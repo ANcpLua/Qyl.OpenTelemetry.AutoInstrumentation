@@ -12,12 +12,13 @@
 set -eo pipefail
 
 NAME="$1"; CSPROJ="$2"; MARKER="$3"; shift 3
-SOURCES=""; PLUGIN=0; METRICS=none; LOGS=none
+SOURCES=""; PLUGIN=0; METRICS=none; LOGS=none; STRICT=0
 while [ $# -gt 0 ]; do case "$1" in
   --sources) SOURCES="$2"; shift 2;;
   --plugin)  PLUGIN=1; shift;;
   --metrics) METRICS=console; shift;;
   --logs)    LOGS=console; shift;;
+  --strict)  STRICT=1; shift;;
   *) echo "unknown opt: $1" >&2; exit 2;;
 esac; done
 
@@ -64,6 +65,10 @@ if [ "$LOGS" = console ]; then
 fi
 if [ "$PLUGIN" = 1 ]; then
   extra="$extra verdicts=[$(grep -hE '^(OK|UNKNOWN)' "$CONF" 2>/dev/null | awk '{print $1}' | sort | uniq -c | tr -s ' \n' ' ')]"
+fi
+if [ "$STRICT" = 1 ]; then
+  unk=$(grep -cE '^UNKNOWN' "$CONF" 2>/dev/null || true)
+  if [ "${unk:-0}" -gt 0 ]; then extra="$extra strict=FAIL(${unk}unk)"; fail=1; else extra="$extra strict=PASS"; fi
 fi
 
 printf '[%-3s] GateB=%s  spans(with/ctl)=%s/%s  logs=%s  qyl_stderr=%sb%s  => %s\n' \

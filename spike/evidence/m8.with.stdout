@@ -1,10 +1,10 @@
-Activity.TraceId:            140dc83dca136d21d357001709f649a8
-Activity.SpanId:             54fd35ec45b83645
+Activity.TraceId:            a7b420f935a7036528a726e2a869fcfd
+Activity.SpanId:             7f11438948fa11e4
 Activity.TraceFlags:         Recorded
 Activity.DisplayName:        chat gpt-4
 Activity.Kind:               Client
-Activity.StartTime:          2026-05-29T13:06:25.6572060Z
-Activity.Duration:           00:00:00.0007410
+Activity.StartTime:          2026-05-29T13:10:25.8229360Z
+Activity.Duration:           00:00:00.0007370
 Activity.Tags:
     gen_ai.operation.name: chat
     gen_ai.system: openai
@@ -15,7 +15,7 @@ Activity.Tags:
 Instrumentation scope (ActivitySource):
     Name: Qyl.M8.GenAI
 Resource associated with Activity:
-    service.instance.id: a65bd442-99ef-488e-8d12-ac359a4eb805
+    service.instance.id: e19638b4-5171-41e8-8697-5a41c4cd5a79
     os.type: darwin
     os.description: Darwin 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132
     os.build_id: 25F71
@@ -25,7 +25,7 @@ Resource associated with Activity:
     host.id: AE5D40F1-6010-5D83-9A50-D75852797969
     host.arch: arm64
     process.owner: ancplua
-    process.pid: 34336
+    process.pid: 34915
     process.runtime.description: .NET 8.0.27
     process.runtime.name: .NET
     process.runtime.version: 8.0.27
@@ -38,7 +38,7 @@ Resource associated with Activity:
 
 M8_DONE
 Resource associated with Metrics:
-	service.instance.id: 85b3b9f6-a2af-4d57-a63c-26313cb72600
+	service.instance.id: 6e534637-16fa-4e7f-9e40-967c47745f6a
 	os.type: darwin
 	os.description: Darwin 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132
 	os.build_id: 25F71
@@ -48,7 +48,7 @@ Resource associated with Metrics:
 	host.id: AE5D40F1-6010-5D83-9A50-D75852797969
 	host.arch: arm64
 	process.owner: ancplua
-	process.pid: 34336
+	process.pid: 34915
 	process.runtime.description: .NET 8.0.27
 	process.runtime.name: .NET
 	process.runtime.version: 8.0.27
@@ -63,136 +63,136 @@ Metric Name: process.runtime.dotnet.gc.collections.count, Description: Number of
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6367690Z, 2026-05-29T13:06:25.6878930Z] generation: gen2 
+(2026-05-29T13:10:25.8043500Z, 2026-05-29T13:10:25.8520110Z] generation: gen2 
 Value: 0
-(2026-05-29T13:06:25.6367690Z, 2026-05-29T13:06:25.6878930Z] generation: gen1 
+(2026-05-29T13:10:25.8043500Z, 2026-05-29T13:10:25.8520110Z] generation: gen1 
 Value: 0
-(2026-05-29T13:06:25.6367690Z, 2026-05-29T13:06:25.6878930Z] generation: gen0 
+(2026-05-29T13:10:25.8043500Z, 2026-05-29T13:10:25.8520110Z] generation: gen0 
 Value: 0
 
 Metric Name: process.runtime.dotnet.gc.objects.size, Description: Count of bytes currently in use by objects in the GC heap that haven't been collected yet. Fragmentation and other GC committed memory pools are excluded., Unit: bytes, Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6377210Z, 2026-05-29T13:06:25.6879190Z] 
-Value: 6931008
+(2026-05-29T13:10:25.8052830Z, 2026-05-29T13:10:25.8520260Z] 
+Value: 6930832
 
 Metric Name: process.runtime.dotnet.gc.allocations.size, Description: Count of bytes allocated on the managed GC heap since the process start. .NET objects are allocated from this heap. Object allocations from unmanaged languages such as C/C++ do not use this heap., Unit: bytes, Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6377410Z, 2026-05-29T13:06:25.6879190Z] 
-Value: 6918912
+(2026-05-29T13:10:25.8053010Z, 2026-05-29T13:10:25.8520270Z] 
+Value: 6918736
 
 Metric Name: process.runtime.dotnet.gc.duration, Description: The total amount of time paused in GC since the process start., Unit: ns, Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6377730Z, 2026-05-29T13:06:25.6879200Z] 
+(2026-05-29T13:10:25.8053300Z, 2026-05-29T13:10:25.8520280Z] 
 Value: 0
 
 Metric Name: process.runtime.dotnet.jit.il_compiled.size, Description: Count of bytes of intermediate language that have been compiled since the process start., Unit: bytes, Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6377780Z, 2026-05-29T13:06:25.6879200Z] 
+(2026-05-29T13:10:25.8053360Z, 2026-05-29T13:10:25.8520280Z] 
 Value: 596910
 
 Metric Name: process.runtime.dotnet.jit.methods_compiled.count, Description: The number of times the JIT compiler compiled a method since the process start. The JIT compiler may be invoked multiple times for the same method to compile with different generic parameters, or because tiered compilation requested different optimization settings., Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6377940Z, 2026-05-29T13:06:25.6879210Z] 
+(2026-05-29T13:10:25.8053500Z, 2026-05-29T13:10:25.8520280Z] 
 Value: 8088
 
 Metric Name: process.runtime.dotnet.jit.compilation_time, Description: The amount of time the JIT compiler has spent compiling methods since the process start., Unit: ns, Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378020Z, 2026-05-29T13:06:25.6879210Z] 
-Value: 524676800
+(2026-05-29T13:10:25.8053570Z, 2026-05-29T13:10:25.8520290Z] 
+Value: 584201000
 
 Metric Name: process.runtime.dotnet.monitor.lock_contention.count, Description: The number of times there was contention when trying to acquire a monitor lock since the process start. Monitor locks are commonly acquired by using the lock keyword in C#, or by calling Monitor.Enter() and Monitor.TryEnter()., Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378080Z, 2026-05-29T13:06:25.6879210Z] 
+(2026-05-29T13:10:25.8053640Z, 2026-05-29T13:10:25.8520290Z] 
 Value: 0
 
 Metric Name: process.runtime.dotnet.thread_pool.threads.count, Description: The number of thread pool threads that currently exist., Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378200Z, 2026-05-29T13:06:25.6879210Z] 
+(2026-05-29T13:10:25.8053740Z, 2026-05-29T13:10:25.8520300Z] 
 Value: 2
 
 Metric Name: process.runtime.dotnet.thread_pool.completed_items.count, Description: The number of work items that have been processed by the thread pool since the process start., Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378310Z, 2026-05-29T13:06:25.6879210Z] 
+(2026-05-29T13:10:25.8053840Z, 2026-05-29T13:10:25.8520300Z] 
 Value: 1
 
 Metric Name: process.runtime.dotnet.thread_pool.queue.length, Description: The number of work items that are currently queued to be processed by the thread pool., Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378420Z, 2026-05-29T13:06:25.6879220Z] 
+(2026-05-29T13:10:25.8053930Z, 2026-05-29T13:10:25.8520300Z] 
 Value: 0
 
 Metric Name: process.runtime.dotnet.timer.count, Description: The number of timer instances that are currently active. Timers can be created by many sources such as System.Threading.Timer, Task.Delay, or the timeout in a CancellationSource. An active timer is registered to tick at some point in the future and has not yet been canceled., Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378530Z, 2026-05-29T13:06:25.6879220Z] 
+(2026-05-29T13:10:25.8054030Z, 2026-05-29T13:10:25.8520310Z] 
 Value: 2
 
 Metric Name: process.runtime.dotnet.assemblies.count, Description: The number of .NET assemblies that are currently loaded., Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Runtime
 	Version: 1.15.1
-(2026-05-29T13:06:25.6378630Z, 2026-05-29T13:06:25.6879220Z] 
+(2026-05-29T13:10:25.8054130Z, 2026-05-29T13:10:25.8520310Z] 
 Value: 71
 
 Metric Name: process.memory.usage, Description: The amount of physical memory in use., Unit: By, Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Process
 	Version: 1.15.1-beta.1
-(2026-05-29T13:06:25.6382600Z, 2026-05-29T13:06:25.6879230Z] 
-Value: 103907328
+(2026-05-29T13:10:25.8058050Z, 2026-05-29T13:10:25.8520320Z] 
+Value: 103743488
 
 Metric Name: process.memory.virtual, Description: The amount of committed virtual memory., Unit: By, Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Process
 	Version: 1.15.1-beta.1
-(2026-05-29T13:06:25.6382710Z, 2026-05-29T13:06:25.6879230Z] 
-Value: 463014199296
+(2026-05-29T13:10:25.8058170Z, 2026-05-29T13:10:25.8520320Z] 
+Value: 463148859392
 
 Metric Name: process.cpu.time, Description: Total CPU seconds broken down by different states., Unit: s, Metric Type: DoubleSum
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Process
 	Version: 1.15.1-beta.1
-(2026-05-29T13:06:25.6384660Z, 2026-05-29T13:06:25.6879560Z] process.cpu.state: user 
-Value: 0.4549833
-(2026-05-29T13:06:25.6384660Z, 2026-05-29T13:06:25.6879560Z] process.cpu.state: system 
-Value: 0.1204083
+(2026-05-29T13:10:25.8060160Z, 2026-05-29T13:10:25.8520540Z] process.cpu.state: user 
+Value: 0.4761958
+(2026-05-29T13:10:25.8060160Z, 2026-05-29T13:10:25.8520540Z] process.cpu.state: system 
+Value: 0.1206291
 
 Metric Name: process.cpu.count, Description: The number of processors (CPU cores) available to the current process., Unit: {processors}, Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Process
 	Version: 1.15.1-beta.1
-(2026-05-29T13:06:25.6384740Z, 2026-05-29T13:06:25.6879570Z] 
+(2026-05-29T13:10:25.8060270Z, 2026-05-29T13:10:25.8520550Z] 
 Value: 10
 
 Metric Name: process.thread.count, Description: Process threads count., Unit: {thread}, Metric Type: LongSumNonMonotonic
 Instrumentation scope (Meter):
 	Name: OpenTelemetry.Instrumentation.Process
 	Version: 1.15.1-beta.1
-(2026-05-29T13:06:25.6384810Z, 2026-05-29T13:06:25.6879570Z] 
+(2026-05-29T13:10:25.8060350Z, 2026-05-29T13:10:25.8520550Z] 
 Value: 28
 
 Metric Name: qyl.semconv.attribute.checks, Description: Emitted attribute keys checked against the qyl semconv registry, by verdict., Unit: {check}, Metric Type: LongSum
 Instrumentation scope (Meter):
 	Name: Qyl.AutoInstrumentation
-(2026-05-29T13:06:25.6746490Z, 2026-05-29T13:06:25.6879570Z] qyl.conformance.verdict: ok 
+(2026-05-29T13:10:25.8389680Z, 2026-05-29T13:10:25.8520550Z] qyl.conformance.verdict: ok 
 Value: 6
