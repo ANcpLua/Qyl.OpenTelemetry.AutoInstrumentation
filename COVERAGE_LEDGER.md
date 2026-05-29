@@ -28,9 +28,10 @@ Gate B is captured **baseline-first**: the WITHOUT-attach run is recorded *befor
 
 | Milestone | Goal | Gate A golden | Gate B baseline | State |
 |-----------|------|---------------|-----------------|-------|
-| **M1 Walking Skeleton** | Attach to unmodified app → ONE HttpClient CLIENT span reaches console exporter | one CLIENT span: method/url/server + status (`golden/m1.client-span.golden.txt`) | `spike` app stdout/exit identical w/wo attach + 0 spans in control arm | **PROVEN ✅** osx-arm64 / net8. NOTE: proves substrate + gate-harness + platform; **no qyl-authored managed code yet** (HttpClient = reused OTel instr). |
-| **M2 First qyl code** | A qyl-authored plugin in the live pipeline (via `OTEL_DOTNET_AUTO_PLUGINS`) asserts every emitted attribute key ∈ qyl semconv registry (wires T003 into runtime) | M1 golden span UNCHANGED | app-observable identical + control arm still 0 spans | **proposed** (awaiting go) |
-| M3+ | defined only after M2 proven | — | — | locked |
+| **M1 Walking Skeleton** | Attach to unmodified app → ONE HttpClient CLIENT span reaches console exporter | one CLIENT span: method/url/server (`golden/m1.client-span.golden.txt`); status_code/error.type dropped as outcome-dependent | `spike` app stdout/exit identical w/wo attach + 0 spans in control arm | **PROVEN ✅** osx-arm64 / net8. Re-proven after hardening the fixture to be deterministic + network-independent (output decoupled from HTTP outcome). Proves substrate + gate-harness + platform; HttpClient = reused OTel instr. |
+| **M2 First qyl code** | A qyl-authored plugin in the live pipeline (via `OTEL_DOTNET_AUTO_PLUGINS`) asserts every emitted attribute key ∈ qyl semconv registry | M1 golden span UNCHANGED | app-observable identical + control arm still 0 spans | **PROVEN ✅** qyl plugin executes; 6/6 emitted keys OK; verdict side-channelled (0 stderr bytes); span + app behavior unchanged. Registry is a PLACEHOLDER HashSet (→ M3). |
+| **M3 Generated registry** | Replace the plugin's placeholder key set with the GENERATED semconv constants from the qyl semconv source generator (T003) — promotes the generator to a runtime-enforced invariant | M1 golden span UNCHANGED; a deliberately-unknown key is flagged UNKNOWN | app-observable identical | **defined** (awaiting go). Cross-repo: pulls generated constants from `feat-semconv-srcgen-port`. |
+| M4+ | defined only after M3 proven | — | — | locked |
 
 ## Coverage ledger — blueprint §00–§09 + T000–T032
 
