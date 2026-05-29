@@ -1,0 +1,17 @@
+# GOLDEN — M9 MCP client span (second differentiator; frontier-domain conformance)
+# Demonstrates MIXED verdicts on real data — the conformance check discriminating which
+# emitted keys are spec-backed vs not-yet-in-spec.
+
+Activity.DisplayName = tools/call
+Activity.Kind        = Client
+
+# Conformance verdicts against the 922-key registry (semconv 1.41 stable + Incubating):
+mcp.method.name  = tools/call     # verdict=OK      (in registry)
+mcp.session.id   = sess-123       # verdict=OK      (in registry)
+rpc.system       = jsonrpc        # verdict=OK      (in registry)
+mcp.tool.name    = get_weather    # verdict=UNKNOWN (not in semconv 1.41)
+mcp.transport    = stdio          # verdict=UNKNOWN (not in semconv 1.41)
+
+# Gate B: M9_DONE, exit 0.
+# Self-telemetry metric: qyl.semconv.attribute.checks verdict=ok=3, verdict=unknown=2.
+# Real finding: semconv 1.41 has PARTIAL MCP coverage.
