@@ -1,0 +1,21 @@
+# GOLDEN — M1 walking skeleton — HttpClient CLIENT span
+# Normalizer: drop volatile fields (TraceId, SpanId, ParentSpanId, timestamps, duration).
+# Assert the stable field set below is present on exactly ONE exported span.
+# Negative control: WITHOUT attach, span count MUST be 0.
+
+Activity.DisplayName       = GET
+Activity.Kind              = Client
+http.request.method        = GET
+server.address             = example.com
+url.full                   = https://example.com/
+http.response.status_code  = 200
+
+# Gate B reference (app-observable, must be identical with/without attach):
+#   APP_OUTPUT status=200
+#   APP_DONE
+#   exit=0
+#
+# NOTED non-failure: with attach, the outbound request gains a W3C `traceparent` header.
+# That is a wire-level change, intentionally INVISIBLE to the app — so it is NOT a Gate B
+# violation. Context propagation is supposed to be app-invisible but wire-visible.
+# Flag for T015/T016/T019 (http/rpc/messaging) milestones where propagation is the point.
