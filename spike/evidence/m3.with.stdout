@@ -1,0 +1,39 @@
+Activity.TraceId:            318fab8201d119ad705db2c6f88d9f4f
+Activity.SpanId:             d13038d50fc742a0
+Activity.TraceFlags:         Recorded
+Activity.DisplayName:        GET
+Activity.Kind:               Client
+Activity.StartTime:          2026-05-29T11:52:00.7474640Z
+Activity.Duration:           00:00:00.1863110
+Activity.Tags:
+    http.request.method: GET
+    server.address: example.com
+    server.port: 443
+    url.full: https://example.com/
+    network.protocol.version: 1.1
+    http.response.status_code: 200
+Instrumentation scope (ActivitySource):
+    Name: System.Net.Http
+Resource associated with Activity:
+    service.instance.id: ec122819-d369-4158-88c6-5e849b1079f7
+    os.type: darwin
+    os.description: Darwin 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132
+    os.build_id: 25F71
+    os.name: macOS
+    os.version: 26.5
+    host.name: Alexanders-MacBook-Air
+    host.id: AE5D40F1-6010-5D83-9A50-D75852797969
+    host.arch: arm64
+    process.owner: ancplua
+    process.pid: 12951
+    process.runtime.description: .NET 8.0.27
+    process.runtime.name: .NET
+    process.runtime.version: 8.0.27
+    telemetry.distro.name: opentelemetry-dotnet-instrumentation
+    telemetry.distro.version: 1.15.0
+    telemetry.sdk.name: opentelemetry
+    telemetry.sdk.language: dotnet
+    telemetry.sdk.version: 1.15.3
+    service.name: qyl-spike
+
+APP_DONE
