@@ -1,10 +1,10 @@
-Activity.TraceId:            0519e8bbd6aa6b88dd5652a695d66c61
-Activity.SpanId:             4000c6f4319f2691
+Activity.TraceId:            df79f71f583ee8b0a0298788564a7309
+Activity.SpanId:             15f34fed55685eaa
 Activity.TraceFlags:         Recorded
 Activity.DisplayName:        GET
 Activity.Kind:               Client
-Activity.StartTime:          2026-05-29T07:05:08.7454920Z
-Activity.Duration:           00:00:00.2059210
+Activity.StartTime:          2026-05-29T13:03:35.9720490Z
+Activity.Duration:           00:00:00.2311540
 Activity.Tags:
     http.request.method: GET
     server.address: example.com
@@ -15,17 +15,17 @@ Activity.Tags:
 Instrumentation scope (ActivitySource):
     Name: System.Net.Http
 Resource associated with Activity:
-    service.instance.id: d2c4ad03-64f5-4147-b7d6-746caed2e530
+    service.instance.id: 7bf3241a-1477-4c55-a2a9-d5bed4634277
     os.type: darwin
     os.description: Darwin 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132
     os.build_id: 25F71
     os.name: macOS
     os.version: 26.5
-    host.name: Alexanders-MacBook-Air
+    host.name: Mac
     host.id: AE5D40F1-6010-5D83-9A50-D75852797969
     host.arch: arm64
     process.owner: ancplua
-    process.pid: 80524
+    process.pid: 33944
     process.runtime.description: .NET 8.0.27
     process.runtime.name: .NET
     process.runtime.version: 8.0.27
@@ -34,6 +34,6 @@ Resource associated with Activity:
     telemetry.sdk.name: opentelemetry
     telemetry.sdk.language: dotnet
     telemetry.sdk.version: 1.15.3
-    service.name: qyl-spike
+    service.name: qyl-gate
 
 APP_DONE

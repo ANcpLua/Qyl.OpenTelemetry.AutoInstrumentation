@@ -1,6 +1,6 @@
-LogRecord.Timestamp:               2026-05-29T12:59:00.9546290Z
-LogRecord.TraceId:                 7cbcc124a7a29f7c58dc0a303ec66e6e
-LogRecord.SpanId:                  86935d4350827c6c
+LogRecord.Timestamp:               2026-05-29T13:03:38.2018950Z
+LogRecord.TraceId:                 aff09edac52fa5eac7a6e862ccd574a1
+LogRecord.SpanId:                  0e3e32a9999e6245
 LogRecord.TraceFlags:              Recorded
 LogRecord.CategoryName:            Qyl.M6
 LogRecord.Severity:                Info
@@ -10,7 +10,7 @@ LogRecord.Attributes (Key:Value):
     OriginalFormat (a.k.a Body): qyl-m6 log inside active span
 
 Resource associated with LogRecord:
-service.instance.id: 9171316a-1aae-4d61-b153-ff6f81c9f83b
+service.instance.id: e93ba8d0-89a8-4725-a74b-29c8b93aa82c
 os.type: darwin
 os.description: Darwin 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132
 os.build_id: 25F71
@@ -20,7 +20,7 @@ host.name: Mac
 host.id: AE5D40F1-6010-5D83-9A50-D75852797969
 host.arch: arm64
 process.owner: ancplua
-process.pid: 33002
+process.pid: 34036
 process.runtime.description: .NET 8.0.27
 process.runtime.name: .NET
 process.runtime.version: 8.0.27
@@ -29,19 +29,19 @@ telemetry.distro.version: 1.15.0
 telemetry.sdk.name: opentelemetry
 telemetry.sdk.language: dotnet
 telemetry.sdk.version: 1.15.3
-service.name: qyl-spike
+service.name: qyl-gate
 
-Activity.TraceId:            7cbcc124a7a29f7c58dc0a303ec66e6e
-Activity.SpanId:             86935d4350827c6c
+Activity.TraceId:            aff09edac52fa5eac7a6e862ccd574a1
+Activity.SpanId:             0e3e32a9999e6245
 Activity.TraceFlags:         Recorded
 Activity.DisplayName:        m6-log-correlation
 Activity.Kind:               Internal
-Activity.StartTime:          2026-05-29T12:59:00.9534260Z
-Activity.Duration:           00:00:00.0170890
+Activity.StartTime:          2026-05-29T13:03:38.2006580Z
+Activity.Duration:           00:00:00.0164290
 Instrumentation scope (ActivitySource):
     Name: Qyl.M6.Demo
 Resource associated with Activity:
-    service.instance.id: fa6ad48a-6373-4e8d-9382-702061d71cb8
+    service.instance.id: ad88162e-f0a8-40b3-874a-3c7ed3e6ff8c
     os.type: darwin
     os.description: Darwin 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:41:26 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8132
     os.build_id: 25F71
@@ -51,7 +51,7 @@ Resource associated with Activity:
     host.id: AE5D40F1-6010-5D83-9A50-D75852797969
     host.arch: arm64
     process.owner: ancplua
-    process.pid: 33002
+    process.pid: 34036
     process.runtime.description: .NET 8.0.27
     process.runtime.name: .NET
     process.runtime.version: 8.0.27
@@ -60,6 +60,6 @@ Resource associated with Activity:
     telemetry.sdk.name: opentelemetry
     telemetry.sdk.language: dotnet
     telemetry.sdk.version: 1.15.3
-    service.name: qyl-spike
+    service.name: qyl-gate
 
 M6_DONE
