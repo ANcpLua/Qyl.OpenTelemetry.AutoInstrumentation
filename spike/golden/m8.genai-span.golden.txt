@@ -1,0 +1,14 @@
+# GOLDEN — M8 GenAI domain span (first qyl-authored instrumentation)
+# Stable gen_ai.* fields on a CLIENT span. Conformance: all keys ∈ registry (verdict=ok).
+
+Activity.DisplayName       = chat gpt-4
+Activity.Kind              = Client
+gen_ai.operation.name      = chat
+gen_ai.system              = openai
+gen_ai.request.model       = gpt-4
+gen_ai.response.model      = gpt-4
+gen_ai.usage.input_tokens  = 10
+gen_ai.usage.output_tokens = 20
+
+# Gate B: M8_DONE, exit 0.
+# Conformance: 6/6 OK. Self-telemetry metric: qyl.semconv.attribute.checks verdict=ok Value=6.
