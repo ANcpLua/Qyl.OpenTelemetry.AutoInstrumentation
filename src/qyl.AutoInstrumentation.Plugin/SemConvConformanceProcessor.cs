@@ -40,8 +40,11 @@ internal sealed class SemConvConformanceProcessor : BaseProcessor<Activity>
         {
             foreach (var tag in activity.TagObjects)
             {
-                var verdict = KnownKeys.Contains(tag.Key) ? "OK     " : "UNKNOWN";
-                Log($"{verdict} {activity.Kind} {activity.DisplayName} :: {tag.Key}");
+                var known = KnownKeys.Contains(tag.Key);
+                // M4: surface conformance as qyl self-telemetry (a metric), alongside the log.
+                QylSelfTelemetry.AttributeChecks.Add(
+                    1, new KeyValuePair<string, object?>("qyl.conformance.verdict", known ? "ok" : "unknown"));
+                Log($"{(known ? "OK     " : "UNKNOWN")} {activity.Kind} {activity.DisplayName} :: {tag.Key}");
             }
         }
         catch

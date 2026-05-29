@@ -1,3 +1,4 @@
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
 namespace Qyl.AutoInstrumentation.Plugin;
@@ -17,4 +18,9 @@ public class Plugin
     /// <summary>Substrate plugin hook: runs after the SDK's own tracer configuration.</summary>
     public TracerProviderBuilder AfterConfigureTracerProvider(TracerProviderBuilder builder)
         => builder.AddProcessor(new SemConvConformanceProcessor());
+
+    /// <summary>Substrate plugin hook: register qyl's self-telemetry meter (M4) so its
+    /// conformance metrics flow through the configured metrics exporter.</summary>
+    public MeterProviderBuilder AfterConfigureMeterProvider(MeterProviderBuilder builder)
+        => builder.AddMeter(QylSelfTelemetry.MeterName);
 }
