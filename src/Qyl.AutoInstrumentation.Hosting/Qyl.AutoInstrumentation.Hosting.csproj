@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.AutoInstrumentation.Hosting</RootNamespace>
+    <AssemblyName>Qyl.AutoInstrumentation.Hosting</AssemblyName>
+    <PackageId>Qyl.AutoInstrumentation.Hosting</PackageId>
+    <Description>Zero-code AOT boot: [ModuleInitializer] auto-activates the qyl listeners when the assembly is loaded. Also exposes AddQylAutoInstrumentation() for explicit wiring.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\Qyl.AutoInstrumentation.DiagnosticListeners\Qyl.AutoInstrumentation.DiagnosticListeners.csproj" />
+  </ItemGroup>
+
+</Project>

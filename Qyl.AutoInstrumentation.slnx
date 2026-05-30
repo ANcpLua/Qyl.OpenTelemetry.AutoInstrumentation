@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj" />
+  <Project Path="src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj" />
+  <Project Path="src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj" />
+  <Project Path="src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj" />
+</Solution>

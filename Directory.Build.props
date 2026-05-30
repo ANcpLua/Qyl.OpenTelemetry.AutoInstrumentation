@@ -1,0 +1,41 @@
+<Project>
+
+  <!--
+    Root-of-repo MSBuild defaults shared by every project under src/.
+
+    Rationale (substrate-swap, post v0.2.0-pre.1):
+    The runtime used to be the OpenTelemetry .NET auto-instrumentation native CLR profiler;
+    we now ship a pure-managed library that runs under NativeAOT-published apps. So every
+    project here MUST stay AOT-clean: trim analyzer, AOT analyzer, and single-file analyzer
+    are turned on at the repo root so a regression fails the build, not the deployment.
+  -->
+
+  <PropertyGroup>
+    <!-- Language / nullability / usings: pinned at repo root so individual csprojs stay small. -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- AOT/trim/single-file safety floor. Per-project csproj overrides only where unavoidable
+         (e.g. the source-generator project targets netstandard2.0 for Roslyn host compatibility). -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+
+    <!-- Deterministic + reproducible builds — golden-OTLP gates need byte-stable artifacts. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- One version source of truth across all packed projects. Bumped on every milestone-bumping commit. -->
+    <Version>0.2.0-pre.1</Version>
+    <Authors>qyl</Authors>
+    <RepositoryUrl>https://github.com/ANcpLua/qyl-dotnet-autoinstrumentation</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>

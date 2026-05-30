@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.AutoInstrumentation</RootNamespace>
+    <AssemblyName>Qyl.AutoInstrumentation</AssemblyName>
+    <PackageId>Qyl.AutoInstrumentation</PackageId>
+    <Description>AOT-native zero-code .NET instrumentation core. Source-generated semconv registry + Activity/Meter primitives. NO IL rewriting, NO CLR profiler attach.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qyl.AutoInstrumentation.DiagnosticListeners" />
+    <InternalsVisibleTo Include="Qyl.AutoInstrumentation.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Source generator referenced as analyzer: emits the semconv FrozenSet at compile time so the
+         runtime conformance check needs zero reflection (the substrate-era reflection path was JIT-only). -->
+    <ProjectReference Include="..\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

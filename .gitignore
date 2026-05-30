@@ -2,4 +2,3 @@ bin/
 obj/
 *.user
 .DS_Store
-spike/evidence/otel-logs/
