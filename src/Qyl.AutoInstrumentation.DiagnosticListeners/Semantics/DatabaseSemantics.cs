@@ -51,6 +51,10 @@ internal static class DatabaseSemantics
             : $"{source.Trim()} {operation}";
     }
 
+    public static bool ShouldWriteQueryText(string? queryText, string? operation, bool captureText)
+        => !string.IsNullOrWhiteSpace(queryText) &&
+           (captureText || string.Equals(operation, "CALL", StringComparison.Ordinal));
+
     private static string? FirstQueryToken(string? queryText)
     {
         if (string.IsNullOrWhiteSpace(queryText))

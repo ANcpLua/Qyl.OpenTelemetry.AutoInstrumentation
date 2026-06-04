@@ -46,7 +46,14 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
         SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, namespaceName);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, operation);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, querySummary);
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, queryText);
+        if (DatabaseSemantics.ShouldWriteQueryText(
+                queryText,
+                operation,
+                QylAutoInstrumentationOptions.Current.SqlClientSetDbStatementForText))
+        {
+            SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, queryText);
+        }
+
         SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, serverAddress);
         DatabaseSemantics.SetError(activity, errorType);
     }

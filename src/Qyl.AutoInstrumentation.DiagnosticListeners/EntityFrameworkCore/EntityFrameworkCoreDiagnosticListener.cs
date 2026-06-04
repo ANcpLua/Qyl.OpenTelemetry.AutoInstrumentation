@@ -46,7 +46,14 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
         SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, namespaceName);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, operation);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, querySummary);
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, queryText);
+        if (DatabaseSemantics.ShouldWriteQueryText(
+                queryText,
+                operation,
+                QylAutoInstrumentationOptions.Current.EntityFrameworkCoreSetDbStatementForText))
+        {
+            SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, queryText);
+        }
+
         DatabaseSemantics.SetError(activity, errorType);
     }
 }
