@@ -130,6 +130,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
+        if (TryGetEntityFrameworkCoreQueryableInvocation(symbol, out target))
+            return true;
+
         if (TryGetDbCommandInvocation(symbol, out target))
             return true;
 
@@ -224,6 +227,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitExternalLoggerInterceptor(builder, invocation, index, "log.log4net");
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreQueryable)
+                EmitEntityFrameworkCoreQueryableInterceptor(builder, invocation, index);
             else
                 EmitDbCommandInterceptor(builder, invocation, index);
         }
@@ -1312,6 +1317,64 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
         builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitEntityFrameworkCoreQueryableInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            "EntityFrameworkCoreQueryable_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "query",
+            target.Parameters,
+            isAsync: true,
+            target.TypeParameterList,
+            target.ConstraintClauses);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
+        {
+            builder.Append("                await global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.");
+            builder.Append(target.MethodName);
+            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+            builder.Append("(query");
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
+            builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
+        }
+        else
+        {
+            builder.Append("                var result = await global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.");
+            builder.Append(target.MethodName);
+            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+            builder.Append("(query");
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
+            builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
+            builder.AppendLine("                return result;");
+        }
+
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
@@ -2420,6 +2483,60 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetEntityFrameworkCoreQueryableInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom;
+        if (original is null ||
+            !IsType(original.ContainingType, "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions") ||
+            !IsSupportedEntityFrameworkCoreQueryableMethod(symbol.Name) ||
+            !CanEmitByValueParameters(symbol) ||
+            original.Parameters.Length is 0 ||
+            !TryGetEntityFrameworkCoreQueryableReturn(symbol.ReturnType))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.EntityFrameworkCoreQueryable,
+            "signals.traces.ENTITYFRAMEWORKCORE",
+            "ENTITYFRAMEWORKCORE",
+            CleanTypeName(original.Parameters[0].Type),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            true,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool IsSupportedEntityFrameworkCoreQueryableMethod(string methodName)
+        => methodName is "ToListAsync" or
+            "ToArrayAsync" or
+            "FirstAsync" or
+            "FirstOrDefaultAsync" or
+            "SingleAsync" or
+            "SingleOrDefaultAsync" or
+            "LastAsync" or
+            "LastOrDefaultAsync" or
+            "AnyAsync" or
+            "AllAsync" or
+            "CountAsync" or
+            "LongCountAsync" or
+            "MinAsync" or
+            "MaxAsync" or
+            "SumAsync" or
+            "AverageAsync" or
+            "ContainsAsync" or
+            "LoadAsync" or
+            "ForEachAsync" or
+            "ExecuteDeleteAsync" or
+            "ExecuteUpdateAsync";
+
+    private static bool TryGetEntityFrameworkCoreQueryableReturn(ITypeSymbol returnType)
+        => IsTask(returnType) || TryGetTaskResult(returnType, out _);
+
     private static bool TryGetDbCommandParameters(IMethodSymbol symbol, string methodName, out ImmutableArray<ParameterSpec> parameters)
     {
         parameters = ImmutableArray<ParameterSpec>.Empty;
@@ -3126,6 +3243,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         NLogLogger,
         Log4NetLogger,
         EntityFrameworkCoreDbContext,
+        EntityFrameworkCoreQueryable,
         DbCommand,
     }
 
