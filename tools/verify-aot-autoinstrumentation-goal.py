@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 COMMANDS: list[tuple[str, list[str]]] = [
     ("contract invariants", [sys.executable, "tools/verify-contract-invariants.py"]),
+    ("contract coverage report", [sys.executable, "tools/verify-contract-coverage-report.py"]),
     ("release build", ["dotnet", "build", "Qyl.AutoInstrumentation.slnx", "-c", "Release"]),
     ("consumer behavior", [sys.executable, "tools/verify-consumer-behavior.py"]),
     ("nativeaot consumer golden", [sys.executable, "tools/verify-nativeaot-consumer-golden.py"]),
