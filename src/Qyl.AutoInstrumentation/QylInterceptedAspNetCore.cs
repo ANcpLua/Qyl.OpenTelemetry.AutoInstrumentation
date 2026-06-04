@@ -24,6 +24,9 @@ public static class QylInterceptedAspNetCore
     public static IEndpointConventionBuilder MapPatch(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
         => endpoints.MapPatch(pattern, Observe(requestDelegate));
 
+    public static IEndpointConventionBuilder MapMethods(IEndpointRouteBuilder endpoints, string pattern, IEnumerable<string> httpMethods, RequestDelegate requestDelegate)
+        => endpoints.MapMethods(pattern, httpMethods, Observe(requestDelegate));
+
     public static Task InvokeAsync(RequestDelegate requestDelegate, HttpContext context)
     {
         if (requestDelegate is null)
@@ -78,12 +81,7 @@ public static class QylInterceptedAspNetCore
         try
         {
             await originalTask.ConfigureAwait(false);
-            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, context.Response.StatusCode);
-            if (context.Response.StatusCode >= 500)
-            {
-                activity.SetTag(QylSemanticAttributes.ErrorType, context.Response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                activity.SetStatus(ActivityStatusCode.Error);
-            }
+            RecordResponse(activity, context);
         }
         catch (Exception exception)
         {
@@ -100,6 +98,19 @@ public static class QylInterceptedAspNetCore
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
+    }
+
+    private static void RecordResponse(Activity? activity, HttpContext context)
+    {
+        if (activity is null)
+            return;
+
+        activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, context.Response.StatusCode);
+        if (context.Response.StatusCode >= 500)
+        {
+            activity.SetTag(QylSemanticAttributes.ErrorType, context.Response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            activity.SetStatus(ActivityStatusCode.Error);
+        }
     }
 
     private static RequestDelegate Observe(RequestDelegate requestDelegate)

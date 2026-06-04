@@ -1655,7 +1655,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             !IsType(symbol.Parameters[0].Type, "global::System.String") ||
             !IsType(symbol.Parameters[1].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate"))
         {
-            return false;
+            if (!string.Equals(symbol.Name, "MapMethods", StringComparison.Ordinal) ||
+                !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder") ||
+                symbol.Parameters.Length is not 3 ||
+                !IsType(symbol.Parameters[0].Type, "global::System.String") ||
+                !IsConstructedFrom(symbol.Parameters[1].Type, "global::System.Collections.Generic.IEnumerable<T>") ||
+                !IsType(symbol.Parameters[2].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate"))
+            {
+                return false;
+            }
         }
 
         target = new InterceptorTarget(
@@ -1671,7 +1679,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static bool IsSupportedAspNetCoreMapMethod(string name)
-        => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch";
+        => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch" or "MapMethods";
 
     private static bool TryGetAspNetCoreComponentsNavigationInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
