@@ -28,7 +28,10 @@ public static class QylInterceptedGrpcNetClient
         return activity;
     }
 
-    public static async Task<TResponse> ObserveUnaryResponseAsync<TResponse>(Task<TResponse> responseTask, Activity? activity)
+    public static async Task<TResponse> ObserveUnaryResponseAsync<TResponse>(
+        Task<TResponse> responseTask,
+        Task<Metadata> responseHeadersTask,
+        Activity? activity)
     {
         if (activity is null)
             return await responseTask.ConfigureAwait(false);
@@ -36,6 +39,7 @@ public static class QylInterceptedGrpcNetClient
         try
         {
             var response = await responseTask.ConfigureAwait(false);
+            CaptureCompletedResponseHeaders(responseHeadersTask, activity);
             activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, QylSemanticAttributes.RpcGrpcStatusCodeOk);
             return response;
         }
@@ -53,8 +57,16 @@ public static class QylInterceptedGrpcNetClient
     public static async Task<Metadata> ObserveResponseHeadersAsync(Task<Metadata> responseHeadersTask, Activity? activity)
     {
         var metadata = await responseHeadersTask.ConfigureAwait(false);
-        SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcResponseMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadata, metadata);
+        SetResponseMetadata(activity, metadata);
         return metadata;
+    }
+
+    public static void CaptureCompletedResponseHeaders(Task<Metadata>? responseHeadersTask, Activity? activity)
+    {
+        if (activity is null || responseHeadersTask is null || !responseHeadersTask.IsCompletedSuccessfully)
+            return;
+
+        SetResponseMetadata(activity, responseHeadersTask.Result);
     }
 
     public static void RecordException(Activity? activity, Exception exception)
@@ -74,6 +86,9 @@ public static class QylInterceptedGrpcNetClient
 
     public static void Dispose(Activity? activity)
         => activity?.Dispose();
+
+    private static void SetResponseMetadata(Activity? activity, Metadata? metadata)
+        => SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcResponseMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadata, metadata);
 
     private static void SetConfiguredMetadata(Activity? activity, string prefix, string[] configuredMetadata, Metadata? metadata)
     {
