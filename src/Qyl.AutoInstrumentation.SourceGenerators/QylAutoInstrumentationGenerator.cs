@@ -100,6 +100,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetNServiceBusInvocation(symbol, out target))
             return true;
 
+        if (TryGetQuartzInvocation(symbol, out target))
+            return true;
+
         if (TryGetStackExchangeRedisInvocation(symbol, out target))
             return true;
 
@@ -201,6 +204,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitMassTransitInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.NServiceBusMessageOperation)
                 EmitNServiceBusInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.QuartzJobExecute)
+                EmitQuartzInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
@@ -894,6 +899,36 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitQuartzInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "Quartz_" + target.MethodName, index, target.ReceiverType, "job", target.Parameters, isAsync: true);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                await job.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(").ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordSuccess(activity);");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -1952,6 +1987,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         => IsOrImplementsType(symbol, "NServiceBus", "IMessageSession") ||
            IsOrImplementsType(symbol, "NServiceBus", "IMessageHandlerContext");
 
+    private static bool TryGetQuartzInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Execute", StringComparison.Ordinal) ||
+            !IsTask(symbol.ReturnType) ||
+            !IsOrImplementsType(symbol.ContainingType, "Quartz", "IJob") ||
+            symbol.Parameters.Length is not 1 ||
+            !IsType(symbol.Parameters[0].Type, "global::Quartz.IJobExecutionContext"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.QuartzJobExecute,
+            "signals.traces.QUARTZ",
+            "QUARTZ",
+            CleanTypeName(symbol.ContainingType),
+            "Execute",
+            "global::System.Threading.Tasks.Task",
+            Parameters(symbol),
+            true);
+        return true;
+    }
+
     private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
@@ -2995,6 +3054,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         KafkaConsumer,
         MassTransitMessageOperation,
         NServiceBusMessageOperation,
+        QuartzJobExecute,
         StackExchangeRedisStringGetAsync,
         GraphQlDocumentExecuter,
         MongoDbCollection,
