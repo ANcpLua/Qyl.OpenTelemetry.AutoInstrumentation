@@ -15,6 +15,10 @@ public sealed class QylAutoInstrumentationOptions
 
     private readonly IReadOnlyDictionary<string, bool> _instrumentationEnabled;
 
+    static QylAutoInstrumentationOptions()
+    {
+    }
+
     private QylAutoInstrumentationOptions(
         bool globalEnabled,
         bool tracesEnabled,

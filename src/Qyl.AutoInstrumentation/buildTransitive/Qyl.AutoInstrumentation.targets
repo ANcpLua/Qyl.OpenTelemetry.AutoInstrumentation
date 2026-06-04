@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
+    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(QylAutoInstrumentationDisableInterceptorsAttribute)' != 'true'">

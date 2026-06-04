@@ -157,7 +157,8 @@ per-library matrix lives in `docs/RUNTIME_SEMANTICS.md`.
   NativeAOT and checks a normalized offline qyl HTTP client activity golden.
   `tools/verify-aot-autoinstrumentation-goal.py` runs the current goal gate end-to-end:
   contract invariants, 60-item contract coverage report, Release build, deterministic consumer
-  behavior, NativeAOT consumer golden, and diff whitespace.
+  source-interceptor consumer proof, deterministic consumer behavior, NativeAOT consumer golden,
+  and diff whitespace.
 
 The substrate-era M1–M12 are preserved in `COVERAGE_LEDGER.md` under the *archived* section
 and remain reproducible from the `v0.1.0-archive` tag.
