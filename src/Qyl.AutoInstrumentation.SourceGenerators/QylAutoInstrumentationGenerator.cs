@@ -11,7 +11,9 @@ namespace Qyl.AutoInstrumentation.SourceGenerators;
 public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 {
     private static readonly SymbolDisplayFormat FullyQualifiedFormat =
-        SymbolDisplayFormat.FullyQualifiedFormat;
+        SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+            SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
+            ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -3004,11 +3006,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         foreach (var parameter in symbol.Parameters)
         {
-            if (parameter.RefKind is not RefKind.None ||
-                IsConstructedFrom(parameter.Type, "global::System.Nullable<T>"))
-            {
+            if (parameter.RefKind is not RefKind.None)
                 return false;
-            }
         }
 
         return true;
@@ -3351,7 +3350,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static string CleanTypeName(ITypeSymbol symbol)
-        => symbol.ToDisplayString(FullyQualifiedFormat).Replace("?", string.Empty);
+        => symbol.ToDisplayString(FullyQualifiedFormat);
 
     private static bool RequiresGrpcStreamReader(InterceptedInvocation[] invocations)
         => invocations.Any(static invocation =>
