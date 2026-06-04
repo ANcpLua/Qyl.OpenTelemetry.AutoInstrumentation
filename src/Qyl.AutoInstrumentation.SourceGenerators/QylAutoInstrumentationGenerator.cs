@@ -82,6 +82,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetMassTransitInvocation(symbol, out target))
             return true;
 
+        if (TryGetNServiceBusInvocation(symbol, out target))
+            return true;
+
         if (TryGetStackExchangeRedisInvocation(symbol, out target))
             return true;
 
@@ -171,6 +174,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitKafkaConsumerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.MassTransitMessageOperation)
                 EmitMassTransitInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.NServiceBusMessageOperation)
+                EmitNServiceBusInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
@@ -572,6 +577,48 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitNServiceBusInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            "NServiceBus_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "endpoint",
+            target.Parameters,
+            isAsync: true,
+            typeParameterList: target.TypeParameterList,
+            constraintClauses: target.ConstraintClauses);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                await endpoint.");
+        builder.Append(target.MethodName);
+        AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(").ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -1292,6 +1339,38 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsMassTransitEndpointType(ITypeSymbol? symbol)
         => IsOrImplementsType(symbol, "MassTransit", "IPublishEndpoint") ||
            IsOrImplementsType(symbol, "MassTransit", "ISendEndpoint");
+
+    private static bool TryGetNServiceBusInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsSupportedNServiceBusOperation(symbol.Name) ||
+            !IsTask(symbol.ReturnType) ||
+            !IsNServiceBusEndpointType(symbol.ContainingType) ||
+            symbol.Parameters.Length is 0)
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.NServiceBusMessageOperation,
+            "signals.traces.NSERVICEBUS",
+            "NSERVICEBUS",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            true,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool IsSupportedNServiceBusOperation(string methodName)
+        => methodName is "Publish" or "Send";
+
+    private static bool IsNServiceBusEndpointType(ITypeSymbol? symbol)
+        => IsOrImplementsType(symbol, "NServiceBus", "IMessageSession") ||
+           IsOrImplementsType(symbol, "NServiceBus", "IMessageHandlerContext");
 
     private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -2268,6 +2347,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         KafkaProducer,
         KafkaConsumer,
         MassTransitMessageOperation,
+        NServiceBusMessageOperation,
         StackExchangeRedisStringGetAsync,
         GraphQlDocumentExecuter,
         MongoDbCollection,
