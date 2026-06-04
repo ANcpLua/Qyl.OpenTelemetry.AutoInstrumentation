@@ -72,6 +72,7 @@ public static class QylSemanticAttributes
     public const string MessagingSystem = MessagingAttributes.System;
     public const string MessagingOperationName = MessagingAttributes.OperationName;
     public const string MessagingOperationNamePublish = "publish";
+    public const string MessagingOperationNameSend = MessagingAttributes.OperationTypeValues.Send;
     public const string MessagingOperationType = MessagingAttributes.OperationType;
     public const string MessagingOperationTypeReceive = MessagingAttributes.OperationTypeValues.Receive;
     public const string MessagingOperationTypeSend = MessagingAttributes.OperationTypeValues.Send;

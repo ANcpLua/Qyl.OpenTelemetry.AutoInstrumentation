@@ -12,7 +12,7 @@ public static class QylInterceptedMassTransit
             return null;
 
         var operation = string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? QylSemanticAttributes.MessagingOperationTypeSend
+            ? QylSemanticAttributes.MessagingOperationNameSend
             : QylSemanticAttributes.MessagingOperationNamePublish;
 
         var activity = QylActivitySource.Source.StartActivity("MassTransit " + operation, ActivityKind.Producer);

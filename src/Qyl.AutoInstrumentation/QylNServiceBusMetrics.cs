@@ -28,6 +28,6 @@ public static class QylNServiceBusMetrics
 
     private static string NormalizeOperation(string operationName)
         => string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? QylSemanticAttributes.MessagingOperationTypeSend
+            ? QylSemanticAttributes.MessagingOperationNameSend
             : QylSemanticAttributes.MessagingOperationNamePublish;
 }
