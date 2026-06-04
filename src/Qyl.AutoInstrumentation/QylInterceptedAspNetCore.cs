@@ -9,6 +9,16 @@ public static class QylInterceptedAspNetCore
 {
     private const string AspNetCoreDomain = "aspnetcore.server";
 
+    public static WebApplication Build(WebApplicationBuilder builder)
+    {
+        if (builder is null)
+            throw new NullReferenceException();
+
+        var app = builder.Build();
+        app.Use(static (context, next) => InvokeAsync(next, context));
+        return app;
+    }
+
     public static IEndpointConventionBuilder MapGet(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
         => endpoints.MapGet(pattern, Observe(requestDelegate));
 

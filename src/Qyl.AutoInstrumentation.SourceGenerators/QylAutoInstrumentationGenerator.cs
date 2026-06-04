@@ -81,6 +81,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetHttpWebRequestInvocation(symbol, receiverType, out target))
             return true;
 
+        if (TryGetAspNetCoreWebApplicationBuilderBuildInvocation(symbol, out target))
+            return true;
+
         if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
             return true;
 
@@ -188,6 +191,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitHttpClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.HttpWebRequest)
                 EmitHttpWebRequestInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreWebApplicationBuilderBuild)
+                EmitAspNetCoreWebApplicationBuilderBuildInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
@@ -378,6 +383,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreRequestDelegate_" + target.MethodName, index, target.ReceiverType, "requestDelegate", target.Parameters, isAsync: false);
         builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.InvokeAsync(requestDelegate, p0);");
+        builder.AppendLine();
+    }
+
+    private static void EmitAspNetCoreWebApplicationBuilderBuildInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreWebApplicationBuilder_" + target.MethodName, index, target.ReceiverType, "builder", target.Parameters, isAsync: false);
+        builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.Build(builder);");
         builder.AppendLine();
     }
 
@@ -1929,28 +1942,40 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return true;
     }
 
+    private static bool TryGetAspNetCoreWebApplicationBuilderBuildInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            !string.Equals(symbol.Name, "Build", StringComparison.Ordinal) ||
+            !IsType(symbol.ContainingType, "global::Microsoft.AspNetCore.Builder.WebApplicationBuilder") ||
+            !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.WebApplication") ||
+            symbol.Parameters.Length is not 0)
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreWebApplicationBuilderBuild,
+            "signals.traces.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(symbol.ContainingType),
+            "Build",
+            "global::Microsoft.AspNetCore.Builder.WebApplication",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
     private static bool TryGetAspNetCoreEndpointMapInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
         var original = symbol.ReducedFrom;
+
         if (original is null ||
             !IsSupportedAspNetCoreMapMethod(symbol.Name) ||
             !IsType(original.ContainingType, "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions") ||
-            !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder") ||
-            symbol.Parameters.Length is not 2 ||
-            !IsType(symbol.Parameters[0].Type, "global::System.String") ||
-            !IsType(symbol.Parameters[1].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate"))
-        {
-            if (!string.Equals(symbol.Name, "MapMethods", StringComparison.Ordinal) ||
-                !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder") ||
-                symbol.Parameters.Length is not 3 ||
-                !IsType(symbol.Parameters[0].Type, "global::System.String") ||
-                !IsConstructedFrom(symbol.Parameters[1].Type, "global::System.Collections.Generic.IEnumerable<T>") ||
-                !IsType(symbol.Parameters[2].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate"))
-            {
-                return false;
-            }
-        }
+            !TryGetAspNetCoreEndpointMapReturnType(symbol, out var returnType))
+            return false;
 
         target = new InterceptorTarget(
             InterceptorKind.AspNetCoreEndpointMap,
@@ -1958,10 +1983,42 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "ASPNETCORE",
             "global::Microsoft.AspNetCore.Routing.IEndpointRouteBuilder",
             symbol.Name,
-            "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder",
+            returnType,
             Parameters(symbol),
             false);
         return true;
+    }
+
+    private static bool TryGetAspNetCoreEndpointMapReturnType(IMethodSymbol symbol, out string returnType)
+    {
+        returnType = string.Empty;
+
+        var handlerIndex = 1;
+        if (string.Equals(symbol.Name, "MapMethods", StringComparison.Ordinal))
+        {
+            if (symbol.Parameters.Length is not 3 ||
+                !IsType(symbol.Parameters[0].Type, "global::System.String") ||
+                !IsConstructedFrom(symbol.Parameters[1].Type, "global::System.Collections.Generic.IEnumerable<T>"))
+            {
+                return false;
+            }
+
+            handlerIndex = 2;
+        }
+        else if (symbol.Parameters.Length is not 2 ||
+                 !IsType(symbol.Parameters[0].Type, "global::System.String"))
+        {
+            return false;
+        }
+
+        if (IsType(symbol.Parameters[handlerIndex].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate") &&
+            IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder"))
+        {
+            returnType = "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder";
+            return true;
+        }
+
+        return false;
     }
 
     private static bool IsSupportedAspNetCoreMapMethod(string name)
@@ -3750,6 +3807,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         HttpClient,
         HttpWebRequest,
+        AspNetCoreWebApplicationBuilderBuild,
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         MeterProviderBuilderAddMeter,
