@@ -61,6 +61,7 @@ public static class QylSemanticAttributes
 #pragma warning disable CS0618 // Qyl still mirrors the current OTEL .NET auto gRPC status attribute contract.
     public const string RpcService = RpcAttributes.Service;
     public const string RpcMethod = RpcAttributes.Method;
+    public const string RpcMethodExecute = "Execute";
     public const string RpcGrpcStatusCode = RpcAttributes.GrpcStatusCode;
     public static readonly int RpcGrpcStatusCodeOk = GetRpcGrpcStatusCodeOk();
 #pragma warning restore CS0618

@@ -18,7 +18,7 @@ public static class QylInterceptedQuartz
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QuartzDomain);
         activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemQuartz);
         activity.SetTag(QylSemanticAttributes.RpcService, jobType);
-        activity.SetTag(QylSemanticAttributes.RpcMethod, "Execute");
+        activity.SetTag(QylSemanticAttributes.RpcMethod, QylSemanticAttributes.RpcMethodExecute);
         return activity;
     }
 
