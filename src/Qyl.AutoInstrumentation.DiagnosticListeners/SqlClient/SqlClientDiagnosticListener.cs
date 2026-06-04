@@ -5,8 +5,9 @@ using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.SqlClient;
 
 /// <summary>
-/// Subscribes to <c>SqlClientDiagnosticListener</c> — emitted by both <c>System.Data.SqlClient</c>
-/// and <c>Microsoft.Data.SqlClient</c>. Direct DB CLIENT spans for SQL Server / Azure SQL.
+/// Subscribes to the synthetic <c>qyl.db.sqlclient</c> event used by the shared semantic demo.
+/// Real Microsoft.Data.SqlClient command events live in <c>Qyl.AutoInstrumentation.SqlClient</c>
+/// so non-SqlClient apps do not inherit SqlClient package dependencies or NativeAOT warnings.
 /// </summary>
 public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
 {
@@ -16,9 +17,7 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
-        if (!StringComparer.Ordinal.Equals(name, "qyl.db.sqlclient") &&
-            !StringComparer.Ordinal.Equals(name, "System.Data.SqlClient.WriteCommandAfter") &&
-            !StringComparer.Ordinal.Equals(name, "Microsoft.Data.SqlClient.WriteCommandAfter"))
+        if (!StringComparer.Ordinal.Equals(name, "qyl.db.sqlclient"))
         {
             return;
         }

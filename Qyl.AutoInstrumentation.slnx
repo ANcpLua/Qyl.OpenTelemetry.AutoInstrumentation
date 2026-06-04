@@ -4,9 +4,11 @@
   <Project Path="demos/Qyl.RealEfCoreDemo/Qyl.RealEfCoreDemo.csproj" />
   <Project Path="demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj" />
   <Project Path="demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj" />
+  <Project Path="demos/Qyl.RealSqlClientDemo/Qyl.RealSqlClientDemo.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.EntityFrameworkCore/Qyl.AutoInstrumentation.EntityFrameworkCore.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj" />
+  <Project Path="src/Qyl.AutoInstrumentation.SqlClient/Qyl.AutoInstrumentation.SqlClient.csproj" />
 </Solution>

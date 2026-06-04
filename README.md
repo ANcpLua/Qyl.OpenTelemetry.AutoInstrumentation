@@ -53,11 +53,12 @@ Runtime projects inherit `IsAotCompatible`, trim, AOT, and single-file analyzers
 build-time Roslyn assembly.
 
 Current evidence proves the qyl runtime closure is NativeAOT-clean and emits spans under
-NativeAOT. The active generator direction is compile-time interception for source-visible
-call-sites: no CLR profiling, no startup hooks, no runtime IL rewriting, no reflection, and no
-dynamic dispatch. The first compiler-emitted interceptor delegates source-visible
-`HttpClient.SendAsync` calls to the qyl runtime wrapper; the full 60-item contract is tracked in
-the generated instrumentation manifest.
+NativeAOT. Library-specific packages call out upstream app-side warning boundaries when the
+instrumented library itself is not warning-clean. The active generator direction is compile-time
+interception for source-visible call-sites: no CLR profiling, no startup hooks, no runtime IL
+rewriting, no reflection, and no dynamic dispatch. The first compiler-emitted interceptor delegates
+source-visible `HttpClient.SendAsync` calls to the qyl runtime wrapper; the full 60-item contract
+is tracked in the generated instrumentation manifest.
 
 - `demos/Qyl.LiveInstrumentationDemo` publishes as `net10.0`/`osx-arm64` with
   `PublishAot=true` and captures `http.client`, `http.server`, `db.efcore`, `db.sqlclient`,
@@ -73,12 +74,19 @@ the generated instrumentation manifest.
 - `demos/Qyl.RealGrpcClientDemo` proves `Grpc.Net.Client` success and Unavailable failure paths
   under managed and warning-clean NativeAOT execution. It uses `WebApplication.CreateSlimBuilder`
   for the local h2c proof server and reads only AOT-safe gRPC activity tags.
+- `demos/Qyl.RealSqlClientDemo` proves `Microsoft.Data.SqlClient` command success and SQL Server
+  error paths under managed and NativeAOT execution. The qyl listener is warning-clean; the app
+  publish intentionally demotes `Microsoft.Data.SqlClient` 7.0.1 trim/AOT warnings and must not use
+  `InvariantGlobalization=true` because SqlClient throws in invariant globalization mode.
 - A temporary consumer with only `PackageReference` wiring for
   `Qyl.AutoInstrumentation.EntityFrameworkCore` and no qyl startup call restored from locally
   packed nupkgs and captured `PASS name=DB INSERT`, proving the EFCore build-transitive bootstrap.
 - A temporary gRPC consumer with only `PackageReference` wiring for
   `Qyl.AutoInstrumentation.Hosting` and no qyl startup call restored from locally packed nupkgs
   and captured `PASS name=gRPC qyl.LiveProbe/Collect`.
+- A temporary SqlClient consumer with only `PackageReference` wiring for
+  `Qyl.AutoInstrumentation.SqlClient` and no qyl startup call restored from locally packed nupkgs,
+  published under NativeAOT, and captured `PASS name=SQL SELECT operation=SELECT`.
 
 The formal Gate A golden-OTLP normalizer and Gate B no-behavior-change baseline are still tracked
 in `COVERAGE_LEDGER.md`.
@@ -91,13 +99,14 @@ in `COVERAGE_LEDGER.md`.
 | `Qyl.AutoInstrumentation.SourceGenerators` | netstandard2.0 | `IIncrementalGenerator` that emits the semconv `FrozenSet<string>` at compile time plus compile-time interceptors for source-visible call-sites. |
 | `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | Shared `DiagnosticListener` substrate and built-in subscribers for HttpClient, ASP.NET Core, gRPC, plus synthetic EFCore and SqlClient semantic proof events. |
 | `Qyl.AutoInstrumentation.EntityFrameworkCore` | net10.0 | EFCore-specific build-transitive bootstrap and typed command payload reader. Kept out of the shared host so non-EFCore apps do not inherit EFCore package warnings. |
+| `Qyl.AutoInstrumentation.SqlClient` | net10.0 | Microsoft.Data.SqlClient-specific build-transitive bootstrap and command payload reader. Kept out of the shared host so non-SqlClient apps do not inherit SqlClient package warnings. |
 | `Qyl.AutoInstrumentation.Hosting` | net10.0 | Build-transitive consumer bootstrap + `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
 
 The runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
 `IsTrimmable`, `EnableTrimAnalyzer`, `EnableAotAnalyzer`, and `EnableSingleFileAnalyzer` all on.
 The source-generator project is build-time-only and explicitly excluded from NativeAOT publish.
-Analyzer or AOT regressions fail the repo build; upstream NativeAOT warnings from EFCore are
-documented at the app publish boundary.
+Analyzer or AOT regressions fail the repo build; upstream NativeAOT warnings from EFCore and
+SqlClient are documented at the app publish boundary.
 
 ## Runtime semantics
 
@@ -126,8 +135,9 @@ paths under managed and NativeAOT execution. `demos/Qyl.RealAspNetCoreDemo` does
 Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. `demos/Qyl.RealEfCoreDemo`
 does the same for EFCore command success and provider-error paths, with the EFCore compiled-model
 NativeAOT prerequisite called out explicitly. `demos/Qyl.RealGrpcClientDemo` proves real
-`Grpc.Net.Client` success and failure activity tags. The compile-time interceptor scaffold now
-covers source-visible `HttpClient.SendAsync` call-sites. The per-library matrix lives in
+`Grpc.Net.Client` success and failure activity tags. `demos/Qyl.RealSqlClientDemo` proves
+`Microsoft.Data.SqlClient` command success and SQL Server error payloads. The compile-time
+interceptor scaffold now covers source-visible `HttpClient.SendAsync` call-sites. The per-library matrix lives in
 `docs/RUNTIME_SEMANTICS.md`.
 
 ## Status
