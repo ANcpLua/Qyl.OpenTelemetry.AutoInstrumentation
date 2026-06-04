@@ -12,6 +12,7 @@ internal static class DatabaseSemantics
         "DELETE",
         "DROP",
         "EXEC",
+        "EXECUTE",
         "INSERT",
         "MERGE",
         "SELECT",

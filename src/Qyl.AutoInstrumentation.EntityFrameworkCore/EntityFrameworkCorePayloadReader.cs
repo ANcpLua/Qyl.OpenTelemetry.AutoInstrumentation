@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
@@ -13,7 +14,9 @@ internal static class EntityFrameworkCorePayloadReader
             return false;
         }
 
-        var operation = DatabaseSemantics.NormalizeOperation(null, commandEvent.Command.CommandText);
+        var operation = commandEvent.Command.CommandType is CommandType.StoredProcedure
+            ? "CALL"
+            : DatabaseSemantics.NormalizeOperation(null, commandEvent.Command.CommandText);
         command = new EntityFrameworkCoreCommand(
             DbSystem: MapProviderName(commandEvent.Context?.Database.ProviderName),
             Namespace: NormalizeEmpty(commandEvent.Command.Connection?.Database),
