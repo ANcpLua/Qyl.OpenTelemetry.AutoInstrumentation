@@ -46,7 +46,7 @@ internal static class InstrumentationContract
     public const int MetricsSignalSpecificPromiseCount = 8;
     public const int LogsSignalSpecificPromiseCount = 3;
     public const int UniqueInstrumentationIdCount = 31;
-    public const int UnsupportedNativeAotSignalPromiseCount = 3;
+    public const int UnsupportedNativeAotSignalPromiseCount = 4;
     public const int SourceGeneratedSignalPromiseCount =
         SignalSpecificInstrumentationPromiseCount -
         UnsupportedNativeAotSignalPromiseCount;
@@ -57,6 +57,7 @@ internal static class InstrumentationContract
     public static readonly ImmutableArray<string> UnsupportedNativeAotSignalKeys =
     [
         "signals.traces.ASPNET",
+        "signals.traces.WCFCORE",
         "signals.traces.WCFSERVICE",
         "signals.metrics.ASPNET",
     ];
@@ -87,7 +88,7 @@ internal static class InstrumentationContract
         Signal(22, "signals.traces.SQLITE", InstrumentationSignal.Traces, "SQLITE", "OTEL_DOTNET_AUTO_TRACES_SQLITE_INSTRUMENTATION_ENABLED", "Microsoft.Data.Sqlite", ">=8.0.0 && <11.0.0", "bytecode", "SQLite tracing promise. NativeAOT replacement must use source-visible command interception; runtime IL rewriting is forbidden."),
         Signal(23, "signals.traces.STACKEXCHANGEREDIS", InstrumentationSignal.Traces, "STACKEXCHANGEREDIS", "OTEL_DOTNET_AUTO_TRACES_STACKEXCHANGEREDIS_INSTRUMENTATION_ENABLED", "StackExchange.Redis", ">=2.6.122 && <3.0.0", "source|bytecode", "StackExchange.Redis tracing promise. NativeAOT replacement must not use bytecode rewriting."),
         Signal(24, "signals.traces.WCFCLIENT", InstrumentationSignal.Traces, "WCFCLIENT", "OTEL_DOTNET_AUTO_TRACES_WCFCLIENT_INSTRUMENTATION_ENABLED", "WCF", "*", "source|bytecode", "WCF client tracing promise. Not supported for .NET NativeAOT; retained only for contract parity."),
-        Signal(25, "signals.traces.WCFCORE", InstrumentationSignal.Traces, "WCFCORE", "OTEL_DOTNET_AUTO_TRACES_WCFCORE_INSTRUMENTATION_ENABLED", "CoreWCF.Primitives", ">=1.8.0", "source", "CoreWCF tracing promise."),
+        Signal(25, "signals.traces.WCFCORE", InstrumentationSignal.Traces, "WCFCORE", "OTEL_DOTNET_AUTO_TRACES_WCFCORE_INSTRUMENTATION_ENABLED", "CoreWCF.Primitives", ">=1.8.0", "source", "CoreWCF tracing promise. Not source-generated in NativeAOT mode because server operation invocation is a CoreWCF runtime dispatch path, not a source-visible call-site."),
         Signal(26, "signals.traces.WCFSERVICE", InstrumentationSignal.Traces, "WCFSERVICE", "OTEL_DOTNET_AUTO_TRACES_WCFSERVICE_INSTRUMENTATION_ENABLED", "WCF", "*", "source|bytecode", "WCF service tracing promise. Not supported for .NET NativeAOT; retained only for contract parity."),
         Signal(27, "signals.metrics.ASPNET", InstrumentationSignal.Metrics, "ASPNET", "OTEL_DOTNET_AUTO_METRICS_ASPNET_INSTRUMENTATION_ENABLED", "ASP.NET Framework", "*", "source|bytecode", "ASP.NET Framework metrics promise. Not supported for .NET NativeAOT; retained only for contract parity."),
         Signal(28, "signals.metrics.ASPNETCORE", InstrumentationSignal.Metrics, "ASPNETCORE", "OTEL_DOTNET_AUTO_METRICS_ASPNETCORE_INSTRUMENTATION_ENABLED", "ASP.NET Core", "*", "source", "ASP.NET Core .NET 10 metrics promise. Use built-in .NET 10 meter Microsoft.AspNetCore.Components and metric aspnetcore.components.navigation; do not regress to Microsoft.AspNetCore.Hosting/http.server.request.duration as the primary proof. Do not re-emit NavigationManager.NavigateTo as aspnetcore.components.navigation because the required component type and route are owned by ASP.NET Core internals, not the call-site."),
@@ -189,6 +190,7 @@ internal static class InstrumentationContract
 
     private static bool IsUnsupportedNativeAotSignalKey(string key)
         => key is "signals.traces.ASPNET" or
+            "signals.traces.WCFCORE" or
             "signals.traces.WCFSERVICE" or
             "signals.metrics.ASPNET";
 

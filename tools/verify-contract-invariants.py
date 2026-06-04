@@ -9,6 +9,15 @@ ROOT = Path(__file__).resolve().parents[1]
 YAML_PATH = ROOT / "docs" / "otel-dotnet-auto-60-contract-items.yaml"
 CONTRACT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
 GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
+INTENTIONALLY_UNSUPPORTED_DYNAMIC_SIGNAL_KEYS = {"signals.traces.WCFCORE"}
+FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
+    "IOperationInvoker",
+    "IServiceBehavior",
+    "IOperationBehavior",
+    "DispatchOperation",
+    "dispatchOperation.Invoker",
+    "QylCoreWcf",
+]
 
 
 def fail(message: str) -> None:
@@ -146,9 +155,10 @@ def verify_yaml_vs_contract() -> tuple[set[str], set[str]]:
         if item["kind"] == "signal_specific_instrumentation_promise"
         and ".NET" in item["not_supported_on"]
     }
+    expected_unsupported = yaml_dotnet_unsupported | INTENTIONALLY_UNSUPPORTED_DYNAMIC_SIGNAL_KEYS
     contract_unsupported = parse_unsupported_keys()
-    if yaml_dotnet_unsupported != contract_unsupported:
-        fail(f"unsupported set mismatch: YAML={sorted(yaml_dotnet_unsupported)} CS={sorted(contract_unsupported)}")
+    if expected_unsupported != contract_unsupported:
+        fail(f"unsupported set mismatch: expected={sorted(expected_unsupported)} CS={sorted(contract_unsupported)}")
 
     return yaml_signal_keys, contract_unsupported
 
@@ -172,6 +182,10 @@ def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]
 
     if "http.server.request.duration" in generator or "Microsoft.AspNetCore.Hosting" in generator:
         fail("generator must not use the old ASP.NET Core Hosting meter metric proof")
+
+    for token in FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS:
+        if token in generator:
+            fail(f"generator must not emit runtime dispatch instrumentation: {token}")
 
 
 def main() -> None:

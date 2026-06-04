@@ -20,8 +20,8 @@ reflection — the substrate-era path was JIT-only).
 
 Coverage is tracked in `COVERAGE_LEDGER.md` and the 60-item OpenTelemetry .NET auto
 instrumentation contract is mirrored in `docs/otel-dotnet-auto-60-contract-items.yaml`. The
-current compile-time lane classifies the contract as 34 source-generated signal promises, three
-unsupported NativeAOT parity signal promises, seven global controls, and 16 instrumentation
+current compile-time lane classifies the contract as 33 source-generated signal promises, four
+unsupported NativeAOT parity/dynamic signal promises, seven global controls, and 16 instrumentation
 options. Nothing is silently dropped; unsupported parity requires an explicit reason.
 
 ## Substrate-swap note (v0.2.0-pre.1)
@@ -60,9 +60,10 @@ NativeAOT. Library-specific packages call out upstream app-side warning boundari
 instrumented library itself is not warning-clean. The active generator direction is compile-time
 interception for source-visible call-sites: no CLR profiling, no startup hooks, no runtime IL
 rewriting, no reflection, and no dynamic dispatch. The source generator now gates emitter targets
-against the generated contract manifest: 34 source-generated signal promises are eligible for
-interceptor or meter registration, while `signals.traces.ASPNET`, `signals.traces.WCFSERVICE`, and
-`signals.metrics.ASPNET` are retained only as unsupported NativeAOT parity items.
+against the generated contract manifest: 33 source-generated signal promises are eligible for
+interceptor or meter registration, while `signals.traces.ASPNET`, `signals.traces.WCFCORE`,
+`signals.traces.WCFSERVICE`, and `signals.metrics.ASPNET` are retained only as unsupported
+NativeAOT parity/dynamic items.
 
 - `demos/Qyl.LiveInstrumentationDemo` publishes as `net10.0`/`osx-arm64` with
   `PublishAot=true` and captures `http.client`, `http.server`, `db.efcore`, `db.sqlclient`,
@@ -141,14 +142,14 @@ does the same for EFCore command success and provider-error paths, with the EFCo
 NativeAOT prerequisite called out explicitly. `demos/Qyl.RealGrpcClientDemo` proves real
 `Grpc.Net.Client` success and failure activity tags. `demos/Qyl.RealSqlClientDemo` proves
 `Microsoft.Data.SqlClient` command success and SQL Server error payloads. The compile-time
-interceptor lane now gates 34 source-generated signal promises from the 60-item contract. The
+interceptor lane now gates 33 source-generated signal promises from the 60-item contract. The
 per-library matrix lives in `docs/RUNTIME_SEMANTICS.md`.
 
 ## Status
 
 - **Compile-time contract lane** — *in progress*: the 60-item contract is represented in
-  `InstrumentationContract`; 34 source-generated signal promises are generator-gated, three
-  .NET Framework parity signal promises are explicitly unsupported for NativeAOT, and all 23
+  `InstrumentationContract`; 33 source-generated signal promises are generator-gated, four
+  parity/dynamic signal promises are explicitly unsupported for NativeAOT, and all 23
   environment controls/options are read by `QylAutoInstrumentationOptions`.
 
 The substrate-era M1–M12 are preserved in `COVERAGE_LEDGER.md` under the *archived* section

@@ -45,17 +45,17 @@ Current compile-time NativeAOT classification:
 
 | Contract slice | Count | Current binding |
 |---|---:|---|
-| Signal-specific promises | 37 | 34 source-generated signal promises plus 3 unsupported NativeAOT parity promises. |
-| Source-generated signal promises | 34 | `QylAutoInstrumentationGenerator` gates interceptor targets through `InstrumentationContract.TryGetSourceGeneratedSignal`. |
-| Unsupported NativeAOT parity signal promises | 3 | `signals.traces.ASPNET`, `signals.traces.WCFSERVICE`, `signals.metrics.ASPNET`; retained in the manifest but rejected by the source-generator target gate. |
+| Signal-specific promises | 37 | 33 source-generated signal promises plus 4 unsupported NativeAOT parity/dynamic promises. |
+| Source-generated signal promises | 33 | `QylAutoInstrumentationGenerator` gates interceptor targets through `InstrumentationContract.TryGetSourceGeneratedSignal`. |
+| Unsupported NativeAOT parity/dynamic signal promises | 4 | `signals.traces.ASPNET`, `signals.traces.WCFCORE`, `signals.traces.WCFSERVICE`, `signals.metrics.ASPNET`; retained in the manifest but rejected by the source-generator target gate. |
 | Global environment controls | 7 | `QylAutoInstrumentationOptions` reads global/signal defaults and derives signal-specific pattern variables. |
 | Instrumentation options | 16 | `QylAutoInstrumentationOptions` reads all option environment variables; raw/sensitive emissions stay default-off. |
 | Total contract items | 60 | `InstrumentationContract.TotalCount`. |
 
-Unsupported NativeAOT parity is not a backlog emitter. These items require .NET Framework or
-bytecode/runtime rewriting surfaces that this generator explicitly does not implement. Treating
-them as source-generated work would violate the architecture rule: no CLR profiling, no startup
-hooks, no runtime IL rewriting, no reflection, and no dynamic dispatch.
+Unsupported NativeAOT parity/dynamic paths are not backlog emitters. These items require .NET
+Framework, bytecode/runtime rewriting, or runtime dispatch surfaces that this generator explicitly
+does not implement. Treating them as source-generated work would violate the architecture rule: no
+CLR profiling, no startup hooks, no runtime IL rewriting, no reflection, and no dynamic dispatch.
 
 The source-generated signal set covers source-visible call-sites and meter registration only.
 Third-party binary internals and unsupported/dynamic call paths remain intentionally ignored.
