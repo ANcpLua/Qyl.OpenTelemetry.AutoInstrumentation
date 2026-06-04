@@ -26,16 +26,20 @@ public static class QylInterceptedHttpWebRequest
 
         if (request.RequestUri is not null)
         {
-            var requestUri = request.RequestUri.ToString();
-            var urlFull = options.HttpClientUrlQueryRedactionDisabled
-                ? requestUri
-                : RedactQuery(requestUri);
-
-            activity.SetTag(QylSemanticAttributes.UrlFull, urlFull);
             activity.SetTag(QylSemanticAttributes.ServerAddress, request.RequestUri.Host);
 
             if (!request.RequestUri.IsDefaultPort)
                 activity.SetTag(QylSemanticAttributes.ServerPort, request.RequestUri.Port);
+
+            if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
+            {
+                var requestUri = request.RequestUri.ToString();
+                var urlFull = options.HttpClientUrlQueryRedactionDisabled
+                    ? requestUri
+                    : RedactQuery(requestUri);
+
+                activity.SetTag(QylSemanticAttributes.UrlFull, urlFull);
+            }
         }
 
         SetConfiguredHeaders(activity, QylSemanticAttributes.HttpRequestHeaderPrefix, options.HttpClientCapturedRequestHeaders, request.Headers);

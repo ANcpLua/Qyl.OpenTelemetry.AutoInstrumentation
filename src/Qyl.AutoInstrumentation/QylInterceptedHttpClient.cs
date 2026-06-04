@@ -522,10 +522,13 @@ public static class QylInterceptedHttpClient
                             activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
                     }
 
-                    var urlFull = rawRequestUri ?? requestUri.ToString();
-                    activity.SetTag(
-                        QylSemanticAttributes.UrlFull,
-                        options.HttpClientUrlQueryRedactionDisabled ? urlFull : RedactQuery(urlFull));
+                    if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
+                    {
+                        var urlFull = rawRequestUri ?? requestUri.ToString();
+                        activity.SetTag(
+                            QylSemanticAttributes.UrlFull,
+                            options.HttpClientUrlQueryRedactionDisabled ? urlFull : RedactQuery(urlFull));
+                    }
                 }
             }
         }
