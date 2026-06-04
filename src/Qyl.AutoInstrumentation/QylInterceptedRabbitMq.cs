@@ -16,8 +16,9 @@ public static class QylInterceptedRabbitMq
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, RabbitMqDomain);
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, "rabbitmq");
-        activity.SetTag(QylSemanticAttributes.MessagingOperationName, "publish");
+        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemRabbitMq);
+        activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
+        activity.SetTag(QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish);
 
         var destination = string.IsNullOrWhiteSpace(exchange) ? routingKey : exchange;
         if (!string.IsNullOrWhiteSpace(destination))

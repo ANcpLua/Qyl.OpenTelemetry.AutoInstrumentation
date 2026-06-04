@@ -20,13 +20,14 @@ public static class QylNServiceBusMetrics
         {
             OperationDuration.Record(
                 elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingSystem, "nservicebus"),
+                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus),
+                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend),
                 new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationName, NormalizeOperation(operationName)));
         }
     }
 
     private static string NormalizeOperation(string operationName)
         => string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? "send"
-            : "publish";
+            ? QylSemanticAttributes.MessagingOperationTypeSend
+            : QylSemanticAttributes.MessagingOperationNamePublish;
 }

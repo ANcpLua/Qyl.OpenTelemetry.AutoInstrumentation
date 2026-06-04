@@ -20,7 +20,8 @@ public static class QylInterceptedMassTransit
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, MassTransitDomain);
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, "masstransit");
+        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemMassTransit);
+        activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);
         return activity;
     }

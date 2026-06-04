@@ -20,7 +20,8 @@ public static class QylInterceptedNServiceBus
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, NServiceBusDomain);
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, "nservicebus");
+        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus);
+        activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);
         return activity;
     }

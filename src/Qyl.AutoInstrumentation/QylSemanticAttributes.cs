@@ -62,7 +62,15 @@ public static class QylSemanticAttributes
 
     public const string MessagingSystem = MessagingAttributes.System;
     public const string MessagingOperationName = MessagingAttributes.OperationName;
+    public const string MessagingOperationNamePublish = "publish";
+    public const string MessagingOperationType = MessagingAttributes.OperationType;
+    public const string MessagingOperationTypeReceive = MessagingAttributes.OperationTypeValues.Receive;
+    public const string MessagingOperationTypeSend = MessagingAttributes.OperationTypeValues.Send;
     public const string MessagingDestinationName = MessagingAttributes.DestinationName;
+    public const string MessagingSystemKafka = MessagingAttributes.SystemValues.Kafka;
+    public const string MessagingSystemRabbitMq = MessagingAttributes.SystemValues.Rabbitmq;
+    public const string MessagingSystemMassTransit = "masstransit";
+    public const string MessagingSystemNServiceBus = "nservicebus";
 
     public const string LogSeverity = "log.severity";
     public const string LogEventName = OtelAttributes.EventName;
