@@ -1052,7 +1052,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MongoDb_" + target.MethodName, index, target.ReceiverType, "collection", target.Parameters, isAsync: true);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MongoDb_" + target.MethodName, index, target.ReceiverType, "collection", target.Parameters, target.IsAsync);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(");
         AppendStringLiteral(builder, target.MethodName);
@@ -1069,13 +1069,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.AppendLine(").ConfigureAwait(false);");
             builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
         }
-        else
+        else if (target.IsAsync)
         {
             builder.Append("                var result = await collection.");
             builder.Append(target.MethodName);
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
             builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
+            builder.AppendLine("                return result;");
+        }
+        else if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
+        {
+            builder.Append("                collection.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
+        }
+        else
+        {
+            builder.Append("                var result = collection.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
             builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
             builder.AppendLine("                return result;");
         }
@@ -2160,7 +2179,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         target = default;
         if (!IsSupportedMongoDbCollectionMethod(symbol.Name) ||
             !IsOrImplementsConstructedGeneric(symbol.ContainingType, "MongoDB.Driver", "IMongoCollection`1") ||
-            !IsMongoDbAsyncReturn(symbol.ReturnType))
+            !CanEmitMongoDbReturn(symbol.ReturnType))
         {
             return false;
         }
@@ -2173,25 +2192,40 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             symbol.Name,
             CleanTypeName(symbol.ReturnType),
             Parameters(symbol),
-            true);
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
         return true;
     }
 
     private static bool IsSupportedMongoDbCollectionMethod(string methodName)
-        => methodName is "FindAsync" or
+        => methodName is "Find" or
+            "FindAsync" or
+            "Aggregate" or
             "AggregateAsync" or
+            "InsertOne" or
             "InsertOneAsync" or
+            "InsertMany" or
             "InsertManyAsync" or
+            "ReplaceOne" or
             "ReplaceOneAsync" or
+            "DeleteOne" or
             "DeleteOneAsync" or
+            "DeleteMany" or
             "DeleteManyAsync" or
+            "UpdateOne" or
             "UpdateOneAsync" or
+            "UpdateMany" or
             "UpdateManyAsync" or
+            "CountDocuments" or
             "CountDocumentsAsync" or
+            "EstimatedDocumentCount" or
             "EstimatedDocumentCountAsync";
 
-    private static bool IsMongoDbAsyncReturn(ITypeSymbol returnType)
-        => IsTask(returnType) || TryGetTaskResult(returnType, out _);
+    private static bool CanEmitMongoDbReturn(ITypeSymbol returnType)
+        => returnType.SpecialType is SpecialType.System_Void ||
+           IsTask(returnType) ||
+           TryGetTaskResult(returnType, out _) ||
+           returnType.SpecialType is not SpecialType.None ||
+           returnType is INamedTypeSymbol;
 
     private static bool TryGetRabbitMqInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
