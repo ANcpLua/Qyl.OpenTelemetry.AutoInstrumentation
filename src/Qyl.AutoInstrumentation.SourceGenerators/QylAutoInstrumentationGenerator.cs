@@ -942,12 +942,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
         builder.AppendLine(").ConfigureAwait(false);");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart);");
+        builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart);");
+        builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");

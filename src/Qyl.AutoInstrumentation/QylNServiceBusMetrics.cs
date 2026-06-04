@@ -10,13 +10,23 @@ public static class QylNServiceBusMetrics
     public static long GetTimestamp()
         => TimeProvider.System.GetTimestamp();
 
-    public static void RecordDuration(long startTimestamp)
+    public static void RecordDuration(long startTimestamp, string operationName)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
             return;
 
         var elapsed = TimeProvider.System.GetElapsedTime(startTimestamp);
         if (elapsed.TotalSeconds >= 0)
-            OperationDuration.Record(elapsed.TotalSeconds);
+        {
+            OperationDuration.Record(
+                elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingSystem, "nservicebus"),
+                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationName, NormalizeOperation(operationName)));
+        }
     }
+
+    private static string NormalizeOperation(string operationName)
+        => string.Equals(operationName, "Send", StringComparison.Ordinal)
+            ? "send"
+            : "publish";
 }
