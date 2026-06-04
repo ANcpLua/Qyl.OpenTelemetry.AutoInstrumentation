@@ -37,7 +37,7 @@ internal static class SemConvConformanceProcessor
         {
             QylSelfTelemetry.ConformanceProcessorFailures.Add(
                 1,
-                new KeyValuePair<string, object?>("exception.type", exception.GetType().Name));
+                new KeyValuePair<string, object?>(QylSemanticAttributes.ExceptionType, exception.GetType().Name));
         }
     }
 }

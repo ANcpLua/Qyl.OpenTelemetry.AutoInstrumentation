@@ -2,6 +2,7 @@ namespace Qyl.AutoInstrumentation;
 
 using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
 using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using ExceptionAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Exception.ExceptionAttributes;
 using GraphqlAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using MessagingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
@@ -15,6 +16,7 @@ internal static class QylSemanticAttributes
     public const string QylInstrumentationDomain = "qyl.instrumentation.domain";
 
     public const string HttpRequestMethod = HttpAttributes.RequestMethod;
+    public const string HttpRequestMethodOriginal = HttpAttributes.RequestMethodOriginal;
     public const string HttpResponseStatusCode = HttpAttributes.ResponseStatusCode;
     public const string HttpRequestHeaderPrefix = HttpAttributes.RequestHeader + ".";
     public const string HttpResponseHeaderPrefix = HttpAttributes.ResponseHeader + ".";
@@ -52,4 +54,5 @@ internal static class QylSemanticAttributes
     public const string ServerAddress = ServerAttributes.Address;
     public const string ServerPort = ServerAttributes.Port;
     public const string ErrorType = ErrorAttributes.Type;
+    public const string ExceptionType = ExceptionAttributes.Type;
 }

@@ -1,83 +1,85 @@
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
+using Qyl.AutoInstrumentation;
+
 internal static class SemanticAttributes
 {
     public static readonly SemanticAttributeDefinition QylInstrumentationDomain = new(
-        "qyl.instrumentation.domain",
+        QylSemanticAttributes.QylInstrumentationDomain,
         SemanticStability.Development);
 
     public static readonly SemanticAttributeDefinition ErrorType = new(
-        "error.type",
+        QylSemanticAttributes.ErrorType,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition HttpRequestMethod = new(
-        "http.request.method",
+        QylSemanticAttributes.HttpRequestMethod,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition HttpRequestMethodOriginal = new(
-        "http.request.method_original",
+        QylSemanticAttributes.HttpRequestMethodOriginal,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition HttpResponseStatusCode = new(
-        "http.response.status_code",
+        QylSemanticAttributes.HttpResponseStatusCode,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition HttpRoute = new(
-        "http.route",
+        QylSemanticAttributes.HttpRoute,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition UrlFull = new(
-        "url.full",
+        QylSemanticAttributes.UrlFull,
         SemanticStability.Stable,
         Sensitive: true);
 
     public static readonly SemanticAttributeDefinition UrlPath = new(
-        "url.path",
+        QylSemanticAttributes.UrlPath,
         SemanticStability.Stable,
         Sensitive: true);
 
     public static readonly SemanticAttributeDefinition ServerAddress = new(
-        "server.address",
+        QylSemanticAttributes.ServerAddress,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition ServerPort = new(
-        "server.port",
+        QylSemanticAttributes.ServerPort,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition DbSystem = new(
-        "db.system",
+        QylSemanticAttributes.DbSystemName,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition DbNamespace = new(
-        "db.namespace",
+        QylSemanticAttributes.DbNamespace,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition DbOperationName = new(
-        "db.operation.name",
+        QylSemanticAttributes.DbOperationName,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition DbQuerySummary = new(
-        "db.query.summary",
+        QylSemanticAttributes.DbQuerySummary,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition DbQueryText = new(
-        "db.query.text",
+        QylSemanticAttributes.DbQueryText,
         SemanticStability.Stable,
         Sensitive: true);
 
     public static readonly SemanticAttributeDefinition RpcSystem = new(
-        "rpc.system",
+        QylSemanticAttributes.RpcSystem,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition RpcService = new(
-        "rpc.service",
+        QylSemanticAttributes.RpcService,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition RpcMethod = new(
-        "rpc.method",
+        QylSemanticAttributes.RpcMethod,
         SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition RpcGrpcStatusCode = new(
-        "rpc.grpc.status_code",
+        QylSemanticAttributes.RpcGrpcStatusCode,
         SemanticStability.Development);
 }
