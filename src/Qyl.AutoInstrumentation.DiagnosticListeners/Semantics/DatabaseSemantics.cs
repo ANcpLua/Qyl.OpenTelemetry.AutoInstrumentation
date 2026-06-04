@@ -54,7 +54,7 @@ internal static class DatabaseSemantics
 
     public static bool ShouldWriteQueryText(string? queryText, string? operation, bool captureText)
         => !string.IsNullOrWhiteSpace(queryText) &&
-           (captureText || string.Equals(operation, "CALL", StringComparison.Ordinal));
+           captureText;
 
     private static string? FirstQueryToken(string? queryText)
     {

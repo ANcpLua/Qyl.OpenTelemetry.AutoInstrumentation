@@ -30,21 +30,21 @@ var scenarios = new[]
         domain: "http.client",
         expectedAttributes:
         [
-            "qyl.instrumentation.domain",
-            "http.request.method",
-            "server.address",
-            "http.response.status_code",
+            QylSemanticAttributes.QylInstrumentationDomain,
+            QylSemanticAttributes.HttpRequestMethod,
+            QylSemanticAttributes.ServerAddress,
+            QylSemanticAttributes.HttpResponseStatusCode,
         ],
         forbiddenAttributes:
         [
-            "url.full",
+            QylSemanticAttributes.UrlFull,
         ],
         attributes: new Dictionary<string, object?>
         {
-            ["http.request.method"] = "GET",
-            ["url.full"] = "https://qyl.local/live/client?id=42",
-            ["server.address"] = "qyl.local",
-            ["http.response.status_code"] = 202,
+            [QylSemanticAttributes.HttpRequestMethod] = "GET",
+            [QylSemanticAttributes.UrlFull] = "https://qyl.local/live/client?id=42",
+            [QylSemanticAttributes.ServerAddress] = "qyl.local",
+            [QylSemanticAttributes.HttpResponseStatusCode] = 202,
         }),
     DiagnosticScenario.Create(
         listenerName: "Microsoft.AspNetCore",
@@ -52,21 +52,21 @@ var scenarios = new[]
         domain: "http.server",
         expectedAttributes:
         [
-            "qyl.instrumentation.domain",
-            "http.request.method",
-            "http.route",
-            "http.response.status_code",
+            QylSemanticAttributes.QylInstrumentationDomain,
+            QylSemanticAttributes.HttpRequestMethod,
+            QylSemanticAttributes.HttpRoute,
+            QylSemanticAttributes.HttpResponseStatusCode,
         ],
         forbiddenAttributes:
         [
-            "url.path",
+            QylSemanticAttributes.UrlPath,
         ],
         attributes: new Dictionary<string, object?>
         {
-            ["http.request.method"] = "POST",
-            ["http.route"] = "/qyl/live/{id}",
-            ["url.path"] = "/qyl/live/42",
-            ["http.response.status_code"] = 201,
+            [QylSemanticAttributes.HttpRequestMethod] = "POST",
+            [QylSemanticAttributes.HttpRoute] = "/qyl/live/{id}",
+            [QylSemanticAttributes.UrlPath] = "/qyl/live/42",
+            [QylSemanticAttributes.HttpResponseStatusCode] = 201,
         }),
     DiagnosticScenario.Create(
         listenerName: "Microsoft.EntityFrameworkCore",
@@ -74,23 +74,23 @@ var scenarios = new[]
         domain: "db.efcore",
         expectedAttributes:
         [
-            "qyl.instrumentation.domain",
-            "db.system",
-            "db.namespace",
-            "db.operation.name",
-            "db.query.summary",
+            QylSemanticAttributes.QylInstrumentationDomain,
+            QylSemanticAttributes.DbSystemName,
+            QylSemanticAttributes.DbNamespace,
+            QylSemanticAttributes.DbOperationName,
+            QylSemanticAttributes.DbQuerySummary,
         ],
         forbiddenAttributes:
         [
-            "db.query.text",
+            QylSemanticAttributes.DbQueryText,
         ],
         attributes: new Dictionary<string, object?>
         {
-            ["db.system"] = "sqlite",
-            ["db.namespace"] = "qyl_live",
-            ["db.operation.name"] = "SELECT",
-            ["db.query.summary"] = "SELECT qyl_live",
-            ["db.query.text"] = "SELECT id, name FROM qyl_live WHERE id = 42",
+            [QylSemanticAttributes.DbSystemName] = "sqlite",
+            [QylSemanticAttributes.DbNamespace] = "qyl_live",
+            [QylSemanticAttributes.DbOperationName] = "SELECT",
+            [QylSemanticAttributes.DbQuerySummary] = "SELECT qyl_live",
+            [QylSemanticAttributes.DbQueryText] = "SELECT id, name FROM qyl_live WHERE id = 42",
         }),
     DiagnosticScenario.Create(
         listenerName: "SqlClientDiagnosticListener",
@@ -98,24 +98,24 @@ var scenarios = new[]
         domain: "db.sqlclient",
         expectedAttributes:
         [
-            "qyl.instrumentation.domain",
-            "db.system",
-            "db.namespace",
-            "db.operation.name",
-            "db.query.summary",
-            "server.address",
+            QylSemanticAttributes.QylInstrumentationDomain,
+            QylSemanticAttributes.DbSystemName,
+            QylSemanticAttributes.DbNamespace,
+            QylSemanticAttributes.DbOperationName,
+            QylSemanticAttributes.DbQuerySummary,
+            QylSemanticAttributes.ServerAddress,
         ],
         forbiddenAttributes:
         [
-            "db.query.text",
+            QylSemanticAttributes.DbQueryText,
         ],
         attributes: new Dictionary<string, object?>
         {
-            ["db.namespace"] = "qyl_live",
-            ["db.operation.name"] = "UPDATE",
-            ["db.query.summary"] = "UPDATE qyl_live",
-            ["db.query.text"] = "UPDATE qyl_live SET seen = 1 WHERE id = 42",
-            ["server.address"] = "localhost",
+            [QylSemanticAttributes.DbNamespace] = "qyl_live",
+            [QylSemanticAttributes.DbOperationName] = "UPDATE",
+            [QylSemanticAttributes.DbQuerySummary] = "UPDATE qyl_live",
+            [QylSemanticAttributes.DbQueryText] = "UPDATE qyl_live SET seen = 1 WHERE id = 42",
+            [QylSemanticAttributes.ServerAddress] = "localhost",
         }),
     DiagnosticScenario.Create(
         listenerName: "Grpc.Net.Client",
@@ -123,20 +123,20 @@ var scenarios = new[]
         domain: "rpc.grpc",
         expectedAttributes:
         [
-            "qyl.instrumentation.domain",
-            "rpc.system",
-            "rpc.service",
-            "rpc.method",
-            "server.address",
-            "server.port",
+            QylSemanticAttributes.QylInstrumentationDomain,
+            QylSemanticAttributes.RpcSystem,
+            QylSemanticAttributes.RpcService,
+            QylSemanticAttributes.RpcMethod,
+            QylSemanticAttributes.ServerAddress,
+            QylSemanticAttributes.ServerPort,
         ],
         forbiddenAttributes: [],
         attributes: new Dictionary<string, object?>
         {
-            ["rpc.service"] = "qyl.LiveProbe",
-            ["rpc.method"] = "Collect",
-            ["server.address"] = "localhost",
-            ["server.port"] = 5001,
+            [QylSemanticAttributes.RpcService] = "qyl.LiveProbe",
+            [QylSemanticAttributes.RpcMethod] = "Collect",
+            [QylSemanticAttributes.ServerAddress] = "localhost",
+            [QylSemanticAttributes.ServerPort] = 5001,
         }),
 };
 
@@ -433,7 +433,7 @@ internal sealed record CapturedActivity(
             static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
             StringComparer.Ordinal);
 
-        var domain = tags.TryGetValue("qyl.instrumentation.domain", out var domainValue)
+        var domain = tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domainValue)
             ? domainValue
             : string.Empty;
 

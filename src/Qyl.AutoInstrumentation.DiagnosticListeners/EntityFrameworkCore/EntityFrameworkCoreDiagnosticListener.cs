@@ -28,7 +28,7 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
             return;
         }
 
-        var system = DiagnosticPayloadReader.GetString(payload, "db.system");
+        var system = DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.DbSystemName, "db.system");
         var namespaceName = DiagnosticPayloadReader.GetString(payload, "db.namespace", "db.name");
         var queryText = DiagnosticPayloadReader.GetString(payload, "db.query.text", "db.statement");
         var operation = DatabaseSemantics.NormalizeOperation(
