@@ -2014,12 +2014,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
-        if (!string.Equals(symbol.Name, "StringGetAsync", StringComparison.Ordinal) ||
+        if (!IsSupportedRedisAsyncCommand(symbol.Name) ||
             !IsOrImplementsType(symbol.ContainingType, "StackExchange.Redis", "IDatabaseAsync") ||
-            !TryGetTaskResult(symbol.ReturnType, out var resultType) ||
-            (!IsType(resultType, "global::StackExchange.Redis.RedisValue") &&
-             !IsArrayOf(resultType, "global::StackExchange.Redis.RedisValue")) ||
-            !TryGetRedisStringGetParameters(symbol, out var parameters))
+            !TryGetTaskResult(symbol.ReturnType, out _) ||
+            !TryGetRedisCommandParameters(symbol, out var parameters))
         {
             return false;
         }
@@ -2029,12 +2027,31 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "signals.traces.STACKEXCHANGEREDIS",
             "STACKEXCHANGEREDIS",
             CleanTypeName(symbol.ContainingType),
-            "StringGetAsync",
+            symbol.Name,
             CleanTypeName(symbol.ReturnType),
             parameters,
             true);
         return true;
     }
+
+    private static bool IsSupportedRedisAsyncCommand(string methodName)
+        => methodName is "StringGetAsync" or
+            "StringSetAsync" or
+            "StringIncrementAsync" or
+            "StringDecrementAsync" or
+            "HashGetAsync" or
+            "HashSetAsync" or
+            "HashDeleteAsync" or
+            "HashExistsAsync" or
+            "KeyDeleteAsync" or
+            "KeyExistsAsync" or
+            "ListLeftPushAsync" or
+            "ListRightPushAsync" or
+            "SetAddAsync" or
+            "SetRemoveAsync" or
+            "SortedSetAddAsync" or
+            "SortedSetRemoveAsync" or
+            "ExecuteAsync";
 
     private static bool TryGetGraphQlInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -2682,6 +2699,51 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         return false;
+    }
+
+    private static bool TryGetRedisCommandParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    {
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        if (!CanEmitRedisParameters(symbol))
+            return false;
+
+        if (string.Equals(symbol.Name, "ExecuteAsync", StringComparison.Ordinal))
+        {
+            if (symbol.Parameters.Length is 0 ||
+                !IsType(symbol.Parameters[0].Type, "global::System.String"))
+            {
+                return false;
+            }
+
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        if (symbol.Parameters.Length is 0)
+            return false;
+
+        if (!IsType(symbol.Parameters[0].Type, "global::StackExchange.Redis.RedisKey") &&
+            !IsArrayOf(symbol.Parameters[0].Type, "global::StackExchange.Redis.RedisKey"))
+        {
+            return false;
+        }
+
+        parameters = Parameters(symbol);
+        return true;
+    }
+
+    private static bool CanEmitRedisParameters(IMethodSymbol symbol)
+    {
+        foreach (var parameter in symbol.Parameters)
+        {
+            if (parameter.RefKind is not RefKind.None ||
+                IsConstructedFrom(parameter.Type, "global::System.Nullable<T>"))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool TryGetRedisStringGetParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
