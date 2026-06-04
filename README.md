@@ -1,6 +1,6 @@
 # qyl-dotnet-autoinstrumentation
 
-Best-ever free, **vendor-neutral .NET zero-code instrumentation runtime — NativeAOT-ready**.
+Free, **vendor-neutral .NET zero-code instrumentation runtime — NativeAOT-ready**.
 
 **Architecture rule (v0.2.0 substrate swap):** C# owns ALL behavior, *and* the runtime is now a
 pure-managed AOT-native library — no native CLR profiler, no IL rewriting, no startup-hook
