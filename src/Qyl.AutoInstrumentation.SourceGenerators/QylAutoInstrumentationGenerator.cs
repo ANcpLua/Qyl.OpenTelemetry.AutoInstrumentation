@@ -73,6 +73,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAspNetCoreEndpointMapInvocation(symbol, out target))
             return true;
 
+        if (TryGetAspNetCoreComponentsNavigationInvocation(symbol, out target))
+            return true;
+
         if (TryGetAzureClientInvocation(symbol, out target))
             return true;
 
@@ -174,6 +177,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
                 EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreComponentsNavigation)
+                EmitAspNetCoreComponentsNavigationInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AzureClient)
                 EmitAzureClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ElasticsearchClient or InterceptorKind.ElasticTransport)
@@ -346,6 +351,21 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("(endpoints");
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
         builder.AppendLine(");");
+        builder.AppendLine();
+    }
+
+    private static void EmitAspNetCoreComponentsNavigationInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, "void", "AspNetCoreComponentsNavigation_" + target.MethodName, index, target.ReceiverType, "navigation", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        builder.Append("            navigation.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+        builder.AppendLine("            global::Qyl.AutoInstrumentation.QylInterceptedAspNetCoreComponents.RecordNavigation();");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -1522,6 +1542,65 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsSupportedAspNetCoreMapMethod(string name)
         => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch";
+
+    private static bool TryGetAspNetCoreComponentsNavigationInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "NavigateTo", StringComparison.Ordinal) ||
+            !symbol.ReturnsVoid ||
+            !InheritsFromOrIs(symbol.ContainingType, "global::Microsoft.AspNetCore.Components.NavigationManager") ||
+            !TryGetAspNetCoreComponentsNavigationParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreComponentsNavigation,
+            "signals.metrics.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(symbol.ContainingType),
+            "NavigateTo",
+            "void",
+            parameters,
+            false);
+        return true;
+    }
+
+    private static bool TryGetAspNetCoreComponentsNavigationParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    {
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        if (symbol.Parameters.Length is < 1 or > 3 ||
+            !IsType(symbol.Parameters[0].Type, "global::System.String"))
+        {
+            return false;
+        }
+
+        if (symbol.Parameters.Length is 1)
+        {
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        if (symbol.Parameters.Length is 2)
+        {
+            if (symbol.Parameters[1].Type.SpecialType is SpecialType.System_Boolean ||
+                IsType(symbol.Parameters[1].Type, "global::Microsoft.AspNetCore.Components.NavigationOptions"))
+            {
+                parameters = Parameters(symbol);
+                return true;
+            }
+        }
+
+        if (symbol.Parameters.Length is 3 &&
+            symbol.Parameters[1].Type.SpecialType is SpecialType.System_Boolean &&
+            symbol.Parameters[2].Type.SpecialType is SpecialType.System_Boolean)
+        {
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        return false;
+    }
 
     private static bool TryGetAzureClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -2854,6 +2933,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         HttpWebRequest,
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
+        AspNetCoreComponentsNavigation,
         AzureClient,
         ElasticsearchClient,
         ElasticTransport,
