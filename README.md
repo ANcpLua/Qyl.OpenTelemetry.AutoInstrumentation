@@ -149,8 +149,10 @@ per-library matrix lives in `docs/RUNTIME_SEMANTICS.md`.
 
 - **Compile-time contract lane** — *in progress*: the 60-item contract is represented in
   `InstrumentationContract`; 33 source-generated signal promises are generator-gated, four
-  parity/dynamic signal promises are explicitly unsupported for NativeAOT, and all 23
-  environment controls/options are read by `QylAutoInstrumentationOptions`.
+  parity/dynamic signal promises are explicitly unsupported for NativeAOT, all 23 environment
+  controls/options are read by `QylAutoInstrumentationOptions`, and
+  `tools/verify-consumer-behavior.py` proves a deterministic baseline-vs-hosting consumer run has
+  identical stdout, stderr, caught-exception output, async return output, and exit code.
 
 The substrate-era M1–M12 are preserved in `COVERAGE_LEDGER.md` under the *archived* section
 and remain reproducible from the `v0.1.0-archive` tag.

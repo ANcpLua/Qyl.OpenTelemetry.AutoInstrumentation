@@ -31,7 +31,7 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 
 | Milestone | Goal | Gate A golden | Gate B baseline | State |
 |-----------|------|---------------|-----------------|-------|
-| **M1 AOT walking skeleton** | A NativeAOT-published consumer app, with a `PackageReference` to `Qyl.AutoInstrumentation.Hosting`, emits ONE HttpClient CLIENT span via `QylActivitySource` to a console listener — driven by the `HttpHandlerDiagnosticListener` subscription. | one CLIENT span: method/url/server | app stdout/exit identical w/wo the reference + 0 spans in the control arm | **in-progress** — PackageReference zero-code NativeAOT boot + HttpClient span emission proven locally; formal Gate A/B runner still pending. |
+| **M1 AOT walking skeleton** | A NativeAOT-published consumer app, with a `PackageReference` to `Qyl.AutoInstrumentation.Hosting`, emits ONE HttpClient CLIENT span via `QylActivitySource` to a console listener — driven by the `HttpHandlerDiagnosticListener` subscription. | one CLIENT span: method/url/server | app stdout/exit identical w/wo the reference + 0 spans in the control arm | **in-progress** — PackageReference zero-code NativeAOT boot + HttpClient span emission proven locally; deterministic Gate B consumer runner exists in `tools/verify-consumer-behavior.py`; Gate A runner still pending. |
 | M2+ | *not enumerated until M1 is `proven`* (the principle) | — | — | — |
 
 ## 60-item OpenTelemetry .NET auto-instrumentation contract
