@@ -37,7 +37,7 @@ public sealed class QylAutoInstrumentationOptions
         bool aspNetCoreUrlQueryRedactionDisabled,
         bool httpClientUrlQueryRedactionDisabled,
         bool aspNetUrlQueryRedactionDisabled,
-        bool sqlClientNetFxIlRewriteEnabled)
+        bool sqlClientNetFxIlRewriteRequested)
     {
         GlobalEnabled = globalEnabled;
         TracesEnabled = tracesEnabled;
@@ -60,7 +60,7 @@ public sealed class QylAutoInstrumentationOptions
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
         AspNetUrlQueryRedactionDisabled = aspNetUrlQueryRedactionDisabled;
-        SqlClientNetFxIlRewriteEnabled = sqlClientNetFxIlRewriteEnabled;
+        SqlClientNetFxIlRewriteRequested = sqlClientNetFxIlRewriteRequested;
     }
 
     public bool GlobalEnabled { get; }
@@ -103,7 +103,9 @@ public sealed class QylAutoInstrumentationOptions
 
     public bool AspNetUrlQueryRedactionDisabled { get; }
 
-    public bool SqlClientNetFxIlRewriteEnabled { get; }
+    public bool SqlClientNetFxIlRewriteRequested { get; }
+
+    public bool SqlClientNetFxIlRewriteEnabled => false;
 
     public bool IsInstrumentationEnabled(QylAutoInstrumentationSignal signal, string instrumentationId)
     {
