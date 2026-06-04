@@ -8,40 +8,6 @@ public static class QylInterceptedDbCommand
 {
     private const string DbDomain = "db.client";
 
-    public static string ResolveInstrumentationId(DbCommand command, string fallbackInstrumentationId)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        ArgumentNullException.ThrowIfNull(fallbackInstrumentationId);
-
-        for (var type = command.GetType(); type is not null; type = type.BaseType)
-        {
-            var namespaceName = type.Namespace;
-            if (string.IsNullOrEmpty(namespaceName))
-                continue;
-
-            if (namespaceName.StartsWith("Microsoft.Data.SqlClient", StringComparison.Ordinal) ||
-                namespaceName.StartsWith("System.Data.SqlClient", StringComparison.Ordinal))
-                return QylAutoInstrumentationIds.SqlClient;
-
-            if (namespaceName.StartsWith("Microsoft.Data.Sqlite", StringComparison.Ordinal))
-                return QylAutoInstrumentationIds.Sqlite;
-
-            if (namespaceName.StartsWith("Npgsql", StringComparison.Ordinal))
-                return QylAutoInstrumentationIds.Npgsql;
-
-            if (namespaceName.StartsWith("MySqlConnector", StringComparison.Ordinal))
-                return QylAutoInstrumentationIds.MySqlConnector;
-
-            if (namespaceName.StartsWith("MySql.Data", StringComparison.Ordinal))
-                return QylAutoInstrumentationIds.MySqlData;
-
-            if (namespaceName.StartsWith("Oracle.ManagedDataAccess", StringComparison.Ordinal))
-                return QylAutoInstrumentationIds.OracleMda;
-        }
-
-        return fallbackInstrumentationId;
-    }
-
     public static Activity? StartActivity(DbCommand command, string instrumentationId, string operationName)
     {
         ArgumentNullException.ThrowIfNull(command);

@@ -326,9 +326,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "DbCommand_" + target.MethodName, index, target.ReceiverType, "command", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylDbClientMetrics.GetTimestamp();");
-        builder.Append("            var instrumentationId = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.ResolveInstrumentationId(command, ");
+        builder.Append("            const string instrumentationId = ");
         AppendStringLiteral(builder, target.InstrumentationId);
-        builder.AppendLine(");");
+        builder.AppendLine(";");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(command, ");
         builder.Append("instrumentationId, ");
         AppendStringLiteral(builder, target.MethodName);
