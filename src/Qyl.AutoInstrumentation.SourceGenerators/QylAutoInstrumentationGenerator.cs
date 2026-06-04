@@ -76,6 +76,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAzureClientInvocation(symbol, out target))
             return true;
 
+        if (TryGetElasticInvocation(symbol, out target))
+            return true;
+
         if (TryGetWcfClientInvocation(symbol, out target))
             return true;
 
@@ -173,6 +176,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AzureClient)
                 EmitAzureClientInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.ElasticsearchClient or InterceptorKind.ElasticTransport)
+                EmitElasticInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.WcfClient)
                 EmitWcfClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
@@ -380,6 +385,82 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitElasticInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            target.InstrumentationId + "_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "client",
+            target.Parameters,
+            target.IsAsync,
+            target.TypeParameterList,
+            target.ConstraintClauses);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedElastic.StartActivity(");
+        AppendStringLiteral(builder, target.InstrumentationId);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (target.IsAsync)
+        {
+            if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
+            {
+                builder.Append("                await client.");
+                builder.Append(target.MethodName);
+                AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+                builder.Append('(');
+                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+                builder.AppendLine(").ConfigureAwait(false);");
+                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
+            }
+            else
+            {
+                builder.Append("                var result = await client.");
+                builder.Append(target.MethodName);
+                AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+                builder.Append('(');
+                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+                builder.AppendLine(").ConfigureAwait(false);");
+                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
+                builder.AppendLine("                return result;");
+            }
+        }
+        else
+        {
+            builder.Append("                var result = client.");
+            builder.Append(target.MethodName);
+            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
+            builder.AppendLine("                return result;");
+        }
+
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -1497,6 +1578,102 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         => symbol is INamedTypeSymbol named &&
            (IsTypeByMetadata(named, "Azure", "Response") ||
             IsConstructedGeneric(named, "Azure", "Response`1"));
+
+    private static bool TryGetElasticInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        if (TryGetElasticsearchClientInvocation(symbol, out target))
+            return true;
+
+        return TryGetElasticTransportInvocation(symbol, out target);
+    }
+
+    private static bool TryGetElasticsearchClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.ReturnsVoid ||
+            symbol.DeclaredAccessibility is not Accessibility.Public ||
+            !CanEmitByValueParameters(symbol) ||
+            !IsElasticsearchClientType(symbol.ContainingType) ||
+            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ElasticsearchClient,
+            "signals.traces.ELASTICSEARCH",
+            "ELASTICSEARCH",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            isAsync,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool TryGetElasticTransportInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsSupportedElasticTransportMethod(symbol.Name) ||
+            symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.ReturnsVoid ||
+            !CanEmitByValueParameters(symbol) ||
+            !IsOrImplementsType(symbol.ContainingType, "Elastic.Transport", "ITransport") ||
+            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ElasticTransport,
+            "signals.traces.ELASTICTRANSPORT",
+            "ELASTICTRANSPORT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            isAsync,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool IsElasticsearchClientType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named ||
+            !named.Name.EndsWith("Client", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return named.ContainingNamespace.ToDisplayString().StartsWith("Elastic.Clients.Elasticsearch", StringComparison.Ordinal);
+    }
+
+    private static bool IsSupportedElasticTransportMethod(string methodName)
+        => methodName is "Request" or "RequestAsync";
+
+    private static bool CanEmitElasticReturn(ITypeSymbol returnType, out bool isAsync)
+    {
+        isAsync = false;
+        if (IsTask(returnType))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        if (TryGetTaskResult(returnType, out _))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        return true;
+    }
 
     private static bool TryGetWcfClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -2678,6 +2855,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         AzureClient,
+        ElasticsearchClient,
+        ElasticTransport,
         WcfClient,
         GrpcNetClientAsyncUnaryCall,
         GrpcNetClientAsyncServerStreamingCall,
