@@ -28,6 +28,17 @@ var scenarios = new[]
         listenerName: "HttpHandlerDiagnosticListener",
         eventName: "qyl.http.client",
         domain: "http.client",
+        expectedAttributes:
+        [
+            "qyl.instrumentation.domain",
+            "http.request.method",
+            "server.address",
+            "http.response.status_code",
+        ],
+        forbiddenAttributes:
+        [
+            "url.full",
+        ],
         attributes: new Dictionary<string, object?>
         {
             ["http.request.method"] = "GET",
@@ -39,6 +50,17 @@ var scenarios = new[]
         listenerName: "Microsoft.AspNetCore",
         eventName: "qyl.http.server",
         domain: "http.server",
+        expectedAttributes:
+        [
+            "qyl.instrumentation.domain",
+            "http.request.method",
+            "http.route",
+            "http.response.status_code",
+        ],
+        forbiddenAttributes:
+        [
+            "url.path",
+        ],
         attributes: new Dictionary<string, object?>
         {
             ["http.request.method"] = "POST",
@@ -50,21 +72,48 @@ var scenarios = new[]
         listenerName: "Microsoft.EntityFrameworkCore",
         eventName: "qyl.db.efcore",
         domain: "db.efcore",
+        expectedAttributes:
+        [
+            "qyl.instrumentation.domain",
+            "db.system",
+            "db.namespace",
+            "db.operation.name",
+            "db.query.summary",
+        ],
+        forbiddenAttributes:
+        [
+            "db.query.text",
+        ],
         attributes: new Dictionary<string, object?>
         {
             ["db.system"] = "sqlite",
             ["db.namespace"] = "qyl_live",
             ["db.operation.name"] = "SELECT",
+            ["db.query.summary"] = "SELECT qyl_live",
             ["db.query.text"] = "SELECT id, name FROM qyl_live WHERE id = 42",
         }),
     DiagnosticScenario.Create(
         listenerName: "SqlClientDiagnosticListener",
         eventName: "qyl.db.sqlclient",
         domain: "db.sqlclient",
+        expectedAttributes:
+        [
+            "qyl.instrumentation.domain",
+            "db.system",
+            "db.namespace",
+            "db.operation.name",
+            "db.query.summary",
+            "server.address",
+        ],
+        forbiddenAttributes:
+        [
+            "db.query.text",
+        ],
         attributes: new Dictionary<string, object?>
         {
             ["db.namespace"] = "qyl_live",
             ["db.operation.name"] = "UPDATE",
+            ["db.query.summary"] = "UPDATE qyl_live",
             ["db.query.text"] = "UPDATE qyl_live SET seen = 1 WHERE id = 42",
             ["server.address"] = "localhost",
         }),
@@ -72,6 +121,16 @@ var scenarios = new[]
         listenerName: "Grpc.Net.Client",
         eventName: "qyl.rpc.grpc",
         domain: "rpc.grpc",
+        expectedAttributes:
+        [
+            "qyl.instrumentation.domain",
+            "rpc.system",
+            "rpc.service",
+            "rpc.method",
+            "server.address",
+            "server.port",
+        ],
+        forbiddenAttributes: [],
         attributes: new Dictionary<string, object?>
         {
             ["rpc.service"] = "qyl.LiveProbe",
@@ -88,11 +147,16 @@ var expectedDomains = scenarios.Select(static scenario => scenario.Domain).ToArr
 var missingDomains = expectedDomains
     .Where(domain => captured.All(activity => activity.Domain != domain))
     .ToArray();
+var capturedByDomain = captured.ToDictionary(static activity => activity.Domain, StringComparer.Ordinal);
+var missingAttributes = FindMissingAttributes(scenarios, capturedByDomain).ToArray();
+var leakedAttributes = FindLeakedAttributes(scenarios, capturedByDomain).ToArray();
 
 var report = new DemoReport(
     NativeAot: RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
     ExpectedDomains: expectedDomains,
     MissingDomains: missingDomains,
+    MissingAttributes: missingAttributes,
+    LeakedAttributes: leakedAttributes,
     Activities: captured.OrderBy(static activity => activity.Domain, StringComparer.Ordinal).ToArray());
 
 var json = JsonSerializer.Serialize(report, DemoJsonContext.Default.DemoReport);
@@ -105,11 +169,15 @@ if (!string.IsNullOrWhiteSpace(options.HtmlPath))
 
 Console.WriteLine(json);
 
-return missingDomains.Length is 0 ? 0 : 1;
+return missingDomains.Length is 0 && missingAttributes.Length is 0 && leakedAttributes.Length is 0 ? 0 : 1;
 
 static string RenderHtml(DemoReport report)
 {
-    var status = report.MissingDomains.Length is 0 ? "PASS" : "FAIL";
+    var status = report.MissingDomains.Length is 0 &&
+                 report.MissingAttributes.Length is 0 &&
+                 report.LeakedAttributes.Length is 0
+        ? "PASS"
+        : "FAIL";
     var rows = string.Join(
         Environment.NewLine,
         report.Activities.Select(static activity =>
@@ -248,6 +316,8 @@ static string RenderHtml(DemoReport report)
             <div class="summary">
               <div class="metric"><span>status</span><strong>__STATUS__</strong></div>
               <div class="metric"><span>domains captured</span><strong>__CAPTURED__/__EXPECTED__</strong></div>
+              <div class="metric"><span>attribute misses</span><strong>__MISSING_ATTRIBUTES__</strong></div>
+              <div class="metric"><span>privacy leaks</span><strong>__LEAKED_ATTRIBUTES__</strong></div>
               <div class="metric"><span>runtime mode</span><strong>__RUNTIME__</strong></div>
             </div>
             <div class="grid">
@@ -262,11 +332,47 @@ static string RenderHtml(DemoReport report)
         .Replace("__STATUS__", Html(status), StringComparison.Ordinal)
         .Replace("__CAPTURED__", report.Activities.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
         .Replace("__EXPECTED__", report.ExpectedDomains.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
+        .Replace("__MISSING_ATTRIBUTES__", report.MissingAttributes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
+        .Replace("__LEAKED_ATTRIBUTES__", report.LeakedAttributes.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
         .Replace("__RUNTIME__", Html(report.NativeAot), StringComparison.Ordinal)
         .Replace("__ROWS__", rows, StringComparison.Ordinal);
 }
 
 static string Html(string value) => WebUtility.HtmlEncode(value);
+
+static IEnumerable<AttributeCheck> FindMissingAttributes(
+    IEnumerable<DiagnosticScenario> scenarios,
+    IReadOnlyDictionary<string, CapturedActivity> capturedByDomain)
+{
+    foreach (var scenario in scenarios)
+    {
+        if (!capturedByDomain.TryGetValue(scenario.Domain, out var activity))
+            continue;
+
+        foreach (var attribute in scenario.ExpectedAttributes)
+        {
+            if (!activity.Tags.ContainsKey(attribute))
+                yield return new AttributeCheck(scenario.Domain, attribute);
+        }
+    }
+}
+
+static IEnumerable<AttributeCheck> FindLeakedAttributes(
+    IEnumerable<DiagnosticScenario> scenarios,
+    IReadOnlyDictionary<string, CapturedActivity> capturedByDomain)
+{
+    foreach (var scenario in scenarios)
+    {
+        if (!capturedByDomain.TryGetValue(scenario.Domain, out var activity))
+            continue;
+
+        foreach (var attribute in scenario.ForbiddenAttributes)
+        {
+            if (activity.Tags.ContainsKey(attribute))
+                yield return new AttributeCheck(scenario.Domain, attribute);
+        }
+    }
+}
 
 internal sealed record DemoOptions(string? JsonPath, string? HtmlPath)
 {
@@ -291,14 +397,18 @@ internal sealed record DiagnosticScenario(
     string ListenerName,
     string EventName,
     string Domain,
+    IReadOnlyList<string> ExpectedAttributes,
+    IReadOnlyList<string> ForbiddenAttributes,
     IReadOnlyDictionary<string, object?> Attributes)
 {
     public static DiagnosticScenario Create(
         string listenerName,
         string eventName,
         string domain,
+        IReadOnlyList<string> expectedAttributes,
+        IReadOnlyList<string> forbiddenAttributes,
         IReadOnlyDictionary<string, object?> attributes)
-        => new(listenerName, eventName, domain, attributes);
+        => new(listenerName, eventName, domain, expectedAttributes, forbiddenAttributes, attributes);
 
     [UnconditionalSuppressMessage("Trimming", "IL2026",
         Justification = "Synthetic producer only; the qyl runtime consumes DiagnosticSource and does not call Write.")]
@@ -331,10 +441,14 @@ internal sealed record CapturedActivity(
     }
 }
 
+internal sealed record AttributeCheck(string Domain, string Attribute);
+
 internal sealed record DemoReport(
     string NativeAot,
     string[] ExpectedDomains,
     string[] MissingDomains,
+    AttributeCheck[] MissingAttributes,
+    AttributeCheck[] LeakedAttributes,
     CapturedActivity[] Activities);
 
 [JsonSerializable(typeof(DemoReport))]

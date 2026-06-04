@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Qyl.AutoInstrumentation;
+using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 
@@ -20,17 +21,23 @@ public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
             return;
         }
 
-        var service = DiagnosticPayloadReader.GetString(payload, "rpc.service", "qyl.Greeter");
-        var method = DiagnosticPayloadReader.GetString(payload, "rpc.method", "SayHello");
-        var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "localhost");
-        var serverPort = DiagnosticPayloadReader.GetInt32(payload, "server.port", 5001);
+        var service = DiagnosticPayloadReader.GetString(payload, "rpc.service");
+        var method = DiagnosticPayloadReader.GetString(payload, "rpc.method");
+        var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "peer.hostname");
+        var serverPort = DiagnosticPayloadReader.GetInt32(payload, "server.port", "peer.port");
+        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "rpc.grpc.status_code");
+        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity($"gRPC {service}/{method}", ActivityKind.Client);
-        activity?.SetTag("qyl.instrumentation.domain", "rpc.grpc");
-        activity?.SetTag("rpc.system", "grpc");
-        activity?.SetTag("rpc.service", service);
-        activity?.SetTag("rpc.method", method);
-        activity?.SetTag("server.address", serverAddress);
-        activity?.SetTag("server.port", serverPort);
+        using var activity = QylActivitySource.Source.StartActivity(
+            service is null || method is null ? "gRPC CLIENT" : $"gRPC {service}/{method}",
+            ActivityKind.Client);
+
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "rpc.grpc");
+        SemanticTagWriter.Set(activity, SemanticAttributes.RpcSystem, "grpc");
+        SemanticTagWriter.Set(activity, SemanticAttributes.RpcService, service);
+        SemanticTagWriter.Set(activity, SemanticAttributes.RpcMethod, method);
+        SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, serverAddress);
+        SemanticTagWriter.Set(activity, SemanticAttributes.ServerPort, serverPort);
+        RpcSemantics.SetGrpcStatus(activity, statusCode, errorType);
     }
 }

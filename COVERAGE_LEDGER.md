@@ -46,7 +46,7 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | §04 ARCHITECTURE | layer reference model | `decided` (source-gen + listener + module-init triad) |
 | §05 TASK_CHAIN | the 33 chains | tracked below |
 | §06 SEMCONV_COVERAGE | full attribute/metric/span registry | `in-progress` (build-time FrozenSet via source generator) |
-| §07 INSTRUMENTATION_MODULES | per-library coverage | `in-progress` (live demo captures HttpClient, ASP.NET Core, EFCore, SqlClient, gRPC; formal gates pending) |
+| §07 INSTRUMENTATION_MODULES | per-library coverage | `in-progress` (live demo captures HttpClient, ASP.NET Core, EFCore, SqlClient, gRPC with safe semantic attributes; formal gates pending) |
 | §08 GOLDEN_OUTPUT_SHAPES | SpanData/MetricData/LogRecordData schemas | `M1` (defines Gate A normalizer) |
 | §09 DONE_STATE | final exit criteria | `decided` (the finish line — unchanged from v0.1.0) |
 | T000 establish baseline | env/runtime/AOT publish matrix | `M1` (osx-arm64/net10 cell first) |
@@ -61,7 +61,7 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | T009 provider bootstrap | Tracer/Meter/Logger providers | `M1` (Tracer via ActivityListener) / Meter+Logger `backlog` |
 | T010 rule manifest | data-defined rule compiler | `backlog` (differentiator) |
 | T011 calltarget ABI | begin/end/exception/async handlers | `oos: substrate-swap — DiagnosticListener replaces this` |
-| T012 source instrumentation runtime | ActivitySource/DiagnosticListener subs | `M1` (HttpClient) / rest `backlog` |
+| T012 source instrumentation runtime | ActivitySource/DiagnosticListener subs | `in-progress` (central semantic policy + live domain proof; formal Gate A/B pending) |
 | T013 bytecode instrumentation runtime | ReJIT rewrite pipeline | `oos: substrate-swap — incompatible with AOT` |
 | T014 http server | ASP.NET Core | `in-progress` (live qyl span demo; formal Gate A/B pending) |
 | T015 http client | HttpClient | `M1` (PackageReference NativeAOT zero-code span emission proven locally; formal Gate A/B pending) |

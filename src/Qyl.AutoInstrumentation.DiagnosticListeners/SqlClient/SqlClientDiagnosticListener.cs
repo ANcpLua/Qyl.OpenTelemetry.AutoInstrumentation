@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Qyl.AutoInstrumentation;
+using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.SqlClient;
 
@@ -22,17 +23,26 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
             return;
         }
 
-        var namespaceName = DiagnosticPayloadReader.GetString(payload, "db.namespace", "qyl_demo");
-        var operation = DiagnosticPayloadReader.GetString(payload, "db.operation.name", "SELECT");
-        var query = DiagnosticPayloadReader.GetString(payload, "db.query.text", "SELECT 1");
-        var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "localhost");
+        var namespaceName = DiagnosticPayloadReader.GetString(payload, "db.namespace", "db.name");
+        var queryText = DiagnosticPayloadReader.GetString(payload, "db.query.text", "db.statement");
+        var operation = DatabaseSemantics.NormalizeOperation(
+            DiagnosticPayloadReader.GetString(payload, "db.operation.name", "db.operation"),
+            queryText);
+        var querySummary = DiagnosticPayloadReader.GetString(payload, "db.query.summary");
+        var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "peer.hostname");
+        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity($"SQL {operation}", ActivityKind.Client);
-        activity?.SetTag("qyl.instrumentation.domain", "db.sqlclient");
-        activity?.SetTag("db.system", "microsoft.sql_server");
-        activity?.SetTag("db.namespace", namespaceName);
-        activity?.SetTag("db.operation.name", operation);
-        activity?.SetTag("db.query.text", query);
-        activity?.SetTag("server.address", serverAddress);
+        using var activity = QylActivitySource.Source.StartActivity(
+            operation is null ? "SQL CLIENT" : $"SQL {operation}",
+            ActivityKind.Client);
+
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "db.sqlclient");
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, "microsoft.sql_server");
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, namespaceName);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, operation);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, querySummary);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, queryText);
+        SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, serverAddress);
+        DatabaseSemantics.SetError(activity, errorType);
     }
 }

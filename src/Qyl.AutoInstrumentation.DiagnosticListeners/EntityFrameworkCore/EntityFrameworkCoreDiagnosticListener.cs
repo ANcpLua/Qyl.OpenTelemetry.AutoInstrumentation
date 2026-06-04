@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Qyl.AutoInstrumentation;
+using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.EntityFrameworkCore;
 
@@ -22,16 +23,25 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
             return;
         }
 
-        var system = DiagnosticPayloadReader.GetString(payload, "db.system", "entity_framework");
-        var namespaceName = DiagnosticPayloadReader.GetString(payload, "db.namespace", "qyl_demo");
-        var operation = DiagnosticPayloadReader.GetString(payload, "db.operation.name", "SELECT");
-        var query = DiagnosticPayloadReader.GetString(payload, "db.query.text", "SELECT 1");
+        var system = DiagnosticPayloadReader.GetString(payload, "db.system");
+        var namespaceName = DiagnosticPayloadReader.GetString(payload, "db.namespace", "db.name");
+        var queryText = DiagnosticPayloadReader.GetString(payload, "db.query.text", "db.statement");
+        var operation = DatabaseSemantics.NormalizeOperation(
+            DiagnosticPayloadReader.GetString(payload, "db.operation.name", "db.operation"),
+            queryText);
+        var querySummary = DiagnosticPayloadReader.GetString(payload, "db.query.summary");
+        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity($"DB {operation}", ActivityKind.Client);
-        activity?.SetTag("qyl.instrumentation.domain", "db.efcore");
-        activity?.SetTag("db.system", system);
-        activity?.SetTag("db.namespace", namespaceName);
-        activity?.SetTag("db.operation.name", operation);
-        activity?.SetTag("db.query.text", query);
+        using var activity = QylActivitySource.Source.StartActivity(
+            operation is null ? "DB CLIENT" : $"DB {operation}",
+            ActivityKind.Client);
+
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "db.efcore");
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, system);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, namespaceName);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, operation);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, querySummary);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, queryText);
+        DatabaseSemantics.SetError(activity, errorType);
     }
 }

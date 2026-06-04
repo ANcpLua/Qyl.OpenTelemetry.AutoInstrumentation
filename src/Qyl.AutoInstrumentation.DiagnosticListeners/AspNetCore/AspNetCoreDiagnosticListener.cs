@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Qyl.AutoInstrumentation;
+using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 
@@ -21,16 +22,23 @@ public sealed class AspNetCoreDiagnosticListener : DiagnosticListenerSubscriber
             return;
         }
 
-        var method = DiagnosticPayloadReader.GetString(payload, "http.request.method", "GET");
-        var route = DiagnosticPayloadReader.GetString(payload, "http.route", "/qyl/{id}");
-        var path = DiagnosticPayloadReader.GetString(payload, "url.path", "/qyl/demo");
-        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", 200);
+        var method = HttpSemantics.NormalizeMethod(
+            DiagnosticPayloadReader.GetString(payload, "http.request.method", "http.method"),
+            out var originalMethod);
+        var route = DiagnosticPayloadReader.GetString(payload, "http.route");
+        var path = DiagnosticPayloadReader.GetString(payload, "url.path", "http.target");
+        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
+        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity($"HTTP SERVER {method}", ActivityKind.Server);
-        activity?.SetTag("qyl.instrumentation.domain", "http.server");
-        activity?.SetTag("http.request.method", method);
-        activity?.SetTag("http.route", route);
-        activity?.SetTag("url.path", path);
-        activity?.SetTag("http.response.status_code", statusCode);
+        using var activity = QylActivitySource.Source.StartActivity(
+            method is null ? "HTTP SERVER" : $"HTTP SERVER {method}",
+            ActivityKind.Server);
+
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "http.server");
+        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);
+        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
+        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRoute, route);
+        SemanticTagWriter.Set(activity, SemanticAttributes.UrlPath, path);
+        HttpSemantics.SetStatus(activity, ActivityKind.Server, statusCode, errorType);
     }
 }

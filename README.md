@@ -78,6 +78,28 @@ The three runtime projects build under `TreatWarningsAsErrors=true` with `IsAotC
 The source-generator project is build-time-only and explicitly excluded from NativeAOT publish, so
 an accidental runtime reflection or publish-graph regression fails the build instead of deployment.
 
+## Runtime semantics
+
+The agent emits runtime values only when the instrumented library supplied them through
+`DiagnosticSource` payloads or the current `Activity`. It does not invent fallback URLs, database
+names, SQL statements, routes, methods, status codes, or RPC methods.
+
+Semantic rules live in the diagnostic listener layer:
+
+- Stable OpenTelemetry keys are emitted; deprecated aliases such as `http.url`, `http.status_code`,
+  `http.method`, `db.statement`, and `db.name` are consumed as input only.
+- Sensitive raw values are off by default. `url.full`, `url.path`, and `db.query.text` are emitted
+  only when `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true`.
+- HTTP method values are normalized to the stable well-known set; unknown methods emit `_OTHER`
+  with `http.request.method_original`.
+- HTTP span status follows the stable HTTP rules: client `4xx+` and server `5xx+` become
+  `ActivityStatusCode.Error` and get low-cardinality `error.type`.
+- Database spans prefer bounded `db.operation.name` and `db.query.summary`; raw query text remains
+  privacy-gated.
+
+`demos/Qyl.LiveInstrumentationDemo` now checks both sides of this contract: every covered domain
+must emit its required safe attributes, and privacy-gated attributes must not leak with defaults.
+
 ## Status
 
 - **M1 walking skeleton (new substrate)** — *in progress*: NativeAOT package-reference boot and
