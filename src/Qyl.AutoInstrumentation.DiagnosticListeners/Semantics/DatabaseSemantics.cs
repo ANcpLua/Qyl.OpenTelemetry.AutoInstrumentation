@@ -41,6 +41,16 @@ internal static class DatabaseSemantics
         activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error);
     }
 
+    public static string? CreateSummary(string? operation, string? source)
+    {
+        if (string.IsNullOrWhiteSpace(operation))
+            return null;
+
+        return string.IsNullOrWhiteSpace(source)
+            ? operation
+            : $"{source.Trim()} {operation}";
+    }
+
     private static string? FirstQueryToken(string? queryText)
     {
         if (string.IsNullOrWhiteSpace(queryText))

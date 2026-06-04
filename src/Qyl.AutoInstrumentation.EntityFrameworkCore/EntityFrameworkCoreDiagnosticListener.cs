@@ -1,13 +1,13 @@
 using System.Diagnostics;
 using Qyl.AutoInstrumentation;
+using Qyl.AutoInstrumentation.DiagnosticListeners;
 using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
-namespace Qyl.AutoInstrumentation.DiagnosticListeners.EntityFrameworkCore;
+namespace Qyl.AutoInstrumentation.EntityFrameworkCore;
 
 /// <summary>
-/// Subscribes to the synthetic <c>qyl.db.efcore</c> event used by the shared semantic demo.
-/// Real EFCore command events live in <c>Qyl.AutoInstrumentation.EntityFrameworkCore</c> so
-/// non-EFCore apps do not inherit EFCore package dependencies or NativeAOT warnings.
+/// Subscribes to <c>Microsoft.EntityFrameworkCore</c> command events and extracts real EFCore
+/// command payload values without IL rewriting.
 /// </summary>
 public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSubscriber
 {
@@ -17,11 +17,36 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
-        if (!StringComparer.Ordinal.Equals(name, "qyl.db.efcore"))
+        if (StringComparer.Ordinal.Equals(name, "qyl.db.efcore"))
+        {
+            WriteSyntheticActivity(payload);
+            return;
+        }
+
+        if (!StringComparer.Ordinal.Equals(name, "Microsoft.EntityFrameworkCore.Database.Command.CommandExecuted") &&
+            !StringComparer.Ordinal.Equals(name, "Microsoft.EntityFrameworkCore.Database.Command.CommandError"))
         {
             return;
         }
 
+        if (!EntityFrameworkCorePayloadReader.TryRead(payload, out var command))
+            return;
+
+        using var activity = QylActivitySource.Source.StartActivity(
+            command.Operation is null ? "DB CLIENT" : $"DB {command.Operation}",
+            ActivityKind.Client);
+
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "db.efcore");
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, command.DbSystem);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, command.Namespace);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, command.Operation);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, command.QuerySummary);
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, command.QueryText);
+        DatabaseSemantics.SetError(activity, command.ErrorType);
+    }
+
+    private static void WriteSyntheticActivity(object? payload)
+    {
         var system = DiagnosticPayloadReader.GetString(payload, "db.system");
         var namespaceName = DiagnosticPayloadReader.GetString(payload, "db.namespace", "db.name");
         var queryText = DiagnosticPayloadReader.GetString(payload, "db.query.text", "db.statement");

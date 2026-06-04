@@ -60,6 +60,14 @@ Current evidence proves the runtime closure is NativeAOT-clean and emits spans u
 - A temporary consumer with only a `PackageReference` to `Qyl.AutoInstrumentation.Hosting` and no
   explicit qyl startup call publishes with `PublishAot=true` and captures a qyl HttpClient span via
   the build-transitive bootstrap.
+- `demos/Qyl.RealEfCoreDemo` proves the EFCore-specific package against real
+  `CommandExecutedEventData` and `CommandErrorEventData` payloads under managed and NativeAOT
+  execution. EFCore is not warning-clean under NativeAOT in .NET 10.0.8: the proof uses the
+  supported compiled-model path and intentionally demotes EFCore's own IL warnings for publish,
+  then runs the native binary.
+- A temporary consumer with only `PackageReference` wiring for
+  `Qyl.AutoInstrumentation.EntityFrameworkCore` and no qyl startup call restored from locally
+  packed nupkgs and captured `PASS name=DB INSERT`, proving the EFCore build-transitive bootstrap.
 
 The formal Gate A golden-OTLP normalizer and Gate B no-behavior-change baseline are still tracked
 in `COVERAGE_LEDGER.md`.
@@ -70,7 +78,8 @@ in `COVERAGE_LEDGER.md`.
 |---|---|---|
 | `Qyl.AutoInstrumentation` | net10.0 | API surface: `QylActivitySource`, `QylSelfTelemetry`, `QylInstrumentation.Activate()`, source-gen-fed `QylSemConvRegistry`. |
 | `Qyl.AutoInstrumentation.SourceGenerators` | netstandard2.0 | `IIncrementalGenerator` that emits the semconv `FrozenSet<string>` at compile time. |
-| `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | One `DiagnosticListener` subscriber per instrumented library (HttpClient, AspNetCore, EFCore, SqlClient, gRPC). |
+| `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | Shared `DiagnosticListener` substrate and built-in subscribers for HttpClient, ASP.NET Core, SqlClient, gRPC, plus the synthetic EFCore semantic proof event. |
+| `Qyl.AutoInstrumentation.EntityFrameworkCore` | net10.0 | EFCore-specific build-transitive bootstrap and typed command payload reader. Kept out of the shared host so non-EFCore apps do not inherit EFCore package warnings. |
 | `Qyl.AutoInstrumentation.Hosting` | net10.0 | Build-transitive consumer bootstrap + `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
 
 The three runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
@@ -102,7 +111,9 @@ must emit its required safe attributes, and privacy-gated attributes must not le
 `demos/Qyl.RealHttpClientDemo` uses real .NET `HttpClient` traffic and BCL
 `HttpHandlerDiagnosticListener` events to prove runtime extraction for 503 and connection-failure
 paths under managed and NativeAOT execution. `demos/Qyl.RealAspNetCoreDemo` does the same for
-Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. The per-library matrix lives in
+Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. `demos/Qyl.RealEfCoreDemo`
+does the same for EFCore command success and provider-error paths, with the EFCore compiled-model
+NativeAOT prerequisite called out explicitly. The per-library matrix lives in
 `docs/RUNTIME_SEMANTICS.md`.
 
 ## Status
