@@ -31,6 +31,12 @@ internal static class QylSemanticAttributes
     public const string DbOperationName = DbAttributes.OperationName;
     public const string DbQuerySummary = DbAttributes.QuerySummary;
     public const string DbQueryText = DbAttributes.QueryText;
+    public const string DbSystemMicrosoftSqlServer = DbAttributes.SystemNameValues.MicrosoftSqlServer;
+    public const string DbSystemMysql = DbAttributes.SystemNameValues.Mysql;
+    public const string DbSystemOracleDb = DbAttributes.SystemNameValues.OracleDb;
+    public const string DbSystemOtherSql = DbAttributes.SystemNameValues.OtherSql;
+    public const string DbSystemPostgresql = DbAttributes.SystemNameValues.Postgresql;
+    public const string DbSystemSqlite = DbAttributes.SystemNameValues.Sqlite;
 
 #pragma warning disable CS0618 // Qyl still mirrors the current OTEL .NET auto gRPC status attribute contract.
     public const string RpcSystem = RpcAttributes.System;

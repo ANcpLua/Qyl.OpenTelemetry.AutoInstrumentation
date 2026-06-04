@@ -37,8 +37,8 @@ public static class QylDbClientMetrics
     private static string GetDbSystemName(string instrumentationId)
         => instrumentationId switch
         {
-            QylAutoInstrumentationIds.SqlClient => "microsoft.sql_server",
-            QylAutoInstrumentationIds.Npgsql => "postgresql",
-            _ => "other_sql",
+            QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
+            QylAutoInstrumentationIds.Npgsql => QylSemanticAttributes.DbSystemPostgresql,
+            _ => QylSemanticAttributes.DbSystemOtherSql,
         };
 }

@@ -114,12 +114,12 @@ public static class QylInterceptedDbCommand
     private static string GetDbSystemName(string instrumentationId)
         => instrumentationId switch
         {
-            QylAutoInstrumentationIds.SqlClient => "microsoft.sql_server",
-            QylAutoInstrumentationIds.Sqlite => "sqlite",
-            QylAutoInstrumentationIds.Npgsql => "postgresql",
-            QylAutoInstrumentationIds.MySqlConnector => "mysql",
-            QylAutoInstrumentationIds.MySqlData => "mysql",
-            QylAutoInstrumentationIds.OracleMda => "oracle.db",
-            _ => "other_sql",
+            QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
+            QylAutoInstrumentationIds.Sqlite => QylSemanticAttributes.DbSystemSqlite,
+            QylAutoInstrumentationIds.Npgsql => QylSemanticAttributes.DbSystemPostgresql,
+            QylAutoInstrumentationIds.MySqlConnector => QylSemanticAttributes.DbSystemMysql,
+            QylAutoInstrumentationIds.MySqlData => QylSemanticAttributes.DbSystemMysql,
+            QylAutoInstrumentationIds.OracleMda => QylSemanticAttributes.DbSystemOracleDb,
+            _ => QylSemanticAttributes.DbSystemOtherSql,
         };
 }
