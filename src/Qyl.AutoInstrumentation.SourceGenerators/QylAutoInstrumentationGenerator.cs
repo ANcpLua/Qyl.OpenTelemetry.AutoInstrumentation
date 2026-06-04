@@ -70,6 +70,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAspNetCoreEndpointMapInvocation(symbol, out target))
             return true;
 
+        if (TryGetAzureClientInvocation(symbol, out target))
+            return true;
+
         if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
             return true;
 
@@ -160,6 +163,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
                 EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.AzureClient)
+                EmitAzureClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
                 EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall)
@@ -282,6 +287,52 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("(endpoints");
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
         builder.AppendLine(");");
+        builder.AppendLine();
+    }
+
+    private static void EmitAzureClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AzureClient_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, target.IsAsync);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedAzure.StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (target.IsAsync)
+        {
+            builder.Append("                var result = await client.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+        }
+        else
+        {
+            builder.Append("                var result = client.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+        }
+
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -1241,6 +1292,62 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsSupportedAspNetCoreMapMethod(string name)
         => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch";
+
+    private static bool TryGetAzureClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            !IsAzureClientType(symbol.ContainingType) ||
+            !TryGetAzureClientOperationReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AzureClient,
+            "signals.traces.AZURE",
+            "AZURE",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            isAsync);
+        return true;
+    }
+
+    private static bool IsAzureClientType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named ||
+            !named.Name.EndsWith("Client", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var namespaceName = named.ContainingNamespace.ToDisplayString();
+        return namespaceName.StartsWith("Azure.", StringComparison.Ordinal) &&
+               !namespaceName.StartsWith("Azure.Core", StringComparison.Ordinal);
+    }
+
+    private static bool TryGetAzureClientOperationReturn(ITypeSymbol returnType, out bool isAsync)
+    {
+        isAsync = false;
+        if (IsAzureResponseType(returnType))
+            return true;
+
+        if (TryGetTaskResult(returnType, out var resultType) && IsAzureResponseType(resultType))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsAzureResponseType(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol named &&
+           (IsTypeByMetadata(named, "Azure", "Response") ||
+            IsConstructedGeneric(named, "Azure", "Response`1"));
 
     private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -2340,6 +2447,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         HttpClient,
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
+        AzureClient,
         GrpcNetClientAsyncUnaryCall,
         GrpcNetClientAsyncServerStreamingCall,
         GrpcNetClientAsyncClientStreamingCall,
