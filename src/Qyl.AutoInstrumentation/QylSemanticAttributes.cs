@@ -5,6 +5,7 @@ using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.E
 using GraphqlAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using MessagingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
+using OtelAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Otel.OtelAttributes;
 using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
@@ -35,15 +36,15 @@ internal static class QylSemanticAttributes
     public const string RpcMethod = RpcAttributes.Method;
     public const string RpcGrpcStatusCode = RpcAttributes.GrpcStatusCode;
 #pragma warning restore CS0618
-    public const string GrpcRequestMetadataPrefix = "grpc.request.metadata.";
-    public const string GrpcResponseMetadataPrefix = "grpc.response.metadata.";
+    public const string GrpcRequestMetadataPrefix = RpcAttributes.RequestMetadata + ".";
+    public const string GrpcResponseMetadataPrefix = RpcAttributes.ResponseMetadata + ".";
 
     public const string MessagingSystem = MessagingAttributes.System;
     public const string MessagingOperationName = MessagingAttributes.OperationName;
     public const string MessagingDestinationName = MessagingAttributes.DestinationName;
 
     public const string LogSeverity = "log.severity";
-    public const string LogEventName = "log.event.name";
+    public const string LogEventName = OtelAttributes.EventName;
 
     public const string GraphQlOperationName = GraphqlAttributes.OperationName;
     public const string GraphQlDocument = GraphqlAttributes.Document;
