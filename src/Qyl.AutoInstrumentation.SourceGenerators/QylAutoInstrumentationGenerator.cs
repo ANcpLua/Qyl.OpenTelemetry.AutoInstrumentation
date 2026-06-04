@@ -64,6 +64,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetHttpClientInvocation(symbol, out target))
             return true;
 
+        if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
+            return true;
+
         if (TryGetDbCommandInvocation(symbol, out target))
             return true;
 
@@ -108,6 +111,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             var invocation = invocations[index];
             if (invocation.Target.Kind is InterceptorKind.HttpClient)
                 EmitHttpClientInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
+                EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else
                 EmitDbCommandInterceptor(builder, invocation, index);
         }
@@ -173,6 +178,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("            }");
         builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitAspNetCoreRequestDelegateInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreRequestDelegate_" + target.MethodName, index, target.ReceiverType, "requestDelegate", target.Parameters, isAsync: false);
+        builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.InvokeAsync(requestDelegate, p0);");
         builder.AppendLine();
     }
 
@@ -342,6 +355,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             returnType,
             parameters,
             isAsync);
+        return true;
+    }
+
+    private static bool TryGetAspNetCoreRequestDelegateInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Invoke", StringComparison.Ordinal) ||
+            !IsType(symbol.ContainingType, "global::Microsoft.AspNetCore.Http.RequestDelegate") ||
+            !IsTask(symbol.ReturnType) ||
+            symbol.Parameters.Length is not 1 ||
+            !IsType(symbol.Parameters[0].Type, "global::Microsoft.AspNetCore.Http.HttpContext"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreRequestDelegate,
+            "signals.traces.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(symbol.ContainingType),
+            "Invoke",
+            "global::System.Threading.Tasks.Task",
+            Parameters(symbol),
+            false);
         return true;
     }
 
@@ -574,6 +611,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsTaskOf(ITypeSymbol? symbol, string resultFullyQualifiedName)
         => TryGetTaskResult(symbol, out var result) && IsType(result, resultFullyQualifiedName);
 
+    private static bool IsTask(ITypeSymbol? symbol)
+        => IsType(symbol, "global::System.Threading.Tasks.Task");
+
     private static bool TryGetTaskResult(ITypeSymbol? symbol, out ITypeSymbol result)
     {
         result = null!;
@@ -657,6 +697,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private enum InterceptorKind
     {
         HttpClient,
+        AspNetCoreRequestDelegate,
         DbCommand,
     }
 

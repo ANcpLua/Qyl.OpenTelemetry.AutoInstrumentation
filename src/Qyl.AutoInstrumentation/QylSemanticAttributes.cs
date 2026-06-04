@@ -7,6 +7,8 @@ internal static class QylSemanticAttributes
     public const string HttpResponseStatusCode = "http.response.status_code";
     public const string HttpRequestHeaderPrefix = "http.request.header.";
     public const string HttpResponseHeaderPrefix = "http.response.header.";
+    public const string HttpRoute = "http.route";
+    public const string UrlPath = "url.path";
     public const string DbSystemName = "db.system.name";
     public const string DbNamespace = "db.namespace";
     public const string DbOperationName = "db.operation.name";
