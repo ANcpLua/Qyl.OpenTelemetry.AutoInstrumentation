@@ -88,6 +88,8 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw caughtException;",
     "throw ex;",
 ]
+REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"
+REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylIntercepted"
 FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS = [
     "CORECLR_PROFILER",
     "DOTNET_STARTUP_HOOKS",
@@ -437,6 +439,45 @@ def verify_metric_contract() -> None:
             fail(f"productive code must not use an obsolete or call-site-invented ASP.NET Core metric proof: {token}")
 
 
+def parse_interceptor_emitter_blocks(generator: str) -> dict[str, str]:
+    blocks: dict[str, str] = {}
+    for match in re.finditer(r"\n    private static void (Emit[A-Za-z0-9]+Interceptor)\(", generator):
+        name = match.group(1)
+        brace_index = generator.find("{", match.end())
+        if brace_index < 0:
+            fail(f"{name} has no method body")
+
+        depth = 0
+        for index in range(brace_index, len(generator)):
+            char = generator[index]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    blocks[name] = generator[brace_index:index + 1]
+                    break
+        else:
+            fail(f"{name} has unterminated method body")
+
+    return blocks
+
+
+def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
+    emitter_blocks = parse_interceptor_emitter_blocks(generator)
+    if not emitter_blocks:
+        fail("generator has no Emit*Interceptor methods")
+
+    for name, body in sorted(emitter_blocks.items()):
+        if name == "EmitMeterProviderBuilderAddMeterInterceptor":
+            if REQUIRED_METER_PROVIDER_DELEGATION_TOKEN not in body:
+                fail(f"{name} must delegate meter registration to QylMetricMeters")
+            continue
+
+        if REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN not in body:
+            fail(f"{name} must delegate intercepted behavior to Qyl runtime instrumentation")
+
+
 def find_catch_blocks(text: str) -> list[str]:
     blocks: list[str] = []
     position = 0
@@ -469,6 +510,7 @@ def verify_behavior_semantics_contract() -> None:
     generator = GENERATOR_PATH.read_text()
     if "global::Qyl.AutoInstrumentation.QylIntercepted" not in generator:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
+    verify_interceptor_emitter_runtime_delegation(generator)
 
     for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:
         if token in generator:
