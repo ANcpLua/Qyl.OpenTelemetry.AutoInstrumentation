@@ -104,9 +104,6 @@ public sealed class QylAutoInstrumentationOptions
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
-        if (!GlobalEnabled)
-            return false;
-
         return _instrumentationEnabled.TryGetValue(BuildKey(signal, instrumentationId), out var enabled)
             ? enabled
             : IsSignalEnabled(signal);
