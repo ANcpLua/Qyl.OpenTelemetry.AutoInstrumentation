@@ -1,0 +1,1200 @@
+schema_id: otel-dotnet-auto-instrumentation-contract-items
+schema_version: 1.0.0
+generated_at: '2026-06-04'
+source:
+  title: Available instrumentations
+  source_kind: uploaded_markdown
+  content_basis: OpenTelemetry .NET Automatic Instrumentation supported libraries
+  citation_marker: fileciteturn1file0
+validation:
+  status: validated
+  expected_counts:
+    signal_specific_instrumentation_promises: 37
+    global_environment_controls: 7
+    instrumentation_options: 16
+    total_contract_items: 60
+    traces_signal_specific_promises: 26
+    metrics_signal_specific_promises: 8
+    logs_signal_specific_promises: 3
+    unique_instrumentation_ids: 31
+  actual_counts:
+    signal_specific_instrumentation_promises: 37
+    global_environment_controls: 7
+    instrumentation_options: 16
+    total_contract_items: 60
+    traces_signal_specific_promises: 26
+    metrics_signal_specific_promises: 8
+    logs_signal_specific_promises: 3
+    unique_instrumentation_ids: 31
+  formula: 37 signal-specific instrumentation promises + 7 global environment controls + 16 instrumentation options = 60 contract
+    items
+schema:
+  contract_items:
+    type: array
+    required_item_fields:
+    - index
+    - contract_item_id
+    - kind
+    - key
+    - status
+    kind_enum:
+    - signal_specific_instrumentation_promise
+    - global_environment_control
+    - instrumentation_option
+    field_rules:
+      signal_specific_instrumentation_promise:
+        required:
+        - signal
+        - instrumentation_id
+        - environment_toggle
+        - libraries
+        - supported_versions
+        - instrumentation_types
+        - instrumentation_type_operator
+        signal_enum:
+        - traces
+        - metrics
+        - logs
+      global_environment_control:
+        required:
+        - environment_variable
+        - scope
+        - description
+        - default_value
+        scope_enum:
+        - all_signals
+        - signal
+        - signal_specific
+      instrumentation_option:
+        required:
+        - environment_variable
+        - description
+        - value_type
+        - default_value
+        value_type_enum:
+        - boolean
+        - comma_separated_string
+inventory:
+  unique_instrumentation_ids:
+  - ADONET
+  - ASPNET
+  - ASPNETCORE
+  - AZURE
+  - ELASTICSEARCH
+  - ELASTICTRANSPORT
+  - ENTITYFRAMEWORKCORE
+  - GRAPHQL
+  - GRPCNETCLIENT
+  - HTTPCLIENT
+  - ILOGGER
+  - KAFKA
+  - LOG4NET
+  - MASSTRANSIT
+  - MONGODB
+  - MYSQLCONNECTOR
+  - MYSQLDATA
+  - NETRUNTIME
+  - NLOG
+  - NPGSQL
+  - NSERVICEBUS
+  - ORACLEMDA
+  - PROCESS
+  - QUARTZ
+  - RABBITMQ
+  - SQLCLIENT
+  - SQLITE
+  - STACKEXCHANGEREDIS
+  - WCFCLIENT
+  - WCFCORE
+  - WCFSERVICE
+  signal_specific_keys:
+  - signals.logs.ILOGGER
+  - signals.logs.LOG4NET
+  - signals.logs.NLOG
+  - signals.metrics.ASPNET
+  - signals.metrics.ASPNETCORE
+  - signals.metrics.HTTPCLIENT
+  - signals.metrics.NETRUNTIME
+  - signals.metrics.NPGSQL
+  - signals.metrics.NSERVICEBUS
+  - signals.metrics.PROCESS
+  - signals.metrics.SQLCLIENT
+  - signals.traces.ADONET
+  - signals.traces.ASPNET
+  - signals.traces.ASPNETCORE
+  - signals.traces.AZURE
+  - signals.traces.ELASTICSEARCH
+  - signals.traces.ELASTICTRANSPORT
+  - signals.traces.ENTITYFRAMEWORKCORE
+  - signals.traces.GRAPHQL
+  - signals.traces.GRPCNETCLIENT
+  - signals.traces.HTTPCLIENT
+  - signals.traces.KAFKA
+  - signals.traces.MASSTRANSIT
+  - signals.traces.MONGODB
+  - signals.traces.MYSQLCONNECTOR
+  - signals.traces.MYSQLDATA
+  - signals.traces.NPGSQL
+  - signals.traces.NSERVICEBUS
+  - signals.traces.ORACLEMDA
+  - signals.traces.QUARTZ
+  - signals.traces.RABBITMQ
+  - signals.traces.SQLCLIENT
+  - signals.traces.SQLITE
+  - signals.traces.STACKEXCHANGEREDIS
+  - signals.traces.WCFCLIENT
+  - signals.traces.WCFCORE
+  - signals.traces.WCFSERVICE
+contract_items:
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ADONET
+  signal: traces
+  instrumentation_id: ADONET
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ADONET_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: ADO.NET
+  supported_versions: System.Data.Common >=4.0.0 && <11.0.0; System.Data for .NET Framework >=2.0.0 && <5.0.0; netstandard
+    >=2.0.0 && <3.0.0
+  instrumentation_types:
+  - bytecode
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Generic ADO.NET instrumentation covers DbCommand methods.
+  - Only implementations for overridden methods are covered.
+  - Implementations using the C# new keyword typically need specific implementations.
+  - Does not cover libraries covered by SQLCLIENT, NPGSQL, MYSQLDATA, MYSQLCONNECTOR, ORACLEMDA, or SQLITE.
+  index: 1
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_001
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ASPNET
+  signal: traces
+  instrumentation_id: ASPNET
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: ASP.NET (.NET Framework) MVC / WebApi
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  not_supported_on:
+  - .NET
+  - ARM64
+  notes:
+  - Only integrated pipeline mode is supported.
+  index: 2
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_002
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ASPNETCORE
+  signal: traces
+  instrumentation_id: ASPNETCORE
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: ASP.NET Core
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  index: 3
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_003
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.AZURE
+  signal: traces
+  instrumentation_id: AZURE
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_AZURE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Azure SDK
+    url: https://azure.github.io/azure-sdk/releases/latest/index.html
+  supported_versions: Azure.* prefixed packages released after 2021-10-01
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  index: 4
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_004
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ELASTICSEARCH
+  signal: traces
+  instrumentation_id: ELASTICSEARCH
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ELASTICSEARCH_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Elastic.Clients.Elasticsearch
+    url: https://www.nuget.org/packages/Elastic.Clients.Elasticsearch
+  supported_versions: '>=8.0.0 && <8.10.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Version >=8.10.0 is supported by ELASTICTRANSPORT instrumentation.
+  index: 5
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ELASTICTRANSPORT
+  signal: traces
+  instrumentation_id: ELASTICTRANSPORT
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ELASTICTRANSPORT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Elastic.Transport
+    url: https://www.nuget.org/packages/Elastic.Transport
+  supported_versions: '>=0.4.16'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  index: 6
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ENTITYFRAMEWORKCORE
+  signal: traces
+  instrumentation_id: ENTITYFRAMEWORKCORE
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ENTITYFRAMEWORKCORE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Microsoft.EntityFrameworkCore
+    url: https://www.nuget.org/packages/Microsoft.EntityFrameworkCore
+  supported_versions: '>=6.0.12'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  index: 7
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_007
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.GRAPHQL
+  signal: traces
+  instrumentation_id: GRAPHQL
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_GRAPHQL_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: GraphQL
+    url: https://www.nuget.org/packages/GraphQL
+  supported_versions: '>=7.5.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  index: 8
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_008
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.GRPCNETCLIENT
+  signal: traces
+  instrumentation_id: GRPCNETCLIENT
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Grpc.Net.Client
+    url: https://www.nuget.org/packages/Grpc.Net.Client
+  supported_versions: '>=2.52.0 && <3.0.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  index: 9
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.HTTPCLIENT
+  signal: traces
+  instrumentation_id: HTTPCLIENT
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name:
+      name: System.Net.Http.HttpClient
+      url: https://docs.microsoft.com/dotnet/api/system.net.http.httpclient
+  - name:
+      name: System.Net.HttpWebRequest
+      url: https://docs.microsoft.com/dotnet/api/system.net.httpwebrequest
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  index: 10
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.KAFKA
+  signal: traces
+  instrumentation_id: KAFKA
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_KAFKA_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Confluent.Kafka
+    url: https://www.nuget.org/packages/Confluent.Kafka
+  supported_versions: '>=1.4.0 && <3.0.0'
+  instrumentation_types:
+  - bytecode
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Confluent.Kafka is supported from version >=1.8.2 on ARM64 for Windows and Linux, and >=1.9.2 on macOS.
+  index: 11
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_011
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MASSTRANSIT
+  signal: traces
+  instrumentation_id: MASSTRANSIT
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MASSTRANSIT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: MassTransit
+    url: https://www.nuget.org/packages/MassTransit
+  supported_versions: '>=8.0.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  index: 12
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MONGODB
+  signal: traces
+  instrumentation_id: MONGODB
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MONGODB_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name:
+      name: MongoDB.Driver.Core
+      url: https://www.nuget.org/packages/MongoDB.Driver.Core
+  - name:
+      name: MongoDB.Driver
+      url: https://www.nuget.org/packages/MongoDB.Driver
+  supported_versions: '>=2.7.0'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: or
+  status: experimental
+  notes:
+  - MongoDB.Driver needs bytecode instrumentation only for versions <3.7.0. Versions >=3.7.0 use only source instrumentation.
+  index: 13
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MYSQLCONNECTOR
+  signal: traces
+  instrumentation_id: MYSQLCONNECTOR
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MYSQLCONNECTOR_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: MySqlConnector
+    url: https://www.nuget.org/packages/MySqlConnector
+  supported_versions: '>=2.0.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  index: 14
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MYSQLDATA
+  signal: traces
+  instrumentation_id: MYSQLDATA
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MYSQLDATA_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: MySql.Data
+    url: https://www.nuget.org/packages/MySql.Data
+  supported_versions: '>=8.1.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  index: 15
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.NPGSQL
+  signal: traces
+  instrumentation_id: NPGSQL
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_NPGSQL_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Npgsql
+    url: https://www.nuget.org/packages/Npgsql
+  supported_versions: '>=6.0.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  index: 16
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.NSERVICEBUS
+  signal: traces
+  instrumentation_id: NSERVICEBUS
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_NSERVICEBUS_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: NServiceBus
+    url: https://www.nuget.org/packages/NServiceBus
+  supported_versions: '>=8.0.0 && <10.0.0'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  index: 17
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.ORACLEMDA
+  signal: traces
+  instrumentation_id: ORACLEMDA
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_ORACLEMDA_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name:
+      name: Oracle.ManagedDataAccess.Core
+      url: https://www.nuget.org/packages/Oracle.ManagedDataAccess.Core
+  - name:
+      name: Oracle.ManagedDataAccess
+      url: https://www.nuget.org/packages/Oracle.ManagedDataAccess
+  supported_versions: '>=23.4.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - ARM64
+  index: 18
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.RABBITMQ
+  signal: traces
+  instrumentation_id: RABBITMQ
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_RABBITMQ_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: RabbitMQ.Client
+    url: https://www.nuget.org/packages/RabbitMQ.Client/
+  supported_versions: '>=5.0.0'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: or
+  status: experimental
+  notes:
+  - RabbitMQ.Client needs bytecode instrumentation only for 5.* and 6.* versions. Versions >=7.0.0 use only source instrumentation.
+  index: 19
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.QUARTZ
+  signal: traces
+  instrumentation_id: QUARTZ
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_QUARTZ_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Quartz
+    url: https://www.nuget.org/packages/Quartz
+  supported_versions: '>=3.4.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework 4.7.1 and older
+  index: 20
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.SQLCLIENT
+  signal: traces
+  instrumentation_id: SQLCLIENT
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_SQLCLIENT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name:
+      name: Microsoft.Data.SqlClient
+      url: https://www.nuget.org/packages/Microsoft.Data.SqlClient
+  - name:
+      name: System.Data.SqlClient
+      url: https://www.nuget.org/packages/System.Data.SqlClient
+  - name:
+      name: System.Data
+      note: Shipped with .NET Framework
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - System.Data.SqlClient is deprecated.
+  - Microsoft.Data.SqlClient v3.* is not supported on .NET Framework due to an OpenTelemetry .NET issue.
+  - System.Data.SqlClient is supported from version 4.8.5.
+  index: 21
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.SQLITE
+  signal: traces
+  instrumentation_id: SQLITE
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_SQLITE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Data.Sqlite
+    url: https://www.nuget.org/packages/Microsoft.Data.Sqlite
+  supported_versions: '>=8.0.0 && <11.0.0'
+  instrumentation_types:
+  - bytecode
+  instrumentation_type_operator: single
+  status: experimental
+  index: 22
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_022
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.STACKEXCHANGEREDIS
+  signal: traces
+  instrumentation_id: STACKEXCHANGEREDIS
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_STACKEXCHANGEREDIS_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: StackExchange.Redis
+    url: https://www.nuget.org/packages/StackExchange.Redis
+  supported_versions: '>=2.6.122 && <3.0.0'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  index: 23
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_023
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.WCFCLIENT
+  signal: traces
+  instrumentation_id: WCFCLIENT
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_WCFCLIENT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: WCF
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  index: 24
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_024
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.WCFCORE
+  signal: traces
+  instrumentation_id: WCFCORE
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_WCFCORE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: CoreWCF.Primitives
+    url: https://www.nuget.org/packages/CoreWCF.Primitives
+  supported_versions: '>=1.8.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  index: 25
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_025
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.WCFSERVICE
+  signal: traces
+  instrumentation_id: WCFSERVICE
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_WCFSERVICE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: WCF
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  not_supported_on:
+  - .NET
+  index: 26
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.ASPNET
+  signal: metrics
+  instrumentation_id: ASPNET
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_ASPNET_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: ASP.NET Framework
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  documentation:
+    name: ASP.NET metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNet-1.15.0/src/OpenTelemetry.Instrumentation.AspNet/README.md#list-of-metrics-produced
+  not_supported_on:
+  - .NET
+  notes:
+  - ASP.NET metrics are generated only if the AspNet trace instrumentation is also enabled.
+  index: 27
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_027
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.ASPNETCORE
+  signal: metrics
+  instrumentation_id: ASPNETCORE
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_ASPNETCORE_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: ASP.NET Core
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  documentation:
+    name: ASP.NET Core metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNetCore-1.15.0/src/OpenTelemetry.Instrumentation.AspNetCore/README.md#list-of-metrics-produced
+  not_supported_on:
+  - .NET Framework
+  index: 28
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_028
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.HTTPCLIENT
+  signal: metrics
+  instrumentation_id: HTTPCLIENT
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_HTTPCLIENT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name:
+      name: System.Net.Http.HttpClient
+      url: https://docs.microsoft.com/dotnet/api/system.net.http.httpclient
+  - name:
+      name: System.Net.HttpWebRequest
+      url: https://docs.microsoft.com/dotnet/api/system.net.httpwebrequest
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  documentation:
+    name: HttpClient metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Http-1.15.0/src/OpenTelemetry.Instrumentation.Http/README.md#list-of-metrics-produced
+  index: 29
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_029
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.NETRUNTIME
+  signal: metrics
+  instrumentation_id: NETRUNTIME
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_NETRUNTIME_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: OpenTelemetry.Instrumentation.Runtime
+    url: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Runtime
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  documentation:
+    name: Runtime metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.15.0/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
+  index: 30
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_030
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.NPGSQL
+  signal: metrics
+  instrumentation_id: NPGSQL
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_NPGSQL_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Npgsql
+    url: https://www.nuget.org/packages/Npgsql
+  supported_versions: '>=6.0.0'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  documentation:
+    name: Npgsql metrics
+    url: https://www.npgsql.org/doc/diagnostics/metrics.html
+  not_supported_on:
+  - .NET Framework
+  index: 31
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.NSERVICEBUS
+  signal: metrics
+  instrumentation_id: NSERVICEBUS
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_NSERVICEBUS_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: NServiceBus
+    url: https://www.nuget.org/packages/NServiceBus
+  supported_versions: '>=8.0.0 && <10.0.0'
+  instrumentation_types:
+  - source
+  - bytecode
+  instrumentation_type_operator: and
+  status: experimental
+  documentation:
+    name: NServiceBus metrics
+    url: https://docs.particular.net/samples/open-telemetry/prometheus-grafana/#reporting-metric-values
+  index: 32
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.PROCESS
+  signal: metrics
+  instrumentation_id: PROCESS
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_PROCESS_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: OpenTelemetry.Instrumentation.Process
+    url: https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Process
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  documentation:
+    name: Process metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Process-1.15.0-beta.1/src/OpenTelemetry.Instrumentation.Process/README.md#metrics
+  index: 33
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_033
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.SQLCLIENT
+  signal: metrics
+  instrumentation_id: SQLCLIENT
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_SQLCLIENT_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name:
+      name: Microsoft.Data.SqlClient
+      url: https://www.nuget.org/packages/Microsoft.Data.SqlClient
+  - name:
+      name: System.Data.SqlClient
+      url: https://www.nuget.org/packages/System.Data.SqlClient
+  - name:
+      name: System.Data
+      note: Shipped with .NET Framework
+  supported_versions: '*'
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  documentation:
+    name: SqlClient metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/releases/tag/Instrumentation.SqlClient-1.15.0-rc.1
+  notes:
+  - System.Data.SqlClient is deprecated.
+  - Microsoft.Data.SqlClient v3.* is not supported on .NET Framework due to an OpenTelemetry .NET issue.
+  - System.Data.SqlClient is supported from version 4.8.5.
+  index: 34
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_034
+- kind: signal_specific_instrumentation_promise
+  key: signals.logs.ILOGGER
+  signal: logs
+  instrumentation_id: ILOGGER
+  environment_toggle: OTEL_DOTNET_AUTO_LOGS_ILOGGER_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Extensions.Logging
+    url: https://www.nuget.org/packages/Microsoft.Extensions.Logging
+  supported_versions: '>=8.0.0'
+  instrumentation_types:
+  - bytecode
+  - source
+  instrumentation_type_operator: or
+  status: experimental
+  not_supported_on:
+  - .NET Framework
+  notes:
+  - For ASP.NET Core applications, LoggingBuilder instrumentation can be enabled without using the .NET CLR Profiler by setting
+    ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper.
+  index: 35
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_035
+- kind: signal_specific_instrumentation_promise
+  key: signals.logs.LOG4NET
+  signal: logs
+  instrumentation_id: LOG4NET
+  environment_toggle: OTEL_DOTNET_AUTO_LOGS_LOG4NET_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: log4net
+    url: https://www.nuget.org/packages/log4net
+  supported_versions: '>=2.0.13 && <4.0.0'
+  instrumentation_types:
+  - bytecode
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Instrumentation provides both trace context injection and logs bridge.
+  index: 36
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_036
+- kind: signal_specific_instrumentation_promise
+  key: signals.logs.NLOG
+  signal: logs
+  instrumentation_id: NLOG
+  environment_toggle: OTEL_DOTNET_AUTO_LOGS_NLOG_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: derived_from_global_signal_specific_pattern
+  libraries:
+  - name: NLog
+    url: https://www.nuget.org/packages/NLog
+  supported_versions: '>=5.0.0 && <7.0.0'
+  instrumentation_types:
+  - bytecode
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Instrumentation provides both trace context injection and logs bridge.
+  index: 37
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_037
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  scope: all_signals
+  description: Enables all instrumentations.
+  default_value: 'true'
+  status: experimental
+  index: 38
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_038
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
+  scope: signal
+  description: Enables all trace instrumentations. Overrides OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED.
+  default_value:
+    inherited_from: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  status: experimental
+  signal: traces
+  overrides:
+  - OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  index: 39
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_039
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
+  scope: signal_specific
+  description: Configuration pattern for enabling a specific trace instrumentation, where {0} is the uppercase ID of the instrumentation.
+    Overrides OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED.
+  default_value:
+    inherited_from: OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
+  status: experimental
+  signal: traces
+  is_pattern: true
+  placeholder:
+    name: '{0}'
+    meaning: uppercase case-sensitive instrumentation ID
+  overrides:
+  - OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
+  index: 40
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_040
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
+  scope: signal
+  description: Disables all metric instrumentations. Overrides OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED.
+  default_value:
+    inherited_from: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  status: experimental
+  signal: metrics
+  overrides:
+  - OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  index: 41
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_041
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
+  scope: signal_specific
+  description: Configuration pattern for enabling a specific metric instrumentation, where {0} is the uppercase ID of the
+    instrumentation. Overrides OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED.
+  default_value:
+    inherited_from: OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
+  status: experimental
+  signal: metrics
+  is_pattern: true
+  placeholder:
+    name: '{0}'
+    meaning: uppercase case-sensitive instrumentation ID
+  overrides:
+  - OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
+  index: 42
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_042
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
+  scope: signal
+  description: Disables all log instrumentations. Overrides OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED.
+  default_value:
+    inherited_from: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  status: experimental
+  signal: logs
+  overrides:
+  - OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  index: 43
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_043
+- kind: global_environment_control
+  key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
+  scope: signal_specific
+  description: Configuration pattern for enabling a specific log instrumentation, where {0} is the uppercase ID of the instrumentation.
+    Overrides OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED.
+  default_value:
+    inherited_from: OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
+  status: experimental
+  signal: logs
+  is_pattern: true
+  placeholder:
+    name: '{0}'
+    meaning: uppercase case-sensitive instrumentation ID
+  overrides:
+  - OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
+  index: 44
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
+  environment_variable: OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
+  description: Whether Entity Framework Core instrumentation can pass SQL statements through the db.statement attribute. Queries
+    might contain sensitive information. If set to false, db.statement is recorded only for executing stored procedures.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ENTITYFRAMEWORKCORE
+  attribute_names:
+  - db.statement
+  notes:
+  - May expose sensitive information.
+  index: 45
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_045
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
+  environment_variable: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
+  description: Whether GraphQL instrumentation can pass raw queries through the graphql.document attribute. Queries might
+    contain sensitive information.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: GRAPHQL
+  attribute_names:
+  - graphql.document
+  notes:
+  - May expose sensitive information.
+  index: 46
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
+  environment_variable: OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
+  description: Whether Oracle Client instrumentation can pass SQL statements through the db.statement attribute. Queries might
+    contain sensitive information. If set to false, db.statement is recorded only for executing stored procedures.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ORACLEMDA
+  attribute_names:
+  - db.statement
+  notes:
+  - May expose sensitive information.
+  index: 47
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_047
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
+  environment_variable: OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
+  description: Whether SQL Client instrumentation can pass SQL statements through the db.statement attribute. Queries might
+    contain sensitive information. If set to false, db.statement is recorded only for executing stored procedures.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: SQLCLIENT
+  attribute_names:
+  - db.statement
+  not_supported_on:
+  - .NET Framework for System.Data.SqlClient
+  notes:
+  - May expose sensitive information.
+  index: 48
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_048
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  description: Comma-separated list of HTTP header names. ASP.NET instrumentations capture HTTP request header values for
+    all configured header names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ASPNET
+  attribute_names:
+  - http.request.header
+  index: 49
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  description: Comma-separated list of HTTP header names. ASP.NET instrumentations capture HTTP response header values for
+    all configured header names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ASPNET
+  attribute_names:
+  - http.response.header
+  not_supported_on:
+  - IIS Classic mode
+  index: 50
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_050
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  description: Comma-separated list of HTTP header names. ASP.NET Core instrumentations capture HTTP request header values
+    for all configured header names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ASPNETCORE
+  attribute_names:
+  - http.request.header
+  index: 51
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_051
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  description: Comma-separated list of HTTP header names. ASP.NET Core instrumentations capture HTTP response header values
+    for all configured header names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ASPNETCORE
+  attribute_names:
+  - http.response.header
+  index: 52
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_052
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
+  description: Comma-separated list of gRPC metadata names. Grpc.Net.Client instrumentations capture gRPC request metadata
+    values for all configured metadata names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: GRPCNETCLIENT
+  attribute_names:
+  - grpc.request.metadata
+  index: 53
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
+  description: Comma-separated list of gRPC metadata names. Grpc.Net.Client instrumentations capture gRPC response metadata
+    values for all configured metadata names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: GRPCNETCLIENT
+  attribute_names:
+  - grpc.response.metadata
+  index: 54
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_054
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  description: Comma-separated list of HTTP header names. HTTP Client instrumentations capture HTTP request header values
+    for all configured header names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: HTTPCLIENT
+  attribute_names:
+  - http.request.header
+  index: 55
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_055
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  description: Comma-separated list of HTTP header names. HTTP Client instrumentations capture HTTP response header values
+    for all configured header names.
+  value_type: comma_separated_string
+  default_value: null
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: HTTPCLIENT
+  attribute_names:
+  - http.response.header
+  index: 56
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_056
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
+  environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
+  description: Whether ASP.NET Core instrumentation turns off redaction of the url.query attribute value.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ASPNETCORE
+  attribute_names:
+  - url.query
+  index: 57
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_057
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
+  environment_variable: OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
+  description: Whether HTTP client instrumentation turns off redaction of the url.full attribute value.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: HTTPCLIENT
+  attribute_names:
+  - url.full
+  index: 58
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_058
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
+  environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
+  description: Whether ASP.NET instrumentation turns off redaction of the url.query attribute value.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ASPNET
+  attribute_names:
+  - url.query
+  index: 59
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_059
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
+  environment_variable: OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
+  description: Enables IL rewriting of SqlCommand on .NET Framework to ensure CommandText is present for SqlClient instrumentation,
+    which is required for db.query.text and db.query.summary to be populated. Previously, CommandText was only available for
+    stored procedures. With this setting enabled, it is also available for raw queries. This changes the behavior of events
+    emitted by SqlEventSource, which might impact other parts of the application if this mechanism is used.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: SQLCLIENT
+  attribute_names:
+  - db.query.text
+  - db.query.summary
+  notes:
+  - Applies to .NET Framework IL rewriting for SqlCommand.
+  - May impact other parts of the application if they depend on SqlEventSource behavior.
+  index: 60
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_060
