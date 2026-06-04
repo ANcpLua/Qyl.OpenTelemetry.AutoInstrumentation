@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Reflection;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -17,5 +16,5 @@ public static class QylActivitySource
     /// <summary>The single source instance.</summary>
     public static readonly ActivitySource Source = new(
         Name,
-        typeof(QylActivitySource).Assembly.GetName().Version?.ToString() ?? "0.0.0");
+        QylInstrumentation.Version);
 }
