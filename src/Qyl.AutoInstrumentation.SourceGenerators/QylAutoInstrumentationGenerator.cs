@@ -780,20 +780,34 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitKafkaProducerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaProducer_" + target.MethodName, index, target.ReceiverType, "producer", target.Parameters, isAsync: true);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaProducer_" + target.MethodName, index, target.ReceiverType, "producer", target.Parameters, target.IsAsync);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity(");
         AppendKafkaTopicExpression(builder, target);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
-        builder.Append("                var result = await producer.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(").ConfigureAwait(false);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);");
-        builder.AppendLine("                return result;");
+
+        if (target.IsAsync)
+        {
+            builder.Append("                var result = await producer.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);");
+            builder.AppendLine("                return result;");
+        }
+        else
+        {
+            builder.Append("                producer.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);");
+        }
+
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
@@ -2447,25 +2461,45 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetKafkaProducerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
-        if (!string.Equals(symbol.Name, "ProduceAsync", StringComparison.Ordinal) ||
-            !IsOrImplementsConstructedGeneric(symbol.ContainingType, "Confluent.Kafka", "IProducer`2") ||
-            !TryGetTaskResult(symbol.ReturnType, out var resultType) ||
-            !IsConstructedGeneric(resultType, "Confluent.Kafka", "DeliveryResult`2") ||
-            !TryGetKafkaProduceParameters(symbol, out var parameters))
+        if (!IsOrImplementsConstructedGeneric(symbol.ContainingType, "Confluent.Kafka", "IProducer`2"))
         {
             return false;
         }
 
-        target = new InterceptorTarget(
-            InterceptorKind.KafkaProducer,
-            "signals.traces.KAFKA",
-            "KAFKA",
-            CleanTypeName(symbol.ContainingType),
-            "ProduceAsync",
-            CleanTypeName(symbol.ReturnType),
-            parameters,
-            true);
-        return true;
+        if (string.Equals(symbol.Name, "ProduceAsync", StringComparison.Ordinal) &&
+            TryGetTaskResult(symbol.ReturnType, out var resultType) &&
+            IsConstructedGeneric(resultType, "Confluent.Kafka", "DeliveryResult`2") &&
+            TryGetKafkaProduceParameters(symbol, isAsync: true, out var parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.KafkaProducer,
+                "signals.traces.KAFKA",
+                "KAFKA",
+                CleanTypeName(symbol.ContainingType),
+                "ProduceAsync",
+                CleanTypeName(symbol.ReturnType),
+                parameters,
+                true);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "Produce", StringComparison.Ordinal) &&
+            symbol.ReturnsVoid &&
+            TryGetKafkaProduceParameters(symbol, isAsync: false, out parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.KafkaProducer,
+                "signals.traces.KAFKA",
+                "KAFKA",
+                CleanTypeName(symbol.ContainingType),
+                "Produce",
+                "void",
+                parameters,
+                false);
+            return true;
+        }
+
+        return false;
     }
 
     private static bool TryGetKafkaConsumerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
@@ -2829,7 +2863,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool TryGetKafkaProduceParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetKafkaProduceParameters(IMethodSymbol symbol, bool isAsync, out ImmutableArray<ParameterSpec> parameters)
     {
         parameters = ImmutableArray<ParameterSpec>.Empty;
         if (symbol.Parameters.Length is not (2 or 3))
@@ -2840,12 +2874,31 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (!firstIsTopic || !IsConstructedGeneric(symbol.Parameters[1].Type, "Confluent.Kafka", "Message`2"))
             return false;
 
-        if (symbol.Parameters.Length is 3 && !IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
-            return false;
+        if (symbol.Parameters.Length is 3)
+        {
+            if (isAsync)
+            {
+                if (!IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
+                    return false;
+            }
+            else if (!IsKafkaDeliveryReportHandler(symbol.Parameters[2].Type))
+            {
+                return false;
+            }
+        }
 
         parameters = Parameters(symbol);
         return true;
     }
+
+    private static bool IsKafkaDeliveryReportHandler(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol
+        {
+            ConstructedFrom.MetadataName: "Action`1",
+            TypeArguments.Length: 1,
+        } named &&
+        string.Equals(named.ConstructedFrom.ContainingNamespace.ToDisplayString(), "System", StringComparison.Ordinal) &&
+        IsConstructedGeneric(named.TypeArguments[0], "Confluent.Kafka", "DeliveryReport`2");
 
     private static bool TryGetKafkaConsumeParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
     {
