@@ -182,6 +182,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     <RestoreSources>{feed};{NUGET_ORG}</RestoreSources>
     <RestorePackagesPath>{packages}</RestorePackagesPath>
     <RestoreNoCache>true</RestoreNoCache>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -197,8 +199,35 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     return project_path
 
 
+def verify_generated_interceptor_source(directory: Path) -> None:
+    generated_files = sorted((directory / "Generated").rglob("QylAutoInstrumentation.Interceptors.g.cs"))
+    if len(generated_files) != 1:
+        fail(f"expected exactly one generated interceptor source file, found {len(generated_files)}")
+
+    text = generated_files[0].read_text(encoding="utf-8")
+    for token in [
+        "#nullable enable",
+        "namespace Qyl.AutoInstrumentation.Generated",
+        "[global::System.Runtime.CompilerServices.InterceptsLocationAttribute(",
+        "// Intercepted call at ",
+        "ILogger_Log_",
+        "global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(",
+    ]:
+        if token not in text:
+            fail(f"generated interceptor source missing token: {token}")
+
+    for token in [
+        "QylActivitySource",
+        ".SetTag(",
+        "new global::System.Diagnostics.Activity",
+    ]:
+        if token in text:
+            fail(f"generated interceptor source must not inline telemetry behavior: {token}")
+
+
 def build_and_run(project: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], project.parent, env)
+    verify_generated_interceptor_source(project.parent)
     assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
     return subprocess.run(
         ["dotnet", str(assembly)],
