@@ -1216,11 +1216,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GraphQl_" + target.MethodName, index, target.ReceiverType, "executer", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity(");
-        AppendGraphQlDocumentExpression(builder, target);
-        builder.Append(", ");
+        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity();");
+        builder.AppendLine("            if (activity is not null)");
+        builder.AppendLine("            {");
+        builder.Append("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordExecutionOptions(activity, ");
         AppendGraphQlOperationNameExpression(builder, target);
+        builder.Append(", ");
+        AppendGraphQlDocumentCaptureExpression(builder, target);
         builder.AppendLine(");");
+        builder.AppendLine("            }");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
         builder.Append("                var resultTask = executer.");
@@ -1240,12 +1244,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
-    private static void AppendGraphQlDocumentExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, InterceptorTarget target)
     {
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
         {
+            builder.Append("global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current.GraphQlSetDocument && ");
+            builder.Append(target.Parameters[0].Name);
+            builder.Append(" is not null ? ");
             builder.Append(target.Parameters[0].Name);
             builder.Append(".Query");
+            builder.Append(" : null");
             return;
         }
 
@@ -1256,6 +1264,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
         {
+            builder.Append(target.Parameters[0].Name);
+            builder.Append(" is null ? null : ");
             builder.Append(target.Parameters[0].Name);
             builder.Append(".OperationName");
             return;
