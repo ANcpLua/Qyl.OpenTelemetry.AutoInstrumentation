@@ -37,7 +37,7 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
             ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "db.sqlclient");
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, "microsoft.sql_server");
+        SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, QylSemanticAttributes.DbSystemMicrosoftSqlServer);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, command.Namespace);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, command.Operation);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, command.QuerySummary);

@@ -30,11 +30,11 @@ internal static class EntityFrameworkCorePayloadReader
     private static string? MapProviderName(string? providerName)
         => providerName switch
         {
-            "Microsoft.EntityFrameworkCore.Sqlite" => "sqlite",
-            "Microsoft.EntityFrameworkCore.SqlServer" => "microsoft.sql_server",
-            "Npgsql.EntityFrameworkCore.PostgreSQL" => "postgresql",
-            "Pomelo.EntityFrameworkCore.MySql" => "mysql",
-            "MySql.EntityFrameworkCore" => "mysql",
+            "Microsoft.EntityFrameworkCore.Sqlite" => QylSemanticAttributes.DbSystemSqlite,
+            "Microsoft.EntityFrameworkCore.SqlServer" => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
+            "Npgsql.EntityFrameworkCore.PostgreSQL" => QylSemanticAttributes.DbSystemPostgresql,
+            "Pomelo.EntityFrameworkCore.MySql" => QylSemanticAttributes.DbSystemMysql,
+            "MySql.EntityFrameworkCore" => QylSemanticAttributes.DbSystemMysql,
             "Oracle.EntityFrameworkCore" => "oracle",
             "IBM.EntityFrameworkCore" => "db2",
             _ => null,

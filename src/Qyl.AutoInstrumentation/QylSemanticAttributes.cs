@@ -11,7 +11,7 @@ using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attribute
 using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
-internal static class QylSemanticAttributes
+public static class QylSemanticAttributes
 {
     public const string QylInstrumentationDomain = "qyl.instrumentation.domain";
 
