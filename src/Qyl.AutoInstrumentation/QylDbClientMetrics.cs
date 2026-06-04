@@ -5,7 +5,7 @@ namespace Qyl.AutoInstrumentation;
 public static class QylDbClientMetrics
 {
     private static readonly Meter Meter = new(QylMetricMeters.DatabaseMeterName);
-    private static readonly Histogram<double> OperationDuration = Meter.CreateHistogram<double>("db.client.operation.duration", "s");
+    private static readonly Histogram<double> OperationDuration = Meter.CreateHistogram<double>(QylMetricNames.DbClientOperationDuration, "s");
 
     public static long GetTimestamp()
         => TimeProvider.System.GetTimestamp();

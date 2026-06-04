@@ -37,21 +37,21 @@ internal static class QylRuntimeProcessMetrics
 
         private static readonly Meter Meter = new(QylMetricMeters.NetRuntimeMeterName);
         private static readonly ObservableCounter<long> GcCollections = Meter.CreateObservableCounter(
-            "process.runtime.dotnet.gc.collections.count",
+            QylMetricNames.ProcessRuntimeDotnetGcCollectionsCount,
             ObserveGcCollections);
         private static readonly ObservableGauge<long> GcHeapSize = Meter.CreateObservableGauge(
-            "process.runtime.dotnet.gc.heap.size",
+            QylMetricNames.ProcessRuntimeDotnetGcHeapSize,
             static () => GC.GetGCMemoryInfo().HeapSizeBytes,
             "By");
         private static readonly ObservableGauge<long> GcObjectsSize = Meter.CreateObservableGauge(
-            "process.runtime.dotnet.gc.objects.size",
+            QylMetricNames.ProcessRuntimeDotnetGcObjectsSize,
             static () => GC.GetTotalMemory(false),
             "By");
         private static readonly ObservableGauge<int> ThreadPoolThreads = Meter.CreateObservableGauge(
-            "process.runtime.dotnet.thread_pool.threads.count",
+            QylMetricNames.ProcessRuntimeDotnetThreadPoolThreadsCount,
             static () => ThreadPool.ThreadCount);
         private static readonly ObservableGauge<long> ThreadPoolQueueLength = Meter.CreateObservableGauge(
-            "process.runtime.dotnet.thread_pool.queue.length",
+            QylMetricNames.ProcessRuntimeDotnetThreadPoolQueueLength,
             static () => ThreadPool.PendingWorkItemCount);
 
         public static void Initialize()
@@ -89,15 +89,15 @@ internal static class QylRuntimeProcessMetrics
 
         private static readonly Meter Meter = new(QylMetricMeters.ProcessMeterName);
         private static readonly ObservableCounter<double> CpuTime = Meter.CreateObservableCounter(
-            "process.cpu.time",
+            QylMetricNames.ProcessCpuTime,
             ObserveCpuTime,
             "s");
         private static readonly ObservableGauge<long> MemoryUsage = Meter.CreateObservableGauge(
-            "process.memory.usage",
+            QylMetricNames.ProcessMemoryUsage,
             static () => Environment.WorkingSet,
             "By");
         private static readonly ObservableGauge<long> MemoryVirtual = Meter.CreateObservableGauge(
-            "process.memory.virtual",
+            QylMetricNames.ProcessMemoryVirtual,
             ObserveVirtualMemory,
             "By");
 
