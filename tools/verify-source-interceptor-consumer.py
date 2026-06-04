@@ -66,6 +66,24 @@ if (captured.Count == 1)
     Console.WriteLine(QylSemanticAttributes.LogSeverity + "=" + severity);
 }
 
+ILogger throwingLogger = new ThrowingLogger();
+try
+{
+    throwingLogger.Log(
+        LogLevel.Error,
+        new EventId(9, "source-generated-throw"),
+        "source-generated-throw",
+        exception: null,
+        static (state, exception) => exception is null ? state : state + ":" + exception.GetType().Name);
+}
+catch (InvalidOperationException exception)
+{
+    Console.WriteLine("throwing.type=" + exception.GetType().Name);
+    Console.WriteLine("throwing.message=" + exception.Message);
+}
+
+Console.WriteLine("activity.count.after.throw=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
 return 0;
 
 internal sealed class CapturingLogger : ILogger
@@ -89,6 +107,21 @@ internal sealed class CapturingLogger : ILogger
         Last = logLevel + ":" + eventId.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + formatter(state, exception);
     }
 }
+
+internal sealed class ThrowingLogger : ILogger
+{
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+        => throw new InvalidOperationException("logger-failure");
+}
 '''
 
 
@@ -99,6 +132,9 @@ activity.name=ILogger log
 activity.kind=Internal
 qyl.instrumentation.domain=log.ilogger
 log.severity=Warning
+throwing.type=InvalidOperationException
+throwing.message=logger-failure
+activity.count.after.throw=2
 """
 
 
