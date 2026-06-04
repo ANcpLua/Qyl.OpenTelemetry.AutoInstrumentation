@@ -308,6 +308,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
+        builder.Append(", ");
+        AppendGrpcMetadataExpression(builder, target);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
@@ -598,7 +600,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append(target.ReturnType);
         builder.AppendLine("(");
         builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync(call.ResponseAsync, activity),");
-        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity),");
         builder.AppendLine("                    call.GetStatus,");
         builder.AppendLine("                    call.GetTrailers,");
         builder.AppendLine("                    () =>");
@@ -633,7 +635,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append(target.ReturnType);
         builder.AppendLine("(");
         builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity),");
-        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity),");
         builder.AppendLine("                    call.GetStatus,");
         builder.AppendLine("                    call.GetTrailers,");
         EmitGrpcDisposeAction(builder);
@@ -659,7 +661,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("(");
         builder.AppendLine("                    call.RequestStream,");
         builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync(call.ResponseAsync, activity),");
-        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity),");
         builder.AppendLine("                    call.GetStatus,");
         builder.AppendLine("                    call.GetTrailers,");
         EmitGrpcDisposeAction(builder);
@@ -685,7 +687,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("(");
         builder.AppendLine("                    call.RequestStream,");
         builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity),");
-        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity),");
         builder.AppendLine("                    call.GetStatus,");
         builder.AppendLine("                    call.GetTrailers,");
         EmitGrpcDisposeAction(builder);
@@ -706,6 +708,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AppendStringLiteral(builder, target.ReceiverType);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
+        builder.Append(", ");
+        AppendGrpcMetadataExpression(builder, target);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
@@ -729,6 +733,20 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                            global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(activity);");
         builder.AppendLine("                        }");
         builder.AppendLine("                    });");
+    }
+
+    private static void AppendGrpcMetadataExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        foreach (var parameter in target.Parameters)
+        {
+            if (string.Equals(parameter.TypeName, "global::Grpc.Core.Metadata", StringComparison.Ordinal))
+            {
+                builder.Append(parameter.Name);
+                return;
+            }
+        }
+
+        builder.Append("null");
     }
 
     private static void EmitGrpcStreamReaderWrapper(StringBuilder builder)

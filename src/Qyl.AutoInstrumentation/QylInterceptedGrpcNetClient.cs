@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Grpc.Core;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -6,7 +7,7 @@ public static class QylInterceptedGrpcNetClient
 {
     private const string GrpcDomain = "rpc.grpc";
 
-    public static Activity? StartActivity(string clientTypeName, string methodName)
+    public static Activity? StartActivity(string clientTypeName, string methodName, Metadata? requestMetadata)
     {
         ArgumentNullException.ThrowIfNull(clientTypeName);
         ArgumentNullException.ThrowIfNull(methodName);
@@ -23,6 +24,7 @@ public static class QylInterceptedGrpcNetClient
         activity.SetTag(QylSemanticAttributes.RpcSystem, "grpc");
         activity.SetTag(QylSemanticAttributes.RpcService, service);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
+        SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcRequestMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadata, requestMetadata);
         return activity;
     }
 
@@ -48,6 +50,13 @@ public static class QylInterceptedGrpcNetClient
         }
     }
 
+    public static async Task<Metadata> ObserveResponseHeadersAsync(Task<Metadata> responseHeadersTask, Activity? activity)
+    {
+        var metadata = await responseHeadersTask.ConfigureAwait(false);
+        SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcResponseMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadata, metadata);
+        return metadata;
+    }
+
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
@@ -65,6 +74,31 @@ public static class QylInterceptedGrpcNetClient
 
     public static void Dispose(Activity? activity)
         => activity?.Dispose();
+
+    private static void SetConfiguredMetadata(Activity? activity, string prefix, string[] configuredMetadata, Metadata? metadata)
+    {
+        if (activity is null || metadata is null || configuredMetadata.Length is 0)
+            return;
+
+        foreach (var metadataName in configuredMetadata)
+        {
+            var normalizedName = NormalizeMetadataName(metadataName);
+            foreach (var entry in metadata)
+            {
+                if (entry.IsBinary ||
+                    !string.Equals(entry.Key, normalizedName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                activity.SetTag(prefix + normalizedName, entry.Value);
+                break;
+            }
+        }
+    }
+
+    private static string NormalizeMetadataName(string metadataName)
+        => metadataName.Trim().ToLowerInvariant().Replace('_', '-');
 
     private static string GetServiceName(string clientTypeName)
     {
