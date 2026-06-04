@@ -1355,8 +1355,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.StartPublishActivity(");
         AppendRabbitMqExchangeExpression(builder, target);
-        builder.Append(", ");
-        AppendRabbitMqRoutingKeyExpression(builder, target);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
@@ -1395,18 +1393,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal))
         {
             builder.Append(target.Parameters[0].Name);
-            return;
-        }
-
-        builder.Append("null");
-    }
-
-    private static void AppendRabbitMqRoutingKeyExpression(StringBuilder builder, InterceptorTarget target)
-    {
-        if (target.Parameters.Length > 1 &&
-            string.Equals(target.Parameters[1].TypeName, "string", StringComparison.Ordinal))
-        {
-            builder.Append(target.Parameters[1].Name);
             return;
         }
 

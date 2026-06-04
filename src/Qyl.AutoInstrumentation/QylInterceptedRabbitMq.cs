@@ -6,7 +6,7 @@ public static class QylInterceptedRabbitMq
 {
     private const string RabbitMqDomain = "messaging.rabbitmq";
 
-    public static Activity? StartPublishActivity(string? exchange, string? routingKey)
+    public static Activity? StartPublishActivity(string? exchange)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.RabbitMq))
             return null;
@@ -20,9 +20,8 @@ public static class QylInterceptedRabbitMq
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish);
 
-        var destination = string.IsNullOrWhiteSpace(exchange) ? routingKey : exchange;
-        if (!string.IsNullOrWhiteSpace(destination))
-            activity.SetTag(QylSemanticAttributes.MessagingDestinationName, destination);
+        if (!string.IsNullOrWhiteSpace(exchange))
+            activity.SetTag(QylSemanticAttributes.MessagingDestinationName, exchange);
 
         return activity;
     }
