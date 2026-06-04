@@ -79,6 +79,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetStackExchangeRedisInvocation(symbol, out target))
             return true;
 
+        if (TryGetLoggerInvocation(symbol, out target))
+            return true;
+
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
@@ -142,6 +145,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitKafkaConsumerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
+                EmitLoggerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
@@ -552,6 +557,24 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("null");
     }
 
+    private static void EmitLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetInterceptsLocationAttributeSyntax(invocation.Location);
+        builder.Append("        ");
+        builder.AppendLine(attribute);
+        builder.Append("        public static void ILogger_Log_");
+        builder.Append(index.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        builder.AppendLine("<TState>(");
+        builder.AppendLine("            this global::Microsoft.Extensions.Logging.ILogger logger,");
+        builder.AppendLine("            global::Microsoft.Extensions.Logging.LogLevel logLevel,");
+        builder.AppendLine("            global::Microsoft.Extensions.Logging.EventId eventId,");
+        builder.AppendLine("            TState state,");
+        builder.AppendLine("            global::System.Exception? exception,");
+        builder.AppendLine("            global::System.Func<TState, global::System.Exception?, string> formatter)");
+        builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);");
+        builder.AppendLine();
+    }
+
     private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
@@ -882,6 +905,34 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             CleanTypeName(symbol.ReturnType),
             parameters,
             true);
+        return true;
+    }
+
+    private static bool TryGetLoggerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Log", StringComparison.Ordinal) ||
+            !symbol.ReturnsVoid ||
+            !symbol.IsGenericMethod ||
+            symbol.TypeParameters.Length is not 1 ||
+            !IsType(symbol.ContainingType, "global::Microsoft.Extensions.Logging.ILogger") ||
+            symbol.Parameters.Length is not 5 ||
+            !IsType(symbol.Parameters[0].Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
+            !IsType(symbol.Parameters[1].Type, "global::Microsoft.Extensions.Logging.EventId") ||
+            !IsLoggerFormatter(symbol.Parameters[4].Type))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ILoggerLog,
+            "signals.logs.ILOGGER",
+            "ILOGGER",
+            CleanTypeName(symbol.ContainingType),
+            "Log",
+            "void",
+            Parameters(symbol),
+            false);
         return true;
     }
 
@@ -1330,6 +1381,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsArrayOf(ITypeSymbol? symbol, string elementFullyQualifiedName)
         => symbol is IArrayTypeSymbol array && IsType(array.ElementType, elementFullyQualifiedName);
 
+    private static bool IsLoggerFormatter(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol
+        {
+            Name: "Func",
+            TypeArguments.Length: 3,
+        } named &&
+        IsType(named.TypeArguments[1], "global::System.Exception") &&
+        IsType(named.TypeArguments[2], "global::System.String");
+
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");
 
@@ -1481,6 +1541,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         KafkaProducer,
         KafkaConsumer,
         StackExchangeRedisStringGetAsync,
+        ILoggerLog,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
