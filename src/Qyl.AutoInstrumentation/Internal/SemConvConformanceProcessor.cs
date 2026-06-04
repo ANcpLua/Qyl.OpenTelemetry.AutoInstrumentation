@@ -28,7 +28,7 @@ internal static class SemConvConformanceProcessor
         {
             foreach (var tag in activity.TagObjects)
             {
-                var verdict = QylSemConvRegistry.KnownKeys.Contains(tag.Key) ? "ok" : "unknown";
+                var verdict = QylSemConvRegistry.IsKnownKey(tag.Key) ? "ok" : "unknown";
                 QylSelfTelemetry.AttributeChecks.Add(
                     1, new KeyValuePair<string, object?>("qyl.conformance.verdict", verdict));
             }
