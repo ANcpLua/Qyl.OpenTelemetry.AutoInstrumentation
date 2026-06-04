@@ -18,6 +18,26 @@ FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
     "dispatchOperation.Invoker",
     "QylCoreWcf",
 ]
+FORBIDDEN_GENERATOR_MECHANISM_TOKENS = [
+    "CORECLR_PROFILER",
+    "DOTNET_STARTUP_HOOKS",
+    "ICorProfiler",
+    "ReJIT",
+    "ILRewrite",
+    "ILRewriter",
+    "Assembly.Load",
+    "Assembly.GetTypes",
+    "System.Reflection",
+    "Activator.CreateInstance",
+    "Type.GetType",
+    "GetTypes(",
+    "GetFields(",
+    "GetProperties(",
+    "GetMethods(",
+    "MakeGeneric",
+    "CallSite",
+    "dynamic ",
+]
 
 
 def fail(message: str) -> None:
@@ -186,6 +206,10 @@ def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]
     for token in FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS:
         if token in generator:
             fail(f"generator must not emit runtime dispatch instrumentation: {token}")
+
+    for token in FORBIDDEN_GENERATOR_MECHANISM_TOKENS:
+        if token in generator:
+            fail(f"generator must not use forbidden instrumentation mechanism: {token}")
 
 
 def main() -> None:
