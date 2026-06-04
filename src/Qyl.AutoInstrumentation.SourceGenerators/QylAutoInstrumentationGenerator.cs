@@ -55,7 +55,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (!TryGetInvocation(symbol, receiverType, out var target))
             return null;
 
-        if (InstrumentationContract.TryGetSupportedSignal(target.ContractKey) is null)
+        if (!IsSupportedTarget(target))
             return null;
 
         var interceptableLocation = context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken);
@@ -63,6 +63,23 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return null;
 
         return new InterceptedInvocation(target, interceptableLocation);
+    }
+
+    private static bool IsSupportedTarget(InterceptorTarget target)
+    {
+        if (InstrumentationContract.TryGetSupportedSignal(target.ContractKey) is null)
+            return false;
+
+        if (target.AdditionalContractKeys is not { Length: > 0 } additionalContractKeys)
+            return true;
+
+        foreach (var contractKey in additionalContractKeys)
+        {
+            if (InstrumentationContract.TryGetSupportedSignal(contractKey) is null)
+                return false;
+        }
+
+        return true;
     }
 
     private static ITypeSymbol? GetInvocationReceiverType(
@@ -1940,7 +1957,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             methodName,
             returnType,
             parameters,
-            isAsync);
+            isAsync,
+            AdditionalContractKeys: ContractKeys("signals.metrics.HTTPCLIENT"));
         return true;
     }
 
@@ -1967,7 +1985,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             methodName,
             returnType,
             parameters,
-            isAsync);
+            isAsync,
+            AdditionalContractKeys: GetDbMetricContractKeys(instrumentationId));
         return true;
     }
 
@@ -2110,7 +2129,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             false,
-            ExtensionContainingType: extensionContainingType);
+            ExtensionContainingType: extensionContainingType,
+            AdditionalContractKeys: ContractKeys(
+                "signals.metrics.HTTPCLIENT",
+                "signals.metrics.NETRUNTIME",
+                "signals.metrics.NPGSQL",
+                "signals.metrics.NSERVICEBUS",
+                "signals.metrics.PROCESS",
+                "signals.metrics.SQLCLIENT"));
         return true;
     }
 
@@ -2482,7 +2508,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             true,
             typeParameterList,
             GetConstraintClauses(symbol),
-            GetReducedExtensionContainingType(symbol));
+            GetReducedExtensionContainingType(symbol),
+            AdditionalContractKeys: ContractKeys("signals.metrics.NSERVICEBUS"));
         return true;
     }
 
@@ -3199,7 +3226,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             methodName,
             returnType,
             parameters,
-            false);
+            false,
+            AdditionalContractKeys: ContractKeys("signals.metrics.HTTPCLIENT"));
+
+    private static string[] GetDbMetricContractKeys(string instrumentationId)
+        => instrumentationId switch
+        {
+            "NPGSQL" => ContractKeys("signals.metrics.NPGSQL"),
+            "SQLCLIENT" => ContractKeys("signals.metrics.SQLCLIENT"),
+            _ => Array.Empty<string>(),
+        };
+
+    private static string[] ContractKeys(params string[] contractKeys)
+        => contractKeys;
 
     private static bool TryGetSendShape(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
     {
@@ -3999,7 +4038,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         bool IsAsync,
         string TypeParameterList = "",
         string ConstraintClauses = "",
-        string ExtensionContainingType = "");
+        string ExtensionContainingType = "",
+        string[]? AdditionalContractKeys = null);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }
