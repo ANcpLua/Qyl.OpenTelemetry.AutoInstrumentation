@@ -1464,8 +1464,34 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitExternalLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index, string domain)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, "void", target.InstrumentationId + "_" + target.MethodName, index, target.ReceiverType, "logger", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            "void",
+            target.InstrumentationId + "_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "logger",
+            target.Parameters,
+            isAsync: false,
+            typeParameterList: target.TypeParameterList,
+            constraintClauses: target.ConstraintClauses);
         builder.AppendLine("        {");
+        if (target.ExtensionContainingType is { Length: > 0 })
+        {
+            builder.Append("            if (!logger.");
+            builder.Append(target.ExtensionContainingType);
+            builder.AppendLine(")");
+            builder.AppendLine("            {");
+            builder.Append("                logger.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+            builder.AppendLine("                return;");
+            builder.AppendLine("            }");
+        }
+
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.StartActivity(");
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.Append(", ");
@@ -2824,7 +2850,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             symbol.Name,
             "void",
             Parameters(symbol),
-            false);
+            false,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            ExtensionContainingType: GetExternalLoggerEnabledProperty(symbol));
         return true;
     }
 
@@ -2846,7 +2875,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             symbol.Name,
             "void",
             Parameters(symbol),
-            false);
+            false,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            ExtensionContainingType: GetExternalLoggerEnabledProperty(symbol));
         return true;
     }
 
@@ -2860,6 +2892,50 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "Error" or "ErrorFormat" or
             "Fatal" or "FatalFormat" or
             "Critical" or "CriticalFormat";
+
+    private static string GetExternalLoggerEnabledProperty(IMethodSymbol symbol)
+    {
+        var propertyName = symbol.Name switch
+        {
+            "Trace" or "TraceFormat" => "IsTraceEnabled",
+            "Debug" or "DebugFormat" => "IsDebugEnabled",
+            "Info" or "InfoFormat" => "IsInfoEnabled",
+            "Warn" or "WarnFormat" or "Warning" or "WarningFormat" => "IsWarnEnabled",
+            "Error" or "ErrorFormat" => "IsErrorEnabled",
+            "Fatal" or "FatalFormat" or "Critical" or "CriticalFormat" => "IsFatalEnabled",
+            _ => string.Empty,
+        };
+
+        return propertyName.Length > 0 && HasReadableBooleanProperty(symbol.ContainingType, propertyName)
+            ? propertyName
+            : string.Empty;
+    }
+
+    private static bool HasReadableBooleanProperty(ITypeSymbol? symbol, string propertyName)
+    {
+        for (var current = symbol; current is not null; current = current.BaseType)
+        {
+            foreach (var member in current.GetMembers(propertyName))
+            {
+                if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
+                    return true;
+            }
+        }
+
+        if (symbol is INamedTypeSymbol named)
+        {
+            foreach (var interfaceType in named.AllInterfaces)
+            {
+                foreach (var member in interfaceType.GetMembers(propertyName))
+                {
+                    if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
 
     private static bool IsLog4NetLoggerType(ITypeSymbol? symbol)
     {
