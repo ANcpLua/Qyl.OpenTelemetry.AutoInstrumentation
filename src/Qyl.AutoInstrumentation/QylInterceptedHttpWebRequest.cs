@@ -35,11 +35,25 @@ public static class QylInterceptedHttpWebRequest
     {
         if (activity is not null && result is HttpWebResponse response)
             activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, (int)response.StatusCode);
+
+        RecordDuration(activity);
     }
 
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
+        RecordDuration(activity);
+    }
+
+    private static void RecordDuration(Activity? activity)
+    {
+        if (activity is null ||
+            !QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
+        {
+            return;
+        }
+
+        QylHttpClientMetrics.RecordRequestDuration(activity.StartTimeUtc);
     }
 }

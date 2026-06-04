@@ -458,7 +458,9 @@ public static class QylInterceptedHttpClient
     {
         try
         {
-            return await originalTask.ConfigureAwait(false);
+            var result = await originalTask.ConfigureAwait(false);
+            RecordSuccess(activity);
+            return result;
         }
         catch (Exception exception)
         {
@@ -534,6 +536,13 @@ public static class QylInterceptedHttpClient
             activity.SetTag(QylSemanticAttributes.ErrorType, ((int)response.StatusCode).ToString(CultureInfo.InvariantCulture));
             activity.SetStatus(ActivityStatusCode.Error);
         }
+
+        RecordDuration(activity);
+    }
+
+    private static void RecordSuccess(Activity activity)
+    {
+        RecordDuration(activity);
     }
 
     private static void ThrowIfInvalidCallTarget(HttpClient client, HttpRequestMessage request)
@@ -552,6 +561,18 @@ public static class QylInterceptedHttpClient
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
+        RecordDuration(activity);
+    }
+
+    private static void RecordDuration(Activity? activity)
+    {
+        if (activity is null ||
+            !QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
+        {
+            return;
+        }
+
+        QylHttpClientMetrics.RecordRequestDuration(activity.StartTimeUtc);
     }
 
     private static string NormalizeMethod(string? method)
