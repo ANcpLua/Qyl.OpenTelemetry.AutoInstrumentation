@@ -10,7 +10,7 @@ public static class QylInterceptedWcfCore
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.WcfCore))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("CoreWCF " + operationName, ActivityKind.Server);
+        var activity = QylActivitySource.Source.StartActivity("CoreWCF SERVER", ActivityKind.Server);
         if (activity is null)
             return null;
 

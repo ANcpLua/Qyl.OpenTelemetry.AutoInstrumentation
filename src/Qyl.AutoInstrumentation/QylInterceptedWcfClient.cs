@@ -10,7 +10,7 @@ public static class QylInterceptedWcfClient
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.WcfClient))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("WCF " + methodName, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("WCF CLIENT", ActivityKind.Client);
         if (activity is null)
             return null;
 
