@@ -97,13 +97,13 @@ public static class QylInterceptedMongoDb
     private static string NormalizeOperation(string operationName)
         => operationName switch
         {
-            "FindAsync" => "find",
-            "AggregateAsync" => "aggregate",
-            "InsertOneAsync" or "InsertManyAsync" => "insert",
-            "ReplaceOneAsync" => "replace",
-            "DeleteOneAsync" or "DeleteManyAsync" => "delete",
-            "UpdateOneAsync" or "UpdateManyAsync" => "update",
-            "CountDocumentsAsync" or "EstimatedDocumentCountAsync" => "count",
+            "Find" or "FindAsync" => "find",
+            "Aggregate" or "AggregateAsync" => "aggregate",
+            "InsertOne" or "InsertOneAsync" or "InsertMany" or "InsertManyAsync" => "insert",
+            "ReplaceOne" or "ReplaceOneAsync" => "replace",
+            "DeleteOne" or "DeleteOneAsync" or "DeleteMany" or "DeleteManyAsync" => "delete",
+            "UpdateOne" or "UpdateOneAsync" or "UpdateMany" or "UpdateManyAsync" => "update",
+            "CountDocuments" or "CountDocumentsAsync" or "EstimatedDocumentCount" or "EstimatedDocumentCountAsync" => "count",
             _ => operationName,
         };
 }
