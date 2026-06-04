@@ -13,7 +13,7 @@ public static class QylInterceptedExternalLogger
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, instrumentationId))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity(domain + " " + methodName, ActivityKind.Internal);
+        var activity = QylActivitySource.Source.StartActivity(GetActivityName(instrumentationId), ActivityKind.Internal);
         if (activity is null)
             return null;
 
@@ -45,4 +45,12 @@ public static class QylInterceptedExternalLogger
 
         return QylSemanticAttributes.LogSeverityOther;
     }
+
+    private static string GetActivityName(string instrumentationId)
+        => instrumentationId switch
+        {
+            QylAutoInstrumentationIds.NLog => "NLog log",
+            QylAutoInstrumentationIds.Log4Net => "log4net log",
+            _ => "external log",
+        };
 }
