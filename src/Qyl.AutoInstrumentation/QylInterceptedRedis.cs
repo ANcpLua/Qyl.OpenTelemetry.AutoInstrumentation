@@ -6,19 +6,19 @@ public static class QylInterceptedRedis
 {
     private const string RedisDomain = "db.redis";
 
-    public static Activity? StartStringGetActivity(string? key)
+    public static Activity? StartCommandActivity(string operationName)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.StackExchangeRedis))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Redis " + QylSemanticAttributes.DbOperationNameGet, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("Redis " + operationName, ActivityKind.Client);
         if (activity is null)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, RedisDomain);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, QylSemanticAttributes.DbOperationNameGet);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, QylSemanticAttributes.DbOperationNameGet);
+        activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
+        activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);
 
         return activity;
     }

@@ -225,7 +225,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitNServiceBusInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.QuartzJobExecute)
                 EmitQuartzInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
+            else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisCommandAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
                 EmitGraphQlInterceptor(builder, invocation, index);
@@ -1187,8 +1187,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "StackExchangeRedis_" + target.MethodName, index, target.ReceiverType, "database", target.Parameters, isAsync: true);
         builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRedis.StartStringGetActivity(");
-        AppendRedisKeyExpression(builder, target);
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRedis.StartCommandActivity(");
+        AppendStringLiteral(builder, GetRedisOperationName(target.MethodName));
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
@@ -1211,19 +1211,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine();
-    }
-
-    private static void AppendRedisKeyExpression(StringBuilder builder, InterceptorTarget target)
-    {
-        if (target.Parameters.Length > 0 &&
-            string.Equals(target.Parameters[0].TypeName, "global::StackExchange.Redis.RedisKey", StringComparison.Ordinal))
-        {
-            builder.Append(target.Parameters[0].Name);
-            builder.Append(".ToString()");
-            return;
-        }
-
-        builder.Append("null");
     }
 
     private static void EmitGraphQlInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -2455,7 +2442,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         target = new InterceptorTarget(
-            InterceptorKind.StackExchangeRedisStringGetAsync,
+            InterceptorKind.StackExchangeRedisCommandAsync,
             "signals.traces.STACKEXCHANGEREDIS",
             "STACKEXCHANGEREDIS",
             CleanTypeName(symbol.ContainingType),
@@ -2484,6 +2471,28 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "SortedSetAddAsync" or
             "SortedSetRemoveAsync" or
             "ExecuteAsync";
+
+    private static string GetRedisOperationName(string methodName)
+        => methodName switch
+        {
+            "StringGetAsync" => "GET",
+            "StringSetAsync" => "SET",
+            "StringIncrementAsync" => "INCR",
+            "StringDecrementAsync" => "DECR",
+            "HashGetAsync" => "HGET",
+            "HashSetAsync" => "HSET",
+            "HashDeleteAsync" => "HDEL",
+            "HashExistsAsync" => "HEXISTS",
+            "KeyDeleteAsync" => "DEL",
+            "KeyExistsAsync" => "EXISTS",
+            "ListLeftPushAsync" => "LPUSH",
+            "ListRightPushAsync" => "RPUSH",
+            "SetAddAsync" => "SADD",
+            "SetRemoveAsync" => "SREM",
+            "SortedSetAddAsync" => "ZADD",
+            "SortedSetRemoveAsync" => "ZREM",
+            _ => "EXECUTE",
+        };
 
     private static bool TryGetGraphQlInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -3825,7 +3834,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         MassTransitMessageOperation,
         NServiceBusMessageOperation,
         QuartzJobExecute,
-        StackExchangeRedisStringGetAsync,
+        StackExchangeRedisCommandAsync,
         GraphQlDocumentExecuter,
         MongoDbCollection,
         RabbitMqBasicPublish,
