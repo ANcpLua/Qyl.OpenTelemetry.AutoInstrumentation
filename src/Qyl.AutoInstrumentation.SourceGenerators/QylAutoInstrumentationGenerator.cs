@@ -67,6 +67,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
             return true;
 
+        if (TryGetAspNetCoreEndpointMapInvocation(symbol, out target))
+            return true;
+
         if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
             return true;
 
@@ -140,6 +143,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitHttpClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
+                EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
                 EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall)
@@ -240,6 +245,18 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreRequestDelegate_" + target.MethodName, index, target.ReceiverType, "requestDelegate", target.Parameters, isAsync: false);
         builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.InvokeAsync(requestDelegate, p0);");
+        builder.AppendLine();
+    }
+
+    private static void EmitAspNetCoreEndpointMapInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreEndpointMap_" + target.MethodName, index, target.ReceiverType, "endpoints", target.Parameters, isAsync: false);
+        builder.Append("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.");
+        builder.Append(target.MethodName);
+        builder.Append("(endpoints");
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
+        builder.AppendLine(");");
         builder.AppendLine();
     }
 
@@ -935,6 +952,36 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             false);
         return true;
     }
+
+    private static bool TryGetAspNetCoreEndpointMapInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom;
+        if (original is null ||
+            !IsSupportedAspNetCoreMapMethod(symbol.Name) ||
+            !IsType(original.ContainingType, "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions") ||
+            !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder") ||
+            symbol.Parameters.Length is not 2 ||
+            !IsType(symbol.Parameters[0].Type, "global::System.String") ||
+            !IsType(symbol.Parameters[1].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreEndpointMap,
+            "signals.traces.ASPNETCORE",
+            "ASPNETCORE",
+            "global::Microsoft.AspNetCore.Routing.IEndpointRouteBuilder",
+            symbol.Name,
+            "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool IsSupportedAspNetCoreMapMethod(string name)
+        => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch";
 
     private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -1795,6 +1842,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         HttpClient,
         AspNetCoreRequestDelegate,
+        AspNetCoreEndpointMap,
         GrpcNetClientAsyncUnaryCall,
         GrpcNetClientAsyncServerStreamingCall,
         GrpcNetClientAsyncClientStreamingCall,

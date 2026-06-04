@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
@@ -7,6 +8,21 @@ namespace Qyl.AutoInstrumentation;
 public static class QylInterceptedAspNetCore
 {
     private const string AspNetCoreDomain = "aspnetcore.server";
+
+    public static IEndpointConventionBuilder MapGet(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
+        => endpoints.MapGet(pattern, Observe(requestDelegate));
+
+    public static IEndpointConventionBuilder MapPost(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
+        => endpoints.MapPost(pattern, Observe(requestDelegate));
+
+    public static IEndpointConventionBuilder MapPut(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
+        => endpoints.MapPut(pattern, Observe(requestDelegate));
+
+    public static IEndpointConventionBuilder MapDelete(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
+        => endpoints.MapDelete(pattern, Observe(requestDelegate));
+
+    public static IEndpointConventionBuilder MapPatch(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
+        => endpoints.MapPatch(pattern, Observe(requestDelegate));
 
     public static Task InvokeAsync(RequestDelegate requestDelegate, HttpContext context)
     {
@@ -85,6 +101,9 @@ public static class QylInterceptedAspNetCore
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
     }
+
+    private static RequestDelegate Observe(RequestDelegate requestDelegate)
+        => requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
 
     private static string? GetRoute(HttpContext context)
         => context.GetEndpoint() is RouteEndpoint routeEndpoint
