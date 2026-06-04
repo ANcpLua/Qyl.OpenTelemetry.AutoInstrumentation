@@ -11,7 +11,10 @@ public static class QylInterceptedElastic
             return null;
 
         var operation = NormalizeOperation(methodName);
-        var activity = QylActivitySource.Source.StartActivity("Elasticsearch " + operation, ActivityKind.Client);
+        var activityName = string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal)
+            ? "Elastic transport request"
+            : "Elasticsearch request";
+        var activity = QylActivitySource.Source.StartActivity(activityName, ActivityKind.Client);
         if (activity is null)
             return null;
 
@@ -51,6 +54,6 @@ public static class QylInterceptedElastic
             "Exists" or "ExistsAsync" => "exists",
             "MultiGet" or "MultiGetAsync" => "mget",
             "MultiSearch" or "MultiSearchAsync" => "msearch",
-            _ => methodName,
+            _ => "request",
         };
 }
