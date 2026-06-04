@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import platform
 import subprocess
 import tempfile
 from pathlib import Path
@@ -226,6 +227,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     <PackageReference Include="Qyl.AutoInstrumentation" Version="{version}" />
     <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
 ''',
@@ -233,6 +235,19 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     )
     (directory / "Program.cs").write_text(PROGRAM, encoding="utf-8")
     return project_path
+
+
+def runtime_identifier() -> str:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    if system == "darwin":
+        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
+    if system == "linux":
+        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
+    if system == "windows":
+        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
+
+    fail(f"unsupported NativeAOT gate platform: {platform.system()} {platform.machine()}")
 
 
 def verify_generated_interceptor_source(directory: Path) -> None:
@@ -276,6 +291,57 @@ def build_and_run(project: Path, env: dict[str, str]) -> subprocess.CompletedPro
     )
 
 
+def publish_nativeaot_and_run(project: Path, output: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    run_checked(
+        [
+            "dotnet",
+            "publish",
+            str(project),
+            "-c",
+            "Release",
+            "-r",
+            runtime_identifier(),
+            "-p:PublishAot=true",
+            "--self-contained",
+            "true",
+            "-o",
+            str(output),
+            "-v",
+            "quiet",
+        ],
+        project.parent,
+        env,
+    )
+    executable = output / ("Consumer.exe" if platform.system().lower() == "windows" else "Consumer")
+    if not executable.exists():
+        fail(f"NativeAOT source interceptor executable missing: {executable}")
+
+    return subprocess.run(
+        [str(executable)],
+        cwd=executable.parent,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def verify_completed(name: str, completed: subprocess.CompletedProcess[str]) -> None:
+    if completed.returncode != 0:
+        fail(
+            f"{name} failed\n"
+            f"exit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
+        )
+    if completed.stderr:
+        fail(f"{name} wrote stderr:\n{completed.stderr}")
+    if completed.stdout != EXPECTED_GOLDEN:
+        fail(
+            f"{name} golden mismatch\n"
+            f"EXPECTED\n{EXPECTED_GOLDEN}\nACTUAL\n{completed.stdout}"
+        )
+
+
 def main() -> None:
     env = clean_env()
     version = read_version()
@@ -283,22 +349,14 @@ def main() -> None:
         root = Path(temp)
         feed = root / "feed"
         packages = root / "packages"
+        publish = root / "publish"
         pack_runtime(feed, env)
         project = write_project(root / "consumer", feed, packages, version)
-        completed = build_and_run(project, env)
+        managed = build_and_run(project, env)
+        nativeaot = publish_nativeaot_and_run(project, publish, env)
 
-    if completed.returncode != 0:
-        fail(
-            "source interceptor consumer failed\n"
-            f"exit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
-        )
-    if completed.stderr:
-        fail(f"source interceptor consumer wrote stderr:\n{completed.stderr}")
-    if completed.stdout != EXPECTED_GOLDEN:
-        fail(
-            "source interceptor golden mismatch\n"
-            f"EXPECTED\n{EXPECTED_GOLDEN}\nACTUAL\n{completed.stdout}"
-        )
+    verify_completed("source interceptor managed consumer", managed)
+    verify_completed("source interceptor NativeAOT consumer", nativeaot)
 
     print("source-interceptor-consumer-ok")
 
