@@ -76,6 +76,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAzureClientInvocation(symbol, out target))
             return true;
 
+        if (TryGetWcfClientInvocation(symbol, out target))
+            return true;
+
         if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
             return true;
 
@@ -170,6 +173,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AzureClient)
                 EmitAzureClientInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.WcfClient)
+                EmitWcfClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
                 EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall)
@@ -375,6 +380,75 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitWcfClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "WcfClient_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, target.IsAsync);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (target.IsAsync)
+        {
+            if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
+            {
+                builder.Append("                await client.");
+                builder.Append(target.MethodName);
+                builder.Append('(');
+                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+                builder.AppendLine(").ConfigureAwait(false);");
+                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
+            }
+            else
+            {
+                builder.Append("                var result = await client.");
+                builder.Append(target.MethodName);
+                builder.Append('(');
+                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+                builder.AppendLine(").ConfigureAwait(false);");
+                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
+                builder.AppendLine("                return result;");
+            }
+        }
+        else if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
+        {
+            builder.Append("                client.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
+        }
+        else
+        {
+            builder.Append("                var result = client.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
+            builder.AppendLine("                return result;");
+        }
+
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -1424,6 +1498,49 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
            (IsTypeByMetadata(named, "Azure", "Response") ||
             IsConstructedGeneric(named, "Azure", "Response`1"));
 
+    private static bool TryGetWcfClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.IsGenericMethod ||
+            IsWcfInfrastructureMethod(symbol.Name) ||
+            !CanEmitByValueParameters(symbol) ||
+            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::System.ServiceModel.ClientBase<TChannel>") ||
+            IsSystemServiceModelType(symbol.ContainingType))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.WcfClient,
+            "signals.traces.WCFCLIENT",
+            "WCFCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
+        return true;
+    }
+
+    private static bool IsWcfInfrastructureMethod(string methodName)
+        => methodName is "Open" or
+            "OpenAsync" or
+            "Close" or
+            "CloseAsync" or
+            "Abort" or
+            "Dispose" or
+            "GetProperty" or
+            "BeginOpen" or
+            "EndOpen" or
+            "BeginClose" or
+            "EndClose";
+
+    private static bool IsSystemServiceModelType(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol named &&
+           named.ContainingNamespace.ToDisplayString().StartsWith("System.ServiceModel", StringComparison.Ordinal);
+
     private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
@@ -2282,6 +2399,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool CanEmitByValueParameters(IMethodSymbol symbol)
+    {
+        foreach (var parameter in symbol.Parameters)
+        {
+            if (parameter.RefKind is not RefKind.None)
+                return false;
+        }
+
+        return true;
+    }
+
     private static string GetTypeParameterList(IMethodSymbol symbol)
     {
         if (symbol.TypeParameters.Length is 0)
@@ -2550,6 +2678,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         AzureClient,
+        WcfClient,
         GrpcNetClientAsyncUnaryCall,
         GrpcNetClientAsyncServerStreamingCall,
         GrpcNetClientAsyncClientStreamingCall,
