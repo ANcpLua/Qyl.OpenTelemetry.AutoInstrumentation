@@ -2,6 +2,8 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylMetricNames
 {
+    public const string AspNetCoreComponentsNavigation = "aspnetcore.components.navigation";
+
     public const string DbClientOperationDuration = "db.client.operation.duration";
     public const string HttpClientRequestDuration = "http.client.request.duration";
     public const string NServiceBusMessagingOperationDuration = "nservicebus.messaging.operation.duration";
