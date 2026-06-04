@@ -1277,10 +1277,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
         {
+            builder.Append("global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current.GraphQlSetDocument && ");
             builder.Append(target.Parameters[0].Name);
-            builder.Append(" is null ? null : ");
+            builder.Append(" is not null ? ");
             builder.Append(target.Parameters[0].Name);
-            builder.Append(".OperationName");
+            builder.Append(".OperationName : null");
             return;
         }
 
