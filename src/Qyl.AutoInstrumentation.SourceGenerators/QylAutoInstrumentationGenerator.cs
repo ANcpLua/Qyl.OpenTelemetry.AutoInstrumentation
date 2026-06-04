@@ -73,6 +73,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetGrpcNetClientStreamingInvocation(symbol, out target))
             return true;
 
+        if (TryGetKafkaInvocation(symbol, out target))
+            return true;
+
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
@@ -130,6 +133,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitGrpcNetClientAsyncClientStreamingInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall)
                 EmitGrpcNetClientAsyncDuplexStreamingInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.KafkaProducer)
+                EmitKafkaProducerInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.KafkaConsumer)
+                EmitKafkaConsumerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
@@ -409,6 +416,91 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine("    }");
+    }
+
+    private static void EmitKafkaProducerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaProducer_" + target.MethodName, index, target.ReceiverType, "producer", target.Parameters, isAsync: true);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity(");
+        AppendKafkaTopicExpression(builder, target);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var result = await producer.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(").ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitKafkaConsumerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaConsumer_" + target.MethodName, index, target.ReceiverType, "consumer", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartConsumerActivity();");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var result = consumer.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity, result is null ? null : result.Topic);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void AppendKafkaTopicExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (target.Parameters.Length is 0)
+        {
+            builder.Append("null");
+            return;
+        }
+
+        if (string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal) ||
+            string.Equals(target.Parameters[0].TypeName, "global::System.String", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            return;
+        }
+
+        if (string.Equals(target.Parameters[0].TypeName, "global::Confluent.Kafka.TopicPartition", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            builder.Append(".Topic");
+            return;
+        }
+
+        builder.Append("null");
     }
 
     private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -705,6 +797,62 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return true;
     }
 
+    private static bool TryGetKafkaInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (TryGetKafkaProducerInvocation(symbol, out target))
+            return true;
+
+        return TryGetKafkaConsumerInvocation(symbol, out target);
+    }
+
+    private static bool TryGetKafkaProducerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "ProduceAsync", StringComparison.Ordinal) ||
+            !IsOrImplementsConstructedGeneric(symbol.ContainingType, "Confluent.Kafka", "IProducer`2") ||
+            !TryGetTaskResult(symbol.ReturnType, out var resultType) ||
+            !IsConstructedGeneric(resultType, "Confluent.Kafka", "DeliveryResult`2") ||
+            !TryGetKafkaProduceParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.KafkaProducer,
+            "signals.traces.KAFKA",
+            "KAFKA",
+            CleanTypeName(symbol.ContainingType),
+            "ProduceAsync",
+            CleanTypeName(symbol.ReturnType),
+            parameters,
+            true);
+        return true;
+    }
+
+    private static bool TryGetKafkaConsumerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Consume", StringComparison.Ordinal) ||
+            !IsOrImplementsConstructedGeneric(symbol.ContainingType, "Confluent.Kafka", "IConsumer`2") ||
+            !IsConstructedGeneric(symbol.ReturnType, "Confluent.Kafka", "ConsumeResult`2") ||
+            !TryGetKafkaConsumeParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.KafkaConsumer,
+            "signals.traces.KAFKA",
+            "KAFKA",
+            CleanTypeName(symbol.ContainingType),
+            "Consume",
+            CleanTypeName(symbol.ReturnType),
+            parameters,
+            false);
+        return true;
+    }
+
     private static bool TryGetEntityFrameworkCoreDbContextInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
@@ -963,6 +1111,44 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetKafkaProduceParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    {
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        if (symbol.Parameters.Length is not (2 or 3))
+            return false;
+
+        var firstIsTopic = IsType(symbol.Parameters[0].Type, "global::System.String") ||
+                           IsType(symbol.Parameters[0].Type, "global::Confluent.Kafka.TopicPartition");
+        if (!firstIsTopic || !IsConstructedGeneric(symbol.Parameters[1].Type, "Confluent.Kafka", "Message`2"))
+            return false;
+
+        if (symbol.Parameters.Length is 3 && !IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
+            return false;
+
+        parameters = Parameters(symbol);
+        return true;
+    }
+
+    private static bool TryGetKafkaConsumeParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    {
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        if (symbol.Parameters.Length is 0)
+            return true;
+
+        if (symbol.Parameters.Length is not 1)
+            return false;
+
+        if (IsType(symbol.Parameters[0].Type, "global::System.Threading.CancellationToken") ||
+            IsType(symbol.Parameters[0].Type, "global::System.TimeSpan") ||
+            symbol.Parameters[0].Type.SpecialType is SpecialType.System_Int32)
+        {
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryGetEfCoreSaveChangesParameters(IMethodSymbol symbol, bool allowCancellationToken, out ImmutableArray<ParameterSpec> parameters)
     {
         if (symbol.Parameters.Length is 0)
@@ -1009,6 +1195,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsConstructedFrom(ITypeSymbol? symbol, string fullyQualifiedConstructedFromName)
         => symbol is INamedTypeSymbol named && IsType(named.ConstructedFrom, fullyQualifiedConstructedFromName);
 
+    private static bool IsConstructedGeneric(ITypeSymbol? symbol, string namespaceName, string metadataName)
+        => symbol is INamedTypeSymbol named &&
+           string.Equals(named.ConstructedFrom.MetadataName, metadataName, StringComparison.Ordinal) &&
+           string.Equals(named.ConstructedFrom.ContainingNamespace.ToDisplayString(), namespaceName, StringComparison.Ordinal);
+
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");
 
@@ -1042,6 +1233,23 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         for (var current = symbol; current is not null; current = (current as INamedTypeSymbol)?.BaseType)
         {
             if (current is INamedTypeSymbol named && IsType(named.ConstructedFrom, fullyQualifiedConstructedFromName))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsOrImplementsConstructedGeneric(ITypeSymbol? symbol, string namespaceName, string metadataName)
+    {
+        if (symbol is not INamedTypeSymbol named)
+            return false;
+
+        if (IsConstructedGeneric(named, namespaceName, metadataName))
+            return true;
+
+        foreach (var interfaceType in named.AllInterfaces)
+        {
+            if (IsConstructedGeneric(interfaceType, namespaceName, metadataName))
                 return true;
         }
 
@@ -1119,6 +1327,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         GrpcNetClientAsyncServerStreamingCall,
         GrpcNetClientAsyncClientStreamingCall,
         GrpcNetClientAsyncDuplexStreamingCall,
+        KafkaProducer,
+        KafkaConsumer,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
