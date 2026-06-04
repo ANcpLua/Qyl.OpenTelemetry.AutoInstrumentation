@@ -37,7 +37,7 @@ Set `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true` to emit these raw va
 | ASP.NET Core | `Microsoft.AspNetCore` listener; `HttpContext` payload on `Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop`. | Real local .NET 10 Kestrel proof covers 204 route response and unhandled-exception 500 response. Route source is `RouteEndpoint.RoutePattern.RawText`; `Request.Path` remains privacy-gated. | `http.request.method`, `http.route`, `http.response.status_code`, `error.type` for 5xx. | Real managed + NativeAOT proof. |
 | EFCore | `Qyl.AutoInstrumentation.EntityFrameworkCore` package; `Microsoft.EntityFrameworkCore` listener; typed `CommandExecutedEventData` and `CommandErrorEventData` payloads. | Real .NET 10 Sqlite proof covers `ExecuteSqlRaw` insert/update and provider command error. Extracted values come from `Command`, `CommandSource`, `Context.Database.ProviderName`, `DbConnection.Database`, and provider exception type. Plain EFCore NativeAOT without a compiled model fails at runtime; compiled-model NativeAOT runs, but EFCore itself still emits trim/AOT warnings. | `db.system`, `db.namespace`, `db.operation.name`, `db.query.summary`, `error.type`; `db.query.text` privacy-gated. | Real managed + NativeAOT runtime proof, with explicit EFCore app-side warning boundary. |
 | SqlClient | `SqlClientDiagnosticListener`; current implementation consumes command event aliases. | Microsoft.Data.SqlClient/System.Data.SqlClient command/error real payload matrix still pending. | `db.system=microsoft.sql_server`, `db.namespace`, `db.operation.name`, `db.query.summary`, `server.address`; `db.query.text` privacy-gated. | Synthetic qyl proof only. |
-| Grpc.Net.Client | `Grpc.Net.Client` listener; current implementation consumes gRPC aliases. | Real client success/cancel/status code matrix still pending. | `rpc.system=grpc`, `rpc.service`, `rpc.method`, `server.address`, `server.port`, `rpc.grpc.status_code`, `error.type`. | Synthetic qyl proof only. |
+| Grpc.Net.Client | `Grpc.Net.Client` listener; real `Grpc.Net.Client.GrpcOut.Stop` activity tags `grpc.method` and `grpc.status_code`; synthetic aliases still consumed when supplied. | Real .NET 10 proof covers successful unary call (`grpc.status_code=0`) and connection failure (`grpc.status_code=14`, `Unavailable`). `grpc.method=/qyl.LiveProbe/Collect` is split into `rpc.service=qyl.LiveProbe` and `rpc.method=Collect`. The AOT-safe public activity tags do not expose `server.address`/`server.port`; those are emitted only when supplied by aliases. | `rpc.system=grpc`, `rpc.service`, `rpc.method`, `rpc.grpc.status_code`, `error.type` for non-zero status; optional `server.address`/`server.port` only when supplied. | Real managed + NativeAOT proof. |
 
 ## Evidence Commands
 
@@ -73,6 +73,20 @@ dotnet pack src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentat
 dotnet pack src/Qyl.AutoInstrumentation.EntityFrameworkCore/Qyl.AutoInstrumentation.EntityFrameworkCore.csproj -c Release -o /tmp/qyl-pack
 # A temp consumer with PackageReference=Qyl.AutoInstrumentation.EntityFrameworkCore and no qyl
 # startup call restored from /tmp/qyl-pack and printed: PASS name=DB INSERT.
+```
+
+Real Grpc.Net.Client, project-reference bootstrap simulation:
+
+```bash
+dotnet run --project demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-grpc-aot /p:PublishAot=true /p:InvariantGlobalization=true
+/tmp/qyl-real-grpc-aot/Qyl.RealGrpcClientDemo
+
+dotnet pack src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj -c Release -o /tmp/qyl-pack
+dotnet pack src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj -c Release -o /tmp/qyl-pack
+dotnet pack src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj -c Release -o /tmp/qyl-pack
+# A temp consumer with PackageReference=Qyl.AutoInstrumentation.Hosting and no qyl startup call
+# restored from /tmp/qyl-pack and printed: PASS name=gRPC qyl.LiveProbe/Collect.
 ```
 
 Synthetic multi-domain semantic proof:

@@ -21,11 +21,15 @@ public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
             return;
         }
 
-        var service = DiagnosticPayloadReader.GetString(payload, "rpc.service");
-        var method = DiagnosticPayloadReader.GetString(payload, "rpc.method");
+        var grpcMethod = DiagnosticPayloadReader.GetString(payload, "grpc.method");
+        var service = DiagnosticPayloadReader.GetString(payload, "rpc.service") ??
+                      RpcSemantics.GetService(grpcMethod);
+        var method = DiagnosticPayloadReader.GetString(payload, "rpc.method") ??
+                     RpcSemantics.GetMethod(grpcMethod);
         var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "peer.hostname");
         var serverPort = DiagnosticPayloadReader.GetInt32(payload, "server.port", "peer.port");
-        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "rpc.grpc.status_code");
+        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "rpc.grpc.status_code") ??
+                         DiagnosticPayloadReader.GetInt32(payload, "grpc.status_code");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
         using var activity = QylActivitySource.Source.StartActivity(

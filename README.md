@@ -65,9 +65,15 @@ Current evidence proves the runtime closure is NativeAOT-clean and emits spans u
   execution. EFCore is not warning-clean under NativeAOT in .NET 10.0.8: the proof uses the
   supported compiled-model path and intentionally demotes EFCore's own IL warnings for publish,
   then runs the native binary.
+- `demos/Qyl.RealGrpcClientDemo` proves `Grpc.Net.Client` success and Unavailable failure paths
+  under managed and warning-clean NativeAOT execution. It uses `WebApplication.CreateSlimBuilder`
+  for the local h2c proof server and reads only AOT-safe gRPC activity tags.
 - A temporary consumer with only `PackageReference` wiring for
   `Qyl.AutoInstrumentation.EntityFrameworkCore` and no qyl startup call restored from locally
   packed nupkgs and captured `PASS name=DB INSERT`, proving the EFCore build-transitive bootstrap.
+- A temporary gRPC consumer with only `PackageReference` wiring for
+  `Qyl.AutoInstrumentation.Hosting` and no qyl startup call restored from locally packed nupkgs
+  and captured `PASS name=gRPC qyl.LiveProbe/Collect`.
 
 The formal Gate A golden-OTLP normalizer and Gate B no-behavior-change baseline are still tracked
 in `COVERAGE_LEDGER.md`.
@@ -113,7 +119,8 @@ must emit its required safe attributes, and privacy-gated attributes must not le
 paths under managed and NativeAOT execution. `demos/Qyl.RealAspNetCoreDemo` does the same for
 Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. `demos/Qyl.RealEfCoreDemo`
 does the same for EFCore command success and provider-error paths, with the EFCore compiled-model
-NativeAOT prerequisite called out explicitly. The per-library matrix lives in
+NativeAOT prerequisite called out explicitly. `demos/Qyl.RealGrpcClientDemo` proves real
+`Grpc.Net.Client` success and failure activity tags. The per-library matrix lives in
 `docs/RUNTIME_SEMANTICS.md`.
 
 ## Status
