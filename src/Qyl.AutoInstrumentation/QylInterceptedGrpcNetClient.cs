@@ -54,6 +54,15 @@ public static class QylInterceptedGrpcNetClient
         activity?.SetStatus(ActivityStatusCode.Error);
     }
 
+    public static void RecordStreamingComplete(Activity? activity)
+    {
+        if (activity is null)
+            return;
+
+        activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, 0);
+        activity.Dispose();
+    }
+
     public static void Dispose(Activity? activity)
         => activity?.Dispose();
 

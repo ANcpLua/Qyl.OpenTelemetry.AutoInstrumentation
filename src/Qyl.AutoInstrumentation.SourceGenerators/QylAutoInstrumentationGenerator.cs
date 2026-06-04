@@ -70,6 +70,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
             return true;
 
+        if (TryGetGrpcNetClientStreamingInvocation(symbol, out target))
+            return true;
+
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
@@ -121,6 +124,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
                 EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall)
+                EmitGrpcNetClientAsyncServerStreamingInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncClientStreamingCall)
+                EmitGrpcNetClientAsyncClientStreamingInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall)
+                EmitGrpcNetClientAsyncDuplexStreamingInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
@@ -128,6 +137,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         builder.AppendLine("    }");
+        if (RequiresGrpcStreamReader(invocations))
+            EmitGrpcStreamReaderWrapper(builder);
+
         builder.AppendLine("}");
 
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
@@ -243,6 +255,160 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine();
+    }
+
+    private static void EmitGrpcNetClientAsyncServerStreamingInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncServerStreaming_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        EmitGrpcCallPreamble(builder, target);
+        builder.Append("                return new ");
+        builder.Append(target.ReturnType);
+        builder.AppendLine("(");
+        builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity),");
+        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    call.GetStatus,");
+        builder.AppendLine("                    call.GetTrailers,");
+        EmitGrpcDisposeAction(builder);
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitGrpcNetClientAsyncClientStreamingInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncClientStreaming_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        EmitGrpcCallPreamble(builder, target);
+        builder.Append("                return new ");
+        builder.Append(target.ReturnType);
+        builder.AppendLine("(");
+        builder.AppendLine("                    call.RequestStream,");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync(call.ResponseAsync, activity),");
+        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    call.GetStatus,");
+        builder.AppendLine("                    call.GetTrailers,");
+        EmitGrpcDisposeAction(builder);
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitGrpcNetClientAsyncDuplexStreamingInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncDuplexStreaming_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        EmitGrpcCallPreamble(builder, target);
+        builder.Append("                return new ");
+        builder.Append(target.ReturnType);
+        builder.AppendLine("(");
+        builder.AppendLine("                    call.RequestStream,");
+        builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity),");
+        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    call.GetStatus,");
+        builder.AppendLine("                    call.GetTrailers,");
+        EmitGrpcDisposeAction(builder);
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitGrpcCallPreamble(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var call = client.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+    }
+
+    private static void EmitGrpcDisposeAction(StringBuilder builder)
+    {
+        builder.AppendLine("                    () =>");
+        builder.AppendLine("                    {");
+        builder.AppendLine("                        try");
+        builder.AppendLine("                        {");
+        builder.AppendLine("                            call.Dispose();");
+        builder.AppendLine("                        }");
+        builder.AppendLine("                        finally");
+        builder.AppendLine("                        {");
+        builder.AppendLine("                            global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(activity);");
+        builder.AppendLine("                        }");
+        builder.AppendLine("                    });");
+    }
+
+    private static void EmitGrpcStreamReaderWrapper(StringBuilder builder)
+    {
+        builder.AppendLine();
+        builder.AppendLine("    internal static class QylObservedAsyncStreamReader");
+        builder.AppendLine("    {");
+        builder.AppendLine("        public static global::Grpc.Core.IAsyncStreamReader<T> Create<T>(global::Grpc.Core.IAsyncStreamReader<T> inner, global::System.Diagnostics.Activity? activity)");
+        builder.AppendLine("            => new QylObservedAsyncStreamReader<T>(inner, activity);");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    internal sealed class QylObservedAsyncStreamReader<T> : global::Grpc.Core.IAsyncStreamReader<T>");
+        builder.AppendLine("    {");
+        builder.AppendLine("        private readonly global::Grpc.Core.IAsyncStreamReader<T> _inner;");
+        builder.AppendLine("        private readonly global::System.Diagnostics.Activity? _activity;");
+        builder.AppendLine("        private bool _completed;");
+        builder.AppendLine();
+        builder.AppendLine("        public QylObservedAsyncStreamReader(global::Grpc.Core.IAsyncStreamReader<T> inner, global::System.Diagnostics.Activity? activity)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            _inner = inner;");
+        builder.AppendLine("            _activity = activity;");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public T Current => _inner.Current;");
+        builder.AppendLine();
+        builder.AppendLine("        public async global::System.Threading.Tasks.Task<bool> MoveNext(global::System.Threading.CancellationToken cancellationToken)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.AppendLine("                var hasNext = await _inner.MoveNext(cancellationToken).ConfigureAwait(false);");
+        builder.AppendLine("                if (!hasNext && !_completed)");
+        builder.AppendLine("                {");
+        builder.AppendLine("                    _completed = true;");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordStreamingComplete(_activity);");
+        builder.AppendLine("                }");
+        builder.AppendLine();
+        builder.AppendLine("                return hasNext;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(_activity, exception);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(_activity);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine("    }");
     }
 
     private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -493,6 +659,42 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.GrpcNetClientAsyncUnaryCall,
+            "signals.traces.GRPCNETCLIENT",
+            "GRPCNETCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetGrpcNetClientStreamingInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
+            return false;
+
+        var kind = default(InterceptorKind);
+        if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncServerStreamingCall<TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncServerStreamingCall;
+        }
+        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncClientStreamingCall;
+        }
+        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall;
+        }
+        else
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            kind,
             "signals.traces.GRPCNETCLIENT",
             "GRPCNETCLIENT",
             CleanTypeName(symbol.ContainingType),
@@ -897,6 +1099,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static string CleanTypeName(ITypeSymbol symbol)
         => symbol.ToDisplayString(FullyQualifiedFormat).Replace("?", string.Empty);
 
+    private static bool RequiresGrpcStreamReader(InterceptedInvocation[] invocations)
+        => invocations.Any(static invocation =>
+            invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall or
+                InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall);
+
     private static void AppendStringLiteral(StringBuilder builder, string value)
     {
         builder.Append('"');
@@ -909,6 +1116,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         HttpClient,
         AspNetCoreRequestDelegate,
         GrpcNetClientAsyncUnaryCall,
+        GrpcNetClientAsyncServerStreamingCall,
+        GrpcNetClientAsyncClientStreamingCall,
+        GrpcNetClientAsyncDuplexStreamingCall,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
