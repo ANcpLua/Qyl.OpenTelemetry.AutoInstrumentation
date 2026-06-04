@@ -78,7 +78,7 @@ Third-party binary internals and unsupported/dynamic call paths remain intention
 | T000 establish baseline | env/runtime/AOT publish matrix | `M1` (osx-arm64/net10 cell first) |
 | T001 reuse decision | BCL primitives + source-gen | `proven` (this commit) |
 | T002 repo bootstrap | solution/packages/CI | `M1` (solution proven ✅; CI `backlog`) |
-| T003 semconv generation | Weaver → `FrozenSet<string>` | `in-progress` (skeleton generator wired) |
+| T003 semconv generation | Weaver → `FrozenSet<string>` | `in-progress` (build-time generator emits `QylSemConvRegistry.g.cs`; runtime reflection path removed) |
 | T004 native profiler boundary | CLSID/protocol/events | `oos: substrate-swap` |
 | T005 startup hook | `Initialize()` entrypoint | `oos: replaced by [ModuleInitializer]` |
 | T006 loader | ALC resolver + activate managed profiler | `oos: not needed under AOT — direct PackageReference` |

@@ -23,8 +23,9 @@ namespace Qyl.AutoInstrumentation.SourceGenerators;
 /// </para>
 ///
 /// <para>
-/// Skeleton: the generator is wired into the build pipeline but emits no code yet (M1 of the new
-/// substrate). The next milestone implements the metadata read + emission.
+/// The generator runs only inside the compiler. It walks the referenced semconv symbols, extracts
+/// constant attribute keys, and emits <c>QylSemConvRegistry.g.cs</c>; the runtime never reflects
+/// over semconv assemblies.
 /// </para>
 /// </summary>
 [Generator(LanguageNames.CSharp)]
