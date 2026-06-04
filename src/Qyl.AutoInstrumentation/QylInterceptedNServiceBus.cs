@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedNServiceBus
 {
-    private const string NServiceBusDomain = "messaging.nservicebus";
 
     public static Activity? StartActivity(string operationName)
     {
@@ -19,7 +18,7 @@ public static class QylInterceptedNServiceBus
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, NServiceBusDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingNServiceBus);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);

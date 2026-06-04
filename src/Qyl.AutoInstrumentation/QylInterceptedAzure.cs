@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedAzure
 {
-    private const string AzureDomain = "azure.sdk";
 
     public static Activity? StartActivity(string methodName)
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedAzure
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, AzureDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AzureSdk);
         return activity;
     }
 

@@ -10,7 +10,6 @@ namespace Qyl.AutoInstrumentation;
 /// </summary>
 public static class QylInterceptedHttpClient
 {
-    private const string HttpClientDomain = "http.client";
 
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
     {
@@ -510,7 +509,7 @@ public static class QylInterceptedHttpClient
             activity = QylActivitySource.Source.StartActivity($"HTTP {method}", ActivityKind.Client);
             if (activity is not null)
             {
-                activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, HttpClientDomain);
+                activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
                 activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
 
                 if (requestUri is not null)

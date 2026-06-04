@@ -4,8 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedElastic
 {
-    private const string ElasticsearchDomain = "db.elasticsearch";
-    private const string ElasticTransportDomain = "elastic.transport";
 
     public static Activity? StartActivity(string instrumentationId, string methodName)
     {
@@ -20,8 +18,8 @@ public static class QylInterceptedElastic
         activity.SetTag(
             QylSemanticAttributes.QylInstrumentationDomain,
             string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal)
-                ? ElasticTransportDomain
-                : ElasticsearchDomain);
+                ? QylInstrumentationDomains.ElasticTransport
+                : QylInstrumentationDomains.DbElasticsearch);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemElasticsearch);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);

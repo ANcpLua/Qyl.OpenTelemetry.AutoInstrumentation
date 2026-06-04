@@ -5,7 +5,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedHttpWebRequest
 {
-    private const string HttpWebRequestDomain = "http.webrequest";
 
     public static DateTime GetStartTimeUtc()
         => TimeProvider.System.GetUtcNow().UtcDateTime;
@@ -21,7 +20,7 @@ public static class QylInterceptedHttpWebRequest
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, HttpWebRequestDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpWebRequest);
         activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
 
         if (request.RequestUri is not null)

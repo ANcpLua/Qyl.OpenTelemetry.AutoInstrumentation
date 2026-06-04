@@ -40,7 +40,7 @@ public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
 
         using var activity = QylActivitySource.Source.StartActivity("gRPC CLIENT", ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "rpc.grpc");
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
         SemanticTagWriter.Set(activity, SemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         SemanticTagWriter.Set(activity, SemanticAttributes.RpcService, service);
         SemanticTagWriter.Set(activity, SemanticAttributes.RpcMethod, method);

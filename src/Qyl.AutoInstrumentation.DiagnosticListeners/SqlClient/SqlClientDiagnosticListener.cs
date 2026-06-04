@@ -41,7 +41,7 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
             operation is null ? "SQL CLIENT" : $"SQL {operation}",
             ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "db.sqlclient");
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbSqlClient);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, QylSemanticAttributes.DbSystemMicrosoftSqlServer);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, namespaceName);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, operation);

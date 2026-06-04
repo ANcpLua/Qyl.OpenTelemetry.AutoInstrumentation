@@ -7,7 +7,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedAspNetCore
 {
-    private const string AspNetCoreDomain = "aspnetcore.server";
 
     public static WebApplication Build(WebApplicationBuilder builder)
     {
@@ -71,7 +70,7 @@ public static class QylInterceptedAspNetCore
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, AspNetCoreDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
         activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
 
         if (options.CaptureSensitiveValues)

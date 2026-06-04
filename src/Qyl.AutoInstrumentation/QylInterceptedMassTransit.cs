@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedMassTransit
 {
-    private const string MassTransitDomain = "messaging.masstransit";
 
     public static Activity? StartActivity(string operationName)
     {
@@ -19,7 +18,7 @@ public static class QylInterceptedMassTransit
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, MassTransitDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingMassTransit);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemMassTransit);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);

@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedKafka
 {
-    private const string KafkaDomain = "messaging.kafka";
 
     public static Activity? StartProducerActivity()
         => StartActivity(
@@ -41,7 +40,7 @@ public static class QylInterceptedKafka
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, KafkaDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingKafka);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemKafka);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operationName);

@@ -5,7 +5,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedLogger
 {
-    private const string LoggerDomain = "log.ilogger";
 
     public static void Log<TState>(
         ILogger logger,
@@ -71,7 +70,7 @@ public static class QylInterceptedLogger
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, LoggerDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.LogILogger);
         activity.SetTag(QylSemanticAttributes.LogSeverity, severity);
 
         if (exception is not null)

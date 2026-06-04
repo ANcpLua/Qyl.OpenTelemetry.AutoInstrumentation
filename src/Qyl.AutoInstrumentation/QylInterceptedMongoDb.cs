@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedMongoDb
 {
-    private const string MongoDbDomain = "db.mongodb";
 
     public static Activity? StartActivity(string operationName)
     {
@@ -18,7 +17,7 @@ public static class QylInterceptedMongoDb
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, MongoDbDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbMongoDb);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMongodb);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);

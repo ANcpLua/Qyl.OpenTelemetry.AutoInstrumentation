@@ -43,7 +43,7 @@ public sealed class HttpClientDiagnosticListener : DiagnosticListenerSubscriber
             method is null ? "HTTP CLIENT" : $"HTTP {method}",
             ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "http.client");
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         HttpSemantics.SetUrlTags(activity, url, serverAddress, serverPort);

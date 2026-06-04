@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedWcfCore
 {
-    private const string WcfCoreDomain = "rpc.wcf.core";
 
     public static Activity? StartActivity(string serviceName, string contractName, string operationName)
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedWcfCore
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, WcfCoreDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcWcfCore);
         activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf);
         activity.SetTag(QylSemanticAttributes.RpcService, string.IsNullOrEmpty(contractName) ? serviceName : contractName);
         activity.SetTag(QylSemanticAttributes.RpcMethod, operationName);

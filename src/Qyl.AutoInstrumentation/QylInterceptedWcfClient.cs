@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedWcfClient
 {
-    private const string WcfClientDomain = "rpc.wcf.client";
 
     public static Activity? StartActivity(string clientType, string methodName)
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedWcfClient
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, WcfClientDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcWcfClient);
         activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf);
         activity.SetTag(QylSemanticAttributes.RpcService, clientType);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);

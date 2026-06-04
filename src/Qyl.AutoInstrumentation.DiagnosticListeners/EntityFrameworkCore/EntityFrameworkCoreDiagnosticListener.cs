@@ -41,7 +41,7 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
             operation is null ? "DB CLIENT" : $"DB {operation}",
             ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "db.efcore");
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbEfCore);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, system);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, namespaceName);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, operation);

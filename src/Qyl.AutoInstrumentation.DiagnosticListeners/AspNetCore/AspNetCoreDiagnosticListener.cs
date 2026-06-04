@@ -44,7 +44,7 @@ public sealed class AspNetCoreDiagnosticListener : DiagnosticListenerSubscriber
             method is null ? "HTTP SERVER" : $"HTTP SERVER {method}",
             ActivityKind.Server);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "http.server");
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpServer);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRoute, route);

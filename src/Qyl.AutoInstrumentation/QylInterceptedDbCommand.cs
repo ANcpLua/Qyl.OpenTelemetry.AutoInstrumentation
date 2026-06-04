@@ -6,7 +6,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedDbCommand
 {
-    private const string DbDomain = "db.client";
 
     public static Activity? StartActivity(DbCommand command, string instrumentationId, string operationName)
     {
@@ -23,7 +22,7 @@ public static class QylInterceptedDbCommand
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, DbDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbClient);
         activity.SetTag(QylSemanticAttributes.DbSystemName, GetDbSystemName(instrumentationId));
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, GetQuerySummary(command, operation));

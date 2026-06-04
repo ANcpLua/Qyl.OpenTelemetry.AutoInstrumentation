@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedRedis
 {
-    private const string RedisDomain = "db.redis";
 
     public static Activity? StartCommandActivity(string operationName)
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedRedis
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, RedisDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbRedis);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);

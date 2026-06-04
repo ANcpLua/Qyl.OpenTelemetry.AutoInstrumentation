@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedQuartz
 {
-    private const string QuartzDomain = "job.quartz";
 
     public static Activity? StartActivity()
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedQuartz
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QuartzDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.JobQuartz);
         return activity;
     }
 

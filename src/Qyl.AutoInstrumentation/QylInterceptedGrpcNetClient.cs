@@ -5,7 +5,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedGrpcNetClient
 {
-    private const string GrpcDomain = "rpc.grpc";
 
     public static Activity? StartActivity(string clientTypeName, string methodName, Metadata? requestMetadata)
     {
@@ -20,7 +19,7 @@ public static class QylInterceptedGrpcNetClient
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, GrpcDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
         activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         activity.SetTag(QylSemanticAttributes.RpcService, service);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);

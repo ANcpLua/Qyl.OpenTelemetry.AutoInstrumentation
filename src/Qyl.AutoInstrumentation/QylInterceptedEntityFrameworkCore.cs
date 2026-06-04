@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedEntityFrameworkCore
 {
-    private const string EntityFrameworkCoreDomain = "db.efcore";
 
     public static Activity? StartActivity(string operationName)
     {
@@ -17,7 +16,7 @@ public static class QylInterceptedEntityFrameworkCore
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, EntityFrameworkCoreDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbEfCore);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);
         return activity;

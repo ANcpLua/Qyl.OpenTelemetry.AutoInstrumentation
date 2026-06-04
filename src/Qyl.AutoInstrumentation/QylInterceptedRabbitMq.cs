@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedRabbitMq
 {
-    private const string RabbitMqDomain = "messaging.rabbitmq";
 
     public static Activity? StartPublishActivity(string? exchange)
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedRabbitMq
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, RabbitMqDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingRabbitMq);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemRabbitMq);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish);

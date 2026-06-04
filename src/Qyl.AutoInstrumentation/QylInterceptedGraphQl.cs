@@ -4,7 +4,6 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedGraphQl
 {
-    private const string GraphQlDomain = "graphql";
 
     public static Activity? StartActivity()
     {
@@ -15,7 +14,7 @@ public static class QylInterceptedGraphQl
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, GraphQlDomain);
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.GraphQl);
         activity.SetTag(QylSemanticAttributes.GraphQlOperationName, "execute");
         return activity;
     }
