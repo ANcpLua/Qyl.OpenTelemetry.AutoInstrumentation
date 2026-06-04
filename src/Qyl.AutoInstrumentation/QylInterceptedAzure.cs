@@ -6,7 +6,7 @@ public static class QylInterceptedAzure
 {
     private const string AzureDomain = "azure.sdk";
 
-    public static Activity? StartActivity(string clientType, string methodName)
+    public static Activity? StartActivity(string methodName)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Azure))
             return null;
@@ -16,9 +16,6 @@ public static class QylInterceptedAzure
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, AzureDomain);
-        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemAzure);
-        activity.SetTag(QylSemanticAttributes.RpcService, clientType);
-        activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
         return activity;
     }
 

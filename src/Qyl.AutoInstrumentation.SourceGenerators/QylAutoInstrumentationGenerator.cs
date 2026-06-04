@@ -425,8 +425,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AzureClient_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, target.IsAsync);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedAzure.StartActivity(");
-        AppendStringLiteral(builder, target.ReceiverType);
-        builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
         builder.AppendLine("            try");
