@@ -2,4 +2,10 @@
   <PropertyGroup>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(QylAutoInstrumentationDisableInterceptorsAttribute)' != 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
+             Link="Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
+             Visible="false" />
+  </ItemGroup>
 </Project>

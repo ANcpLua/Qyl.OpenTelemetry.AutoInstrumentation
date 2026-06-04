@@ -78,6 +78,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAspNetCoreEndpointMapInvocation(symbol, out target))
             return true;
 
+        if (TryGetMeterProviderBuilderAddMeterInvocation(symbol, out target))
+            return true;
+
         if (TryGetAzureClientInvocation(symbol, out target))
             return true;
 
@@ -176,6 +179,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
                 EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.MeterProviderBuilderAddMeter)
+                EmitMeterProviderBuilderAddMeterInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AzureClient)
                 EmitAzureClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ElasticsearchClient or InterceptorKind.ElasticTransport)
@@ -368,6 +373,20 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("(endpoints");
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
         builder.AppendLine(");");
+        builder.AppendLine();
+    }
+
+    private static void EmitMeterProviderBuilderAddMeterInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MeterProviderBuilder_" + target.MethodName, index, target.ReceiverType, "builder", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        builder.AppendLine("            var result = builder.AddMeter(p0);");
+        builder.AppendLine("            if (global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.AspNetCore))");
+        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.Generated.QylGeneratedInstrumentationContract.AspNetCoreComponentsMeterName);");
+        builder.AppendLine();
+        builder.AppendLine("            return result;");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -1752,6 +1771,31 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsSupportedAspNetCoreMapMethod(string name)
         => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch" or "MapMethods";
+
+    private static bool TryGetMeterProviderBuilderAddMeterInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            !string.Equals(symbol.Name, "AddMeter", StringComparison.Ordinal) ||
+            !IsType(symbol.ContainingType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
+            !IsType(symbol.ReturnType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
+            symbol.Parameters.Length is not 1 ||
+            !IsArrayOf(symbol.Parameters[0].Type, "global::System.String"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.MeterProviderBuilderAddMeter,
+            "signals.metrics.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(symbol.ContainingType),
+            "AddMeter",
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            false);
+        return true;
+    }
 
     private static bool TryGetAzureClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -3299,6 +3343,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         HttpWebRequest,
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
+        MeterProviderBuilderAddMeter,
         AzureClient,
         ElasticsearchClient,
         ElasticTransport,
