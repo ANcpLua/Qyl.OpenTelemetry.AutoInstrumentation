@@ -62,6 +62,7 @@ public static class QylSemanticAttributes
     public const string RpcService = RpcAttributes.Service;
     public const string RpcMethod = RpcAttributes.Method;
     public const string RpcGrpcStatusCode = RpcAttributes.GrpcStatusCode;
+    public static readonly int RpcGrpcStatusCodeOk = GetRpcGrpcStatusCodeOk();
 #pragma warning restore CS0618
     public const string GrpcRequestMetadataPrefix = RpcAttributes.RequestMetadata + ".";
     public const string GrpcResponseMetadataPrefix = RpcAttributes.ResponseMetadata + ".";
@@ -88,4 +89,13 @@ public static class QylSemanticAttributes
     public const string ServerPort = ServerAttributes.Port;
     public const string ErrorType = ErrorAttributes.Type;
     public const string ExceptionType = ExceptionAttributes.Type;
+
+    private static int GetRpcGrpcStatusCodeOk()
+        => global::System.Int32.TryParse(
+            RpcAttributes.GrpcStatusCodeValues.Ok,
+            global::System.Globalization.NumberStyles.Integer,
+            global::System.Globalization.CultureInfo.InvariantCulture,
+            out var value)
+            ? value
+            : default;
 }

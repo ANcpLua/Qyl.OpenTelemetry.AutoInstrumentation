@@ -36,7 +36,7 @@ public static class QylInterceptedGrpcNetClient
         try
         {
             var response = await responseTask.ConfigureAwait(false);
-            activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, 0);
+            activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, QylSemanticAttributes.RpcGrpcStatusCodeOk);
             return response;
         }
         catch (Exception exception)
@@ -68,7 +68,7 @@ public static class QylInterceptedGrpcNetClient
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, 0);
+        activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, QylSemanticAttributes.RpcGrpcStatusCodeOk);
         activity.Dispose();
     }
 
