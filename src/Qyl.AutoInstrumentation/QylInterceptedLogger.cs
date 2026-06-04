@@ -18,7 +18,7 @@ public static class QylInterceptedLogger
         if (logger is null)
             throw new NullReferenceException();
 
-        var activity = StartActivity(logLevel, eventId, exception);
+        var activity = StartActivity(logger, logLevel, eventId, exception);
         try
         {
             logger.Log(logLevel, eventId, state, exception, formatter);
@@ -42,10 +42,10 @@ public static class QylInterceptedLogger
         string? message,
         object?[] args)
     {
-        var activity = StartActivity(logLevel, eventId, exception);
+        var activity = logger is null ? null : StartActivity(logger, logLevel, eventId, exception);
         try
         {
-            LoggerExtensions.Log(logger, logLevel, eventId, exception, message, args);
+            LoggerExtensions.Log(logger!, logLevel, eventId, exception, message, args);
         }
         catch (Exception caughtException)
         {
@@ -58,13 +58,13 @@ public static class QylInterceptedLogger
         }
     }
 
-    private static Activity? StartActivity(LogLevel logLevel, EventId eventId, Exception? exception)
+    private static Activity? StartActivity(ILogger logger, LogLevel logLevel, EventId eventId, Exception? exception)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, QylAutoInstrumentationIds.ILogger))
             return null;
 
         var severity = NormalizeSeverity(logLevel);
-        if (severity is null)
+        if (severity is null || !logger.IsEnabled(logLevel))
             return null;
 
         var activity = QylActivitySource.Source.StartActivity("ILogger " + severity, ActivityKind.Internal);
