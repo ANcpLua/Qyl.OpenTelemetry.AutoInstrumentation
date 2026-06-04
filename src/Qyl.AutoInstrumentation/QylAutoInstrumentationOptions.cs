@@ -11,7 +11,7 @@ public sealed class QylAutoInstrumentationOptions
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
     private const string CaptureSensitiveValuesVariable = "QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES";
 
-    public static readonly QylAutoInstrumentationOptions Current = Load();
+    public static QylAutoInstrumentationOptions Current => CurrentHolder.Value;
 
     private readonly IReadOnlyDictionary<string, bool> _instrumentationEnabled;
 
@@ -119,6 +119,11 @@ public sealed class QylAutoInstrumentationOptions
     public bool HasAnyActivityInstrumentationEnabled()
         => HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, TraceInstrumentationIds) ||
            HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, LogInstrumentationIds);
+
+    private static class CurrentHolder
+    {
+        internal static readonly QylAutoInstrumentationOptions Value = Load();
+    }
 
     private static QylAutoInstrumentationOptions Load()
     {

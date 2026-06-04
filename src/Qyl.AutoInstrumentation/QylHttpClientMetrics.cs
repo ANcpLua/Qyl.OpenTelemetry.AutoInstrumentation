@@ -18,7 +18,7 @@ internal static class QylHttpClientMetrics
         {
             var tags = new TagList
             {
-                { QylSemanticAttributes.HttpRequestMethod, NormalizeMethod(method) },
+                { QylSemanticAttributes.HttpRequestMethod, QylHttpMethod.Normalize(method) },
             };
 
             if (statusCode is { } code)
@@ -28,18 +28,4 @@ internal static class QylHttpClientMetrics
         }
     }
 
-    private static string NormalizeMethod(string? method)
-        => method switch
-        {
-            QylSemanticAttributes.HttpRequestMethodConnect or
-                QylSemanticAttributes.HttpRequestMethodDelete or
-                QylSemanticAttributes.HttpRequestMethodGet or
-                QylSemanticAttributes.HttpRequestMethodHead or
-                QylSemanticAttributes.HttpRequestMethodOptions or
-                QylSemanticAttributes.HttpRequestMethodPatch or
-                QylSemanticAttributes.HttpRequestMethodPost or
-                QylSemanticAttributes.HttpRequestMethodPut or
-                QylSemanticAttributes.HttpRequestMethodTrace => method,
-            _ => QylSemanticAttributes.HttpRequestMethodOther,
-        };
 }

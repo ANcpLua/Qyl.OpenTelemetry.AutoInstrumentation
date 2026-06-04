@@ -64,7 +64,7 @@ public static class QylInterceptedAspNetCore
         if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.AspNetCore))
             return null;
 
-        var method = context.Request.Method;
+        var method = QylHttpMethod.Normalize(context.Request.Method);
         var route = GetRoute(context);
         var activityName = route is null ? "HTTP " + method : method + " " + route;
         var activity = QylActivitySource.Source.StartActivity(activityName, ActivityKind.Server);

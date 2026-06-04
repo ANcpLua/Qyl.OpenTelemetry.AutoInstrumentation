@@ -16,12 +16,13 @@ public static class QylInterceptedHttpWebRequest
         if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("HTTP " + request.Method, ActivityKind.Client);
+        var method = QylHttpMethod.Normalize(request.Method);
+        var activity = QylActivitySource.Source.StartActivity("HTTP " + method, ActivityKind.Client);
         if (activity is null)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, HttpWebRequestDomain);
-        activity.SetTag(QylSemanticAttributes.HttpRequestMethod, request.Method);
+        activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
 
         if (request.RequestUri is not null)
         {

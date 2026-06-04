@@ -11,7 +11,6 @@ namespace Qyl.AutoInstrumentation;
 public static class QylInterceptedHttpClient
 {
     private const string HttpClientDomain = "http.client";
-    private const string UnknownHttpMethod = QylSemanticAttributes.HttpRequestMethodOther;
 
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
     {
@@ -502,7 +501,7 @@ public static class QylInterceptedHttpClient
         if (!traceEnabled && !metricsEnabled)
             return default;
 
-        method = NormalizeMethod(method);
+        method = QylHttpMethod.Normalize(method);
         var startTimeUtc = TimeProvider.System.GetUtcNow().UtcDateTime;
         Activity? activity = null;
 
@@ -588,21 +587,6 @@ public static class QylInterceptedHttpClient
             observation.Method,
             statusCode);
     }
-
-    private static string NormalizeMethod(string? method)
-        => method switch
-        {
-            QylSemanticAttributes.HttpRequestMethodConnect or
-                QylSemanticAttributes.HttpRequestMethodDelete or
-                QylSemanticAttributes.HttpRequestMethodGet or
-                QylSemanticAttributes.HttpRequestMethodHead or
-                QylSemanticAttributes.HttpRequestMethodOptions or
-                QylSemanticAttributes.HttpRequestMethodPatch or
-                QylSemanticAttributes.HttpRequestMethodPost or
-                QylSemanticAttributes.HttpRequestMethodPut or
-                QylSemanticAttributes.HttpRequestMethodTrace => method,
-            _ => UnknownHttpMethod,
-        };
 
     private static string RedactQuery(string url)
     {
