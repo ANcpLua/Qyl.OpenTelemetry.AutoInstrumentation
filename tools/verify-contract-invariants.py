@@ -199,6 +199,18 @@ def parse_unsupported_keys() -> set[str]:
     return set(re.findall(r'"(signals\.[^"]+)"', block))
 
 
+def parse_contract_signal_promises() -> dict[str, str]:
+    text = CONTRACT_PATH.read_text()
+    promises: dict[str, str] = {}
+    for match in re.finditer(
+        r'Signal\(\d+, "([^"]+)", InstrumentationSignal\.[A-Za-z]+, "[^"]+", "[^"]+", "[^"]+", "[^"]+", "[^"]+", "([^"]+)"\)',
+        text,
+    ):
+        promises[match.group(1)] = match.group(2)
+
+    return promises
+
+
 def parse_instrumentation_id_constants() -> dict[str, str]:
     text = IDS_PATH.read_text()
     return {
@@ -271,6 +283,15 @@ def verify_yaml_vs_contract() -> tuple[set[str], set[str]]:
     contract_unsupported = parse_unsupported_keys()
     if expected_unsupported != contract_unsupported:
         fail(f"unsupported set mismatch: expected={sorted(expected_unsupported)} CS={sorted(contract_unsupported)}")
+
+    source_generated_keys = yaml_signal_keys - contract_unsupported
+    contract_promises = parse_contract_signal_promises()
+    for key in sorted(source_generated_keys):
+        promise = contract_promises.get(key)
+        if promise is None:
+            fail(f"contract promise missing for source-generated signal: {key}")
+        if "Not supported for .NET NativeAOT" in promise or "retained only for contract parity" in promise:
+            fail(f"source-generated signal cannot be documented as NativeAOT-unsupported/parity-only: {key}")
 
     return yaml_signal_keys, contract_unsupported
 
