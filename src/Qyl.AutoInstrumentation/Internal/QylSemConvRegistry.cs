@@ -55,6 +55,7 @@ internal static partial class QylSemConvRegistry
     private static void ContributeQylContractKeys(HashSet<string> keys, HashSet<string> templatePrefixes)
     {
         keys.Add(QylSemanticAttributes.QylInstrumentationDomain);
+        keys.Add(QylSemanticAttributes.QylConformanceVerdict);
         keys.Add(QylSemanticAttributes.LogSeverity);
         keys.Add(QylSemanticAttributes.LogEventName);
 

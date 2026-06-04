@@ -30,7 +30,7 @@ internal static class SemConvConformanceProcessor
             {
                 var verdict = QylSemConvRegistry.IsKnownKey(tag.Key) ? "ok" : "unknown";
                 QylSelfTelemetry.AttributeChecks.Add(
-                    1, new KeyValuePair<string, object?>("qyl.conformance.verdict", verdict));
+                    1, new KeyValuePair<string, object?>(QylSemanticAttributes.QylConformanceVerdict, verdict));
             }
         }
         catch (Exception exception)

@@ -16,6 +16,7 @@ using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAt
 public static class QylSemanticAttributes
 {
     public const string QylInstrumentationDomain = "qyl.instrumentation.domain";
+    public const string QylConformanceVerdict = "qyl.conformance.verdict";
 
     public const string HttpRequestMethod = HttpAttributes.RequestMethod;
     public const string HttpRequestMethodOriginal = HttpAttributes.RequestMethodOriginal;
