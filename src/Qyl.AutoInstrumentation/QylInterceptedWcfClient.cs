@@ -16,7 +16,7 @@ public static class QylInterceptedWcfClient
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, WcfClientDomain);
-        activity.SetTag(QylSemanticAttributes.RpcSystem, "wcf");
+        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf);
         activity.SetTag(QylSemanticAttributes.RpcService, clientType);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
         return activity;

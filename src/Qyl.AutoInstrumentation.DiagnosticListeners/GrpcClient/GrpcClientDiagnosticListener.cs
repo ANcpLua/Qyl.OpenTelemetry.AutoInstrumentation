@@ -43,7 +43,7 @@ public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
             ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, "rpc.grpc");
-        SemanticTagWriter.Set(activity, SemanticAttributes.RpcSystem, "grpc");
+        SemanticTagWriter.Set(activity, SemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         SemanticTagWriter.Set(activity, SemanticAttributes.RpcService, service);
         SemanticTagWriter.Set(activity, SemanticAttributes.RpcMethod, method);
         SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, serverAddress);

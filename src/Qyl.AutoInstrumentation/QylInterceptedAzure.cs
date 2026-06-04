@@ -16,7 +16,7 @@ public static class QylInterceptedAzure
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, AzureDomain);
-        activity.SetTag(QylSemanticAttributes.RpcSystem, "azure");
+        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemAzure);
         activity.SetTag(QylSemanticAttributes.RpcService, clientType);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
         return activity;

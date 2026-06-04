@@ -51,8 +51,14 @@ public static class QylSemanticAttributes
     public const string DbSystemRedis = DbAttributes.SystemNameValues.Redis;
     public const string DbSystemSqlite = DbAttributes.SystemNameValues.Sqlite;
 
+    public const string RpcSystem = RpcAttributes.SystemName;
+    public const string RpcSystemGrpc = RpcAttributes.SystemNameValues.Grpc;
+#pragma warning disable CS0618 // DotnetWcf exists only on the deprecated value set in the current semconv package.
+    public const string RpcSystemDotNetWcf = RpcAttributes.SystemValues.DotnetWcf;
+#pragma warning restore CS0618
+    public const string RpcSystemAzure = "azure";
+    public const string RpcSystemQuartz = "quartz";
 #pragma warning disable CS0618 // Qyl still mirrors the current OTEL .NET auto gRPC status attribute contract.
-    public const string RpcSystem = RpcAttributes.System;
     public const string RpcService = RpcAttributes.Service;
     public const string RpcMethod = RpcAttributes.Method;
     public const string RpcGrpcStatusCode = RpcAttributes.GrpcStatusCode;

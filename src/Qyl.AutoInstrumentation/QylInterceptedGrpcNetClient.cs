@@ -21,7 +21,7 @@ public static class QylInterceptedGrpcNetClient
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, GrpcDomain);
-        activity.SetTag(QylSemanticAttributes.RpcSystem, "grpc");
+        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         activity.SetTag(QylSemanticAttributes.RpcService, service);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
         SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcRequestMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadata, requestMetadata);
