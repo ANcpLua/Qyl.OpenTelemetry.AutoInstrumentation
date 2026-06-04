@@ -13,12 +13,14 @@
     <InternalsVisibleTo Include="Qyl.AutoInstrumentation.Hosting" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(PublishAot)' != 'true'">
     <!-- Source generator referenced as analyzer: emits the semconv FrozenSet at compile time so the
-         runtime conformance check needs zero reflection (the substrate-era reflection path was JIT-only). -->
+         runtime conformance check needs zero reflection (the substrate-era reflection path was JIT-only).
+         It is build-time-only; NativeAOT publish must not try to publish the netstandard2.0 generator. -->
     <ProjectReference Include="..\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
   </ItemGroup>
 
 </Project>

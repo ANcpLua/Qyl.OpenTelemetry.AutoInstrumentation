@@ -23,4 +23,10 @@ public static class QylSelfTelemetry
         "qyl.semconv.attribute.checks",
         unit: "{check}",
         description: "Emitted attribute keys checked against the qyl semconv registry, by verdict.");
+
+    /// <summary>Counts conformance-processor failures swallowed to preserve app behavior.</summary>
+    public static readonly Counter<long> ConformanceProcessorFailures = Meter.CreateCounter<long>(
+        "qyl.semconv.processor.failures",
+        unit: "{failure}",
+        description: "Conformance processor failures swallowed to keep qyl instrumentation app-invisible.");
 }

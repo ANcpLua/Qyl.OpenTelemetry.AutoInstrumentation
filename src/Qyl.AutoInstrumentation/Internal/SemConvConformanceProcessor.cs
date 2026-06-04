@@ -33,9 +33,11 @@ internal static class SemConvConformanceProcessor
                     1, new KeyValuePair<string, object?>("qyl.conformance.verdict", verdict));
             }
         }
-        catch
+        catch (Exception exception)
         {
-            // Instrumentation must be invisible — never let a conformance-check failure reach the app.
+            QylSelfTelemetry.ConformanceProcessorFailures.Add(
+                1,
+                new KeyValuePair<string, object?>("exception.type", exception.GetType().Name));
         }
     }
 }

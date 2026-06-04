@@ -34,6 +34,28 @@ pure-managed library that ships as a NuGet package an app references directly. T
 substrate-era milestones (M1–M12) are **archived in git history** at tag `v0.1.0-archive` for
 reference.
 
+## Analyzer + NativeAOT proof
+
+The repo build is gated by the requested analyzer stack:
+
+- `ANcpLua.Analyzers` `2.0.2`
+- `Microsoft.CodeAnalysis.Analyzers` `5.3.0`
+- `ErrorProne.NET.CoreAnalyzers` `0.8.2-beta.1`
+- `ErrorProne.NET.Structs` `0.6.1-beta.1`
+- `Roslynator.Analyzers` `4.15.0`
+- `JonSkeet.RoslynAnalyzers` `1.0.0-beta.6`
+
+`Microsoft.CodeAnalysis.CSharp` is pinned to `5.3.0` for the build-time source-generator project.
+Runtime projects inherit `IsAotCompatible`, trim, AOT, and single-file analyzers with
+`TreatWarningsAsErrors=true`. The source-generator project is intentionally different: it targets
+`netstandard2.0` and runs only inside the compiler. Normal repo builds use it as an analyzer;
+`PublishAot=true` excludes the generator project so NativeAOT publish never tries to publish a
+build-time Roslyn assembly.
+
+Current evidence proves the runtime closure is NativeAOT-clean: a `net10.0` `osx-arm64` consumer
+referencing `Qyl.AutoInstrumentation.Hosting` publishes with `PublishAot=true` and starts. It does
+not claim M1 span emission is proven yet; the coverage ledger still owns that milestone.
+
 ## Projects
 
 | Project | TFM | Role |
@@ -43,10 +65,10 @@ reference.
 | `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | One `DiagnosticListener` subscriber per instrumented library (HttpClient, AspNetCore, EFCore, SqlClient, gRPC). |
 | `Qyl.AutoInstrumentation.Hosting` | net10.0 | `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
 
-All four projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
-`IsTrimmable`, `EnableTrimAnalyzer`, `EnableAotAnalyzer`, and `EnableSingleFileAnalyzer` all on,
-so an accidental introduction of a reflection-laden code path fails the build, not the
-deployment.
+The three runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
+`IsTrimmable`, `EnableTrimAnalyzer`, `EnableAotAnalyzer`, and `EnableSingleFileAnalyzer` all on.
+The source-generator project is build-time-only and explicitly excluded from NativeAOT publish, so
+an accidental runtime reflection or publish-graph regression fails the build instead of deployment.
 
 ## Status
 
