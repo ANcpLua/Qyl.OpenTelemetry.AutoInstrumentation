@@ -7,10 +7,18 @@ public static class QylInterceptedKafka
     private const string KafkaDomain = "messaging.kafka";
 
     public static Activity? StartProducerActivity(string? topic)
-        => StartActivity(QylSemanticAttributes.MessagingOperationTypeSend, QylSemanticAttributes.MessagingOperationNamePublish, topic);
+        => StartActivity(
+            ActivityKind.Producer,
+            QylSemanticAttributes.MessagingOperationTypeSend,
+            QylSemanticAttributes.MessagingOperationNamePublish,
+            topic);
 
     public static Activity? StartConsumerActivity()
-        => StartActivity(QylSemanticAttributes.MessagingOperationTypeReceive, QylSemanticAttributes.MessagingOperationTypeReceive, null);
+        => StartActivity(
+            ActivityKind.Consumer,
+            QylSemanticAttributes.MessagingOperationTypeReceive,
+            QylSemanticAttributes.MessagingOperationTypeReceive,
+            null);
 
     public static void RecordConsumeSuccess(Activity? activity, string? topic)
     {
@@ -28,12 +36,12 @@ public static class QylInterceptedKafka
         activity?.SetStatus(ActivityStatusCode.Error);
     }
 
-    private static Activity? StartActivity(string operationType, string operationName, string? topic)
+    private static Activity? StartActivity(ActivityKind activityKind, string operationType, string operationName, string? topic)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Kafka))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Kafka " + operationName, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("Kafka " + operationName, activityKind);
         if (activity is null)
             return null;
 
