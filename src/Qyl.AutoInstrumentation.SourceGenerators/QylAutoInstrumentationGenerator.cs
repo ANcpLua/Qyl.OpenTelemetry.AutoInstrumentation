@@ -64,6 +64,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetHttpClientInvocation(symbol, out target))
             return true;
 
+        if (TryGetHttpWebRequestInvocation(symbol, out target))
+            return true;
+
         if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
             return true;
 
@@ -159,6 +162,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             var invocation = invocations[index];
             if (invocation.Target.Kind is InterceptorKind.HttpClient)
                 EmitHttpClientInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.HttpWebRequest)
+                EmitHttpWebRequestInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
@@ -221,6 +226,50 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("(client");
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
         builder.AppendLine(");");
+        builder.AppendLine();
+    }
+
+    private static void EmitHttpWebRequestInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "HttpWebRequest_" + target.MethodName, index, target.ReceiverType, "request", target.Parameters, target.IsAsync);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.StartActivity(request, ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (target.IsAsync)
+        {
+            builder.Append("                var result = await request.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+        }
+        else
+        {
+            builder.Append("                var result = request.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+        }
+
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordResult(activity, result);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -1212,6 +1261,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetHttpWebRequestInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsType(symbol.ContainingType, "global::System.Net.HttpWebRequest") ||
+            !TryGetNoParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        var methodName = symbol.Name;
+        var isAsync = methodName.EndsWith("Async", StringComparison.Ordinal);
+        if (!TryGetHttpWebRequestReturn(symbol, methodName, isAsync, out var returnType))
+            return false;
+
+        target = new InterceptorTarget(
+            InterceptorKind.HttpWebRequest,
+            "signals.traces.HTTPCLIENT",
+            "HTTPCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            methodName,
+            returnType,
+            parameters,
+            isAsync);
+        return true;
+    }
+
     private static bool TryGetDbCommandInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
@@ -1897,6 +1972,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetHttpWebRequestReturn(IMethodSymbol symbol, string methodName, bool isAsync, out string returnType)
+    {
+        returnType = CleanTypeName(symbol.ReturnType);
+        if (!isAsync)
+        {
+            if (string.Equals(methodName, "GetResponse", StringComparison.Ordinal))
+                return InheritsFromOrIs(symbol.ReturnType, "global::System.Net.WebResponse");
+
+            if (string.Equals(methodName, "GetRequestStream", StringComparison.Ordinal))
+                return InheritsFromOrIs(symbol.ReturnType, "global::System.IO.Stream");
+
+            return false;
+        }
+
+        if (!TryGetTaskResult(symbol.ReturnType, out var taskResult))
+            return false;
+
+        if (string.Equals(methodName, "GetResponseAsync", StringComparison.Ordinal))
+            return InheritsFromOrIs(taskResult, "global::System.Net.WebResponse");
+
+        if (string.Equals(methodName, "GetRequestStreamAsync", StringComparison.Ordinal))
+            return InheritsFromOrIs(taskResult, "global::System.IO.Stream");
+
+        return false;
+    }
+
     private static InterceptorTarget HttpTarget(IMethodSymbol symbol, string methodName, string returnType, ImmutableArray<ParameterSpec> parameters)
         => new(
             InterceptorKind.HttpClient,
@@ -2445,6 +2546,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private enum InterceptorKind
     {
         HttpClient,
+        HttpWebRequest,
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         AzureClient,
