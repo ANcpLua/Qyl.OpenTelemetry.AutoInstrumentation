@@ -23,11 +23,15 @@ public sealed class AspNetCoreDiagnosticListener : DiagnosticListenerSubscriber
         }
 
         var method = HttpSemantics.NormalizeMethod(
+            AspNetCorePayloadReader.GetMethod(payload) ??
             DiagnosticPayloadReader.GetString(payload, "http.request.method", "http.method"),
             out var originalMethod);
-        var route = DiagnosticPayloadReader.GetString(payload, "http.route");
-        var path = DiagnosticPayloadReader.GetString(payload, "url.path", "http.target");
-        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
+        var route = AspNetCorePayloadReader.GetRoute(payload) ??
+                    DiagnosticPayloadReader.GetString(payload, "http.route");
+        var path = AspNetCorePayloadReader.GetPath(payload) ??
+                   DiagnosticPayloadReader.GetString(payload, "url.path", "http.target");
+        var statusCode = AspNetCorePayloadReader.GetStatusCode(payload) ??
+                         DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
         using var activity = QylActivitySource.Source.StartActivity(

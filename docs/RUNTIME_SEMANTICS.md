@@ -34,7 +34,7 @@ Set `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true` to emit these raw va
 | Library | Runtime source | Event/error path knowledge | Emitted stable defaults | Status |
 |---|---|---|---|---|
 | `System.Net.Http.HttpClient` | `HttpHandlerDiagnosticListener`; `Activity.Current` tags on `System.Net.Http.HttpRequestOut.Stop`. | Real local .NET 10 proof covers 503 response and connection failure. Error values observed: status-code string such as `503`, and BCL low-cardinality `connection_error`. | `http.request.method`, `server.address`, `server.port`, `http.response.status_code`, `error.type`. | Real managed + NativeAOT proof. |
-| ASP.NET Core | `Microsoft.AspNetCore` listener; current implementation consumes stable qyl payload and common HTTP aliases. | Route/status/error path still needs a real Kestrel/MVC proof matrix. | `http.request.method`, `http.route`, `http.response.status_code`; `url.path` privacy-gated. | Synthetic qyl proof only. |
+| ASP.NET Core | `Microsoft.AspNetCore` listener; `HttpContext` payload on `Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop`. | Real local .NET 10 Kestrel proof covers 204 route response and unhandled-exception 500 response. Route source is `RouteEndpoint.RoutePattern.RawText`; `Request.Path` remains privacy-gated. | `http.request.method`, `http.route`, `http.response.status_code`, `error.type` for 5xx. | Real managed + NativeAOT proof. |
 | EFCore | `Microsoft.EntityFrameworkCore` listener; current implementation consumes command event aliases. | CommandExecuted/CommandError real payload shape and provider/version matrix still pending. | `db.system`, `db.namespace`, `db.operation.name`, `db.query.summary`; `db.query.text` privacy-gated. | Synthetic qyl proof only. |
 | SqlClient | `SqlClientDiagnosticListener`; current implementation consumes command event aliases. | Microsoft.Data.SqlClient/System.Data.SqlClient command/error real payload matrix still pending. | `db.system=microsoft.sql_server`, `db.namespace`, `db.operation.name`, `db.query.summary`, `server.address`; `db.query.text` privacy-gated. | Synthetic qyl proof only. |
 | Grpc.Net.Client | `Grpc.Net.Client` listener; current implementation consumes gRPC aliases. | Real client success/cancel/status code matrix still pending. | `rpc.system=grpc`, `rpc.service`, `rpc.method`, `server.address`, `server.port`, `rpc.grpc.status_code`, `error.type`. | Synthetic qyl proof only. |
@@ -47,6 +47,14 @@ Real HttpClient, project-reference bootstrap simulation:
 dotnet run --project demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj -c Release --no-build
 dotnet publish demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-httpclient-aot /p:PublishAot=true /p:InvariantGlobalization=true
 /tmp/qyl-real-httpclient-aot/Qyl.RealHttpClientDemo
+```
+
+Real ASP.NET Core, project-reference bootstrap simulation:
+
+```bash
+dotnet run --project demos/Qyl.RealAspNetCoreDemo/Qyl.RealAspNetCoreDemo.csproj -c Release --no-build --no-launch-profile
+dotnet publish demos/Qyl.RealAspNetCoreDemo/Qyl.RealAspNetCoreDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-aspnetcore-aot /p:PublishAot=true /p:InvariantGlobalization=true
+/tmp/qyl-real-aspnetcore-aot/Qyl.RealAspNetCoreDemo
 ```
 
 Synthetic multi-domain semantic proof:

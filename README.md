@@ -101,7 +101,8 @@ Semantic rules live in the diagnostic listener layer:
 must emit its required safe attributes, and privacy-gated attributes must not leak with defaults.
 `demos/Qyl.RealHttpClientDemo` uses real .NET `HttpClient` traffic and BCL
 `HttpHandlerDiagnosticListener` events to prove runtime extraction for 503 and connection-failure
-paths under managed and NativeAOT execution. The per-library matrix lives in
+paths under managed and NativeAOT execution. `demos/Qyl.RealAspNetCoreDemo` does the same for
+Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. The per-library matrix lives in
 `docs/RUNTIME_SEMANTICS.md`.
 
 ## Status
