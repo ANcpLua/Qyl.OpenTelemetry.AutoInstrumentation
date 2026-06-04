@@ -90,6 +90,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetWcfClientInvocation(symbol, out target))
             return true;
 
+        if (TryGetWcfCoreServiceModelServicesInvocation(symbol, out target))
+            return true;
+
         if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
             return true;
 
@@ -187,6 +190,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitElasticInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.WcfClient)
                 EmitWcfClientInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.WcfCoreServiceModelServices)
+                EmitWcfCoreServiceModelServicesInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
                 EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall)
@@ -230,6 +235,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         builder.AppendLine("    }");
+        if (RequiresCoreWcfServiceBehavior(invocations))
+            EmitCoreWcfServiceBehavior(builder);
+
         if (RequiresGrpcStreamReader(invocations))
             EmitGrpcStreamReaderWrapper(builder);
 
@@ -577,6 +585,146 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("            }");
         builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitWcfCoreServiceModelServicesInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "WcfCore_" + target.MethodName, index, target.ReceiverType, "services", target.Parameters, false);
+        builder.AppendLine("        {");
+        builder.AppendLine("            var result = global::CoreWCF.Configuration.ServiceModelServiceCollectionExtensions.AddServiceModelServices(services);");
+        builder.AppendLine("            if (global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Traces, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.WcfCore))");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Microsoft.Extensions.DependencyInjection.Extensions.ServiceCollectionDescriptorExtensions.TryAddEnumerable(");
+        builder.AppendLine("                    result,");
+        builder.AppendLine("                    global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor.Singleton<global::CoreWCF.Description.IServiceBehavior, global::Qyl.AutoInstrumentation.Generated.QylCoreWcfServiceBehavior>());");
+        builder.AppendLine("            }");
+        builder.AppendLine();
+        builder.AppendLine("            return result;");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitCoreWcfServiceBehavior(StringBuilder builder)
+    {
+        builder.AppendLine("    public sealed class QylCoreWcfServiceBehavior : global::CoreWCF.Description.IServiceBehavior");
+        builder.AppendLine("    {");
+        builder.AppendLine("        public void Validate(global::CoreWCF.Description.ServiceDescription serviceDescription, global::CoreWCF.ServiceHostBase serviceHostBase)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            foreach (var endpoint in serviceDescription.Endpoints)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                foreach (var operation in endpoint.Contract.Operations)");
+        builder.AppendLine("                {");
+        builder.AppendLine("                    if (HasQylOperationBehavior(operation.OperationBehaviors))");
+        builder.AppendLine("                        continue;");
+        builder.AppendLine();
+        builder.AppendLine("                    operation.OperationBehaviors.Add(new QylCoreWcfOperationBehavior(");
+        builder.AppendLine("                        serviceDescription.ServiceType?.FullName ?? serviceDescription.Name,");
+        builder.AppendLine("                        endpoint.Contract.Name,");
+        builder.AppendLine("                        operation.Name));");
+        builder.AppendLine("                }");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public void AddBindingParameters(");
+        builder.AppendLine("            global::CoreWCF.Description.ServiceDescription serviceDescription,");
+        builder.AppendLine("            global::CoreWCF.ServiceHostBase serviceHostBase,");
+        builder.AppendLine("            global::System.Collections.ObjectModel.Collection<global::CoreWCF.Description.ServiceEndpoint> endpoints,");
+        builder.AppendLine("            global::CoreWCF.Channels.BindingParameterCollection bindingParameters)");
+        builder.AppendLine("        {");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public void ApplyDispatchBehavior(global::CoreWCF.Description.ServiceDescription serviceDescription, global::CoreWCF.ServiceHostBase serviceHostBase)");
+        builder.AppendLine("        {");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        private static bool HasQylOperationBehavior(global::System.Collections.IEnumerable behaviors)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            foreach (var behavior in behaviors)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                if (behavior is QylCoreWcfOperationBehavior)");
+        builder.AppendLine("                    return true;");
+        builder.AppendLine("            }");
+        builder.AppendLine();
+        builder.AppendLine("            return false;");
+        builder.AppendLine("        }");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    public sealed class QylCoreWcfOperationBehavior : global::CoreWCF.Description.IOperationBehavior");
+        builder.AppendLine("    {");
+        builder.AppendLine("        private readonly string _serviceName;");
+        builder.AppendLine("        private readonly string _contractName;");
+        builder.AppendLine("        private readonly string _operationName;");
+        builder.AppendLine();
+        builder.AppendLine("        public QylCoreWcfOperationBehavior(string serviceName, string contractName, string operationName)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            _serviceName = serviceName;");
+        builder.AppendLine("            _contractName = contractName;");
+        builder.AppendLine("            _operationName = operationName;");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public void AddBindingParameters(global::CoreWCF.Description.OperationDescription operationDescription, global::CoreWCF.Channels.BindingParameterCollection bindingParameters)");
+        builder.AppendLine("        {");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public void ApplyClientBehavior(global::CoreWCF.Description.OperationDescription operationDescription, global::CoreWCF.Dispatcher.ClientOperation clientOperation)");
+        builder.AppendLine("        {");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public void ApplyDispatchBehavior(global::CoreWCF.Description.OperationDescription operationDescription, global::CoreWCF.Dispatcher.DispatchOperation dispatchOperation)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            if (!global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Traces, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.WcfCore))");
+        builder.AppendLine("                return;");
+        builder.AppendLine();
+        builder.AppendLine("            if (dispatchOperation.Invoker is null or QylCoreWcfOperationInvoker)");
+        builder.AppendLine("                return;");
+        builder.AppendLine();
+        builder.AppendLine("            dispatchOperation.Invoker = new QylCoreWcfOperationInvoker(dispatchOperation.Invoker, _serviceName, _contractName, _operationName);");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public void Validate(global::CoreWCF.Description.OperationDescription operationDescription)");
+        builder.AppendLine("        {");
+        builder.AppendLine("        }");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    public sealed class QylCoreWcfOperationInvoker : global::CoreWCF.Dispatcher.IOperationInvoker");
+        builder.AppendLine("    {");
+        builder.AppendLine("        private readonly global::CoreWCF.Dispatcher.IOperationInvoker _inner;");
+        builder.AppendLine("        private readonly string _serviceName;");
+        builder.AppendLine("        private readonly string _contractName;");
+        builder.AppendLine("        private readonly string _operationName;");
+        builder.AppendLine();
+        builder.AppendLine("        public QylCoreWcfOperationInvoker(global::CoreWCF.Dispatcher.IOperationInvoker inner, string serviceName, string contractName, string operationName)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            _inner = inner;");
+        builder.AppendLine("            _serviceName = serviceName;");
+        builder.AppendLine("            _contractName = contractName;");
+        builder.AppendLine("            _operationName = operationName;");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public object[] AllocateInputs() => _inner.AllocateInputs();");
+        builder.AppendLine();
+        builder.AppendLine("        public async global::System.Threading.Tasks.ValueTask<(object returnValue, object[] outputs)> InvokeAsync(object instance, object[] inputs)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedWcfCore.StartActivity(_serviceName, _contractName, _operationName);");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.AppendLine("                var result = await _inner.InvokeAsync(instance, inputs).ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfCore.RecordSuccess(activity);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfCore.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine("    }");
         builder.AppendLine();
     }
 
@@ -1991,6 +2139,34 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         => symbol is INamedTypeSymbol named &&
            named.ContainingNamespace.ToDisplayString().StartsWith("System.ServiceModel", StringComparison.Ordinal);
 
+    private static bool TryGetWcfCoreServiceModelServicesInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom ?? symbol;
+        var hasReceiverParameter = symbol.Parameters.Length is 1 &&
+            IsType(symbol.Parameters[0].Type, "global::Microsoft.Extensions.DependencyInjection.IServiceCollection");
+
+        if ((symbol.ReducedFrom is null && !hasReceiverParameter) ||
+            !string.Equals(symbol.Name, "AddServiceModelServices", StringComparison.Ordinal) ||
+            !IsType(original.ContainingType, "global::CoreWCF.Configuration.ServiceModelServiceCollectionExtensions") ||
+            !IsType(symbol.ReturnType, "global::Microsoft.Extensions.DependencyInjection.IServiceCollection") ||
+            (symbol.Parameters.Length is not 0 && !hasReceiverParameter))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.WcfCoreServiceModelServices,
+            "signals.traces.WCFCORE",
+            "WCFCORE",
+            "global::Microsoft.Extensions.DependencyInjection.IServiceCollection",
+            "AddServiceModelServices",
+            CleanTypeName(symbol.ReturnType),
+            ImmutableArray<ParameterSpec>.Empty,
+            false);
+        return true;
+    }
+
     private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
@@ -3329,6 +3505,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall or
                 InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall);
 
+    private static bool RequiresCoreWcfServiceBehavior(InterceptedInvocation[] invocations)
+        => invocations.Any(static invocation => invocation.Target.Kind is InterceptorKind.WcfCoreServiceModelServices);
+
     private static void AppendStringLiteral(StringBuilder builder, string value)
     {
         builder.Append('"');
@@ -3347,6 +3526,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         ElasticsearchClient,
         ElasticTransport,
         WcfClient,
+        WcfCoreServiceModelServices,
         GrpcNetClientAsyncUnaryCall,
         GrpcNetClientAsyncServerStreamingCall,
         GrpcNetClientAsyncClientStreamingCall,
