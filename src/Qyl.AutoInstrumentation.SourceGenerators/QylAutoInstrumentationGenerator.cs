@@ -1038,12 +1038,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
-        builder.Append("                await endpoint.");
-        builder.Append(target.MethodName);
-        AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(").ConfigureAwait(false);");
+        builder.Append("                await ");
+        AppendInvocationCall(builder, target, "endpoint");
+        builder.AppendLine(".ConfigureAwait(false);");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
@@ -1260,7 +1257,18 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MongoDb_" + target.MethodName, index, target.ReceiverType, "collection", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            "MongoDb_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "collection",
+            target.Parameters,
+            isAsync: false,
+            typeParameterList: target.TypeParameterList,
+            constraintClauses: target.ConstraintClauses);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(");
         AppendStringLiteral(builder, target.MethodName);
@@ -1270,38 +1278,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
         {
-            builder.Append("                var resultTask = collection.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
+            builder.Append("                var resultTask = ");
+            AppendInvocationCall(builder, target, "collection");
+            builder.AppendLine(";");
             builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(resultTask, activity);");
         }
         else if (target.IsAsync)
         {
-            builder.Append("                var resultTask = collection.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
+            builder.Append("                var resultTask = ");
+            AppendInvocationCall(builder, target, "collection");
+            builder.AppendLine(";");
             builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(resultTask, activity);");
         }
         else if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
         {
-            builder.Append("                collection.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
+            builder.Append("                ");
+            AppendInvocationCall(builder, target, "collection");
+            builder.AppendLine(";");
             builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
         }
         else
         {
-            builder.Append("                var result = collection.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
+            builder.Append("                var result = ");
+            AppendInvocationCall(builder, target, "collection");
+            builder.AppendLine(";");
             builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
             builder.AppendLine("                return result;");
         }
@@ -1351,20 +1351,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (target.IsAsync)
         {
-            builder.Append("                await channel.");
-            builder.Append(target.MethodName);
-            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
+            builder.Append("                await ");
+            AppendInvocationCall(builder, target, "channel");
+            builder.AppendLine(".ConfigureAwait(false);");
         }
         else
         {
-            builder.Append("                channel.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
+            builder.Append("                ");
+            AppendInvocationCall(builder, target, "channel");
+            builder.AppendLine(";");
         }
 
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);");
@@ -1725,6 +1720,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
             builder.Append(parameters[i].Name);
         }
+    }
+
+    private static void AppendInvocationCall(StringBuilder builder, InterceptorTarget target, string receiverName)
+    {
+        if (!string.IsNullOrEmpty(target.ExtensionContainingType))
+        {
+            builder.Append(target.ExtensionContainingType);
+            builder.Append('.');
+            builder.Append(target.MethodName);
+            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+            builder.Append('(');
+            builder.Append(receiverName);
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
+            builder.Append(')');
+            return;
+        }
+
+        builder.Append(receiverName);
+        builder.Append('.');
+        builder.Append(target.MethodName);
+        AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.Append(')');
     }
 
     private static bool TryGetHttpClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
@@ -2280,25 +2299,42 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetNServiceBusInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsNServiceBusEndpointType(receiverType) &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsNServiceBusEndpointType(receiverType)))
+        {
+            return false;
+        }
+
         if (!IsSupportedNServiceBusOperation(symbol.Name) ||
             !IsTask(symbol.ReturnType) ||
-            !IsNServiceBusEndpointType(symbol.ContainingType) ||
             symbol.Parameters.Length is 0)
         {
             return false;
         }
 
+        var typeParameterList = GetTypeParameterList(symbol);
+        var receiverTypeName = CleanTypeName(receiverType);
+        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
+        var parameters = Parameters(symbol);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, receiverType);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
+
         target = new InterceptorTarget(
             InterceptorKind.NServiceBusMessageOperation,
             "signals.traces.NSERVICEBUS",
             "NSERVICEBUS",
-            CleanTypeName(symbol.ContainingType),
+            receiverTypeName,
             symbol.Name,
-            CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            returnTypeName,
+            parameters,
             true,
-            GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol));
+            typeParameterList,
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
         return true;
     }
 
@@ -2402,22 +2438,41 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetMongoDbInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsOrImplementsConstructedGeneric(receiverType, "MongoDB.Driver", "IMongoCollection`1") &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsOrImplementsConstructedGeneric(receiverType, "MongoDB.Driver", "IMongoCollection`1")))
+        {
+            return false;
+        }
+
         if (!IsSupportedMongoDbCollectionMethod(symbol.Name) ||
-            !IsOrImplementsConstructedGeneric(symbol.ContainingType, "MongoDB.Driver", "IMongoCollection`1") ||
             !CanEmitMongoDbReturn(symbol.ReturnType))
         {
             return false;
         }
 
+        var typeParameterList = GetTypeParameterList(symbol);
+        var receiverTypeName = CleanTypeName(receiverType);
+        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
+        var parameters = Parameters(symbol);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, receiverType);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
+
         target = new InterceptorTarget(
             InterceptorKind.MongoDbCollection,
             "signals.traces.MONGODB",
             "MONGODB",
-            CleanTypeName(symbol.ContainingType),
+            receiverTypeName,
             symbol.Name,
-            CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
-            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
+            returnTypeName,
+            parameters,
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _),
+            typeParameterList,
+            string.Empty,
+            GetReducedExtensionContainingType(symbol));
         return true;
     }
 
@@ -2455,8 +2510,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetRabbitMqInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
-        if (!IsRabbitMqChannelType(symbol.ContainingType) ||
-            !TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsRabbitMqChannelType(receiverType) &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsRabbitMqChannelType(receiverType)))
+        {
+            return false;
+        }
+
+        if (!TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
         {
             return false;
         }
@@ -2468,11 +2530,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 InterceptorKind.RabbitMqBasicPublish,
                 "signals.traces.RABBITMQ",
                 "RABBITMQ",
-                CleanTypeName(symbol.ContainingType),
+                CleanTypeName(receiverType),
                 "BasicPublish",
                 "void",
                 parameters,
-                false);
+                false,
+                ExtensionContainingType: GetReducedExtensionContainingType(symbol));
             return true;
         }
 
@@ -2483,13 +2546,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 InterceptorKind.RabbitMqBasicPublish,
                 "signals.traces.RABBITMQ",
                 "RABBITMQ",
-                CleanTypeName(symbol.ContainingType),
+                CleanTypeName(receiverType),
                 "BasicPublishAsync",
                 CleanTypeName(symbol.ReturnType, symbol),
                 parameters,
                 true,
                 GetTypeParameterList(symbol),
-                GetConstraintClauses(symbol));
+                GetConstraintClauses(symbol),
+                GetReducedExtensionContainingType(symbol));
             return true;
         }
 
@@ -3249,6 +3313,23 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetReducedExtensionReceiverType(IMethodSymbol symbol, out ITypeSymbol receiverType)
+    {
+        if (symbol.ReducedFrom is { Parameters.Length: > 0 } original)
+        {
+            receiverType = original.Parameters[0].Type;
+            return true;
+        }
+
+        receiverType = symbol.ContainingType;
+        return false;
+    }
+
+    private static string GetReducedExtensionContainingType(IMethodSymbol symbol)
+        => symbol.ReducedFrom is null
+            ? string.Empty
+            : CleanTypeName(symbol.ReducedFrom.ContainingType);
+
     private static bool CanEmitByValueParameters(IMethodSymbol symbol)
     {
         foreach (var parameter in symbol.Parameters)
@@ -3262,17 +3343,18 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static string GetTypeParameterList(IMethodSymbol symbol)
     {
-        if (symbol.TypeParameters.Length is 0)
+        var genericSymbol = GetGenericMethodForEmission(symbol);
+        if (genericSymbol.TypeParameters.Length is 0)
             return string.Empty;
 
         var builder = new StringBuilder();
         builder.Append('<');
-        for (var i = 0; i < symbol.TypeParameters.Length; i++)
+        for (var i = 0; i < genericSymbol.TypeParameters.Length; i++)
         {
             if (i > 0)
                 builder.Append(", ");
 
-            builder.Append(symbol.TypeParameters[i].Name);
+            builder.Append(genericSymbol.TypeParameters[i].Name);
         }
 
         builder.Append('>');
@@ -3281,11 +3363,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static string GetConstraintClauses(IMethodSymbol symbol)
     {
-        if (symbol.TypeParameters.Length is 0)
+        var genericSymbol = GetGenericMethodForEmission(symbol);
+        if (genericSymbol.TypeParameters.Length is 0)
             return string.Empty;
 
         var builder = new StringBuilder();
-        foreach (var typeParameter in symbol.TypeParameters)
+        foreach (var typeParameter in genericSymbol.TypeParameters)
         {
             var constraintClause = GetConstraintClause(typeParameter);
             if (string.IsNullOrWhiteSpace(constraintClause))
@@ -3297,6 +3380,87 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         return builder.ToString();
     }
+
+    private static string GetTypeParameterListFromVisibleTypes(IMethodSymbol symbol, ITypeSymbol receiverType)
+    {
+        var names = new List<string>();
+        AddTypeParameterNames(receiverType, names);
+        AddTypeParameterNames(symbol.ReturnType, names);
+
+        foreach (var parameter in symbol.Parameters)
+            AddTypeParameterNames(parameter.Type, names);
+
+        return names.Count is 0
+            ? string.Empty
+            : "<" + string.Join(", ", names) + ">";
+    }
+
+    private static string GetTypeParameterListFromFormattedTypes(
+        string receiverType,
+        string returnType,
+        ImmutableArray<ParameterSpec> parameters)
+    {
+        var names = new List<string>();
+        AddFormattedTypeParameterNames(receiverType, names);
+        AddFormattedTypeParameterNames(returnType, names);
+
+        foreach (var parameter in parameters)
+            AddFormattedTypeParameterNames(parameter.TypeName, names);
+
+        return names.Count is 0
+            ? string.Empty
+            : "<" + string.Join(", ", names) + ">";
+    }
+
+    private static void AddFormattedTypeParameterNames(string typeName, List<string> names)
+    {
+        for (var i = 0; i < typeName.Length; i++)
+        {
+            if (typeName[i] is not 'T' ||
+                i > 0 && typeName[i - 1] is not '<' and not ',' and not ' ')
+            {
+                continue;
+            }
+
+            var end = i + 1;
+            while (end < typeName.Length && (char.IsLetterOrDigit(typeName[end]) || typeName[end] == '_'))
+                end++;
+
+            var candidate = typeName.Substring(i, end - i);
+            if (candidate.Length > 1 && !names.Contains(candidate))
+                names.Add(candidate);
+        }
+    }
+
+    private static void AddTypeParameterNames(ITypeSymbol symbol, List<string> names)
+    {
+        if (symbol is ITypeParameterSymbol typeParameter)
+        {
+            if (!names.Contains(typeParameter.Name))
+                names.Add(typeParameter.Name);
+
+            return;
+        }
+
+        if (symbol is IArrayTypeSymbol array)
+        {
+            AddTypeParameterNames(array.ElementType, names);
+            return;
+        }
+
+        if (symbol is INamedTypeSymbol named)
+        {
+            foreach (var typeArgument in named.TypeArguments)
+                AddTypeParameterNames(typeArgument, names);
+        }
+    }
+
+    private static IMethodSymbol GetGenericMethodForEmission(IMethodSymbol symbol)
+        => symbol.TypeParameters.Length > 0
+            ? symbol
+            : symbol.ReducedFrom is { TypeParameters.Length: > 0 } reducedFrom
+                ? reducedFrom
+                : symbol;
 
     private static string GetConstraintClause(ITypeParameterSymbol typeParameter)
     {
@@ -3513,9 +3677,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         => symbol.ToDisplayString(FullyQualifiedFormat);
 
     private static string CleanTypeName(ITypeSymbol symbol, IMethodSymbol method)
-        => method.TypeParameters.Length is 0
+    {
+        var genericMethod = GetGenericMethodForEmission(method);
+        return genericMethod.TypeParameters.Length is 0
             ? CleanTypeName(symbol)
-            : CleanTypeName(symbol, method.TypeParameters, method.TypeArguments);
+            : CleanTypeName(symbol, genericMethod.TypeParameters, genericMethod.TypeArguments);
+    }
 
     private static string CleanTypeName(
         ITypeSymbol symbol,
@@ -3608,7 +3775,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         ImmutableArray<ParameterSpec> Parameters,
         bool IsAsync,
         string TypeParameterList = "",
-        string ConstraintClauses = "");
+        string ConstraintClauses = "",
+        string ExtensionContainingType = "");
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }
