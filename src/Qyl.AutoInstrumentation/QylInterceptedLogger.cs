@@ -74,9 +74,6 @@ public static class QylInterceptedLogger
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, LoggerDomain);
         activity.SetTag(QylSemanticAttributes.LogSeverity, severity);
 
-        if (!string.IsNullOrWhiteSpace(eventId.Name))
-            activity.SetTag(QylSemanticAttributes.LogEventName, eventId.Name);
-
         if (exception is not null)
             RecordException(activity, exception);
 
