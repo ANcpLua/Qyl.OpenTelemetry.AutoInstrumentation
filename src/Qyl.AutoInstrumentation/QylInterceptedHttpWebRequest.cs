@@ -25,9 +25,10 @@ public static class QylInterceptedHttpWebRequest
 
         if (request.RequestUri is not null)
         {
+            var requestUri = request.RequestUri.ToString();
             var urlFull = options.HttpClientUrlQueryRedactionDisabled
-                ? request.RequestUri.ToString()
-                : request.RequestUri.GetLeftPart(UriPartial.Path);
+                ? requestUri
+                : RedactQuery(requestUri);
 
             activity.SetTag(QylSemanticAttributes.UrlFull, urlFull);
             activity.SetTag(QylSemanticAttributes.ServerAddress, request.RequestUri.Host);
@@ -86,4 +87,16 @@ public static class QylInterceptedHttpWebRequest
 
     private static string NormalizeHeaderName(string headerName)
         => headerName.Trim().ToLowerInvariant().Replace('_', '-');
+
+    private static string RedactQuery(string url)
+    {
+        var queryStart = url.IndexOf('?', StringComparison.Ordinal);
+        if (queryStart < 0)
+            return url;
+
+        var fragmentStart = url.IndexOf('#', queryStart);
+        return fragmentStart < 0
+            ? url[..queryStart] + "?Redacted"
+            : url[..queryStart] + "?Redacted" + url[fragmentStart..];
+    }
 }
