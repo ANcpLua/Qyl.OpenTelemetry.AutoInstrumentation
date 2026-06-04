@@ -5,7 +5,7 @@ namespace Qyl.AutoInstrumentation;
 
 internal static class QylHttpClientMetrics
 {
-    private static readonly Meter Meter = new("System.Net.Http");
+    private static readonly Meter Meter = new(QylMetricMeters.HttpClientMeterName);
     private static readonly Histogram<double> RequestDuration = Meter.CreateHistogram<double>("http.client.request.duration", "s");
 
     public static void RecordRequestDuration(DateTime startTimeUtc, string? method, int? statusCode)

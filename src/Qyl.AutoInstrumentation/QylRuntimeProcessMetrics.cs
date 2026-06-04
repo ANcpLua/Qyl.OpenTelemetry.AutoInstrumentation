@@ -18,7 +18,7 @@ internal static class QylRuntimeProcessMetrics
 
     private static class NetRuntimeMetrics
     {
-        private static readonly Meter Meter = new("OpenTelemetry.Instrumentation.Runtime");
+        private static readonly Meter Meter = new(QylMetricMeters.NetRuntimeMeterName);
         private static readonly ObservableCounter<long> GcCollections = Meter.CreateObservableCounter(
             "process.runtime.dotnet.gc.collections.count",
             ObserveGcCollections);
@@ -57,7 +57,7 @@ internal static class QylRuntimeProcessMetrics
 
     private static class ProcessMetrics
     {
-        private static readonly Meter Meter = new("OpenTelemetry.Instrumentation.Process");
+        private static readonly Meter Meter = new(QylMetricMeters.ProcessMeterName);
         private static readonly ObservableCounter<double> CpuTime = Meter.CreateObservableCounter(
             "process.cpu.time",
             ObserveCpuTime,

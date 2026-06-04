@@ -4,7 +4,7 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylNServiceBusMetrics
 {
-    private static readonly Meter Meter = new("NServiceBus.Core");
+    private static readonly Meter Meter = new(QylMetricMeters.NServiceBusMeterName);
     private static readonly Histogram<double> OperationDuration = Meter.CreateHistogram<double>("nservicebus.messaging.operation.duration", "s");
 
     public static long GetTimestamp()
