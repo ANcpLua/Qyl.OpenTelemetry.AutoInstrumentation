@@ -313,8 +313,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
-        builder.Append(", ");
-        AppendGrpcMetadataExpression(builder, target);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
