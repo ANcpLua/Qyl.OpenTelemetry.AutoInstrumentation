@@ -34,6 +34,30 @@ public static class QylInterceptedLogger
         }
     }
 
+    public static void LogExtension(
+        ILogger logger,
+        LogLevel logLevel,
+        EventId eventId,
+        Exception? exception,
+        string? message,
+        object?[] args)
+    {
+        var activity = StartActivity(logLevel, eventId, exception);
+        try
+        {
+            LoggerExtensions.Log(logger, logLevel, eventId, exception, message, args);
+        }
+        catch (Exception caughtException)
+        {
+            RecordException(activity, caughtException);
+            throw;
+        }
+        finally
+        {
+            activity?.Dispose();
+        }
+    }
+
     private static Activity? StartActivity(LogLevel logLevel, EventId eventId, Exception? exception)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, QylAutoInstrumentationIds.ILogger))

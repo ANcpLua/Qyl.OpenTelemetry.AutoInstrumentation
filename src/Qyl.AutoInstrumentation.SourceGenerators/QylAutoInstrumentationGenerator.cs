@@ -79,6 +79,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetStackExchangeRedisInvocation(symbol, out target))
             return true;
 
+        if (TryGetLoggerExtensionInvocation(symbol, out target))
+            return true;
+
         if (TryGetLoggerInvocation(symbol, out target))
             return true;
 
@@ -145,6 +148,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitKafkaConsumerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.ILoggerExtensionLog)
+                EmitLoggerExtensionInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
                 EmitLoggerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
@@ -575,6 +580,74 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
+    private static void EmitLoggerExtensionInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, "void", "LoggerExtensions_" + target.MethodName, index, target.ReceiverType, "logger", target.Parameters, isAsync: false);
+        builder.Append("            => global::Qyl.AutoInstrumentation.QylInterceptedLogger.LogExtension(logger, ");
+        AppendLoggerLevelExpression(builder, target);
+        builder.Append(", ");
+        AppendFirstParameterExpression(builder, target, "global::Microsoft.Extensions.Logging.EventId", "default");
+        builder.Append(", ");
+        AppendFirstParameterExpression(builder, target, "global::System.Exception", "null");
+        builder.Append(", ");
+        AppendFirstParameterExpression(builder, target, "global::System.String", "null");
+        builder.Append(", ");
+        AppendFirstArrayParameterExpression(builder, target, "global::System.Object", "global::System.Array.Empty<object?>()");
+        builder.AppendLine(");");
+        builder.AppendLine();
+    }
+
+    private static void AppendLoggerLevelExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (string.Equals(target.MethodName, "Log", StringComparison.Ordinal))
+        {
+            AppendFirstParameterExpression(builder, target, "global::Microsoft.Extensions.Logging.LogLevel", "global::Microsoft.Extensions.Logging.LogLevel.None");
+            return;
+        }
+
+        var levelName = target.MethodName switch
+        {
+            "LogTrace" => "Trace",
+            "LogDebug" => "Debug",
+            "LogInformation" => "Information",
+            "LogWarning" => "Warning",
+            "LogError" => "Error",
+            "LogCritical" => "Critical",
+            _ => "None",
+        };
+        builder.Append("global::Microsoft.Extensions.Logging.LogLevel.");
+        builder.Append(levelName);
+    }
+
+    private static void AppendFirstParameterExpression(StringBuilder builder, InterceptorTarget target, string typeName, string fallbackExpression)
+    {
+        foreach (var parameter in target.Parameters)
+        {
+            if (string.Equals(parameter.TypeName, typeName, StringComparison.Ordinal))
+            {
+                builder.Append(parameter.Name);
+                return;
+            }
+        }
+
+        builder.Append(fallbackExpression);
+    }
+
+    private static void AppendFirstArrayParameterExpression(StringBuilder builder, InterceptorTarget target, string elementTypeName, string fallbackExpression)
+    {
+        foreach (var parameter in target.Parameters)
+        {
+            if (string.Equals(parameter.TypeName, elementTypeName + "[]", StringComparison.Ordinal))
+            {
+                builder.Append(parameter.Name);
+                return;
+            }
+        }
+
+        builder.Append(fallbackExpression);
+    }
+
     private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
@@ -655,6 +728,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         foreach (var parameter in parameters)
         {
             builder.Append(", ");
+            if (parameter.IsParams)
+                builder.Append("params ");
+
             builder.Append(parameter.TypeName);
             builder.Append(' ');
             builder.Append(parameter.Name);
@@ -934,6 +1010,75 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             Parameters(symbol),
             false);
         return true;
+    }
+
+    private static bool TryGetLoggerExtensionInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom;
+        if (original is null ||
+            !symbol.ReturnsVoid ||
+            !IsType(original.ContainingType, "global::Microsoft.Extensions.Logging.LoggerExtensions") ||
+            !IsSupportedLoggerExtensionName(symbol.Name) ||
+            !IsSupportedLoggerExtensionParameters(symbol))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ILoggerExtensionLog,
+            "signals.logs.ILOGGER",
+            "ILOGGER",
+            "global::Microsoft.Extensions.Logging.ILogger",
+            symbol.Name,
+            "void",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool IsSupportedLoggerExtensionName(string name)
+        => name is "Log" or
+            "LogTrace" or
+            "LogDebug" or
+            "LogInformation" or
+            "LogWarning" or
+            "LogError" or
+            "LogCritical";
+
+    private static bool IsSupportedLoggerExtensionParameters(IMethodSymbol symbol)
+    {
+        if (symbol.Parameters.Length is < 2)
+            return false;
+
+        var hasMessage = false;
+        var hasArgs = false;
+
+        foreach (var parameter in symbol.Parameters)
+        {
+            if (IsType(parameter.Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
+                IsType(parameter.Type, "global::Microsoft.Extensions.Logging.EventId") ||
+                IsType(parameter.Type, "global::System.Exception"))
+            {
+                continue;
+            }
+
+            if (IsType(parameter.Type, "global::System.String"))
+            {
+                hasMessage = true;
+                continue;
+            }
+
+            if (parameter.IsParams && IsArrayOf(parameter.Type, "global::System.Object"))
+            {
+                hasArgs = true;
+                continue;
+            }
+
+            return false;
+        }
+
+        return hasMessage && hasArgs;
     }
 
     private static bool TryGetKafkaProducerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
@@ -1339,7 +1484,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.Add(new ParameterSpec(
                 CleanTypeName(symbol.Parameters[i].Type),
                 "p" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                GetDefaultValueExpression(symbol.Parameters[i])));
+                GetDefaultValueExpression(symbol.Parameters[i]),
+                symbol.Parameters[i].IsParams));
 
         return builder.ToImmutable();
     }
@@ -1541,12 +1687,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         KafkaProducer,
         KafkaConsumer,
         StackExchangeRedisStringGetAsync,
+        ILoggerExtensionLog,
         ILoggerLog,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
 
-    private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "");
+    private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false);
 
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,
