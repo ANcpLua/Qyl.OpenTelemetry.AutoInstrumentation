@@ -60,6 +60,14 @@ RUNTIME_EMISSION_ROOTS = [
     ROOT / "src" / "Qyl.AutoInstrumentation",
     ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
 ]
+PRODUCTIVE_MECHANISM_ROOTS = [
+    ROOT / "src" / "Qyl.AutoInstrumentation",
+    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.AutoInstrumentation.Hosting",
+    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators",
+]
 FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
     re.compile(r'\.SetTag\(\s*"[^"]+"'),
     re.compile(r'\.AddTag\(\s*"[^"]+"'),
@@ -75,6 +83,26 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw exception;",
     "throw caughtException;",
     "throw ex;",
+]
+FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS = [
+    "CORECLR_PROFILER",
+    "DOTNET_STARTUP_HOOKS",
+    "ICorProfiler",
+    "ReJIT",
+    "ILRewrite",
+    "ILRewriter",
+    "Assembly.Load",
+    "Assembly.GetTypes",
+    "System.Reflection",
+    "Activator.CreateInstance",
+    "Type.GetType",
+    "GetTypes(",
+    "GetFields(",
+    "GetProperties(",
+    "GetMethods(",
+    "MakeGeneric",
+    "CallSite",
+    "dynamic ",
 ]
 
 
@@ -402,6 +430,53 @@ def verify_behavior_semantics_contract() -> None:
                 fail(f"interceptor catch block must rethrow with throw; in {path.relative_to(ROOT)}")
 
 
+def strip_csharp_comments(text: str) -> str:
+    result: list[str] = []
+    index = 0
+    in_block_comment = False
+    while index < len(text):
+        if in_block_comment:
+            if text.startswith("*/", index):
+                in_block_comment = False
+                index += 2
+            else:
+                if text[index] in "\r\n":
+                    result.append(text[index])
+                index += 1
+            continue
+
+        if text.startswith("/*", index):
+            in_block_comment = True
+            index += 2
+            continue
+
+        if text.startswith("//", index):
+            while index < len(text) and text[index] not in "\r\n":
+                index += 1
+            continue
+
+        result.append(text[index])
+        index += 1
+
+    return "".join(result)
+
+
+def verify_productive_mechanism_contract() -> None:
+    for root in PRODUCTIVE_MECHANISM_ROOTS:
+        for path in sorted(root.rglob("*")):
+            if "bin" in path.parts or "obj" in path.parts:
+                continue
+
+            if path.suffix not in {".cs", ".props", ".targets"}:
+                continue
+
+            text = path.read_text()
+            scan_text = strip_csharp_comments(text) if path.suffix == ".cs" else text
+            for token in FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS:
+                if token in scan_text:
+                    fail(f"productive code must not use forbidden instrumentation mechanism {token}: {path.relative_to(ROOT)}")
+
+
 def parse_interceptor_kinds(generator: str) -> set[str]:
     try:
         enum_block = generator.split("private enum InterceptorKind", 1)[1].split("}", 1)[0]
@@ -533,6 +608,7 @@ def main() -> None:
     verify_environment_contract()
     verify_semconv_attribute_contract()
     verify_behavior_semantics_contract()
+    verify_productive_mechanism_contract()
     print("contract-invariants-ok")
 
 
