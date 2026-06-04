@@ -78,9 +78,9 @@ public static class QylInterceptedHttpWebRequest
 
         foreach (var headerName in configuredHeaders)
         {
-            var value = headers[headerName];
-            if (!string.IsNullOrEmpty(value))
-                activity.SetTag(prefix + NormalizeHeaderName(headerName), value);
+            var values = headers.GetValues(headerName);
+            if (values is { Length: > 0 })
+                activity.SetTag(prefix + NormalizeHeaderName(headerName), values);
         }
     }
 
