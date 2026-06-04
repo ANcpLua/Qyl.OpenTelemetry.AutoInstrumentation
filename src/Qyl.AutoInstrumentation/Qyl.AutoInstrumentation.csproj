@@ -6,11 +6,18 @@
     <AssemblyName>Qyl.AutoInstrumentation</AssemblyName>
     <PackageId>Qyl.AutoInstrumentation</PackageId>
     <Description>AOT-native zero-code .NET instrumentation core. Source-generated semconv registry + Activity/Meter primitives. NO IL rewriting, NO CLR profiler attach.</Description>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Qyl.AutoInstrumentation.DiagnosticListeners" />
     <InternalsVisibleTo Include="Qyl.AutoInstrumentation.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="buildTransitive\Qyl.AutoInstrumentation.targets"
+          Pack="true"
+          PackagePath="buildTransitive\" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(PublishAot)' != 'true'">
@@ -22,5 +29,15 @@
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
   </ItemGroup>
+
+  <Target Name="QylPackSourceGeneratorAnalyzer" BeforeTargets="GenerateNuspec" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <None Include="@(Analyzer)"
+            Pack="true"
+            PackagePath="analyzers/dotnet/cs\"
+            Visible="false"
+            Condition="'%(Analyzer.Filename)' == 'Qyl.AutoInstrumentation.SourceGenerators'" />
+    </ItemGroup>
+  </Target>
 
 </Project>
