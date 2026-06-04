@@ -14,6 +14,8 @@ IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
 SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
+METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
+METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
 INTENTIONALLY_UNSUPPORTED_DYNAMIC_SIGNAL_KEYS = {"signals.traces.WCFCORE"}
 FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
     "IOperationInvoker",
@@ -59,6 +61,8 @@ FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
 RUNTIME_EMISSION_ROOTS = [
     ROOT / "src" / "Qyl.AutoInstrumentation",
     ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
 ]
 PRODUCTIVE_MECHANISM_ROOTS = [
     ROOT / "src" / "Qyl.AutoInstrumentation",
@@ -402,6 +406,37 @@ def verify_semconv_attribute_contract() -> None:
                     fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
 
 
+def verify_metric_contract() -> None:
+    contract = CONTRACT_PATH.read_text()
+    generator = GENERATOR_PATH.read_text()
+    meters = METRIC_METERS_PATH.read_text()
+    names = METRIC_NAMES_PATH.read_text()
+    metric_implementation_text = "\n".join([generator, meters, names])
+
+    for token in [
+        'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";',
+        'public const string AspNetCoreComponentsNavigationMetricName = "aspnetcore.components.navigation";',
+    ]:
+        if token not in contract:
+            fail(f"InstrumentationContract must pin the .NET 10 ASP.NET Core components metric proof: {token}")
+
+    if 'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";' not in meters:
+        fail("QylMetricMeters must register the .NET 10 ASP.NET Core components meter")
+    if "names.Add(AspNetCoreComponentsMeterName);" not in meters:
+        fail("QylMetricMeters must add the ASP.NET Core components meter when ASPNETCORE metrics are enabled")
+    if 'public const string AspNetCoreComponentsNavigation = "aspnetcore.components.navigation";' not in names:
+        fail("QylMetricNames must pin the .NET 10 ASP.NET Core components navigation metric")
+
+    for token in [
+        "Microsoft.AspNetCore.Hosting",
+        "http.server.request.duration",
+        "NavigationManager",
+        "NavigateTo",
+    ]:
+        if token in metric_implementation_text:
+            fail(f"productive code must not use an obsolete or call-site-invented ASP.NET Core metric proof: {token}")
+
+
 def find_catch_blocks(text: str) -> list[str]:
     blocks: list[str] = []
     position = 0
@@ -628,6 +663,7 @@ def main() -> None:
     verify_generator_keys(yaml_signal_keys, unsupported_keys)
     verify_environment_contract()
     verify_semconv_attribute_contract()
+    verify_metric_contract()
     verify_behavior_semantics_contract()
     verify_productive_mechanism_contract()
     print("contract-invariants-ok")
