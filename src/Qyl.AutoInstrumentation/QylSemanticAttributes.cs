@@ -39,6 +39,7 @@ public static class QylSemanticAttributes
     public const string DbSystemName = DbAttributes.SystemName;
     public const string DbNamespace = DbAttributes.Namespace;
     public const string DbOperationName = DbAttributes.OperationName;
+    public const string DbOperationNameGet = "GET";
     public const string DbQuerySummary = DbAttributes.QuerySummary;
     public const string DbQueryText = DbAttributes.QueryText;
     public const string DbSystemElasticsearch = DbAttributes.SystemNameValues.Elasticsearch;

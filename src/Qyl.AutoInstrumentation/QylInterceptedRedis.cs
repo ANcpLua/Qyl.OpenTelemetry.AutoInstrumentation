@@ -11,14 +11,14 @@ public static class QylInterceptedRedis
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.StackExchangeRedis))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Redis GET", ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("Redis " + QylSemanticAttributes.DbOperationNameGet, ActivityKind.Client);
         if (activity is null)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, RedisDomain);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, "GET");
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, "GET");
+        activity.SetTag(QylSemanticAttributes.DbOperationName, QylSemanticAttributes.DbOperationNameGet);
+        activity.SetTag(QylSemanticAttributes.DbQuerySummary, QylSemanticAttributes.DbOperationNameGet);
 
         return activity;
     }
