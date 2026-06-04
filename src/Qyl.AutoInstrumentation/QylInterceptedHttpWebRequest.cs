@@ -21,7 +21,11 @@ public static class QylInterceptedHttpWebRequest
 
         if (request.RequestUri is not null)
         {
-            activity.SetTag(QylSemanticAttributes.UrlFull, request.RequestUri.GetLeftPart(UriPartial.Path));
+            var urlFull = QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled
+                ? request.RequestUri.ToString()
+                : request.RequestUri.GetLeftPart(UriPartial.Path);
+
+            activity.SetTag(QylSemanticAttributes.UrlFull, urlFull);
             activity.SetTag(QylSemanticAttributes.ServerAddress, request.RequestUri.Host);
 
             if (!request.RequestUri.IsDefaultPort)
