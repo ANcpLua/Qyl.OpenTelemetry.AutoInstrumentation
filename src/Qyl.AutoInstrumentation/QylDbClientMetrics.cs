@@ -19,7 +19,11 @@ public static class QylDbClientMetrics
 
         var elapsed = TimeProvider.System.GetElapsedTime(startTimestamp);
         if (elapsed.TotalSeconds >= 0)
-            OperationDuration.Record(elapsed.TotalSeconds);
+        {
+            OperationDuration.Record(
+                elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>(QylSemanticAttributes.DbSystemName, GetDbSystemName(instrumentationId)));
+        }
     }
 
     private static bool ShouldRecord(string instrumentationId)
@@ -28,5 +32,13 @@ public static class QylDbClientMetrics
             QylAutoInstrumentationIds.SqlClient => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.SqlClient),
             QylAutoInstrumentationIds.Npgsql => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Npgsql),
             _ => false,
+        };
+
+    private static string GetDbSystemName(string instrumentationId)
+        => instrumentationId switch
+        {
+            QylAutoInstrumentationIds.SqlClient => "microsoft.sql_server",
+            QylAutoInstrumentationIds.Npgsql => "postgresql",
+            _ => "other_sql",
         };
 }
