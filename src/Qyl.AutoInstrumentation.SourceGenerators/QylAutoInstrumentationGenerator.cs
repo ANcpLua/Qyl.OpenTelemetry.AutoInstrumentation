@@ -1950,7 +1950,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "ASPNETCORE",
             CleanTypeName(symbol.ContainingType),
             "AddMeter",
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             false);
         return true;
@@ -1973,7 +1973,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "AZURE",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             isAsync);
         return true;
@@ -2040,7 +2040,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "ELASTICSEARCH",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             isAsync,
             GetTypeParameterList(symbol),
@@ -2068,7 +2068,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "ELASTICTRANSPORT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             isAsync,
             GetTypeParameterList(symbol),
@@ -2128,7 +2128,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "WCFCLIENT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
         return true;
@@ -2173,7 +2173,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "WCFCORE",
             "global::Microsoft.Extensions.DependencyInjection.IServiceCollection",
             "AddServiceModelServices",
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             ImmutableArray<ParameterSpec>.Empty,
             false);
         return true;
@@ -2194,7 +2194,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "GRPCNETCLIENT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             false);
         return true;
@@ -2230,7 +2230,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "GRPCNETCLIENT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             false);
         return true;
@@ -2262,7 +2262,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "MASSTRANSIT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             true,
             GetTypeParameterList(symbol),
@@ -2294,7 +2294,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "NSERVICEBUS",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             true,
             GetTypeParameterList(symbol),
@@ -2350,7 +2350,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "STACKEXCHANGEREDIS",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             parameters,
             true);
         return true;
@@ -2393,7 +2393,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "GRAPHQL",
             CleanTypeName(symbol.ContainingType),
             "ExecuteAsync",
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             true);
         return true;
@@ -2415,7 +2415,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "MONGODB",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
         return true;
@@ -2485,7 +2485,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "RABBITMQ",
                 CleanTypeName(symbol.ContainingType),
                 "BasicPublishAsync",
-                CleanTypeName(symbol.ReturnType),
+                CleanTypeName(symbol.ReturnType, symbol),
                 parameters,
                 true,
                 GetTypeParameterList(symbol),
@@ -2688,7 +2688,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "KAFKA",
                 CleanTypeName(symbol.ContainingType),
                 "ProduceAsync",
-                CleanTypeName(symbol.ReturnType),
+                CleanTypeName(symbol.ReturnType, symbol),
                 parameters,
                 true);
             return true;
@@ -2730,7 +2730,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "KAFKA",
             CleanTypeName(symbol.ContainingType),
             "Consume",
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             parameters,
             false);
         return true;
@@ -2797,7 +2797,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "ENTITYFRAMEWORKCORE",
             CleanTypeName(original.Parameters[0].Type),
             symbol.Name,
-            CleanTypeName(symbol.ReturnType),
+            CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             true,
             GetTypeParameterList(symbol),
@@ -2853,7 +2853,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool TryGetDbCommandReturn(IMethodSymbol symbol, string methodName, bool isAsync, out string returnType)
     {
-        returnType = CleanTypeName(symbol.ReturnType);
+        returnType = CleanTypeName(symbol.ReturnType, symbol);
         if (string.Equals(methodName, "ExecuteNonQuery", StringComparison.Ordinal))
             return symbol.ReturnType.SpecialType is SpecialType.System_Int32;
 
@@ -2880,7 +2880,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool TryGetHttpWebRequestReturn(IMethodSymbol symbol, string methodName, bool isAsync, out string returnType)
     {
-        returnType = CleanTypeName(symbol.ReturnType);
+        returnType = CleanTypeName(symbol.ReturnType, symbol);
         if (!isAsync)
         {
             if (string.Equals(methodName, "GetResponse", StringComparison.Ordinal))
@@ -3327,7 +3327,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
         for (var i = 0; i < symbol.Parameters.Length; i++)
             builder.Add(new ParameterSpec(
-                CleanTypeName(symbol.Parameters[i].Type),
+                CleanTypeName(symbol.Parameters[i].Type, symbol),
                 "p" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 GetDefaultValueExpression(symbol.Parameters[i]),
                 symbol.Parameters[i].IsParams));
@@ -3344,7 +3344,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return "default";
 
         if (parameter.ExplicitDefaultValue is null)
-            return "null";
+            return parameter.Type.IsValueType ? "default" : "null";
 
         if (parameter.Type.SpecialType is SpecialType.System_Boolean)
             return (bool)parameter.ExplicitDefaultValue ? "true" : "false";
@@ -3511,6 +3511,41 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static string CleanTypeName(ITypeSymbol symbol)
         => symbol.ToDisplayString(FullyQualifiedFormat);
+
+    private static string CleanTypeName(ITypeSymbol symbol, IMethodSymbol method)
+        => method.TypeParameters.Length is 0
+            ? CleanTypeName(symbol)
+            : CleanTypeName(symbol, method.TypeParameters, method.TypeArguments);
+
+    private static string CleanTypeName(
+        ITypeSymbol symbol,
+        ImmutableArray<ITypeParameterSymbol> typeParameters,
+        ImmutableArray<ITypeSymbol> typeArguments)
+    {
+        for (var i = 0; i < typeArguments.Length && i < typeParameters.Length; i++)
+        {
+            if (SymbolEqualityComparer.Default.Equals(symbol, typeArguments[i]))
+                return typeParameters[i].Name;
+        }
+
+        if (symbol is ITypeParameterSymbol typeParameter)
+            return typeParameter.Name;
+
+        if (symbol is IArrayTypeSymbol array)
+            return CleanTypeName(array.ElementType, typeParameters, typeArguments) + "[]";
+
+        if (symbol is INamedTypeSymbol { IsGenericType: true } named && named.TypeArguments.Length > 0)
+        {
+            var constructedName = named.ConstructedFrom.ToDisplayString(FullyQualifiedFormat);
+            var genericStart = constructedName.IndexOf('<');
+            var typeName = genericStart < 0 ? constructedName : constructedName.Substring(0, genericStart);
+            var arguments = named.TypeArguments
+                .Select(typeArgument => CleanTypeName(typeArgument, typeParameters, typeArguments));
+            return typeName + "<" + string.Join(", ", arguments) + ">";
+        }
+
+        return CleanTypeName(symbol);
+    }
 
     private static bool RequiresGrpcStreamReader(InterceptedInvocation[] invocations)
         => invocations.Any(static invocation =>
