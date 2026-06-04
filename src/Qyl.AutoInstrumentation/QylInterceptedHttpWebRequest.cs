@@ -16,7 +16,7 @@ public static class QylInterceptedHttpWebRequest
             return null;
 
         var method = QylHttpMethod.Normalize(request.Method);
-        var activity = QylActivitySource.Source.StartActivity("HTTP " + method, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("HTTP client request", ActivityKind.Client);
         if (activity is null)
             return null;
 

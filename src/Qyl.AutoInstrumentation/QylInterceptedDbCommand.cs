@@ -18,7 +18,7 @@ public static class QylInterceptedDbCommand
             return null;
 
         var operation = NormalizeOperation(operationName, command);
-        var activity = QylActivitySource.Source.StartActivity("DB " + operation, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("DB client command", ActivityKind.Client);
         if (activity is null)
             return null;
 
@@ -79,9 +79,6 @@ public static class QylInterceptedDbCommand
         if (string.IsNullOrWhiteSpace(command.CommandText))
             return false;
 
-        if (command.CommandType is CommandType.StoredProcedure)
-            return true;
-
         var options = QylAutoInstrumentationOptions.Current;
         return instrumentationId switch
         {
@@ -94,9 +91,6 @@ public static class QylInterceptedDbCommand
 
     private static string GetQuerySummary(DbCommand command, string operation)
     {
-        if (command.CommandType is CommandType.StoredProcedure && !string.IsNullOrWhiteSpace(command.CommandText))
-            return command.CommandText;
-
         return operation;
     }
 
