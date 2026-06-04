@@ -135,7 +135,7 @@ public static class QylInterceptedAspNetCore
         foreach (var headerName in configuredHeaders)
         {
             if (headers.TryGetValue(headerName, out var values) && values.Count > 0)
-                activity.SetTag(prefix + NormalizeHeaderName(headerName), values.ToString());
+                activity.SetTag(prefix + NormalizeHeaderName(headerName), values.ToArray());
         }
     }
 
