@@ -12,8 +12,8 @@ public static class QylInterceptedNServiceBus
             return null;
 
         var operation = string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? "send"
-            : "publish";
+            ? QylSemanticAttributes.MessagingOperationTypeSend
+            : QylSemanticAttributes.MessagingOperationNamePublish;
 
         var activity = QylActivitySource.Source.StartActivity("NServiceBus " + operation, ActivityKind.Producer);
         if (activity is null)
