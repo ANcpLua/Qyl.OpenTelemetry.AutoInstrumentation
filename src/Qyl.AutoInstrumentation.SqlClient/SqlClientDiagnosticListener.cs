@@ -32,9 +32,7 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
         if (!SqlClientPayloadReader.TryRead(payload, isError, out var command))
             return;
 
-        using var activity = QylActivitySource.Source.StartActivity(
-            command.Operation is null ? "SQL CLIENT" : $"SQL {command.Operation}",
-            ActivityKind.Client);
+        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.DbClientCommand, ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbSqlClient);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, QylSemanticAttributes.DbSystemMicrosoftSqlServer);

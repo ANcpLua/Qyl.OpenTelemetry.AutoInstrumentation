@@ -37,9 +37,7 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
         var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "peer.hostname");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity(
-            operation is null ? "SQL CLIENT" : $"SQL {operation}",
-            ActivityKind.Client);
+        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.DbClientCommand, ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbSqlClient);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, QylSemanticAttributes.DbSystemMicrosoftSqlServer);

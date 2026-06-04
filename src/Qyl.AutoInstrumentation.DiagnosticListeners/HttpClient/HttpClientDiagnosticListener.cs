@@ -39,9 +39,7 @@ public sealed class HttpClientDiagnosticListener : DiagnosticListenerSubscriber
         var statusCode = DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity(
-            method is null ? "HTTP CLIENT" : $"HTTP {method}",
-            ActivityKind.Client);
+        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.HttpClientRequest, ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);

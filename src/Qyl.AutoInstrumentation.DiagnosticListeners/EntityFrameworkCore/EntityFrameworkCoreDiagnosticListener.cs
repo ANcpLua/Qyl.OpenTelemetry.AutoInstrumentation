@@ -37,9 +37,7 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
         var querySummary = DiagnosticPayloadReader.GetString(payload, "db.query.summary");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity(
-            operation is null ? "DB CLIENT" : $"DB {operation}",
-            ActivityKind.Client);
+        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.EntityFrameworkCoreOperation, ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbEfCore);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, system);
