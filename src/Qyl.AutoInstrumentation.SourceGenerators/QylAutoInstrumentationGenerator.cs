@@ -299,7 +299,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitDbCommandInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "DbCommand_" + target.MethodName, index, target.ReceiverType, "command", target.Parameters, target.IsAsync);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "DbCommand_" + target.MethodName, index, target.ReceiverType, "command", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylDbClientMetrics.GetTimestamp();");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(command, ");
@@ -314,11 +314,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (target.IsAsync)
         {
-            builder.Append("                var result = await command.");
+            builder.Append("                var resultTask = command.");
             builder.Append(target.MethodName);
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine(");");
+            builder.Append("                return global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.ObserveAsync(resultTask, activity, metricStart, ");
+            AppendStringLiteral(builder, target.InstrumentationId);
+            builder.AppendLine(");");
         }
         else
         {
@@ -327,13 +330,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
             builder.AppendLine(");");
-        }
 
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordSuccess(activity);");
-        builder.Append("                global::Qyl.AutoInstrumentation.QylDbClientMetrics.RecordDuration(metricStart, ");
-        AppendStringLiteral(builder, target.InstrumentationId);
-        builder.AppendLine(");");
-        builder.AppendLine("                return result;");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordSuccess(activity);");
+            builder.Append("                global::Qyl.AutoInstrumentation.QylDbClientMetrics.RecordDuration(metricStart, ");
+            AppendStringLiteral(builder, target.InstrumentationId);
+            builder.AppendLine(");");
+            builder.AppendLine("                return result;");
+        }
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
@@ -343,10 +346,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        if (!target.IsAsync)
+        {
+            builder.AppendLine("            finally");
+            builder.AppendLine("            {");
+            builder.AppendLine("                activity?.Dispose();");
+            builder.AppendLine("            }");
+        }
         builder.AppendLine("        }");
         builder.AppendLine();
     }

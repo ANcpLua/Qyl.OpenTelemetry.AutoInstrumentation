@@ -41,6 +41,30 @@ public static class QylInterceptedDbCommand
     {
     }
 
+    public static async Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+        ArgumentNullException.ThrowIfNull(instrumentationId);
+
+        try
+        {
+            var result = await task.ConfigureAwait(false);
+            RecordSuccess(activity);
+            QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
+            return result;
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
+            throw;
+        }
+        finally
+        {
+            activity?.Dispose();
+        }
+    }
+
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
