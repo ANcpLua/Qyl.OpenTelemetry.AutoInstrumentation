@@ -14,6 +14,10 @@ internal static class QylSemanticAttributes
     public const string DbOperationName = "db.operation.name";
     public const string DbQuerySummary = "db.query.summary";
     public const string DbQueryText = "db.query.text";
+    public const string RpcSystem = "rpc.system";
+    public const string RpcService = "rpc.service";
+    public const string RpcMethod = "rpc.method";
+    public const string RpcGrpcStatusCode = "rpc.grpc.status_code";
     public const string ServerAddress = "server.address";
     public const string ServerPort = "server.port";
     public const string UrlFull = "url.full";

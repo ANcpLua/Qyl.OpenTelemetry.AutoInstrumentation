@@ -67,6 +67,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
             return true;
 
+        if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
+            return true;
+
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
@@ -116,6 +119,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitHttpClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
+                EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
@@ -191,6 +196,52 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreRequestDelegate_" + target.MethodName, index, target.ReceiverType, "requestDelegate", target.Parameters, isAsync: false);
         builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.InvokeAsync(requestDelegate, p0);");
+        builder.AppendLine();
+    }
+
+    private static void EmitGrpcNetClientAsyncUnaryInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncUnary_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var call = client.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+        builder.Append("                return new ");
+        builder.Append(target.ReturnType);
+        builder.AppendLine("(");
+        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync(call.ResponseAsync, activity),");
+        builder.AppendLine("                    call.ResponseHeadersAsync,");
+        builder.AppendLine("                    call.GetStatus,");
+        builder.AppendLine("                    call.GetTrailers,");
+        builder.AppendLine("                    () =>");
+        builder.AppendLine("                    {");
+        builder.AppendLine("                        try");
+        builder.AppendLine("                        {");
+        builder.AppendLine("                            call.Dispose();");
+        builder.AppendLine("                        }");
+        builder.AppendLine("                        finally");
+        builder.AppendLine("                        {");
+        builder.AppendLine("                            global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(activity);");
+        builder.AppendLine("                        }");
+        builder.AppendLine("                    });");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -426,6 +477,27 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             CleanTypeName(symbol.ContainingType),
             "Invoke",
             "global::System.Threading.Tasks.Task",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncUnaryCall<TResponse>") ||
+            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.GrpcNetClientAsyncUnaryCall,
+            "signals.traces.GRPCNETCLIENT",
+            "GRPCNETCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
             Parameters(symbol),
             false);
         return true;
@@ -732,6 +804,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsTaskOf(ITypeSymbol? symbol, string resultFullyQualifiedName)
         => TryGetTaskResult(symbol, out var result) && IsType(result, resultFullyQualifiedName);
 
+    private static bool IsConstructedFrom(ITypeSymbol? symbol, string fullyQualifiedConstructedFromName)
+        => symbol is INamedTypeSymbol named && IsType(named.ConstructedFrom, fullyQualifiedConstructedFromName);
+
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");
 
@@ -754,6 +829,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         for (var current = symbol; current is not null; current = (current as INamedTypeSymbol)?.BaseType)
         {
             if (IsType(current, fullyQualifiedName))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool InheritsFromConstructedGeneric(ITypeSymbol? symbol, string fullyQualifiedConstructedFromName)
+    {
+        for (var current = symbol; current is not null; current = (current as INamedTypeSymbol)?.BaseType)
+        {
+            if (current is INamedTypeSymbol named && IsType(named.ConstructedFrom, fullyQualifiedConstructedFromName))
                 return true;
         }
 
@@ -822,6 +908,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         HttpClient,
         AspNetCoreRequestDelegate,
+        GrpcNetClientAsyncUnaryCall,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
