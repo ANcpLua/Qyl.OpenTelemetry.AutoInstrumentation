@@ -326,9 +326,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "DbCommand_" + target.MethodName, index, target.ReceiverType, "command", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylDbClientMetrics.GetTimestamp();");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(command, ");
+        builder.Append("            var instrumentationId = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.ResolveInstrumentationId(command, ");
         AppendStringLiteral(builder, target.InstrumentationId);
-        builder.Append(", ");
+        builder.AppendLine(");");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(command, ");
+        builder.Append("instrumentationId, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
         builder.AppendLine("            try");
@@ -342,7 +344,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
             builder.AppendLine(");");
             builder.Append("                return global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.ObserveAsync(resultTask, activity, metricStart, ");
-            AppendStringLiteral(builder, target.InstrumentationId);
+            builder.Append("instrumentationId");
             builder.AppendLine(");");
         }
         else
@@ -355,7 +357,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
             builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordSuccess(activity);");
             builder.Append("                global::Qyl.AutoInstrumentation.QylDbClientMetrics.RecordDuration(metricStart, ");
-            AppendStringLiteral(builder, target.InstrumentationId);
+            builder.Append("instrumentationId");
             builder.AppendLine(");");
             builder.AppendLine("                return result;");
         }
@@ -364,7 +366,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordException(activity, exception);");
         builder.Append("                global::Qyl.AutoInstrumentation.QylDbClientMetrics.RecordDuration(metricStart, ");
-        AppendStringLiteral(builder, target.InstrumentationId);
+        builder.Append("instrumentationId");
         builder.AppendLine(");");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
