@@ -572,8 +572,19 @@ public static class QylInterceptedHttpClient
             return;
         }
 
-        QylHttpClientMetrics.RecordRequestDuration(activity.StartTimeUtc);
+        QylHttpClientMetrics.RecordRequestDuration(
+            activity.StartTimeUtc,
+            activity.GetTagItem(QylSemanticAttributes.HttpRequestMethod) as string,
+            GetStatusCode(activity));
     }
+
+    private static int? GetStatusCode(Activity activity)
+        => activity.GetTagItem(QylSemanticAttributes.HttpResponseStatusCode) switch
+        {
+            int value => value,
+            string value when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) => parsed,
+            _ => null,
+        };
 
     private static string NormalizeMethod(string? method)
         => method switch

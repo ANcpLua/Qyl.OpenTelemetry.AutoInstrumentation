@@ -63,8 +63,19 @@ public static class QylInterceptedHttpWebRequest
             return;
         }
 
-        QylHttpClientMetrics.RecordRequestDuration(activity.StartTimeUtc);
+        QylHttpClientMetrics.RecordRequestDuration(
+            activity.StartTimeUtc,
+            activity.GetTagItem(QylSemanticAttributes.HttpRequestMethod) as string,
+            GetStatusCode(activity));
     }
+
+    private static int? GetStatusCode(Activity activity)
+        => activity.GetTagItem(QylSemanticAttributes.HttpResponseStatusCode) switch
+        {
+            int value => value,
+            string value when int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var parsed) => parsed,
+            _ => null,
+        };
 
     private static void SetConfiguredHeaders(Activity activity, string prefix, string[] configuredHeaders, WebHeaderCollection headers)
     {
