@@ -76,6 +76,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetKafkaInvocation(symbol, out target))
             return true;
 
+        if (TryGetStackExchangeRedisInvocation(symbol, out target))
+            return true;
+
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
@@ -137,6 +140,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitKafkaProducerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.KafkaConsumer)
                 EmitKafkaConsumerInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
+                EmitStackExchangeRedisInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
@@ -503,6 +508,50 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("null");
     }
 
+    private static void EmitStackExchangeRedisInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "StackExchangeRedis_" + target.MethodName, index, target.ReceiverType, "database", target.Parameters, isAsync: true);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRedis.StartStringGetActivity(");
+        AppendRedisKeyExpression(builder, target);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var result = await database.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(").ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordSuccess(activity);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void AppendRedisKeyExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 0 &&
+            string.Equals(target.Parameters[0].TypeName, "global::StackExchange.Redis.RedisKey", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            builder.Append(".ToString()");
+            return;
+        }
+
+        builder.Append("null");
+    }
+
     private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
@@ -586,6 +635,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.Append(parameter.TypeName);
             builder.Append(' ');
             builder.Append(parameter.Name);
+            if (!string.IsNullOrEmpty(parameter.DefaultValueExpression))
+            {
+                builder.Append(" = ");
+                builder.Append(parameter.DefaultValueExpression);
+            }
         }
     }
 
@@ -804,6 +858,31 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return true;
 
         return TryGetKafkaConsumerInvocation(symbol, out target);
+    }
+
+    private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "StringGetAsync", StringComparison.Ordinal) ||
+            !IsOrImplementsType(symbol.ContainingType, "StackExchange.Redis", "IDatabaseAsync") ||
+            !TryGetTaskResult(symbol.ReturnType, out var resultType) ||
+            (!IsType(resultType, "global::StackExchange.Redis.RedisValue") &&
+             !IsArrayOf(resultType, "global::StackExchange.Redis.RedisValue")) ||
+            !TryGetRedisStringGetParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.StackExchangeRedisStringGetAsync,
+            "signals.traces.STACKEXCHANGEREDIS",
+            "STACKEXCHANGEREDIS",
+            CleanTypeName(symbol.ContainingType),
+            "StringGetAsync",
+            CleanTypeName(symbol.ReturnType),
+            parameters,
+            true);
+        return true;
     }
 
     private static bool TryGetKafkaProducerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
@@ -1149,6 +1228,28 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetRedisStringGetParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    {
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        if (symbol.Parameters.Length is < 1 or > 2)
+            return false;
+
+        if (!IsType(symbol.Parameters[0].Type, "global::StackExchange.Redis.RedisKey") &&
+            !IsArrayOf(symbol.Parameters[0].Type, "global::StackExchange.Redis.RedisKey"))
+        {
+            return false;
+        }
+
+        if (symbol.Parameters.Length is 2 &&
+            !IsType(symbol.Parameters[1].Type, "global::StackExchange.Redis.CommandFlags"))
+        {
+            return false;
+        }
+
+        parameters = Parameters(symbol);
+        return true;
+    }
+
     private static bool TryGetEfCoreSaveChangesParameters(IMethodSymbol symbol, bool allowCancellationToken, out ImmutableArray<ParameterSpec> parameters)
     {
         if (symbol.Parameters.Length is 0)
@@ -1184,9 +1285,35 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
         for (var i = 0; i < symbol.Parameters.Length; i++)
-            builder.Add(new ParameterSpec(CleanTypeName(symbol.Parameters[i].Type), "p" + i.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            builder.Add(new ParameterSpec(
+                CleanTypeName(symbol.Parameters[i].Type),
+                "p" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                GetDefaultValueExpression(symbol.Parameters[i])));
 
         return builder.ToImmutable();
+    }
+
+    private static string GetDefaultValueExpression(IParameterSymbol parameter)
+    {
+        if (!parameter.IsOptional)
+            return string.Empty;
+
+        if (!parameter.HasExplicitDefaultValue)
+            return "default";
+
+        if (parameter.ExplicitDefaultValue is null)
+            return "null";
+
+        if (parameter.Type.SpecialType is SpecialType.System_Boolean)
+            return (bool)parameter.ExplicitDefaultValue ? "true" : "false";
+
+        if (parameter.Type.SpecialType is SpecialType.System_Int32)
+            return ((int)parameter.ExplicitDefaultValue).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        if (parameter.Type.SpecialType is SpecialType.System_String)
+            return "\"" + parameter.ExplicitDefaultValue.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+
+        return "default";
     }
 
     private static bool IsTaskOf(ITypeSymbol? symbol, string resultFullyQualifiedName)
@@ -1199,6 +1326,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         => symbol is INamedTypeSymbol named &&
            string.Equals(named.ConstructedFrom.MetadataName, metadataName, StringComparison.Ordinal) &&
            string.Equals(named.ConstructedFrom.ContainingNamespace.ToDisplayString(), namespaceName, StringComparison.Ordinal);
+
+    private static bool IsArrayOf(ITypeSymbol? symbol, string elementFullyQualifiedName)
+        => symbol is IArrayTypeSymbol array && IsType(array.ElementType, elementFullyQualifiedName);
 
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");
@@ -1255,6 +1385,27 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         return false;
     }
+
+    private static bool IsOrImplementsType(ITypeSymbol? symbol, string namespaceName, string metadataName)
+    {
+        if (symbol is not INamedTypeSymbol named)
+            return false;
+
+        if (IsTypeByMetadata(named, namespaceName, metadataName))
+            return true;
+
+        foreach (var interfaceType in named.AllInterfaces)
+        {
+            if (IsTypeByMetadata(interfaceType, namespaceName, metadataName))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsTypeByMetadata(INamedTypeSymbol symbol, string namespaceName, string metadataName)
+        => string.Equals(symbol.MetadataName, metadataName, StringComparison.Ordinal) &&
+           string.Equals(symbol.ContainingNamespace.ToDisplayString(), namespaceName, StringComparison.Ordinal);
 
     private static bool IsType(ITypeSymbol? symbol, string fullyQualifiedName)
     {
@@ -1329,11 +1480,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         GrpcNetClientAsyncDuplexStreamingCall,
         KafkaProducer,
         KafkaConsumer,
+        StackExchangeRedisStringGetAsync,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
 
-    private readonly record struct ParameterSpec(string TypeName, string Name);
+    private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "");
 
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,
