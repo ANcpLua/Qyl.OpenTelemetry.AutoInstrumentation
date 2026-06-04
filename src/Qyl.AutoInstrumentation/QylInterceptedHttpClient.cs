@@ -16,533 +16,546 @@ public static class QylInterceptedHttpClient
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        if (activity is null)
+        var observation = StartHttpClientObservation(request);
+        if (!observation.IsEnabled)
             return client.Send(request);
 
         try
         {
             var response = client.Send(request);
-            RecordResponse(activity, response);
+            RecordResponse(observation, response);
             return response;
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            RecordException(observation, exception);
             throw;
         }
         finally
         {
-            activity.Dispose();
+            observation.Dispose();
         }
     }
 
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        if (activity is null)
+        var observation = StartHttpClientObservation(request);
+        if (!observation.IsEnabled)
             return client.Send(request, cancellationToken);
 
         try
         {
             var response = client.Send(request, cancellationToken);
-            RecordResponse(activity, response);
+            RecordResponse(observation, response);
             return response;
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            RecordException(observation, exception);
             throw;
         }
         finally
         {
-            activity.Dispose();
+            observation.Dispose();
         }
     }
 
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        if (activity is null)
+        var observation = StartHttpClientObservation(request);
+        if (!observation.IsEnabled)
             return client.Send(request, completionOption);
 
         try
         {
             var response = client.Send(request, completionOption);
-            RecordResponse(activity, response);
+            RecordResponse(observation, response);
             return response;
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            RecordException(observation, exception);
             throw;
         }
         finally
         {
-            activity.Dispose();
+            observation.Dispose();
         }
     }
 
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        if (activity is null)
+        var observation = StartHttpClientObservation(request);
+        if (!observation.IsEnabled)
             return client.Send(request, completionOption, cancellationToken);
 
         try
         {
             var response = client.Send(request, completionOption, cancellationToken);
-            RecordResponse(activity, response);
+            RecordResponse(observation, response);
             return response;
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            RecordException(observation, exception);
             throw;
         }
         finally
         {
-            activity.Dispose();
+            observation.Dispose();
         }
     }
 
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        try { return ObserveResponseAsync(client.SendAsync(request), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation(request);
+        try { return ObserveResponseAsync(client.SendAsync(request), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        try { return ObserveResponseAsync(client.SendAsync(request, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation(request);
+        try { return ObserveResponseAsync(client.SendAsync(request, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        try { return ObserveResponseAsync(client.SendAsync(request, completionOption), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation(request);
+        try { return ObserveResponseAsync(client.SendAsync(request, completionOption), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var activity = StartHttpClientActivity(request);
-        try { return ObserveResponseAsync(client.SendAsync(request, completionOption, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation(request);
+        try { return ObserveResponseAsync(client.SendAsync(request, completionOption, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, HttpCompletionOption completionOption)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, HttpCompletionOption completionOption)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("POST", requestUri);
-        try { return ObserveResponseAsync(client.PostAsync(requestUri, content), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("POST", requestUri);
+        try { return ObserveResponseAsync(client.PostAsync(requestUri, content), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("POST", requestUri);
-        try { return ObserveResponseAsync(client.PostAsync(requestUri, content), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("POST", requestUri);
+        try { return ObserveResponseAsync(client.PostAsync(requestUri, content), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("POST", requestUri);
-        try { return ObserveResponseAsync(client.PostAsync(requestUri, content, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("POST", requestUri);
+        try { return ObserveResponseAsync(client.PostAsync(requestUri, content, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("POST", requestUri);
-        try { return ObserveResponseAsync(client.PostAsync(requestUri, content, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("POST", requestUri);
+        try { return ObserveResponseAsync(client.PostAsync(requestUri, content, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PUT", requestUri);
-        try { return ObserveResponseAsync(client.PutAsync(requestUri, content), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PUT", requestUri);
+        try { return ObserveResponseAsync(client.PutAsync(requestUri, content), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PUT", requestUri);
-        try { return ObserveResponseAsync(client.PutAsync(requestUri, content), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PUT", requestUri);
+        try { return ObserveResponseAsync(client.PutAsync(requestUri, content), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PUT", requestUri);
-        try { return ObserveResponseAsync(client.PutAsync(requestUri, content, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PUT", requestUri);
+        try { return ObserveResponseAsync(client.PutAsync(requestUri, content, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PUT", requestUri);
-        try { return ObserveResponseAsync(client.PutAsync(requestUri, content, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PUT", requestUri);
+        try { return ObserveResponseAsync(client.PutAsync(requestUri, content, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PATCH", requestUri);
-        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PATCH", requestUri);
+        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PATCH", requestUri);
-        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PATCH", requestUri);
+        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PATCH", requestUri);
-        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PATCH", requestUri);
+        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("PATCH", requestUri);
-        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("PATCH", requestUri);
+        try { return ObserveResponseAsync(client.PatchAsync(requestUri, content, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("DELETE", requestUri);
-        try { return ObserveResponseAsync(client.DeleteAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("DELETE", requestUri);
+        try { return ObserveResponseAsync(client.DeleteAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("DELETE", requestUri);
-        try { return ObserveResponseAsync(client.DeleteAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("DELETE", requestUri);
+        try { return ObserveResponseAsync(client.DeleteAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("DELETE", requestUri);
-        try { return ObserveResponseAsync(client.DeleteAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("DELETE", requestUri);
+        try { return ObserveResponseAsync(client.DeleteAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("DELETE", requestUri);
-        try { return ObserveResponseAsync(client.DeleteAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("DELETE", requestUri);
+        try { return ObserveResponseAsync(client.DeleteAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<string> GetStringAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStringAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStringAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<string> GetStringAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStringAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStringAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<string> GetStringAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStringAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStringAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<string> GetStringAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStringAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStringAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<Stream> GetStreamAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStreamAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStreamAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<Stream> GetStreamAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStreamAsync(requestUri), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStreamAsync(requestUri), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<Stream> GetStreamAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStreamAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStreamAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
     public static Task<Stream> GetStreamAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var activity = StartHttpClientActivity("GET", requestUri);
-        try { return ObserveValueAsync(client.GetStreamAsync(requestUri, cancellationToken), activity); }
-        catch (Exception exception) { RecordException(activity, exception); activity?.Dispose(); throw; }
+        var observation = StartHttpClientObservation("GET", requestUri);
+        try { return ObserveValueAsync(client.GetStreamAsync(requestUri, cancellationToken), observation); }
+        catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
-    private static Task<HttpResponseMessage> ObserveResponseAsync(Task<HttpResponseMessage> originalTask, Activity? activity)
-        => activity is null ? originalTask : ObserveResponseSlowAsync(originalTask, activity);
+    private static Task<HttpResponseMessage> ObserveResponseAsync(Task<HttpResponseMessage> originalTask, HttpClientObservation observation)
+        => !observation.IsEnabled ? originalTask : ObserveResponseSlowAsync(originalTask, observation);
 
-    private static async Task<HttpResponseMessage> ObserveResponseSlowAsync(Task<HttpResponseMessage> originalTask, Activity activity)
+    private static async Task<HttpResponseMessage> ObserveResponseSlowAsync(Task<HttpResponseMessage> originalTask, HttpClientObservation observation)
     {
         try
         {
             var response = await originalTask.ConfigureAwait(false);
-            RecordResponse(activity, response);
+            RecordResponse(observation, response);
             return response;
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            RecordException(observation, exception);
             throw;
         }
         finally
         {
-            activity.Dispose();
+            observation.Dispose();
         }
     }
 
-    private static Task<T> ObserveValueAsync<T>(Task<T> originalTask, Activity? activity)
-        => activity is null ? originalTask : ObserveValueSlowAsync(originalTask, activity);
+    private static Task<T> ObserveValueAsync<T>(Task<T> originalTask, HttpClientObservation observation)
+        => !observation.IsEnabled ? originalTask : ObserveValueSlowAsync(originalTask, observation);
 
-    private static async Task<T> ObserveValueSlowAsync<T>(Task<T> originalTask, Activity activity)
+    private static async Task<T> ObserveValueSlowAsync<T>(Task<T> originalTask, HttpClientObservation observation)
     {
         try
         {
             var result = await originalTask.ConfigureAwait(false);
-            RecordSuccess(activity);
+            RecordSuccess(observation);
             return result;
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            RecordException(observation, exception);
             throw;
         }
         finally
         {
-            activity.Dispose();
+            observation.Dispose();
         }
     }
 
-    private static Activity? StartHttpClientActivity(HttpRequestMessage request)
+    private static HttpClientObservation StartHttpClientObservation(HttpRequestMessage request)
     {
-        var activity = StartHttpClientActivity(request.Method.Method, request.RequestUri, request.RequestUri?.ToString());
-        if (activity is not null)
-            SetConfiguredHeaders(activity, QylSemanticAttributes.HttpRequestHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaders, request.Headers, request.Content?.Headers);
+        var observation = StartHttpClientObservation(request.Method.Method, request.RequestUri, request.RequestUri?.ToString());
+        if (observation.Activity is not null)
+            SetConfiguredHeaders(observation.Activity, QylSemanticAttributes.HttpRequestHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaders, request.Headers, request.Content?.Headers);
 
-        return activity;
+        return observation;
     }
 
-    private static Activity? StartHttpClientActivity(string method, string? requestUri)
+    private static HttpClientObservation StartHttpClientObservation(string method, string? requestUri)
     {
         Uri? uri = null;
         if (!string.IsNullOrWhiteSpace(requestUri))
             Uri.TryCreate(requestUri, UriKind.RelativeOrAbsolute, out uri);
 
-        return StartHttpClientActivity(method, uri, requestUri);
+        return StartHttpClientObservation(method, uri, requestUri);
     }
 
-    private static Activity? StartHttpClientActivity(string method, Uri? requestUri)
-        => StartHttpClientActivity(method, requestUri, requestUri?.ToString());
+    private static HttpClientObservation StartHttpClientObservation(string method, Uri? requestUri)
+        => StartHttpClientObservation(method, requestUri, requestUri?.ToString());
 
-    private static Activity? StartHttpClientActivity(string method, Uri? requestUri, string? rawRequestUri)
+    private static HttpClientObservation StartHttpClientObservation(string method, Uri? requestUri, string? rawRequestUri)
     {
         var options = QylAutoInstrumentationOptions.Current;
-        if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient))
-            return null;
+        var traceEnabled = options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient);
+        var metricsEnabled = options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient);
+        if (!traceEnabled && !metricsEnabled)
+            return default;
 
         method = NormalizeMethod(method);
-        var activity = QylActivitySource.Source.StartActivity($"HTTP {method}", ActivityKind.Client);
-        if (activity is null)
-            return null;
+        var startTimeUtc = TimeProvider.System.GetUtcNow().UtcDateTime;
+        Activity? activity = null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, HttpClientDomain);
-        activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
-
-        if (requestUri is not null)
+        if (traceEnabled)
         {
-            if (requestUri.IsAbsoluteUri)
+            activity = QylActivitySource.Source.StartActivity($"HTTP {method}", ActivityKind.Client);
+            if (activity is not null)
             {
-                activity.SetTag(QylSemanticAttributes.ServerAddress, requestUri.Host);
-                if (!requestUri.IsDefaultPort)
-                    activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
+                activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, HttpClientDomain);
+                activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
+
+                if (requestUri is not null)
+                {
+                    if (requestUri.IsAbsoluteUri)
+                    {
+                        activity.SetTag(QylSemanticAttributes.ServerAddress, requestUri.Host);
+                        if (!requestUri.IsDefaultPort)
+                            activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
+                    }
+
+                    var urlFull = rawRequestUri ?? requestUri.ToString();
+                    activity.SetTag(
+                        QylSemanticAttributes.UrlFull,
+                        options.HttpClientUrlQueryRedactionDisabled ? urlFull : RedactQuery(urlFull));
+                }
             }
-
-            var urlFull = rawRequestUri ?? requestUri.ToString();
-            activity.SetTag(
-                QylSemanticAttributes.UrlFull,
-                options.HttpClientUrlQueryRedactionDisabled ? urlFull : RedactQuery(urlFull));
         }
 
-        return activity;
+        return new HttpClientObservation(activity, startTimeUtc, method, metricsEnabled);
     }
 
-    private static void RecordResponse(Activity activity, HttpResponseMessage response)
+    private static void RecordResponse(HttpClientObservation observation, HttpResponseMessage response)
     {
-        activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, (int)response.StatusCode);
-        SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaders, response.Headers, response.Content?.Headers);
-
-        if ((int)response.StatusCode >= 400)
+        var statusCode = (int)response.StatusCode;
+        var activity = observation.Activity;
+        if (activity is not null)
         {
-            activity.SetTag(QylSemanticAttributes.ErrorType, ((int)response.StatusCode).ToString(CultureInfo.InvariantCulture));
-            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
+            SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaders, response.Headers, response.Content?.Headers);
+
+            if (statusCode >= 400)
+            {
+                activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(CultureInfo.InvariantCulture));
+                activity.SetStatus(ActivityStatusCode.Error);
+            }
         }
 
-        RecordDuration(activity);
+        RecordDuration(observation, statusCode);
     }
 
-    private static void RecordSuccess(Activity activity)
+    private static void RecordSuccess(HttpClientObservation observation)
     {
-        RecordDuration(activity);
+        RecordDuration(observation, null);
     }
 
     private static void ThrowIfInvalidCallTarget(HttpClient client, HttpRequestMessage request)
@@ -557,34 +570,24 @@ public static class QylInterceptedHttpClient
             throw new NullReferenceException();
     }
 
-    private static void RecordException(Activity? activity, Exception exception)
+    private static void RecordException(HttpClientObservation observation, Exception exception)
     {
+        var activity = observation.Activity;
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
-        RecordDuration(activity);
+        RecordDuration(observation, null);
     }
 
-    private static void RecordDuration(Activity? activity)
+    private static void RecordDuration(HttpClientObservation observation, int? statusCode)
     {
-        if (activity is null ||
-            !QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
-        {
+        if (!observation.RecordMetrics)
             return;
-        }
 
         QylHttpClientMetrics.RecordRequestDuration(
-            activity.StartTimeUtc,
-            activity.GetTagItem(QylSemanticAttributes.HttpRequestMethod) as string,
-            GetStatusCode(activity));
+            observation.StartTimeUtc,
+            observation.Method,
+            statusCode);
     }
-
-    private static int? GetStatusCode(Activity activity)
-        => activity.GetTagItem(QylSemanticAttributes.HttpResponseStatusCode) switch
-        {
-            int value => value,
-            string value when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) => parsed,
-            _ => null,
-        };
 
     private static string NormalizeMethod(string? method)
         => method switch
@@ -625,4 +628,16 @@ public static class QylInterceptedHttpClient
 
     private static string NormalizeHeaderName(string headerName)
         => headerName.Replace('_', '-').ToLower(CultureInfo.InvariantCulture);
+
+    private readonly record struct HttpClientObservation(
+        Activity? Activity,
+        DateTime StartTimeUtc,
+        string? Method,
+        bool RecordMetrics)
+    {
+        public bool IsEnabled => Activity is not null || RecordMetrics;
+
+        public void Dispose()
+            => Activity?.Dispose();
+    }
 }

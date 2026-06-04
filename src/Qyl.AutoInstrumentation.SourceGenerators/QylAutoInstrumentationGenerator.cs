@@ -261,6 +261,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "HttpWebRequest_" + target.MethodName, index, target.ReceiverType, "request", target.Parameters, target.IsAsync);
         builder.AppendLine("        {");
+        builder.AppendLine("            var metricStartTimeUtc = global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.GetStartTimeUtc();");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.StartActivity(request, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
@@ -284,12 +285,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.AppendLine(");");
         }
 
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordResult(activity, result);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordResult(activity, metricStartTimeUtc, request.Method, result);");
         builder.AppendLine("                return result;");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, exception);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, metricStartTimeUtc, request.Method, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");

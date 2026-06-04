@@ -7,6 +7,9 @@ public static class QylInterceptedHttpWebRequest
 {
     private const string HttpWebRequestDomain = "http.webrequest";
 
+    public static DateTime GetStartTimeUtc()
+        => TimeProvider.System.GetUtcNow().UtcDateTime;
+
     public static Activity? StartActivity(HttpWebRequest request, string methodName)
     {
         var options = QylAutoInstrumentationOptions.Current;
@@ -37,45 +40,36 @@ public static class QylInterceptedHttpWebRequest
         return activity;
     }
 
-    public static void RecordResult(Activity? activity, object? result)
+    public static void RecordResult(Activity? activity, DateTime startTimeUtc, string? method, object? result)
     {
-        if (activity is not null && result is HttpWebResponse response)
+        int? statusCode = null;
+        var response = result as HttpWebResponse;
+        if (response is not null)
+            statusCode = (int)response.StatusCode;
+
+        if (activity is not null && response is not null)
         {
-            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, (int)response.StatusCode);
+            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
             SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaders, response.Headers);
         }
 
-        RecordDuration(activity);
+        RecordDuration(startTimeUtc, method, statusCode);
     }
 
-    public static void RecordException(Activity? activity, Exception exception)
+    public static void RecordException(Activity? activity, DateTime startTimeUtc, string? method, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
-        RecordDuration(activity);
+        RecordDuration(startTimeUtc, method, null);
     }
 
-    private static void RecordDuration(Activity? activity)
+    private static void RecordDuration(DateTime startTimeUtc, string? method, int? statusCode)
     {
-        if (activity is null ||
-            !QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
-        {
-            return;
-        }
-
         QylHttpClientMetrics.RecordRequestDuration(
-            activity.StartTimeUtc,
-            activity.GetTagItem(QylSemanticAttributes.HttpRequestMethod) as string,
-            GetStatusCode(activity));
+            startTimeUtc,
+            method,
+            statusCode);
     }
-
-    private static int? GetStatusCode(Activity activity)
-        => activity.GetTagItem(QylSemanticAttributes.HttpResponseStatusCode) switch
-        {
-            int value => value,
-            string value when int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var parsed) => parsed,
-            _ => null,
-        };
 
     private static void SetConfiguredHeaders(Activity activity, string prefix, string[] configuredHeaders, WebHeaderCollection headers)
     {
