@@ -6,8 +6,14 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
 
 ROOT = Path(__file__).resolve().parents[1]
+PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
 PROPS_PATH = ROOT / "Directory.Build.props"
 CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Qyl.AutoInstrumentation.DiagnosticListeners.csproj"
@@ -102,12 +108,19 @@ def read_version() -> str:
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:
     feed.mkdir(parents=True)
-    for project in [CORE_PROJECT, DIAGNOSTIC_LISTENERS_PROJECT, HOSTING_PROJECT]:
-        run_checked(
-            ["dotnet", "pack", str(project), "-c", "Release", "-o", str(feed), "-v", "quiet"],
-            ROOT,
-            env,
-        )
+    with PACK_LOCK_PATH.open("w", encoding="utf-8") as lock:
+        if fcntl is not None:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            for project in [CORE_PROJECT, DIAGNOSTIC_LISTENERS_PROJECT, HOSTING_PROJECT]:
+                run_checked(
+                    ["dotnet", "pack", str(project), "-c", "Release", "-o", str(feed), "-v", "quiet"],
+                    ROOT,
+                    env,
+                )
+        finally:
+            if fcntl is not None:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
 
 def run_app(command: list[str], cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:

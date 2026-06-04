@@ -153,6 +153,8 @@ per-library matrix lives in `docs/RUNTIME_SEMANTICS.md`.
   controls/options are read by `QylAutoInstrumentationOptions`, and
   `tools/verify-consumer-behavior.py` proves a deterministic baseline-vs-hosting consumer run has
   identical stdout, stderr, caught-exception output, async return output, and exit code.
+  `tools/verify-nativeaot-consumer-golden.py` publishes an instrumented `net10.0` consumer with
+  NativeAOT and checks a normalized offline qyl HTTP client activity golden.
 
 The substrate-era M1–M12 are preserved in `COVERAGE_LEDGER.md` under the *archived* section
 and remain reproducible from the `v0.1.0-archive` tag.
