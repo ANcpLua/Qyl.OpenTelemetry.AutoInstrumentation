@@ -14,7 +14,7 @@ public static class QylInterceptedNServiceBus
             ? QylSemanticAttributes.MessagingOperationNameSend
             : QylSemanticAttributes.MessagingOperationNamePublish;
 
-        var activity = QylActivitySource.Source.StartActivity("NServiceBus " + operation, ActivityKind.Producer);
+        var activity = QylActivitySource.Source.StartActivity("NServiceBus message", ActivityKind.Producer);
         if (activity is null)
             return null;
 

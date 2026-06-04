@@ -14,7 +14,7 @@ public static class QylInterceptedMassTransit
             ? QylSemanticAttributes.MessagingOperationNameSend
             : QylSemanticAttributes.MessagingOperationNamePublish;
 
-        var activity = QylActivitySource.Source.StartActivity("MassTransit " + operation, ActivityKind.Producer);
+        var activity = QylActivitySource.Source.StartActivity("MassTransit message", ActivityKind.Producer);
         if (activity is null)
             return null;
 
