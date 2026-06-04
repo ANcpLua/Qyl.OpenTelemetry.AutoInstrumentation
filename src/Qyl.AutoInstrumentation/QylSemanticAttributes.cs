@@ -1,6 +1,8 @@
 namespace Qyl.AutoInstrumentation;
 
 using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using CpuAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Cpu.CpuAttributes;
+using DotnetAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Dotnet.DotnetAttributes;
 using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using ExceptionAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Exception.ExceptionAttributes;
 using GraphqlAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
@@ -35,6 +37,15 @@ public static class QylSemanticAttributes
     public const string UrlPath = UrlAttributes.Path;
     public const string UrlQuery = UrlAttributes.Query;
     public const string UrlFull = UrlAttributes.Full;
+
+    public const string DotnetGcHeapGeneration = DotnetAttributes.GcHeapGeneration;
+    public const string DotnetGcHeapGenerationGen0 = DotnetAttributes.GcHeapGenerationValues.Gen0;
+    public const string DotnetGcHeapGenerationGen1 = DotnetAttributes.GcHeapGenerationValues.Gen1;
+    public const string DotnetGcHeapGenerationGen2 = DotnetAttributes.GcHeapGenerationValues.Gen2;
+
+    public const string CpuMode = CpuAttributes.Mode;
+    public const string CpuModeSystem = CpuAttributes.ModeValues.System;
+    public const string CpuModeUser = CpuAttributes.ModeValues.User;
 
     public const string DbSystemName = DbAttributes.SystemName;
     public const string DbNamespace = DbAttributes.Namespace;

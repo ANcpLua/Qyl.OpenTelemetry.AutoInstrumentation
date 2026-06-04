@@ -18,6 +18,23 @@ internal static class QylRuntimeProcessMetrics
 
     private static class NetRuntimeMetrics
     {
+        private static readonly KeyValuePair<string, object?>[] Gen0Tags =
+        [
+            new(QylSemanticAttributes.DotnetGcHeapGeneration, QylSemanticAttributes.DotnetGcHeapGenerationGen0),
+        ];
+
+        private static readonly KeyValuePair<string, object?>[] Gen1Tags =
+        [
+            new(QylSemanticAttributes.DotnetGcHeapGeneration, QylSemanticAttributes.DotnetGcHeapGenerationGen1),
+        ];
+
+        private static readonly KeyValuePair<string, object?>[] Gen2Tags =
+        [
+            new(QylSemanticAttributes.DotnetGcHeapGeneration, QylSemanticAttributes.DotnetGcHeapGenerationGen2),
+        ];
+
+        private static readonly Measurement<long>[] GcCollectionMeasurements = new Measurement<long>[3];
+
         private static readonly Meter Meter = new(QylMetricMeters.NetRuntimeMeterName);
         private static readonly ObservableCounter<long> GcCollections = Meter.CreateObservableCounter(
             "process.runtime.dotnet.gc.collections.count",
@@ -47,16 +64,29 @@ internal static class QylRuntimeProcessMetrics
         }
 
         private static Measurement<long>[] ObserveGcCollections()
-            =>
-            [
-                new(GC.CollectionCount(0), new KeyValuePair<string, object?>("generation", "gen0")),
-                new(GC.CollectionCount(1), new KeyValuePair<string, object?>("generation", "gen1")),
-                new(GC.CollectionCount(2), new KeyValuePair<string, object?>("generation", "gen2")),
-            ];
+        {
+            GcCollectionMeasurements[0] = new Measurement<long>(GC.CollectionCount(0), Gen0Tags);
+            GcCollectionMeasurements[1] = new Measurement<long>(GC.CollectionCount(1), Gen1Tags);
+            GcCollectionMeasurements[2] = new Measurement<long>(GC.CollectionCount(2), Gen2Tags);
+
+            return GcCollectionMeasurements;
+        }
     }
 
     private static class ProcessMetrics
     {
+        private static readonly KeyValuePair<string, object?>[] UserCpuModeTags =
+        [
+            new(QylSemanticAttributes.CpuMode, QylSemanticAttributes.CpuModeUser),
+        ];
+
+        private static readonly KeyValuePair<string, object?>[] SystemCpuModeTags =
+        [
+            new(QylSemanticAttributes.CpuMode, QylSemanticAttributes.CpuModeSystem),
+        ];
+
+        private static readonly Measurement<double>[] CpuTimeMeasurements = new Measurement<double>[2];
+
         private static readonly Meter Meter = new(QylMetricMeters.ProcessMeterName);
         private static readonly ObservableCounter<double> CpuTime = Meter.CreateObservableCounter(
             "process.cpu.time",
@@ -82,11 +112,10 @@ internal static class QylRuntimeProcessMetrics
         {
             using var process = Process.GetCurrentProcess();
 
-            return
-            [
-                new(process.UserProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("state", "user")),
-                new(process.PrivilegedProcessorTime.TotalSeconds, new KeyValuePair<string, object?>("state", "system")),
-            ];
+            CpuTimeMeasurements[0] = new Measurement<double>(process.UserProcessorTime.TotalSeconds, UserCpuModeTags);
+            CpuTimeMeasurements[1] = new Measurement<double>(process.PrivilegedProcessorTime.TotalSeconds, SystemCpuModeTags);
+
+            return CpuTimeMeasurements;
         }
 
         private static long ObserveVirtualMemory()
