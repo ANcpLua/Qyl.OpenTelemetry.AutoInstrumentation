@@ -65,6 +65,17 @@ FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
     re.compile(r'\.AddTag\(\s*"[^"]+"'),
     re.compile(r'new\s+(?:global::System\.Collections\.Generic\.)?KeyValuePair<string,\s*object\?>\(\s*"[^"]+"'),
 ]
+FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS = [
+    "QylActivitySource",
+    ".SetTag(",
+    "new global::System.Diagnostics.Activity",
+    "ActivitySource",
+]
+FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
+    "throw exception;",
+    "throw caughtException;",
+    "throw ex;",
+]
 
 
 def fail(message: str) -> None:
@@ -342,6 +353,55 @@ def verify_semconv_attribute_contract() -> None:
                     fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
 
 
+def find_catch_blocks(text: str) -> list[str]:
+    blocks: list[str] = []
+    position = 0
+    while True:
+        match = re.search(r"\bcatch\b", text[position:])
+        if match is None:
+            return blocks
+
+        catch_index = position + match.start()
+        brace_index = text.find("{", catch_index)
+        if brace_index < 0:
+            fail("catch block without body")
+
+        depth = 0
+        for index in range(brace_index, len(text)):
+            char = text[index]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    blocks.append(text[brace_index:index + 1])
+                    position = index + 1
+                    break
+        else:
+            fail("unterminated catch block")
+
+
+def verify_behavior_semantics_contract() -> None:
+    generator = GENERATOR_PATH.read_text()
+    if "global::Qyl.AutoInstrumentation.QylIntercepted" not in generator:
+        fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
+
+    for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:
+        if token in generator:
+            fail(f"generator must not inline telemetry behavior instead of delegating to runtime: {token}")
+
+    behavior_sources = [GENERATOR_PATH, *sorted((ROOT / "src" / "Qyl.AutoInstrumentation").glob("QylIntercepted*.cs"))]
+    for path in behavior_sources:
+        text = path.read_text()
+        for token in FORBIDDEN_EXCEPTION_REWRITE_TOKENS:
+            if token in text:
+                fail(f"interceptor must preserve exception stack semantics; forbidden token in {path.relative_to(ROOT)}: {token}")
+
+        for block in find_catch_blocks(text):
+            if "throw;" not in block:
+                fail(f"interceptor catch block must rethrow with throw; in {path.relative_to(ROOT)}")
+
+
 def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]) -> None:
     generator = GENERATOR_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
@@ -387,6 +447,7 @@ def main() -> None:
     verify_generator_keys(yaml_signal_keys, unsupported_keys)
     verify_environment_contract()
     verify_semconv_attribute_contract()
+    verify_behavior_semantics_contract()
     print("contract-invariants-ok")
 
 
