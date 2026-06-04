@@ -51,7 +51,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol symbol)
             return null;
 
-        if (!TryGetInvocation(symbol, out var target))
+        var receiverType = GetInvocationReceiverType(invocation, context.SemanticModel, cancellationToken);
+        if (!TryGetInvocation(symbol, receiverType, out var target))
             return null;
 
         if (InstrumentationContract.TryGetSupportedSignal(target.ContractKey) is null)
@@ -64,12 +65,20 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return new InterceptedInvocation(target, interceptableLocation);
     }
 
-    private static bool TryGetInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    private static ITypeSymbol? GetInvocationReceiverType(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+        => invocation.Expression is MemberAccessExpressionSyntax memberAccess
+            ? semanticModel.GetTypeInfo(memberAccess.Expression, cancellationToken).Type
+            : null;
+
+    private static bool TryGetInvocation(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
     {
         if (TryGetHttpClientInvocation(symbol, out target))
             return true;
 
-        if (TryGetHttpWebRequestInvocation(symbol, out target))
+        if (TryGetHttpWebRequestInvocation(symbol, receiverType, out target))
             return true;
 
         if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
@@ -264,8 +273,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "HttpWebRequest_" + target.MethodName, index, target.ReceiverType, "request", target.Parameters, target.IsAsync);
         builder.AppendLine("        {");
+        builder.AppendLine("            var httpWebRequest = (global::System.Net.HttpWebRequest)request;");
         builder.AppendLine("            var metricStartTimeUtc = global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.GetStartTimeUtc();");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.StartActivity(request, ");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.StartActivity(httpWebRequest, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
         builder.AppendLine("            try");
@@ -288,12 +298,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.AppendLine(");");
         }
 
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordResult(activity, metricStartTimeUtc, request.Method, result);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordResult(activity, metricStartTimeUtc, httpWebRequest.Method, result);");
         builder.AppendLine("                return result;");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, metricStartTimeUtc, request.Method, exception);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, metricStartTimeUtc, httpWebRequest.Method, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -1837,10 +1847,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool TryGetHttpWebRequestInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    private static bool TryGetHttpWebRequestInvocation(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
     {
         target = default;
-        if (!IsType(symbol.ContainingType, "global::System.Net.HttpWebRequest") ||
+        var effectiveReceiverType = IsType(symbol.ContainingType, "global::System.Net.HttpWebRequest")
+            ? symbol.ContainingType
+            : receiverType;
+
+        if (effectiveReceiverType is null ||
+            !IsType(effectiveReceiverType, "global::System.Net.HttpWebRequest") ||
             !TryGetNoParameters(symbol, out var parameters))
         {
             return false;
