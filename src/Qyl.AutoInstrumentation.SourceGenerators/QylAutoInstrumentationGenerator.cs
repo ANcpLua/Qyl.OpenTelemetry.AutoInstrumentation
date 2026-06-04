@@ -412,9 +412,23 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MeterProviderBuilder_" + target.MethodName, index, target.ReceiverType, "builder", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
-        builder.AppendLine("            var result = builder.AddMeter(p0);");
+        builder.Append("            var result = ");
+        AppendInvocationCall(builder, target, "builder");
+        builder.AppendLine(";");
         builder.AppendLine("            var qylMeters = global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames();");
-        builder.AppendLine("            return qylMeters.Length is 0 ? result : result.AddMeter(qylMeters);");
+        if (string.IsNullOrEmpty(target.ExtensionContainingType))
+        {
+            builder.AppendLine("            return qylMeters.Length is 0 ? result : result.AddMeter(qylMeters);");
+        }
+        else
+        {
+            builder.Append("            return qylMeters.Length is 0 ? result : ");
+            builder.Append(target.ExtensionContainingType);
+            builder.Append('.');
+            builder.Append(target.MethodName);
+            builder.AppendLine("(result, qylMeters);");
+        }
+
         builder.AppendLine();
         builder.AppendLine("        }");
         builder.AppendLine();
@@ -2010,9 +2024,20 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetMeterProviderBuilderAddMeterInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
-        if (symbol.IsStatic ||
-            !string.Equals(symbol.Name, "AddMeter", StringComparison.Ordinal) ||
-            !IsType(symbol.ContainingType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
+        ITypeSymbol receiverType = symbol.ContainingType;
+        var extensionContainingType = string.Empty;
+        if (symbol.ReducedFrom is { Parameters.Length: > 0 } original)
+        {
+            receiverType = original.Parameters[0].Type;
+            extensionContainingType = CleanTypeName(original.ContainingType);
+        }
+        else if (symbol.IsStatic)
+        {
+            return false;
+        }
+
+        if (!string.Equals(symbol.Name, "AddMeter", StringComparison.Ordinal) ||
+            !IsType(receiverType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
             !IsType(symbol.ReturnType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
             symbol.Parameters.Length is not 1 ||
             !IsArrayOf(symbol.Parameters[0].Type, "global::System.String"))
@@ -2024,11 +2049,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             InterceptorKind.MeterProviderBuilderAddMeter,
             "signals.metrics.ASPNETCORE",
             "ASPNETCORE",
-            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(receiverType),
             "AddMeter",
             CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
-            false);
+            false,
+            ExtensionContainingType: extensionContainingType);
         return true;
     }
 
