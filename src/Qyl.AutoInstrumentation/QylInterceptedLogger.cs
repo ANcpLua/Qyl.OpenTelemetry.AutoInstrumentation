@@ -68,7 +68,7 @@ public static class QylInterceptedLogger
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, LoggerDomain);
-        activity.SetTag(QylSemanticAttributes.LogSeverity, logLevel.ToString());
+        activity.SetTag(QylSemanticAttributes.LogSeverity, NormalizeSeverity(logLevel));
 
         if (!string.IsNullOrWhiteSpace(eventId.Name))
             activity.SetTag(QylSemanticAttributes.LogEventName, eventId.Name);
@@ -78,6 +78,19 @@ public static class QylInterceptedLogger
 
         return activity;
     }
+
+    private static string NormalizeSeverity(LogLevel logLevel)
+        => logLevel switch
+        {
+            LogLevel.Trace => QylSemanticAttributes.LogSeverityTrace,
+            LogLevel.Debug => QylSemanticAttributes.LogSeverityDebug,
+            LogLevel.Information => QylSemanticAttributes.LogSeverityInformation,
+            LogLevel.Warning => QylSemanticAttributes.LogSeverityWarning,
+            LogLevel.Error => QylSemanticAttributes.LogSeverityError,
+            LogLevel.Critical => QylSemanticAttributes.LogSeverityCritical,
+            LogLevel.None => QylSemanticAttributes.LogSeverityNone,
+            _ => logLevel.ToString(),
+        };
 
     private static void RecordException(Activity? activity, Exception exception)
     {

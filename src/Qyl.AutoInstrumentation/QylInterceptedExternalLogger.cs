@@ -31,17 +31,17 @@ public static class QylInterceptedExternalLogger
     private static string NormalizeSeverity(string methodName)
     {
         if (methodName.StartsWith("Trace", StringComparison.Ordinal))
-            return "Trace";
+            return QylSemanticAttributes.LogSeverityTrace;
         if (methodName.StartsWith("Debug", StringComparison.Ordinal))
-            return "Debug";
+            return QylSemanticAttributes.LogSeverityDebug;
         if (methodName.StartsWith("Info", StringComparison.Ordinal))
-            return "Information";
+            return QylSemanticAttributes.LogSeverityInformation;
         if (methodName.StartsWith("Warn", StringComparison.Ordinal) || methodName.StartsWith("Warning", StringComparison.Ordinal))
-            return "Warning";
+            return QylSemanticAttributes.LogSeverityWarning;
         if (methodName.StartsWith("Error", StringComparison.Ordinal))
-            return "Error";
+            return QylSemanticAttributes.LogSeverityError;
         if (methodName.StartsWith("Fatal", StringComparison.Ordinal) || methodName.StartsWith("Critical", StringComparison.Ordinal))
-            return "Critical";
+            return QylSemanticAttributes.LogSeverityCritical;
 
         return methodName;
     }

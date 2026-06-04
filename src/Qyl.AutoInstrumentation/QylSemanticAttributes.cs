@@ -82,6 +82,13 @@ public static class QylSemanticAttributes
     public const string MessagingSystemNServiceBus = "nservicebus";
 
     public const string LogSeverity = "log.severity";
+    public const string LogSeverityTrace = "Trace";
+    public const string LogSeverityDebug = "Debug";
+    public const string LogSeverityInformation = "Information";
+    public const string LogSeverityWarning = "Warning";
+    public const string LogSeverityError = "Error";
+    public const string LogSeverityCritical = "Critical";
+    public const string LogSeverityNone = "None";
     public const string LogEventName = OtelAttributes.EventName;
 
     public const string GraphQlOperationName = GraphqlAttributes.OperationName;
