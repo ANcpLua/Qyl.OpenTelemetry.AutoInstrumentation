@@ -25,12 +25,15 @@ public static class QylInstrumentation
         if (Interlocked.Exchange(ref _activated, 1) == 1)
             return false;
 
-        ActivitySource.AddActivityListener(new ActivityListener
+        if (QylAutoInstrumentationOptions.Current.HasAnyActivityInstrumentationEnabled())
         {
-            ShouldListenTo = static source => source.Name == QylActivitySource.Name,
-            Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = SemConvConformanceProcessor.OnActivityStopped,
-        });
+            ActivitySource.AddActivityListener(new ActivityListener
+            {
+                ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+                Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+                ActivityStopped = SemConvConformanceProcessor.OnActivityStopped,
+            });
+        }
 
         QylRuntimeProcessMetrics.Initialize();
 

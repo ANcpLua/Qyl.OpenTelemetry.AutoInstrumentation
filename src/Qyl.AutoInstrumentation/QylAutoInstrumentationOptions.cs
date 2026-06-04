@@ -109,6 +109,10 @@ public sealed class QylAutoInstrumentationOptions
             : IsSignalEnabled(signal);
     }
 
+    public bool HasAnyActivityInstrumentationEnabled()
+        => HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, TraceInstrumentationIds) ||
+           HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, LogInstrumentationIds);
+
     private static QylAutoInstrumentationOptions Load()
     {
         var globalEnabled = ReadBoolean(GlobalEnabledVariable) ?? true;
@@ -215,6 +219,17 @@ public sealed class QylAutoInstrumentationOptions
             QylAutoInstrumentationSignal.Logs => LogsEnabled,
             _ => false,
         };
+
+    private bool HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal signal, string[] instrumentationIds)
+    {
+        foreach (var instrumentationId in instrumentationIds)
+        {
+            if (IsInstrumentationEnabled(signal, instrumentationId))
+                return true;
+        }
+
+        return false;
+    }
 
     private static string BuildSignalSpecificVariable(QylAutoInstrumentationSignal signal, string instrumentationId)
         => signal switch
