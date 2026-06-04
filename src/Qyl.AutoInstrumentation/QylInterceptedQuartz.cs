@@ -6,7 +6,7 @@ public static class QylInterceptedQuartz
 {
     private const string QuartzDomain = "job.quartz";
 
-    public static Activity? StartActivity(string jobType)
+    public static Activity? StartActivity()
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Quartz))
             return null;
@@ -16,9 +16,6 @@ public static class QylInterceptedQuartz
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QuartzDomain);
-        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemQuartz);
-        activity.SetTag(QylSemanticAttributes.RpcService, jobType);
-        activity.SetTag(QylSemanticAttributes.RpcMethod, QylSemanticAttributes.RpcMethodExecute);
         return activity;
     }
 

@@ -1133,9 +1133,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "Quartz_" + target.MethodName, index, target.ReceiverType, "job", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity(");
-        AppendStringLiteral(builder, target.ReceiverType);
-        builder.AppendLine(");");
+        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity();");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
         builder.Append("                var resultTask = job.");
