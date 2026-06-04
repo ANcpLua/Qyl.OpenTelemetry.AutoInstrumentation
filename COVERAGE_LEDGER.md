@@ -34,6 +34,32 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | **M1 AOT walking skeleton** | A NativeAOT-published consumer app, with a `PackageReference` to `Qyl.AutoInstrumentation.Hosting`, emits ONE HttpClient CLIENT span via `QylActivitySource` to a console listener — driven by the `HttpHandlerDiagnosticListener` subscription. | one CLIENT span: method/url/server | app stdout/exit identical w/wo the reference + 0 spans in the control arm | **in-progress** — PackageReference zero-code NativeAOT boot + HttpClient span emission proven locally; formal Gate A/B runner still pending. |
 | M2+ | *not enumerated until M1 is `proven`* (the principle) | — | — | — |
 
+## 60-item OpenTelemetry .NET auto-instrumentation contract
+
+Source of truth:
+
+- `docs/otel-dotnet-auto-60-contract-items.yaml`
+- `src/Qyl.AutoInstrumentation.SourceGenerators/InstrumentationContract.cs`
+
+Current compile-time NativeAOT classification:
+
+| Contract slice | Count | Current binding |
+|---|---:|---|
+| Signal-specific promises | 37 | 34 source-generated signal promises plus 3 unsupported NativeAOT parity promises. |
+| Source-generated signal promises | 34 | `QylAutoInstrumentationGenerator` gates interceptor targets through `InstrumentationContract.TryGetSourceGeneratedSignal`. |
+| Unsupported NativeAOT parity signal promises | 3 | `signals.traces.ASPNET`, `signals.traces.WCFSERVICE`, `signals.metrics.ASPNET`; retained in the manifest but rejected by the source-generator target gate. |
+| Global environment controls | 7 | `QylAutoInstrumentationOptions` reads global/signal defaults and derives signal-specific pattern variables. |
+| Instrumentation options | 16 | `QylAutoInstrumentationOptions` reads all option environment variables; raw/sensitive emissions stay default-off. |
+| Total contract items | 60 | `InstrumentationContract.TotalCount`. |
+
+Unsupported NativeAOT parity is not a backlog emitter. These items require .NET Framework or
+bytecode/runtime rewriting surfaces that this generator explicitly does not implement. Treating
+them as source-generated work would violate the architecture rule: no CLR profiling, no startup
+hooks, no runtime IL rewriting, no reflection, and no dynamic dispatch.
+
+The source-generated signal set covers source-visible call-sites and meter registration only.
+Third-party binary internals and unsupported/dynamic call paths remain intentionally ignored.
+
 ## Coverage ledger — blueprint §00–§09 + T000–T032 (re-aimed)
 
 | Ref | What | Status |
