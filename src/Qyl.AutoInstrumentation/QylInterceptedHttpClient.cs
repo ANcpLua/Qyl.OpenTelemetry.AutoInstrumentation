@@ -475,7 +475,7 @@ public static class QylInterceptedHttpClient
 
     private static HttpClientObservation StartHttpClientObservation(HttpRequestMessage request)
     {
-        var observation = StartHttpClientObservation(request.Method.Method, request.RequestUri, request.RequestUri?.ToString());
+        var observation = StartHttpClientObservation(request.Method.Method, request.RequestUri, null);
         if (observation.Activity is not null)
             SetConfiguredHeaders(observation.Activity, QylSemanticAttributes.HttpRequestHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaders, request.Headers, request.Content?.Headers);
 
@@ -492,7 +492,7 @@ public static class QylInterceptedHttpClient
     }
 
     private static HttpClientObservation StartHttpClientObservation(string method, Uri? requestUri)
-        => StartHttpClientObservation(method, requestUri, requestUri?.ToString());
+        => StartHttpClientObservation(method, requestUri, null);
 
     private static HttpClientObservation StartHttpClientObservation(string method, Uri? requestUri, string? rawRequestUri)
     {
