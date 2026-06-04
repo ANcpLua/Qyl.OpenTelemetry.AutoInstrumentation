@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Qyl.AutoInstrumentation;
 using Qyl.AutoInstrumentation.DiagnosticListeners;
 using Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
@@ -12,6 +13,12 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "SqlClientDiagnosticListener";
+
+    /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.SqlClient;
 
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)

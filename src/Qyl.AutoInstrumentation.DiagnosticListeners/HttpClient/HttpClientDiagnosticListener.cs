@@ -16,6 +16,12 @@ public sealed class HttpClientDiagnosticListener : DiagnosticListenerSubscriber
     protected override string ListenerName => "HttpHandlerDiagnosticListener";
 
     /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.HttpClient;
+
+    /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
         if (!StringComparer.Ordinal.Equals(name, "qyl.http.client") &&

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Qyl.AutoInstrumentation;
 
 namespace Qyl.AutoInstrumentation.DiagnosticListeners;
 
@@ -22,10 +23,19 @@ public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<stri
     /// (e.g. <c>HttpHandlerDiagnosticListener</c>, <c>Microsoft.AspNetCore</c>).</summary>
     protected abstract string ListenerName { get; }
 
+    /// <summary>The signal controlled by the OTEL_DOTNET_AUTO_* env var family.</summary>
+    protected abstract QylAutoInstrumentationSignal Signal { get; }
+
+    /// <summary>The instrumentation id used in OTEL_DOTNET_AUTO_{SIGNAL}_{ID}_INSTRUMENTATION_ENABLED.</summary>
+    protected abstract string InstrumentationId { get; }
+
     /// <summary>Subscribe to <see cref="DiagnosticListener.AllListeners"/> and wait for the
     /// target listener to appear. Idempotent; safe under <c>[ModuleInitializer]</c>.</summary>
     public void Subscribe()
     {
+        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
+            return;
+
         _allListenersSubscription ??= DiagnosticListener.AllListeners.Subscribe(new AllListenersObserver(this));
     }
 
@@ -33,7 +43,10 @@ public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<stri
     protected abstract void OnEvent(string name, object? payload);
 
     void IObserver<KeyValuePair<string, object?>>.OnNext(KeyValuePair<string, object?> value)
-        => OnEvent(value.Key, value.Value);
+    {
+        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
+            OnEvent(value.Key, value.Value);
+    }
 
     void IObserver<KeyValuePair<string, object?>>.OnError(Exception error) { /* invisible */ }
 

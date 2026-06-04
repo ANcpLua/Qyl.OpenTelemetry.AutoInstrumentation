@@ -15,6 +15,12 @@ public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
     protected override string ListenerName => "SqlClientDiagnosticListener";
 
     /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.SqlClient;
+
+    /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
         if (!StringComparer.Ordinal.Equals(name, "qyl.db.sqlclient"))

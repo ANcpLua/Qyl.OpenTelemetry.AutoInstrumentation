@@ -14,6 +14,12 @@ public sealed class AspNetCoreDiagnosticListener : DiagnosticListenerSubscriber
     protected override string ListenerName => "Microsoft.AspNetCore";
 
     /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.AspNetCore;
+
+    /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
         if (!StringComparer.Ordinal.Equals(name, "qyl.http.server") &&

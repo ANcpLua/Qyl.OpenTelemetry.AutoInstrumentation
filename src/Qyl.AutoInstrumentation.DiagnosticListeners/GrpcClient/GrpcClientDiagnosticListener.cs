@@ -13,6 +13,12 @@ public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
     protected override string ListenerName => "Grpc.Net.Client";
 
     /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.GrpcNetClient;
+
+    /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
         if (!StringComparer.Ordinal.Equals(name, "qyl.rpc.grpc") &&

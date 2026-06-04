@@ -15,6 +15,12 @@ public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSu
     protected override string ListenerName => "Microsoft.EntityFrameworkCore";
 
     /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.EntityFrameworkCore;
+
+    /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
         if (StringComparer.Ordinal.Equals(name, "qyl.db.efcore"))
