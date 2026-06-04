@@ -484,8 +484,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedElastic.StartActivity(");
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.Append(", ");
-        AppendStringLiteral(builder, target.ReceiverType);
-        builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
         builder.AppendLine("            try");

@@ -7,12 +7,13 @@ public static class QylInterceptedElastic
     private const string ElasticsearchDomain = "db.elasticsearch";
     private const string ElasticTransportDomain = "elastic.transport";
 
-    public static Activity? StartActivity(string instrumentationId, string clientType, string methodName)
+    public static Activity? StartActivity(string instrumentationId, string methodName)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, instrumentationId))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Elasticsearch " + methodName, ActivityKind.Client);
+        var operation = NormalizeOperation(methodName);
+        var activity = QylActivitySource.Source.StartActivity("Elasticsearch " + operation, ActivityKind.Client);
         if (activity is null)
             return null;
 
@@ -22,8 +23,8 @@ public static class QylInterceptedElastic
                 ? ElasticTransportDomain
                 : ElasticsearchDomain);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemElasticsearch);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, methodName);
-        activity.SetTag(QylSemanticAttributes.RpcService, clientType);
+        activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
+        activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);
         return activity;
     }
 
@@ -36,4 +37,22 @@ public static class QylInterceptedElastic
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
     }
+
+    private static string NormalizeOperation(string methodName)
+        => methodName switch
+        {
+            "Request" or "RequestAsync" => "request",
+            "Search" or "SearchAsync" => "search",
+            "Index" or "IndexAsync" => "index",
+            "Create" or "CreateAsync" => "create",
+            "Update" or "UpdateAsync" => "update",
+            "Delete" or "DeleteAsync" => "delete",
+            "Bulk" or "BulkAsync" => "bulk",
+            "Get" or "GetAsync" => "get",
+            "Count" or "CountAsync" => "count",
+            "Exists" or "ExistsAsync" => "exists",
+            "MultiGet" or "MultiGetAsync" => "mget",
+            "MultiSearch" or "MultiSearchAsync" => "msearch",
+            _ => methodName,
+        };
 }
