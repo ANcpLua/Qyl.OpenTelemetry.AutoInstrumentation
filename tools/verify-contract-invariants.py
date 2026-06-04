@@ -11,6 +11,9 @@ CONTRACT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Ins
 GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
 OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
 IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
+SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
+SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
+RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 INTENTIONALLY_UNSUPPORTED_DYNAMIC_SIGNAL_KEYS = {"signals.traces.WCFCORE"}
 FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
     "IOperationInvoker",
@@ -52,6 +55,15 @@ FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
     "InterceptableLocation.Create",
     "GetLocation()",
     "Location.Create",
+]
+RUNTIME_EMISSION_ROOTS = [
+    ROOT / "src" / "Qyl.AutoInstrumentation",
+    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
+]
+FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
+    re.compile(r'\.SetTag\(\s*"[^"]+"'),
+    re.compile(r'\.AddTag\(\s*"[^"]+"'),
+    re.compile(r'new\s+(?:global::System\.Collections\.Generic\.)?KeyValuePair<string,\s*object\?>\(\s*"[^"]+"'),
 ]
 
 
@@ -293,6 +305,43 @@ def verify_environment_contract() -> None:
         fail("NETFX SQLClient IL rewrite option must be recorded but remain disabled in NativeAOT mode")
 
 
+def verify_semconv_attribute_contract() -> None:
+    attributes = SEMCONV_ATTRIBUTES_PATH.read_text()
+    generator = SEMCONV_GENERATOR_PATH.read_text()
+    runtime_project = RUNTIME_PROJECT_PATH.read_text()
+
+    for package in [
+        'Include="Qyl.OpenTelemetry.SemanticConventions"',
+        'Include="Qyl.OpenTelemetry.SemanticConventions.Incubating"',
+    ]:
+        if package not in runtime_project:
+            fail(f"runtime project must reference generated semconv package: {package}")
+
+    for namespace in [
+        "Qyl.OpenTelemetry.SemanticConventions.Attributes.",
+        "Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.",
+    ]:
+        if namespace not in attributes:
+            fail(f"QylSemanticAttributes must alias generated semconv constants from {namespace}")
+
+    for token in [
+        "QylSemConvRegistry.g.cs",
+        "CollectFromNamespace",
+        "IFieldSymbol",
+        "HasConstantValue",
+    ]:
+        if token not in generator:
+            fail(f"semconv registry generator missing compile-time metadata extraction token: {token}")
+
+    for root in RUNTIME_EMISSION_ROOTS:
+        for path in root.rglob("*.cs"):
+            text = path.read_text()
+            for pattern in FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS:
+                match = pattern.search(text)
+                if match is not None:
+                    fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
+
+
 def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]) -> None:
     generator = GENERATOR_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
@@ -337,6 +386,7 @@ def main() -> None:
     yaml_signal_keys, unsupported_keys = verify_yaml_vs_contract()
     verify_generator_keys(yaml_signal_keys, unsupported_keys)
     verify_environment_contract()
+    verify_semconv_attribute_contract()
     print("contract-invariants-ok")
 
 
