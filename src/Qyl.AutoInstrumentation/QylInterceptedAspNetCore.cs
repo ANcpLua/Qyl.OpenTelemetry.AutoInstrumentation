@@ -63,7 +63,9 @@ public static class QylInterceptedAspNetCore
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, AspNetCoreDomain);
         activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
-        activity.SetTag(QylSemanticAttributes.UrlPath, context.Request.Path.Value);
+
+        if (options.CaptureSensitiveValues)
+            activity.SetTag(QylSemanticAttributes.UrlPath, context.Request.Path.Value);
 
         if (context.Request.QueryString.HasValue)
         {

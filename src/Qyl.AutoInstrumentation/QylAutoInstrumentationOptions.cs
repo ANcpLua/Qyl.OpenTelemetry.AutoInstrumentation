@@ -9,6 +9,7 @@ public sealed class QylAutoInstrumentationOptions
     private const string TracesEnabledVariable = "OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED";
     private const string MetricsEnabledVariable = "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED";
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
+    private const string CaptureSensitiveValuesVariable = "QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES";
 
     public static readonly QylAutoInstrumentationOptions Current = Load();
 
@@ -19,6 +20,7 @@ public sealed class QylAutoInstrumentationOptions
         bool tracesEnabled,
         bool metricsEnabled,
         bool logsEnabled,
+        bool captureSensitiveValues,
         IReadOnlyDictionary<string, bool> instrumentationEnabled,
         bool entityFrameworkCoreSetDbStatementForText,
         bool graphQlSetDocument,
@@ -41,6 +43,7 @@ public sealed class QylAutoInstrumentationOptions
         TracesEnabled = tracesEnabled;
         MetricsEnabled = metricsEnabled;
         LogsEnabled = logsEnabled;
+        CaptureSensitiveValues = captureSensitiveValues;
         _instrumentationEnabled = instrumentationEnabled;
         EntityFrameworkCoreSetDbStatementForText = entityFrameworkCoreSetDbStatementForText;
         GraphQlSetDocument = graphQlSetDocument;
@@ -67,6 +70,8 @@ public sealed class QylAutoInstrumentationOptions
     public bool MetricsEnabled { get; }
 
     public bool LogsEnabled { get; }
+
+    public bool CaptureSensitiveValues { get; }
 
     public bool EntityFrameworkCoreSetDbStatementForText { get; }
 
@@ -130,6 +135,7 @@ public sealed class QylAutoInstrumentationOptions
             tracesEnabled,
             metricsEnabled,
             logsEnabled,
+            ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
             new ReadOnlyDictionary<string, bool>(instrumentationEnabled),
             ReadBoolean("OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT") ?? false,
             ReadBoolean("OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT") ?? false,
