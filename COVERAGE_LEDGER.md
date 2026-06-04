@@ -64,7 +64,7 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | T012 source instrumentation runtime | ActivitySource/DiagnosticListener subs | `in-progress` (central semantic policy + live domain proof; formal Gate A/B pending) |
 | T013 bytecode instrumentation runtime | ReJIT rewrite pipeline | `oos: substrate-swap — incompatible with AOT` |
 | T014 http server | ASP.NET Core | `in-progress` (live qyl span demo; formal Gate A/B pending) |
-| T015 http client | HttpClient | `M1` (PackageReference NativeAOT zero-code span emission proven locally; formal Gate A/B pending) |
+| T015 http client | HttpClient | `M1` (real `HttpHandlerDiagnosticListener` 503 + connection-error paths proven under managed, NativeAOT, and PackageReference zero-code; formal Gate A/B pending) |
 | T016 grpc/rpc | Grpc.Net | `in-progress` (live qyl span demo; formal Gate A/B pending) |
 | T017 database | ADO.NET/EFCore/SqlClient | `in-progress` (EFCore + SqlClient live qyl span demo; formal Gate A/B pending) |
 | T018 cache | StackExchange.Redis | `backlog` |

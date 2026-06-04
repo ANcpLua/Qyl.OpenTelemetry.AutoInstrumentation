@@ -99,6 +99,10 @@ Semantic rules live in the diagnostic listener layer:
 
 `demos/Qyl.LiveInstrumentationDemo` now checks both sides of this contract: every covered domain
 must emit its required safe attributes, and privacy-gated attributes must not leak with defaults.
+`demos/Qyl.RealHttpClientDemo` uses real .NET `HttpClient` traffic and BCL
+`HttpHandlerDiagnosticListener` events to prove runtime extraction for 503 and connection-failure
+paths under managed and NativeAOT execution. The per-library matrix lives in
+`docs/RUNTIME_SEMANTICS.md`.
 
 ## Status
 
