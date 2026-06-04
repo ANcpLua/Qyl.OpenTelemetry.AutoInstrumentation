@@ -6,24 +6,20 @@ public static class QylInterceptedKafka
 {
     private const string KafkaDomain = "messaging.kafka";
 
-    public static Activity? StartProducerActivity(string? topic)
+    public static Activity? StartProducerActivity()
         => StartActivity(
             ActivityKind.Producer,
             QylSemanticAttributes.MessagingOperationTypeSend,
-            QylSemanticAttributes.MessagingOperationNamePublish,
-            topic);
+            QylSemanticAttributes.MessagingOperationNamePublish);
 
     public static Activity? StartConsumerActivity()
         => StartActivity(
             ActivityKind.Consumer,
             QylSemanticAttributes.MessagingOperationTypeReceive,
-            QylSemanticAttributes.MessagingOperationTypeReceive,
-            null);
+            QylSemanticAttributes.MessagingOperationTypeReceive);
 
-    public static void RecordConsumeSuccess(Activity? activity, string? topic)
+    public static void RecordConsumeSuccess(Activity? activity)
     {
-        if (activity is not null && !string.IsNullOrWhiteSpace(topic))
-            activity.SetTag(QylSemanticAttributes.MessagingDestinationName, topic);
     }
 
     public static void RecordSuccess(Activity? activity)
@@ -36,7 +32,7 @@ public static class QylInterceptedKafka
         activity?.SetStatus(ActivityStatusCode.Error);
     }
 
-    private static Activity? StartActivity(ActivityKind activityKind, string operationType, string operationName, string? topic)
+    private static Activity? StartActivity(ActivityKind activityKind, string operationType, string operationName)
     {
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Kafka))
             return null;
@@ -49,9 +45,6 @@ public static class QylInterceptedKafka
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemKafka);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operationName);
-
-        if (!string.IsNullOrWhiteSpace(topic))
-            activity.SetTag(QylSemanticAttributes.MessagingDestinationName, topic);
 
         return activity;
     }

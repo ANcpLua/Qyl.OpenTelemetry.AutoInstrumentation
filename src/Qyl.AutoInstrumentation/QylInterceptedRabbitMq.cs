@@ -20,9 +20,6 @@ public static class QylInterceptedRabbitMq
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish);
 
-        if (!string.IsNullOrWhiteSpace(exchange))
-            activity.SetTag(QylSemanticAttributes.MessagingDestinationName, exchange);
-
         return activity;
     }
 

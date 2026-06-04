@@ -991,9 +991,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaProducer_" + target.MethodName, index, target.ReceiverType, "producer", target.Parameters, target.IsAsync);
         builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity(");
-        AppendKafkaTopicExpression(builder, target);
-        builder.AppendLine(");");
+        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity();");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
 
@@ -1044,7 +1042,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append('(');
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
         builder.AppendLine(");");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity, result is null ? null : result.Topic);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity);");
         builder.AppendLine("                return result;");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
