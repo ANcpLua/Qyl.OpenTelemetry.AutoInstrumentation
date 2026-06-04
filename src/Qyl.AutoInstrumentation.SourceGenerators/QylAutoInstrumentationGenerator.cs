@@ -1050,7 +1050,18 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitRabbitMqInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, "void", "RabbitMq_" + target.MethodName, index, target.ReceiverType, "channel", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            "RabbitMq_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "channel",
+            target.Parameters,
+            target.IsAsync,
+            target.TypeParameterList,
+            target.ConstraintClauses);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.StartPublishActivity(");
         AppendRabbitMqExchangeExpression(builder, target);
@@ -1059,11 +1070,25 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
-        builder.Append("                channel.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(");");
+
+        if (target.IsAsync)
+        {
+            builder.Append("                await channel.");
+            builder.Append(target.MethodName);
+            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+        }
+        else
+        {
+            builder.Append("                channel.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+        }
+
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
@@ -2017,24 +2042,45 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetRabbitMqInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
-        if (!string.Equals(symbol.Name, "BasicPublish", StringComparison.Ordinal) ||
-            !symbol.ReturnsVoid ||
-            !IsRabbitMqChannelType(symbol.ContainingType) ||
+        if (!IsRabbitMqChannelType(symbol.ContainingType) ||
             !TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
         {
             return false;
         }
 
-        target = new InterceptorTarget(
-            InterceptorKind.RabbitMqBasicPublish,
-            "signals.traces.RABBITMQ",
-            "RABBITMQ",
-            CleanTypeName(symbol.ContainingType),
-            "BasicPublish",
-            "void",
-            parameters,
-            false);
-        return true;
+        if (string.Equals(symbol.Name, "BasicPublish", StringComparison.Ordinal) &&
+            symbol.ReturnsVoid)
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.RabbitMqBasicPublish,
+                "signals.traces.RABBITMQ",
+                "RABBITMQ",
+                CleanTypeName(symbol.ContainingType),
+                "BasicPublish",
+                "void",
+                parameters,
+                false);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "BasicPublishAsync", StringComparison.Ordinal) &&
+            IsValueTask(symbol.ReturnType))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.RabbitMqBasicPublish,
+                "signals.traces.RABBITMQ",
+                "RABBITMQ",
+                CleanTypeName(symbol.ContainingType),
+                "BasicPublishAsync",
+                CleanTypeName(symbol.ReturnType),
+                parameters,
+                true,
+                GetTypeParameterList(symbol),
+                GetConstraintClauses(symbol));
+            return true;
+        }
+
+        return false;
     }
 
     private static bool IsRabbitMqChannelType(ITypeSymbol? symbol)
@@ -2789,6 +2835,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");
+
+    private static bool IsValueTask(ITypeSymbol? symbol)
+        => IsType(symbol, "global::System.Threading.Tasks.ValueTask");
 
     private static bool TryGetTaskResult(ITypeSymbol? symbol, out ITypeSymbol result)
     {
