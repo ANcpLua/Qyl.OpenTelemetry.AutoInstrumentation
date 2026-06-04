@@ -1039,7 +1039,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GraphQl_" + target.MethodName, index, target.ReceiverType, "executer", target.Parameters, isAsync: true);
         builder.AppendLine("        {");
-        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity();");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity(");
+        AppendGraphQlDocumentExpression(builder, target);
+        builder.Append(", ");
+        AppendGraphQlOperationNameExpression(builder, target);
+        builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
         builder.Append("                var result = await executer.");
@@ -1061,6 +1065,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine();
+    }
+
+    private static void AppendGraphQlDocumentExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            builder.Append(".Query");
+            return;
+        }
+
+        builder.Append("null");
+    }
+
+    private static void AppendGraphQlOperationNameExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            builder.Append(".OperationName");
+            return;
+        }
+
+        builder.Append("null");
     }
 
     private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
