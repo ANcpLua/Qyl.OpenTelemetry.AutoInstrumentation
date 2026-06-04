@@ -65,6 +65,14 @@ public static class QylInterceptedAspNetCore
         activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
         activity.SetTag(QylSemanticAttributes.UrlPath, context.Request.Path.Value);
 
+        if (context.Request.QueryString.HasValue)
+        {
+            var query = context.Request.QueryString.Value;
+            activity.SetTag(
+                QylSemanticAttributes.UrlQuery,
+                options.AspNetCoreUrlQueryRedactionDisabled ? TrimQueryPrefix(query) : "REDACTED");
+        }
+
         if (route is not null)
             activity.SetTag(QylSemanticAttributes.HttpRoute, route);
 
@@ -133,6 +141,11 @@ public static class QylInterceptedAspNetCore
 
     private static string NormalizeHeaderName(string headerName)
         => headerName.Trim().ToLowerInvariant().Replace('_', '-');
+
+    private static string TrimQueryPrefix(string? query)
+        => string.IsNullOrEmpty(query) || query[0] is not '?'
+            ? query ?? string.Empty
+            : query[1..];
 
     private static string? GetRoute(HttpContext context)
         => context.GetEndpoint() is RouteEndpoint routeEndpoint
