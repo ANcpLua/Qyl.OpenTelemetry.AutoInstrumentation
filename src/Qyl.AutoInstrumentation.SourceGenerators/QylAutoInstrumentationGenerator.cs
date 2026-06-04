@@ -952,28 +952,25 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitQuartzInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "Quartz_" + target.MethodName, index, target.ReceiverType, "job", target.Parameters, isAsync: true);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "Quartz_" + target.MethodName, index, target.ReceiverType, "job", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity(");
         AppendStringLiteral(builder, target.ReceiverType);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
-        builder.Append("                await job.");
+        builder.Append("                var resultTask = job.");
         builder.Append(target.MethodName);
         builder.Append('(');
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(").ConfigureAwait(false);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordSuccess(activity);");
+        builder.AppendLine(");");
+        builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync(resultTask, activity);");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
         builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine();
