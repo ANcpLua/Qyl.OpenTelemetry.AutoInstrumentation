@@ -50,7 +50,8 @@ public static class QylInterceptedAspNetCore
 
     private static Activity? StartRequestActivity(HttpContext context)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.AspNetCore))
+        var options = QylAutoInstrumentationOptions.Current;
+        if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.AspNetCore))
             return null;
 
         var method = context.Request.Method;
@@ -67,6 +68,7 @@ public static class QylInterceptedAspNetCore
         if (route is not null)
             activity.SetTag(QylSemanticAttributes.HttpRoute, route);
 
+        SetConfiguredHeaders(activity, QylSemanticAttributes.HttpRequestHeaderPrefix, options.AspNetCoreCapturedRequestHeaders, context.Request.Headers);
         return activity;
     }
 
@@ -106,6 +108,7 @@ public static class QylInterceptedAspNetCore
             return;
 
         activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, context.Response.StatusCode);
+        SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaders, context.Response.Headers);
         if (context.Response.StatusCode >= 500)
         {
             activity.SetTag(QylSemanticAttributes.ErrorType, context.Response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -115,6 +118,21 @@ public static class QylInterceptedAspNetCore
 
     private static RequestDelegate Observe(RequestDelegate requestDelegate)
         => requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
+
+    private static void SetConfiguredHeaders(Activity activity, string prefix, string[] configuredHeaders, IHeaderDictionary headers)
+    {
+        if (configuredHeaders.Length is 0)
+            return;
+
+        foreach (var headerName in configuredHeaders)
+        {
+            if (headers.TryGetValue(headerName, out var values) && values.Count > 0)
+                activity.SetTag(prefix + NormalizeHeaderName(headerName), values.ToString());
+        }
+    }
+
+    private static string NormalizeHeaderName(string headerName)
+        => headerName.Trim().ToLowerInvariant().Replace('_', '-');
 
     private static string? GetRoute(HttpContext context)
         => context.GetEndpoint() is RouteEndpoint routeEndpoint
