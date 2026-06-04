@@ -46,9 +46,20 @@ internal static class InstrumentationContract
     public const int MetricsSignalSpecificPromiseCount = 8;
     public const int LogsSignalSpecificPromiseCount = 3;
     public const int UniqueInstrumentationIdCount = 31;
+    public const int UnsupportedNativeAotSignalPromiseCount = 3;
+    public const int SourceGeneratedSignalPromiseCount =
+        SignalSpecificInstrumentationPromiseCount -
+        UnsupportedNativeAotSignalPromiseCount;
 
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     public const string AspNetCoreComponentsNavigationMetricName = "aspnetcore.components.navigation";
+
+    public static readonly ImmutableArray<string> UnsupportedNativeAotSignalKeys =
+    [
+        "signals.traces.ASPNET",
+        "signals.traces.WCFSERVICE",
+        "signals.metrics.ASPNET",
+    ];
 
     public static readonly ImmutableArray<InstrumentationContractItem> Items =
     [
@@ -132,15 +143,34 @@ internal static class InstrumentationContract
         builder.AppendLine($"    public const int MetricsSignalSpecificPromiseCount = {MetricsSignalSpecificPromiseCount};");
         builder.AppendLine($"    public const int LogsSignalSpecificPromiseCount = {LogsSignalSpecificPromiseCount};");
         builder.AppendLine($"    public const int UniqueInstrumentationIdCount = {UniqueInstrumentationIdCount};");
+        builder.AppendLine($"    public const int UnsupportedNativeAotSignalPromiseCount = {UnsupportedNativeAotSignalPromiseCount};");
+        builder.AppendLine($"    public const int SourceGeneratedSignalPromiseCount = {SourceGeneratedSignalPromiseCount};");
         builder.AppendLine("    public const string AspNetCoreComponentsMeterName = \"Microsoft.AspNetCore.Components\";");
         builder.AppendLine("    public const string AspNetCoreComponentsNavigationMetricName = \"aspnetcore.components.navigation\";");
         builder.AppendLine();
         EmitStringArray(builder, "ItemIds", Items.Select(static item => item.Key));
         EmitStringArray(builder, "SignalKeys", Items.Where(static item => item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise).Select(static item => item.Key));
+        EmitStringArray(builder, "SourceGeneratedSignalKeys", Items.Where(static item => item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise && !IsUnsupportedNativeAotSignalKey(item.Key)).Select(static item => item.Key));
+        EmitStringArray(builder, "UnsupportedNativeAotSignalKeys", UnsupportedNativeAotSignalKeys);
         EmitStringArray(builder, "GlobalEnvironmentControls", Items.Where(static item => item.Kind is InstrumentationContractKind.GlobalEnvironmentControl).Select(static item => item.EnvironmentVariable));
         EmitStringArray(builder, "InstrumentationOptions", Items.Where(static item => item.Kind is InstrumentationContractKind.InstrumentationOption).Select(static item => item.EnvironmentVariable));
         builder.AppendLine("}");
         return builder.ToString();
+    }
+
+    public static InstrumentationContractItem? TryGetSourceGeneratedSignal(string key)
+    {
+        foreach (var item in Items)
+        {
+            if (item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise &&
+                !IsUnsupportedNativeAotSignalKey(item.Key) &&
+                string.Equals(item.Key, key, StringComparison.Ordinal))
+            {
+                return item;
+            }
+        }
+
+        return null;
     }
 
     public static InstrumentationContractItem? TryGetSupportedSignal(string key)
@@ -156,6 +186,11 @@ internal static class InstrumentationContract
 
         return null;
     }
+
+    private static bool IsUnsupportedNativeAotSignalKey(string key)
+        => key is "signals.traces.ASPNET" or
+            "signals.traces.WCFSERVICE" or
+            "signals.metrics.ASPNET";
 
     private static InstrumentationContractItem Signal(
         int index,
