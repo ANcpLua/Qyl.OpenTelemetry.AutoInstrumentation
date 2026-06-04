@@ -52,7 +52,12 @@ Runtime projects inherit `IsAotCompatible`, trim, AOT, and single-file analyzers
 `PublishAot=true` excludes the generator project so NativeAOT publish never tries to publish a
 build-time Roslyn assembly.
 
-Current evidence proves the runtime closure is NativeAOT-clean and emits spans under NativeAOT:
+Current evidence proves the qyl runtime closure is NativeAOT-clean and emits spans under
+NativeAOT. The active generator direction is compile-time interception for source-visible
+call-sites: no CLR profiling, no startup hooks, no runtime IL rewriting, no reflection, and no
+dynamic dispatch. The first compiler-emitted interceptor delegates source-visible
+`HttpClient.SendAsync` calls to the qyl runtime wrapper; the full 60-item contract is tracked in
+the generated instrumentation manifest.
 
 - `demos/Qyl.LiveInstrumentationDemo` publishes as `net10.0`/`osx-arm64` with
   `PublishAot=true` and captures `http.client`, `http.server`, `db.efcore`, `db.sqlclient`,
@@ -83,15 +88,16 @@ in `COVERAGE_LEDGER.md`.
 | Project | TFM | Role |
 |---|---|---|
 | `Qyl.AutoInstrumentation` | net10.0 | API surface: `QylActivitySource`, `QylSelfTelemetry`, `QylInstrumentation.Activate()`, source-gen-fed `QylSemConvRegistry`. |
-| `Qyl.AutoInstrumentation.SourceGenerators` | netstandard2.0 | `IIncrementalGenerator` that emits the semconv `FrozenSet<string>` at compile time. |
-| `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | Shared `DiagnosticListener` substrate and built-in subscribers for HttpClient, ASP.NET Core, SqlClient, gRPC, plus the synthetic EFCore semantic proof event. |
+| `Qyl.AutoInstrumentation.SourceGenerators` | netstandard2.0 | `IIncrementalGenerator` that emits the semconv `FrozenSet<string>` at compile time plus compile-time interceptors for source-visible call-sites. |
+| `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | Shared `DiagnosticListener` substrate and built-in subscribers for HttpClient, ASP.NET Core, gRPC, plus synthetic EFCore and SqlClient semantic proof events. |
 | `Qyl.AutoInstrumentation.EntityFrameworkCore` | net10.0 | EFCore-specific build-transitive bootstrap and typed command payload reader. Kept out of the shared host so non-EFCore apps do not inherit EFCore package warnings. |
 | `Qyl.AutoInstrumentation.Hosting` | net10.0 | Build-transitive consumer bootstrap + `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
 
-The three runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
+The runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
 `IsTrimmable`, `EnableTrimAnalyzer`, `EnableAotAnalyzer`, and `EnableSingleFileAnalyzer` all on.
-The source-generator project is build-time-only and explicitly excluded from NativeAOT publish, so
-an accidental runtime reflection or publish-graph regression fails the build instead of deployment.
+The source-generator project is build-time-only and explicitly excluded from NativeAOT publish.
+Analyzer or AOT regressions fail the repo build; upstream NativeAOT warnings from EFCore are
+documented at the app publish boundary.
 
 ## Runtime semantics
 
@@ -120,7 +126,8 @@ paths under managed and NativeAOT execution. `demos/Qyl.RealAspNetCoreDemo` does
 Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. `demos/Qyl.RealEfCoreDemo`
 does the same for EFCore command success and provider-error paths, with the EFCore compiled-model
 NativeAOT prerequisite called out explicitly. `demos/Qyl.RealGrpcClientDemo` proves real
-`Grpc.Net.Client` success and failure activity tags. The per-library matrix lives in
+`Grpc.Net.Client` success and failure activity tags. The compile-time interceptor scaffold now
+covers source-visible `HttpClient.SendAsync` call-sites. The per-library matrix lives in
 `docs/RUNTIME_SEMANTICS.md`.
 
 ## Status

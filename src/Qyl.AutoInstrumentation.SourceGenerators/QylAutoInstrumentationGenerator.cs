@@ -46,18 +46,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol symbol)
             return null;
 
-        if (!TryGetHttpClientSendAsyncOverload(symbol, out var overload))
+        if (!TryGetHttpClientInvocation(symbol, out var method, out var shape, out var contractId))
             return null;
 
-        var contract = InstrumentationContract.TryGetSupportedSignal("http.client.send_async");
-        if (contract is null)
+        if (InstrumentationContract.TryGetSupportedSignal(contractId) is null)
             return null;
 
         var interceptableLocation = context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken);
         if (interceptableLocation is null)
             return null;
 
-        return new InterceptedInvocation(contract.Value.Id, overload, interceptableLocation);
+        return new InterceptedInvocation(contractId, method, shape, interceptableLocation);
     }
 
     private static void EmitInterceptors(
@@ -89,65 +88,141 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
         builder.AppendLine("namespace Qyl.AutoInstrumentation.Generated");
         builder.AppendLine("{");
-        builder.AppendLine("    internal static class QylHttpClientSendAsyncInterceptors");
+        builder.AppendLine("    internal static class QylHttpClientInterceptors");
         builder.AppendLine("    {");
 
         for (var index = 0; index < invocations.Length; index++)
-            EmitHttpClientSendAsyncInterceptor(builder, invocations[index], index);
+            EmitHttpClientInterceptor(builder, invocations[index], index);
 
         builder.AppendLine("    }");
         builder.AppendLine("}");
 
-        context.AddSource("QylAutoInstrumentation.HttpClientSendAsync.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+        context.AddSource("QylAutoInstrumentation.HttpClient.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
-    private static void EmitHttpClientSendAsyncInterceptor(
+    private static void EmitHttpClientInterceptor(
         StringBuilder builder,
         InterceptedInvocation invocation,
         int index)
     {
-        var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions
-            .GetInterceptsLocationAttributeSyntax(invocation.Location);
+        var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetInterceptsLocationAttributeSyntax(invocation.Location);
 
         builder.Append("        ");
         builder.AppendLine(attribute);
 
-        switch (invocation.Overload)
+        switch (invocation.Shape)
         {
-            case HttpClientSendAsyncOverload.Request:
-                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> SendAsync_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request)");
+            case HttpClientParameterShape.SendRequest:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request)");
                 builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.SendAsync(client, request);");
                 break;
 
-            case HttpClientSendAsyncOverload.RequestCancellationToken:
-                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> SendAsync_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request, global::System.Threading.CancellationToken cancellationToken)");
+            case HttpClientParameterShape.SendRequestCancellationToken:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request, global::System.Threading.CancellationToken cancellationToken)");
                 builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.SendAsync(client, request, cancellationToken);");
                 break;
 
-            case HttpClientSendAsyncOverload.RequestCompletionOption:
-                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> SendAsync_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request, global::System.Net.Http.HttpCompletionOption completionOption)");
+            case HttpClientParameterShape.SendRequestCompletionOption:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request, global::System.Net.Http.HttpCompletionOption completionOption)");
                 builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.SendAsync(client, request, completionOption);");
                 break;
 
-            case HttpClientSendAsyncOverload.RequestCompletionOptionCancellationToken:
-                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> SendAsync_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request, global::System.Net.Http.HttpCompletionOption completionOption, global::System.Threading.CancellationToken cancellationToken)");
+            case HttpClientParameterShape.SendRequestCompletionOptionCancellationToken:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Net.Http.HttpRequestMessage request, global::System.Net.Http.HttpCompletionOption completionOption, global::System.Threading.CancellationToken cancellationToken)");
                 builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.SendAsync(client, request, completionOption, cancellationToken);");
+                break;
+
+            case HttpClientParameterShape.RequestUriString:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, string? requestUri)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri);");
+                break;
+
+            case HttpClientParameterShape.RequestUriUri:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Uri? requestUri)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri);");
+                break;
+
+            case HttpClientParameterShape.RequestUriStringCancellationToken:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, string? requestUri, global::System.Threading.CancellationToken cancellationToken)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri, cancellationToken);");
+                break;
+
+            case HttpClientParameterShape.RequestUriUriCancellationToken:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Uri? requestUri, global::System.Threading.CancellationToken cancellationToken)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri, cancellationToken);");
+                break;
+
+            case HttpClientParameterShape.RequestUriStringCompletionOption:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, string? requestUri, global::System.Net.Http.HttpCompletionOption completionOption)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri, completionOption);");
+                break;
+
+            case HttpClientParameterShape.RequestUriUriCompletionOption:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Uri? requestUri, global::System.Net.Http.HttpCompletionOption completionOption)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri, completionOption);");
+                break;
+
+            case HttpClientParameterShape.RequestUriStringCompletionOptionCancellationToken:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, string? requestUri, global::System.Net.Http.HttpCompletionOption completionOption, global::System.Threading.CancellationToken cancellationToken)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri, completionOption, cancellationToken);");
+                break;
+
+            case HttpClientParameterShape.RequestUriUriCompletionOptionCancellationToken:
+                builder.AppendLine($"        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> {invocation.Method}_{index}(this global::System.Net.Http.HttpClient client, global::System.Uri? requestUri, global::System.Net.Http.HttpCompletionOption completionOption, global::System.Threading.CancellationToken cancellationToken)");
+                builder.AppendLine($"            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.{invocation.Method}(client, requestUri, completionOption, cancellationToken);");
                 break;
         }
 
         builder.AppendLine();
     }
 
-    private static bool TryGetHttpClientSendAsyncOverload(
+    private static bool TryGetHttpClientInvocation(
         IMethodSymbol symbol,
-        out HttpClientSendAsyncOverload overload)
+        out HttpClientMethod method,
+        out HttpClientParameterShape shape,
+        out string contractId)
     {
-        overload = default;
+        method = default;
+        shape = default;
+        contractId = string.Empty;
 
-        if (!string.Equals(symbol.Name, "SendAsync", StringComparison.Ordinal) ||
-            !IsType(symbol.ContainingType, "global::System.Net.Http.HttpClient") ||
-            !IsType(symbol.ReturnType, "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>") ||
-            symbol.Parameters.Length is < 1 or > 3 ||
+        if (!IsType(symbol.ContainingType, "global::System.Net.Http.HttpClient") ||
+            !IsType(symbol.ReturnType, "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>"))
+        {
+            return false;
+        }
+
+        if (string.Equals(symbol.Name, "SendAsync", StringComparison.Ordinal) &&
+            TryGetSendAsyncShape(symbol, out shape))
+        {
+            method = HttpClientMethod.SendAsync;
+            contractId = "http.client.send_async";
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetAsync", StringComparison.Ordinal) &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: true, out shape))
+        {
+            method = HttpClientMethod.GetAsync;
+            contractId = "http.client.get_async";
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "DeleteAsync", StringComparison.Ordinal) &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out shape))
+        {
+            method = HttpClientMethod.DeleteAsync;
+            contractId = "http.client.delete_async";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetSendAsyncShape(IMethodSymbol symbol, out HttpClientParameterShape shape)
+    {
+        shape = default;
+        if (symbol.Parameters.Length is < 1 or > 3 ||
             !IsType(symbol.Parameters[0].Type, "global::System.Net.Http.HttpRequestMessage"))
         {
             return false;
@@ -155,7 +230,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (symbol.Parameters.Length is 1)
         {
-            overload = HttpClientSendAsyncOverload.Request;
+            shape = HttpClientParameterShape.SendRequest;
             return true;
         }
 
@@ -163,13 +238,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         {
             if (IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
             {
-                overload = HttpClientSendAsyncOverload.RequestCancellationToken;
+                shape = HttpClientParameterShape.SendRequestCancellationToken;
                 return true;
             }
 
             if (IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption"))
             {
-                overload = HttpClientSendAsyncOverload.RequestCompletionOption;
+                shape = HttpClientParameterShape.SendRequestCompletionOption;
                 return true;
             }
         }
@@ -178,7 +253,54 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption") &&
             IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
         {
-            overload = HttpClientSendAsyncOverload.RequestCompletionOptionCancellationToken;
+            shape = HttpClientParameterShape.SendRequestCompletionOptionCancellationToken;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetRequestUriShape(
+        IMethodSymbol symbol,
+        bool allowCompletionOption,
+        out HttpClientParameterShape shape)
+    {
+        shape = default;
+        if (symbol.Parameters.Length is < 1 or > 3)
+            return false;
+
+        var firstIsString = IsType(symbol.Parameters[0].Type, "global::System.String");
+        var firstIsUri = IsType(symbol.Parameters[0].Type, "global::System.Uri");
+        if (!firstIsString && !firstIsUri)
+            return false;
+
+        if (symbol.Parameters.Length is 1)
+        {
+            shape = firstIsString ? HttpClientParameterShape.RequestUriString : HttpClientParameterShape.RequestUriUri;
+            return true;
+        }
+
+        if (symbol.Parameters.Length is 2)
+        {
+            if (IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
+            {
+                shape = firstIsString ? HttpClientParameterShape.RequestUriStringCancellationToken : HttpClientParameterShape.RequestUriUriCancellationToken;
+                return true;
+            }
+
+            if (allowCompletionOption && IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption"))
+            {
+                shape = firstIsString ? HttpClientParameterShape.RequestUriStringCompletionOption : HttpClientParameterShape.RequestUriUriCompletionOption;
+                return true;
+            }
+        }
+
+        if (allowCompletionOption &&
+            symbol.Parameters.Length is 3 &&
+            IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption") &&
+            IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
+        {
+            shape = firstIsString ? HttpClientParameterShape.RequestUriStringCompletionOptionCancellationToken : HttpClientParameterShape.RequestUriUriCompletionOptionCancellationToken;
             return true;
         }
 
@@ -188,16 +310,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsType(ITypeSymbol? symbol, string fullyQualifiedMetadataName)
         => symbol?.ToDisplayString(FullyQualifiedFormat) == fullyQualifiedMetadataName;
 
-    private enum HttpClientSendAsyncOverload
+    private enum HttpClientMethod
     {
-        Request,
-        RequestCancellationToken,
-        RequestCompletionOption,
-        RequestCompletionOptionCancellationToken,
+        SendAsync,
+        GetAsync,
+        DeleteAsync,
+    }
+
+    private enum HttpClientParameterShape
+    {
+        SendRequest,
+        SendRequestCancellationToken,
+        SendRequestCompletionOption,
+        SendRequestCompletionOptionCancellationToken,
+        RequestUriString,
+        RequestUriUri,
+        RequestUriStringCancellationToken,
+        RequestUriUriCancellationToken,
+        RequestUriStringCompletionOption,
+        RequestUriUriCompletionOption,
+        RequestUriStringCompletionOptionCancellationToken,
+        RequestUriUriCompletionOptionCancellationToken,
     }
 
     private readonly record struct InterceptedInvocation(
         string ContractId,
-        HttpClientSendAsyncOverload Overload,
+        HttpClientMethod Method,
+        HttpClientParameterShape Shape,
         InterceptableLocation Location);
 }

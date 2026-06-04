@@ -26,6 +26,7 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
 
     <!-- Deterministic + reproducible builds — golden-OTLP gates need byte-stable artifacts. -->
     <Deterministic>true</Deterministic>

@@ -101,6 +101,236 @@ public static class QylInterceptedHttpClient
         }
     }
 
+    public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(
+        HttpClient client,
+        string? requestUri,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri, cancellationToken), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(
+        HttpClient client,
+        Uri? requestUri,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri, cancellationToken), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(
+        HttpClient client,
+        string? requestUri,
+        HttpCompletionOption completionOption)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri, completionOption), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(
+        HttpClient client,
+        Uri? requestUri,
+        HttpCompletionOption completionOption)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri, completionOption), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(
+        HttpClient client,
+        string? requestUri,
+        HttpCompletionOption completionOption,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri, completionOption, cancellationToken), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> GetAsync(
+        HttpClient client,
+        Uri? requestUri,
+        HttpCompletionOption completionOption,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("GET", requestUri);
+        try
+        {
+            return ObserveAsync(client.GetAsync(requestUri, completionOption, cancellationToken), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("DELETE", requestUri);
+        try
+        {
+            return ObserveAsync(client.DeleteAsync(requestUri), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("DELETE", requestUri);
+        try
+        {
+            return ObserveAsync(client.DeleteAsync(requestUri), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> DeleteAsync(
+        HttpClient client,
+        string? requestUri,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("DELETE", requestUri);
+        try
+        {
+            return ObserveAsync(client.DeleteAsync(requestUri, cancellationToken), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
+    public static Task<HttpResponseMessage> DeleteAsync(
+        HttpClient client,
+        Uri? requestUri,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfNullClient(client);
+
+        var activity = StartHttpClientActivity("DELETE", requestUri);
+        try
+        {
+            return ObserveAsync(client.DeleteAsync(requestUri, cancellationToken), activity);
+        }
+        catch (Exception exception)
+        {
+            RecordException(activity, exception);
+            activity?.Dispose();
+            throw;
+        }
+    }
+
     private static async Task<HttpResponseMessage> ObserveAsync(
         Task<HttpResponseMessage> originalTask,
         Activity? activity)
@@ -130,8 +360,23 @@ public static class QylInterceptedHttpClient
     }
 
     private static Activity? StartHttpClientActivity(HttpRequestMessage request)
+        => StartHttpClientActivity(request.Method.Method, request.RequestUri, request.RequestUri?.ToString());
+
+    private static Activity? StartHttpClientActivity(string method, string? requestUri)
     {
-        var method = NormalizeMethod(request.Method.Method);
+        Uri? uri = null;
+        if (!string.IsNullOrWhiteSpace(requestUri))
+            Uri.TryCreate(requestUri, UriKind.RelativeOrAbsolute, out uri);
+
+        return StartHttpClientActivity(method, uri, requestUri);
+    }
+
+    private static Activity? StartHttpClientActivity(string method, Uri? requestUri)
+        => StartHttpClientActivity(method, requestUri, requestUri?.ToString());
+
+    private static Activity? StartHttpClientActivity(string method, Uri? requestUri, string? rawRequestUri)
+    {
+        method = NormalizeMethod(method);
         var activity = QylActivitySource.Source.StartActivity($"HTTP {method}", ActivityKind.Client);
         if (activity is null)
             return null;
@@ -139,15 +384,17 @@ public static class QylInterceptedHttpClient
         activity.SetTag(DomainAttribute, HttpClientDomain);
         activity.SetTag(HttpRequestMethodAttribute, method);
 
-        var uri = request.RequestUri;
-        if (uri is not null)
+        if (requestUri is not null)
         {
-            activity.SetTag(ServerAddressAttribute, uri.Host);
-            if (!uri.IsDefaultPort)
-                activity.SetTag(ServerPortAttribute, uri.Port);
+            if (requestUri.IsAbsoluteUri)
+            {
+                activity.SetTag(ServerAddressAttribute, requestUri.Host);
+                if (!requestUri.IsDefaultPort)
+                    activity.SetTag(ServerPortAttribute, requestUri.Port);
+            }
 
             if (CaptureSensitiveValues)
-                activity.SetTag(UrlFullAttribute, uri.ToString());
+                activity.SetTag(UrlFullAttribute, rawRequestUri ?? requestUri.ToString());
         }
 
         return activity;
@@ -155,10 +402,15 @@ public static class QylInterceptedHttpClient
 
     private static void ThrowIfInvalidCallTarget(HttpClient client, HttpRequestMessage request)
     {
-        if (client is null)
-            throw new NullReferenceException();
+        ThrowIfNullClient(client);
 
         ArgumentNullException.ThrowIfNull(request);
+    }
+
+    private static void ThrowIfNullClient(HttpClient client)
+    {
+        if (client is null)
+            throw new NullReferenceException();
     }
 
     private static void RecordException(Activity? activity, Exception exception)

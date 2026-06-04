@@ -66,7 +66,7 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | T014 http server | ASP.NET Core | `in-progress` (real Kestrel 204 + unhandled-exception 500 paths proven under managed, NativeAOT, and PackageReference zero-code; formal Gate A/B pending) |
 | T015 http client | HttpClient | `M1` (real `HttpHandlerDiagnosticListener` 503 + connection-error paths proven under managed, NativeAOT, and PackageReference zero-code; formal Gate A/B pending) |
 | T016 grpc/rpc | Grpc.Net | `in-progress` (live qyl span demo; formal Gate A/B pending) |
-| T017 database | ADO.NET/EFCore/SqlClient | `in-progress` (EFCore + SqlClient live qyl span demo; formal Gate A/B pending) |
+| T017 database | ADO.NET/EFCore/SqlClient | `in-progress` (EFCore live proof exists; compile-time DB/SqlClient interceptor emitters are still contract-only and not proven) |
 | T018 cache | StackExchange.Redis | `backlog` |
 | T019 messaging | Kafka/RabbitMQ/Azure/AWS/GCP | `backlog` |
 | T020 cloud sdk | Azure/AWS/GCP SDKs | `backlog` |
