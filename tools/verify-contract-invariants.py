@@ -38,6 +38,19 @@ FORBIDDEN_GENERATOR_MECHANISM_TOKENS = [
     "CallSite",
     "dynamic ",
 ]
+REQUIRED_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
+    "node is InvocationExpressionSyntax",
+    "GetInterceptorMethod(invocation, cancellationToken) is not null",
+    "GetInterceptableLocation(invocation, cancellationToken)",
+    "interceptableLocation is null",
+    "GetInterceptsLocationAttributeSyntax(",
+]
+FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
+    "new InterceptableLocation",
+    "InterceptableLocation.Create",
+    "GetLocation()",
+    "Location.Create",
+]
 
 
 def fail(message: str) -> None:
@@ -210,6 +223,17 @@ def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]
     for token in FORBIDDEN_GENERATOR_MECHANISM_TOKENS:
         if token in generator:
             fail(f"generator must not use forbidden instrumentation mechanism: {token}")
+
+    for token in REQUIRED_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS:
+        if token not in generator:
+            fail(f"generator must preserve Roslyn interceptor contract token: {token}")
+
+    for token in FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS:
+        if token in generator:
+            fail(f"generator must not synthesize interceptor locations: {token}")
+
+    if "InterceptsLocationAttribute(" in generator and "GetInterceptsLocationAttributeSyntax(" not in generator:
+        fail("generator must emit InterceptsLocationAttribute through Roslyn GetInterceptsLocationAttributeSyntax")
 
 
 def main() -> None:
