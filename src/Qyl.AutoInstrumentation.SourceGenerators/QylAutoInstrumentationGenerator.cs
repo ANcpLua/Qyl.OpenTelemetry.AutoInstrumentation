@@ -85,6 +85,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetGraphQlInvocation(symbol, out target))
             return true;
 
+        if (TryGetMongoDbInvocation(symbol, out target))
+            return true;
+
         if (TryGetLoggerExtensionInvocation(symbol, out target))
             return true;
 
@@ -164,6 +167,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
                 EmitGraphQlInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.MongoDbCollection)
+                EmitMongoDbInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerExtensionLog)
                 EmitLoggerExtensionInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
@@ -613,6 +618,51 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MongoDb_" + target.MethodName, index, target.ReceiverType, "collection", target.Parameters, isAsync: true);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
+        {
+            builder.Append("                await collection.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
+        }
+        else
+        {
+            builder.Append("                var result = await collection.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
+            builder.AppendLine("                return result;");
+        }
+
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -1131,6 +1181,44 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             true);
         return true;
     }
+
+    private static bool TryGetMongoDbInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsSupportedMongoDbCollectionMethod(symbol.Name) ||
+            !IsOrImplementsConstructedGeneric(symbol.ContainingType, "MongoDB.Driver", "IMongoCollection`1") ||
+            !IsMongoDbAsyncReturn(symbol.ReturnType))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.MongoDbCollection,
+            "signals.traces.MONGODB",
+            "MONGODB",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            true);
+        return true;
+    }
+
+    private static bool IsSupportedMongoDbCollectionMethod(string methodName)
+        => methodName is "FindAsync" or
+            "AggregateAsync" or
+            "InsertOneAsync" or
+            "InsertManyAsync" or
+            "ReplaceOneAsync" or
+            "DeleteOneAsync" or
+            "DeleteManyAsync" or
+            "UpdateOneAsync" or
+            "UpdateManyAsync" or
+            "CountDocumentsAsync" or
+            "EstimatedDocumentCountAsync";
+
+    private static bool IsMongoDbAsyncReturn(ITypeSymbol returnType)
+        => IsTask(returnType) || TryGetTaskResult(returnType, out _);
 
     private static bool TryGetLoggerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -1909,6 +1997,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         KafkaConsumer,
         StackExchangeRedisStringGetAsync,
         GraphQlDocumentExecuter,
+        MongoDbCollection,
         ILoggerExtensionLog,
         ILoggerLog,
         NLogLogger,
