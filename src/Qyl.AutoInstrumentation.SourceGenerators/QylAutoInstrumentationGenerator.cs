@@ -88,6 +88,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetMongoDbInvocation(symbol, out target))
             return true;
 
+        if (TryGetRabbitMqInvocation(symbol, out target))
+            return true;
+
         if (TryGetLoggerExtensionInvocation(symbol, out target))
             return true;
 
@@ -169,6 +172,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitGraphQlInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.MongoDbCollection)
                 EmitMongoDbInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.RabbitMqBasicPublish)
+                EmitRabbitMqInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerExtensionLog)
                 EmitLoggerExtensionInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
@@ -671,6 +676,62 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine();
+    }
+
+    private static void EmitRabbitMqInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, "void", "RabbitMq_" + target.MethodName, index, target.ReceiverType, "channel", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.StartPublishActivity(");
+        AppendRabbitMqExchangeExpression(builder, target);
+        builder.Append(", ");
+        AppendRabbitMqRoutingKeyExpression(builder, target);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                channel.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void AppendRabbitMqExchangeExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 0 &&
+            string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            return;
+        }
+
+        builder.Append("null");
+    }
+
+    private static void AppendRabbitMqRoutingKeyExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 1 &&
+            string.Equals(target.Parameters[1].TypeName, "string", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[1].Name);
+            return;
+        }
+
+        builder.Append("null");
     }
 
     private static void EmitLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -1219,6 +1280,33 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsMongoDbAsyncReturn(ITypeSymbol returnType)
         => IsTask(returnType) || TryGetTaskResult(returnType, out _);
+
+    private static bool TryGetRabbitMqInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "BasicPublish", StringComparison.Ordinal) ||
+            !symbol.ReturnsVoid ||
+            !IsRabbitMqChannelType(symbol.ContainingType) ||
+            !TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.RabbitMqBasicPublish,
+            "signals.traces.RABBITMQ",
+            "RABBITMQ",
+            CleanTypeName(symbol.ContainingType),
+            "BasicPublish",
+            "void",
+            parameters,
+            false);
+        return true;
+    }
+
+    private static bool IsRabbitMqChannelType(ITypeSymbol? symbol)
+        => IsOrImplementsType(symbol, "RabbitMQ.Client", "IModel") ||
+           IsOrImplementsType(symbol, "RabbitMQ.Client", "IChannel");
 
     private static bool TryGetLoggerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -1785,6 +1873,29 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    {
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        if (symbol.Parameters.Length < 3)
+            return false;
+
+        if (IsType(symbol.Parameters[0].Type, "global::System.String") &&
+            IsType(symbol.Parameters[1].Type, "global::System.String"))
+        {
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        if (symbol.Parameters[0].Type is INamedTypeSymbol publicationAddress &&
+            IsTypeByMetadata(publicationAddress, "RabbitMQ.Client", "PublicationAddress"))
+        {
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        return false;
+    }
+
     private static ImmutableArray<ParameterSpec> Parameters(IMethodSymbol symbol)
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
@@ -1998,6 +2109,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         StackExchangeRedisStringGetAsync,
         GraphQlDocumentExecuter,
         MongoDbCollection,
+        RabbitMqBasicPublish,
         ILoggerExtensionLog,
         ILoggerLog,
         NLogLogger,
