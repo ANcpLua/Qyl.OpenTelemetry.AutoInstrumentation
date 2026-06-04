@@ -85,6 +85,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetLoggerInvocation(symbol, out target))
             return true;
 
+        if (TryGetNLogInvocation(symbol, out target))
+            return true;
+
+        if (TryGetLog4NetInvocation(symbol, out target))
+            return true;
+
         if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
             return true;
 
@@ -152,6 +158,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitLoggerExtensionInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
                 EmitLoggerInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.NLogLogger)
+                EmitExternalLoggerInterceptor(builder, invocation, index, "log.nlog");
+            else if (invocation.Target.Kind is InterceptorKind.Log4NetLogger)
+                EmitExternalLoggerInterceptor(builder, invocation, index, "log.log4net");
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
@@ -595,6 +605,39 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append(", ");
         AppendFirstArrayParameterExpression(builder, target, "global::System.Object", "global::System.Array.Empty<object?>()");
         builder.AppendLine(");");
+        builder.AppendLine();
+    }
+
+    private static void EmitExternalLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index, string domain)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, "void", target.InstrumentationId + "_" + target.MethodName, index, target.ReceiverType, "logger", target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.StartActivity(");
+        AppendStringLiteral(builder, target.InstrumentationId);
+        builder.Append(", ");
+        AppendStringLiteral(builder, domain);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                logger.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -1079,6 +1122,78 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         return hasMessage && hasArgs;
+    }
+
+    private static bool TryGetNLogInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!symbol.ReturnsVoid ||
+            !IsTypeByMetadata(symbol.ContainingType, "NLog", "Logger") ||
+            !IsSupportedExternalLoggerMethodName(symbol.Name))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.NLogLogger,
+            "signals.logs.NLOG",
+            "NLOG",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            "void",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetLog4NetInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!symbol.ReturnsVoid ||
+            !IsLog4NetLoggerType(symbol.ContainingType) ||
+            !IsSupportedExternalLoggerMethodName(symbol.Name))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.Log4NetLogger,
+            "signals.logs.LOG4NET",
+            "LOG4NET",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            "void",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool IsSupportedExternalLoggerMethodName(string name)
+        => name is "Log" or
+            "Trace" or "TraceFormat" or
+            "Debug" or "DebugFormat" or
+            "Info" or "InfoFormat" or
+            "Warn" or "WarnFormat" or
+            "Warning" or "WarningFormat" or
+            "Error" or "ErrorFormat" or
+            "Fatal" or "FatalFormat" or
+            "Critical" or "CriticalFormat";
+
+    private static bool IsLog4NetLoggerType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named)
+            return false;
+
+        if (IsTypeByMetadata(named, "log4net", "ILog"))
+            return true;
+
+        foreach (var interfaceType in named.AllInterfaces)
+        {
+            if (IsTypeByMetadata(interfaceType, "log4net", "ILog"))
+                return true;
+        }
+
+        return false;
     }
 
     private static bool TryGetKafkaProducerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
@@ -1689,6 +1804,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         StackExchangeRedisStringGetAsync,
         ILoggerExtensionLog,
         ILoggerLog,
+        NLogLogger,
+        Log4NetLogger,
         EntityFrameworkCoreDbContext,
         DbCommand,
     }
