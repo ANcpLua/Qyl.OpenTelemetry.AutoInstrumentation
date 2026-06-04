@@ -26,7 +26,6 @@ public static class QylInterceptedGraphQl
             return;
 
         var normalizedOperationName = string.IsNullOrWhiteSpace(operationName) ? "execute" : operationName;
-        activity.DisplayName = "GraphQL " + normalizedOperationName;
         activity.SetTag(QylSemanticAttributes.GraphQlOperationName, normalizedOperationName);
         if (QylAutoInstrumentationOptions.Current.GraphQlSetDocument && !string.IsNullOrWhiteSpace(document))
             activity.SetTag(QylSemanticAttributes.GraphQlDocument, document);
