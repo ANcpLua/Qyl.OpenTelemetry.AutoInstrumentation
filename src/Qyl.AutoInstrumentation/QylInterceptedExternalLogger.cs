@@ -4,7 +4,7 @@ namespace Qyl.AutoInstrumentation;
 
 public static class QylInterceptedExternalLogger
 {
-    public static Activity? StartActivity(string instrumentationId, string domain, string methodName)
+    public static Activity? StartActivity(string instrumentationId, string domain, string methodName, string? severityName)
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
         ArgumentNullException.ThrowIfNull(domain);
@@ -18,7 +18,7 @@ public static class QylInterceptedExternalLogger
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, domain);
-        activity.SetTag(QylSemanticAttributes.LogSeverity, NormalizeSeverity(methodName));
+        activity.SetTag(QylSemanticAttributes.LogSeverity, NormalizeSeverity(string.IsNullOrWhiteSpace(severityName) ? methodName : severityName));
         return activity;
     }
 

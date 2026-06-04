@@ -1473,6 +1473,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AppendStringLiteral(builder, domain);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
+        builder.Append(", ");
+        AppendExternalLoggerSeverityExpression(builder, target);
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
@@ -1493,6 +1495,36 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("        }");
         builder.AppendLine();
+    }
+
+    private static void AppendExternalLoggerSeverityExpression(StringBuilder builder, InterceptorTarget target)
+    {
+        foreach (var parameter in target.Parameters)
+        {
+            if (string.Equals(parameter.TypeName, "global::NLog.LogLevel", StringComparison.Ordinal) ||
+                string.Equals(parameter.TypeName, "global::log4net.Core.Level", StringComparison.Ordinal))
+            {
+                builder.Append(parameter.Name);
+                builder.Append(" is null ? null : ");
+                builder.Append(parameter.Name);
+                builder.Append(".Name");
+                return;
+            }
+
+            if (string.Equals(parameter.TypeName, "global::NLog.LogEventInfo", StringComparison.Ordinal) ||
+                string.Equals(parameter.TypeName, "global::log4net.Core.LoggingEvent", StringComparison.Ordinal))
+            {
+                builder.Append(parameter.Name);
+                builder.Append(" is null ? null : ");
+                builder.Append(parameter.Name);
+                builder.Append(".Level is null ? null : ");
+                builder.Append(parameter.Name);
+                builder.Append(".Level.Name");
+                return;
+            }
+        }
+
+        builder.Append("null");
     }
 
     private static void AppendLoggerLevelExpression(StringBuilder builder, InterceptorTarget target)
@@ -2826,12 +2858,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (symbol is not INamedTypeSymbol named)
             return false;
 
-        if (IsTypeByMetadata(named, "log4net", "ILog"))
+        if (IsTypeByMetadata(named, "log4net", "ILog") ||
+            IsTypeByMetadata(named, "log4net.Core", "ILogger"))
             return true;
 
         foreach (var interfaceType in named.AllInterfaces)
         {
-            if (IsTypeByMetadata(interfaceType, "log4net", "ILog"))
+            if (IsTypeByMetadata(interfaceType, "log4net", "ILog") ||
+                IsTypeByMetadata(interfaceType, "log4net.Core", "ILogger"))
                 return true;
         }
 
