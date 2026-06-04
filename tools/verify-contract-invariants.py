@@ -402,6 +402,89 @@ def verify_behavior_semantics_contract() -> None:
                 fail(f"interceptor catch block must rethrow with throw; in {path.relative_to(ROOT)}")
 
 
+def parse_interceptor_kinds(generator: str) -> set[str]:
+    try:
+        enum_block = generator.split("private enum InterceptorKind", 1)[1].split("}", 1)[0]
+    except IndexError:
+        fail("InterceptorKind enum missing from generator")
+
+    return {
+        match.group(1)
+        for match in re.finditer(r"^\s*([A-Za-z0-9]+),\s*$", enum_block, re.MULTILINE)
+    }
+
+
+def parse_contract_keys_call_keys(generator: str) -> set[str]:
+    keys: set[str] = set()
+    for match in re.finditer(r"ContractKeys\((.*?)\)", generator, re.DOTALL):
+        keys.update(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(1)))
+
+    return keys
+
+
+def parse_switch_helper_keys(generator: str, helper_name: str) -> set[str]:
+    match = re.search(
+        rf"private static [^=]+ {re.escape(helper_name)}\([^)]*\)\s*=>.*?}};",
+        generator,
+        re.DOTALL,
+    )
+    if match is None:
+        fail(f"{helper_name} helper missing from generator")
+
+    return set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(0)))
+
+
+def verify_interceptor_target_coverage(generator: str, source_generated_keys: set[str]) -> None:
+    kinds = parse_interceptor_kinds(generator)
+    if not kinds:
+        fail("InterceptorKind enum has no values")
+
+    try:
+        dispatch_block = generator.split("for (var index = 0; index < invocations.Length; index++)", 1)[1].split(
+            'context.AddSource("QylAutoInstrumentation.Interceptors.g.cs"', 1)[0]
+    except IndexError:
+        fail("EmitInterceptors dispatch block missing")
+
+    dispatch_missing = {
+        kind
+        for kind in kinds
+        if f"InterceptorKind.{kind}" not in dispatch_block and
+        not (kind == "DbCommand" and "EmitDbCommandInterceptor(builder, invocation, index);" in dispatch_block)
+    }
+    if dispatch_missing:
+        fail(f"InterceptorKind values missing from emitter dispatch: {sorted(dispatch_missing)}")
+
+    target_missing = {
+        kind
+        for kind in kinds
+        if f"InterceptorKind.{kind}," not in generator and f"= InterceptorKind.{kind};" not in generator
+    }
+    if target_missing:
+        fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
+
+    target_contract_keys = set(re.findall(
+        r"InterceptorKind\.[A-Za-z0-9]+,\s*\n\s*\"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\"",
+        generator,
+    ))
+    target_contract_keys.update(parse_contract_keys_call_keys(generator))
+
+    if "GetDbTraceContractKey(instrumentationId)" not in generator:
+        fail("DbCommand target must route trace contract keys through GetDbTraceContractKey")
+    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbTraceContractKey"))
+
+    if "GetDbMetricContractKeys(instrumentationId)" not in generator:
+        fail("DbCommand target must route metric contract keys through GetDbMetricContractKeys")
+    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
+
+    missing_contract_keys = source_generated_keys - target_contract_keys
+    extra_contract_keys = target_contract_keys - source_generated_keys
+    if missing_contract_keys or extra_contract_keys:
+        fail(
+            "generator target contract key mismatch: "
+            f"missing={sorted(missing_contract_keys)} extra={sorted(extra_contract_keys)}"
+        )
+
+
 def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]) -> None:
     generator = GENERATOR_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
@@ -440,6 +523,8 @@ def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]
 
     if "InterceptsLocationAttribute(" in generator and "GetInterceptsLocationAttributeSyntax(" not in generator:
         fail("generator must emit InterceptsLocationAttribute through Roslyn GetInterceptsLocationAttributeSyntax")
+
+    verify_interceptor_target_coverage(generator, source_generated_keys)
 
 
 def main() -> None:
