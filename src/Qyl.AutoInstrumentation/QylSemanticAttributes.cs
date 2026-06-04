@@ -32,6 +32,7 @@ public static class QylSemanticAttributes
     public const string DbQuerySummary = DbAttributes.QuerySummary;
     public const string DbQueryText = DbAttributes.QueryText;
     public const string DbSystemMicrosoftSqlServer = DbAttributes.SystemNameValues.MicrosoftSqlServer;
+    public const string DbSystemMongodb = DbAttributes.SystemNameValues.Mongodb;
     public const string DbSystemMysql = DbAttributes.SystemNameValues.Mysql;
     public const string DbSystemOracleDb = DbAttributes.SystemNameValues.OracleDb;
     public const string DbSystemOtherSql = DbAttributes.SystemNameValues.OtherSql;

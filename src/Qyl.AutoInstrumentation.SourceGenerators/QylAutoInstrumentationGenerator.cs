@@ -45,6 +45,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (string.Equals(context.SemanticModel.Compilation.AssemblyName, "Qyl.AutoInstrumentation", StringComparison.Ordinal))
             return null;
 
+        if (context.SemanticModel.GetInterceptorMethod(invocation, cancellationToken) is not null)
+            return null;
+
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol symbol)
             return null;
 
@@ -1101,7 +1104,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MongoDb_" + target.MethodName, index, target.ReceiverType, "collection", target.Parameters, target.IsAsync);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MongoDb_" + target.MethodName, index, target.ReceiverType, "collection", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(");
         AppendStringLiteral(builder, target.MethodName);
@@ -1111,22 +1114,21 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
         {
-            builder.Append("                await collection.");
+            builder.Append("                var resultTask = collection.");
             builder.Append(target.MethodName);
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
+            builder.AppendLine(");");
+            builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(resultTask, activity);");
         }
         else if (target.IsAsync)
         {
-            builder.Append("                var result = await collection.");
+            builder.Append("                var resultTask = collection.");
             builder.Append(target.MethodName);
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
-            builder.AppendLine("                return result;");
+            builder.AppendLine(");");
+            builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(resultTask, activity);");
         }
         else if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
         {
@@ -1152,12 +1154,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);");
+        if (target.IsAsync)
+            builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        if (!target.IsAsync)
+        {
+            builder.AppendLine("            finally");
+            builder.AppendLine("            {");
+            builder.AppendLine("                activity?.Dispose();");
+            builder.AppendLine("            }");
+        }
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1246,6 +1253,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetInterceptsLocationAttributeSyntax(invocation.Location);
+        var displayLocation = invocation.Location.GetDisplayLocation();
+        builder.Append("        // Intercepted call at ");
+        builder.AppendLine(displayLocation);
         builder.Append("        ");
         builder.AppendLine(attribute);
         builder.Append("        public static void ILogger_Log_");
@@ -1490,6 +1500,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string constraintClauses)
     {
         var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetInterceptsLocationAttributeSyntax(location);
+        var displayLocation = location.GetDisplayLocation();
+        builder.Append("        // Intercepted call at ");
+        builder.AppendLine(displayLocation);
         builder.Append("        ");
         builder.AppendLine(attribute);
         builder.Append("        public static ");
