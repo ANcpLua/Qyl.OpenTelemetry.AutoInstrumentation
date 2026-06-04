@@ -2379,9 +2379,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetMassTransitInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsMassTransitEndpointType(receiverType) &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsMassTransitEndpointType(receiverType)))
+        {
+            return false;
+        }
+
         if (!IsSupportedMassTransitOperation(symbol.Name) ||
             !IsTask(symbol.ReturnType) ||
-            !IsMassTransitEndpointType(symbol.ContainingType) ||
             symbol.Parameters.Length is 0)
         {
             return false;
@@ -2391,13 +2398,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             InterceptorKind.MassTransitMessageOperation,
             "signals.traces.MASSTRANSIT",
             "MASSTRANSIT",
-            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(receiverType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             true,
             GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol));
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
         return true;
     }
 
@@ -2406,7 +2414,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsMassTransitEndpointType(ITypeSymbol? symbol)
         => IsOrImplementsType(symbol, "MassTransit", "IPublishEndpoint") ||
-           IsOrImplementsType(symbol, "MassTransit", "ISendEndpoint");
+           IsOrImplementsType(symbol, "MassTransit", "ISendEndpoint") ||
+           IsOrImplementsType(symbol, "MassTransit", "ISendEndpointProvider");
 
     private static bool TryGetNServiceBusInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
