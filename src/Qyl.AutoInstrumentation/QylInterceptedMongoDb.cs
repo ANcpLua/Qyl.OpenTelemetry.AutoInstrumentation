@@ -13,7 +13,7 @@ public static class QylInterceptedMongoDb
             return null;
 
         var operation = NormalizeOperation(operationName);
-        var activity = QylActivitySource.Source.StartActivity("MongoDB " + operation, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("MongoDB command", ActivityKind.Client);
         if (activity is null)
             return null;
 
