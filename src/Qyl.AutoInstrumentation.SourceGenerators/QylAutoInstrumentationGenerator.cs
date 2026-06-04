@@ -1119,12 +1119,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
-        builder.Append("                await endpoint.");
-        builder.Append(target.MethodName);
-        AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(").ConfigureAwait(false);");
+        builder.Append("                await ");
+        AppendInvocationCall(builder, target, "endpoint");
+        builder.AppendLine(".ConfigureAwait(false);");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);");
         builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
         AppendStringLiteral(builder, target.MethodName);
