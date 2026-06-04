@@ -82,6 +82,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetStackExchangeRedisInvocation(symbol, out target))
             return true;
 
+        if (TryGetGraphQlInvocation(symbol, out target))
+            return true;
+
         if (TryGetLoggerExtensionInvocation(symbol, out target))
             return true;
 
@@ -159,6 +162,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitKafkaConsumerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
+                EmitGraphQlInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerExtensionLog)
                 EmitLoggerExtensionInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
@@ -587,6 +592,35 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         builder.Append("null");
+    }
+
+    private static void EmitGraphQlInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GraphQl_" + target.MethodName, index, target.ReceiverType, "executer", target.Parameters, isAsync: true);
+        builder.AppendLine("        {");
+        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity();");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var result = await executer.");
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(").ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordSuccess(activity);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
     }
 
     private static void EmitLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -1070,6 +1104,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "StringGetAsync",
             CleanTypeName(symbol.ReturnType),
             parameters,
+            true);
+        return true;
+    }
+
+    private static bool TryGetGraphQlInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "ExecuteAsync", StringComparison.Ordinal) ||
+            !IsOrImplementsType(symbol.ContainingType, "GraphQL", "IDocumentExecuter") ||
+            !TryGetTaskResult(symbol.ReturnType, out var resultType) ||
+            resultType is not INamedTypeSymbol namedResult ||
+            !IsTypeByMetadata(namedResult, "GraphQL", "ExecutionResult"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.GraphQlDocumentExecuter,
+            "signals.traces.GRAPHQL",
+            "GRAPHQL",
+            CleanTypeName(symbol.ContainingType),
+            "ExecuteAsync",
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
             true);
         return true;
     }
@@ -1850,6 +1908,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         KafkaProducer,
         KafkaConsumer,
         StackExchangeRedisStringGetAsync,
+        GraphQlDocumentExecuter,
         ILoggerExtensionLog,
         ILoggerLog,
         NLogLogger,

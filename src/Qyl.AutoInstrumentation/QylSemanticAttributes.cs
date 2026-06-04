@@ -23,6 +23,7 @@ internal static class QylSemanticAttributes
     public const string MessagingDestinationName = "messaging.destination.name";
     public const string LogSeverity = "log.severity";
     public const string LogEventName = "log.event.name";
+    public const string GraphQlOperationName = "graphql.operation.name";
     public const string ServerAddress = "server.address";
     public const string ServerPort = "server.port";
     public const string UrlFull = "url.full";
