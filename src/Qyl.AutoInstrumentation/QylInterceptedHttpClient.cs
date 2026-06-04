@@ -11,7 +11,7 @@ namespace Qyl.AutoInstrumentation;
 public static class QylInterceptedHttpClient
 {
     private const string HttpClientDomain = "http.client";
-    private const string UnknownHttpMethod = "_OTHER";
+    private const string UnknownHttpMethod = QylSemanticAttributes.HttpRequestMethodOther;
 
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
     {
@@ -144,7 +144,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -152,7 +152,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -160,7 +160,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -168,7 +168,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -176,7 +176,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, HttpCompletionOption completionOption)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -184,7 +184,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, HttpCompletionOption completionOption)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -192,7 +192,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -200,7 +200,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveResponseAsync(client.GetAsync(requestUri, completionOption, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -208,7 +208,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("POST", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPost, requestUri);
         try { return ObserveResponseAsync(client.PostAsync(requestUri, content), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -216,7 +216,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("POST", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPost, requestUri);
         try { return ObserveResponseAsync(client.PostAsync(requestUri, content), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -224,7 +224,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("POST", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPost, requestUri);
         try { return ObserveResponseAsync(client.PostAsync(requestUri, content, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -232,7 +232,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("POST", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPost, requestUri);
         try { return ObserveResponseAsync(client.PostAsync(requestUri, content, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -240,7 +240,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PUT", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPut, requestUri);
         try { return ObserveResponseAsync(client.PutAsync(requestUri, content), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -248,7 +248,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PUT", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPut, requestUri);
         try { return ObserveResponseAsync(client.PutAsync(requestUri, content), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -256,7 +256,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PUT", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPut, requestUri);
         try { return ObserveResponseAsync(client.PutAsync(requestUri, content, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -264,7 +264,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PUT", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPut, requestUri);
         try { return ObserveResponseAsync(client.PutAsync(requestUri, content, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -272,7 +272,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PATCH", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPatch, requestUri);
         try { return ObserveResponseAsync(client.PatchAsync(requestUri, content), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -280,7 +280,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PATCH", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPatch, requestUri);
         try { return ObserveResponseAsync(client.PatchAsync(requestUri, content), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -288,7 +288,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PATCH", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPatch, requestUri);
         try { return ObserveResponseAsync(client.PatchAsync(requestUri, content, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -296,7 +296,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("PATCH", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodPatch, requestUri);
         try { return ObserveResponseAsync(client.PatchAsync(requestUri, content, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -304,7 +304,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("DELETE", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodDelete, requestUri);
         try { return ObserveResponseAsync(client.DeleteAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -312,7 +312,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("DELETE", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodDelete, requestUri);
         try { return ObserveResponseAsync(client.DeleteAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -320,7 +320,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("DELETE", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodDelete, requestUri);
         try { return ObserveResponseAsync(client.DeleteAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -328,7 +328,7 @@ public static class QylInterceptedHttpClient
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("DELETE", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodDelete, requestUri);
         try { return ObserveResponseAsync(client.DeleteAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -336,7 +336,7 @@ public static class QylInterceptedHttpClient
     public static Task<string> GetStringAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStringAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -344,7 +344,7 @@ public static class QylInterceptedHttpClient
     public static Task<string> GetStringAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStringAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -352,7 +352,7 @@ public static class QylInterceptedHttpClient
     public static Task<string> GetStringAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStringAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -360,7 +360,7 @@ public static class QylInterceptedHttpClient
     public static Task<string> GetStringAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStringAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -368,7 +368,7 @@ public static class QylInterceptedHttpClient
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -376,7 +376,7 @@ public static class QylInterceptedHttpClient
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -384,7 +384,7 @@ public static class QylInterceptedHttpClient
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -392,7 +392,7 @@ public static class QylInterceptedHttpClient
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetByteArrayAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -400,7 +400,7 @@ public static class QylInterceptedHttpClient
     public static Task<Stream> GetStreamAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStreamAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -408,7 +408,7 @@ public static class QylInterceptedHttpClient
     public static Task<Stream> GetStreamAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStreamAsync(requestUri), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -416,7 +416,7 @@ public static class QylInterceptedHttpClient
     public static Task<Stream> GetStreamAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStreamAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -424,7 +424,7 @@ public static class QylInterceptedHttpClient
     public static Task<Stream> GetStreamAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
-        var observation = StartHttpClientObservation("GET", requestUri);
+        var observation = StartHttpClientObservation(QylSemanticAttributes.HttpRequestMethodGet, requestUri);
         try { return ObserveValueAsync(client.GetStreamAsync(requestUri, cancellationToken), observation); }
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
@@ -592,7 +592,15 @@ public static class QylInterceptedHttpClient
     private static string NormalizeMethod(string? method)
         => method switch
         {
-            "CONNECT" or "DELETE" or "GET" or "HEAD" or "OPTIONS" or "PATCH" or "POST" or "PUT" or "TRACE" => method,
+            QylSemanticAttributes.HttpRequestMethodConnect or
+                QylSemanticAttributes.HttpRequestMethodDelete or
+                QylSemanticAttributes.HttpRequestMethodGet or
+                QylSemanticAttributes.HttpRequestMethodHead or
+                QylSemanticAttributes.HttpRequestMethodOptions or
+                QylSemanticAttributes.HttpRequestMethodPatch or
+                QylSemanticAttributes.HttpRequestMethodPost or
+                QylSemanticAttributes.HttpRequestMethodPut or
+                QylSemanticAttributes.HttpRequestMethodTrace => method,
             _ => UnknownHttpMethod,
         };
 

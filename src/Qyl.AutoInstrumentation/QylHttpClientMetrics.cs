@@ -31,7 +31,15 @@ internal static class QylHttpClientMetrics
     private static string NormalizeMethod(string? method)
         => method switch
         {
-            "CONNECT" or "DELETE" or "GET" or "HEAD" or "OPTIONS" or "PATCH" or "POST" or "PUT" or "TRACE" => method,
-            _ => "_OTHER",
+            QylSemanticAttributes.HttpRequestMethodConnect or
+                QylSemanticAttributes.HttpRequestMethodDelete or
+                QylSemanticAttributes.HttpRequestMethodGet or
+                QylSemanticAttributes.HttpRequestMethodHead or
+                QylSemanticAttributes.HttpRequestMethodOptions or
+                QylSemanticAttributes.HttpRequestMethodPatch or
+                QylSemanticAttributes.HttpRequestMethodPost or
+                QylSemanticAttributes.HttpRequestMethodPut or
+                QylSemanticAttributes.HttpRequestMethodTrace => method,
+            _ => QylSemanticAttributes.HttpRequestMethodOther,
         };
 }

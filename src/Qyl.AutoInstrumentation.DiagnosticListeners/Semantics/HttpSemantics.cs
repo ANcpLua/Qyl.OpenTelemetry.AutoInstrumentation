@@ -7,15 +7,15 @@ internal static class HttpSemantics
 {
     private static readonly HashSet<string> KnownMethods = new(StringComparer.Ordinal)
     {
-        "CONNECT",
-        "DELETE",
-        "GET",
-        "HEAD",
-        "OPTIONS",
-        "PATCH",
-        "POST",
-        "PUT",
-        "TRACE",
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodConnect,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodDelete,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodGet,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodHead,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodOptions,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodPatch,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodPost,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodPut,
+        global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodTrace,
     };
 
     public static string? NormalizeMethod(string? method, out string? originalMethod)
@@ -35,7 +35,7 @@ internal static class HttpSemantics
         }
 
         originalMethod = method;
-        return "_OTHER";
+        return global::Qyl.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodOther;
     }
 
     public static void SetUrlTags(Activity? activity, string? url, string? serverAddress, int? serverPort)

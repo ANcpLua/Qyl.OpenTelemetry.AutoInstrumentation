@@ -17,6 +17,16 @@ public static class QylSemanticAttributes
 
     public const string HttpRequestMethod = HttpAttributes.RequestMethod;
     public const string HttpRequestMethodOriginal = HttpAttributes.RequestMethodOriginal;
+    public const string HttpRequestMethodOther = HttpAttributes.RequestMethodValues.Other;
+    public const string HttpRequestMethodConnect = HttpAttributes.RequestMethodValues.Connect;
+    public const string HttpRequestMethodDelete = HttpAttributes.RequestMethodValues.Delete;
+    public const string HttpRequestMethodGet = HttpAttributes.RequestMethodValues.Get;
+    public const string HttpRequestMethodHead = HttpAttributes.RequestMethodValues.Head;
+    public const string HttpRequestMethodOptions = HttpAttributes.RequestMethodValues.Options;
+    public const string HttpRequestMethodPatch = HttpAttributes.RequestMethodValues.Patch;
+    public const string HttpRequestMethodPost = HttpAttributes.RequestMethodValues.Post;
+    public const string HttpRequestMethodPut = HttpAttributes.RequestMethodValues.Put;
+    public const string HttpRequestMethodTrace = HttpAttributes.RequestMethodValues.Trace;
     public const string HttpResponseStatusCode = HttpAttributes.ResponseStatusCode;
     public const string HttpRequestHeaderPrefix = HttpAttributes.RequestHeader + ".";
     public const string HttpResponseHeaderPrefix = HttpAttributes.ResponseHeader + ".";
