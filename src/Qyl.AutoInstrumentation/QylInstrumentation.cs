@@ -32,6 +32,8 @@ public static class QylInstrumentation
             ActivityStopped = SemConvConformanceProcessor.OnActivityStopped,
         });
 
+        QylRuntimeProcessMetrics.Initialize();
+
         return true;
     }
 }
