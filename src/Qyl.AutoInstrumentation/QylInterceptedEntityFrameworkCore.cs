@@ -18,7 +18,6 @@ public static class QylInterceptedEntityFrameworkCore
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, EntityFrameworkCoreDomain);
-        activity.SetTag(QylSemanticAttributes.DbSystemName, "efcore");
         activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);
         return activity;

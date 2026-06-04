@@ -16,7 +16,7 @@ public static class QylInterceptedRedis
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, RedisDomain);
-        activity.SetTag(QylSemanticAttributes.DbSystemName, "redis");
+        activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
         activity.SetTag(QylSemanticAttributes.DbOperationName, "GET");
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, "GET");
 

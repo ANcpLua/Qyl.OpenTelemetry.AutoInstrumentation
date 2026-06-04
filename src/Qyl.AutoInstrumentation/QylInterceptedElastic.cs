@@ -21,7 +21,7 @@ public static class QylInterceptedElastic
             string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal)
                 ? ElasticTransportDomain
                 : ElasticsearchDomain);
-        activity.SetTag(QylSemanticAttributes.DbSystemName, "elasticsearch");
+        activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemElasticsearch);
         activity.SetTag(QylSemanticAttributes.DbOperationName, methodName);
         activity.SetTag(QylSemanticAttributes.RpcService, clientType);
         return activity;
