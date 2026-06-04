@@ -63,12 +63,16 @@ public static class QylInterceptedLogger
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, QylAutoInstrumentationIds.ILogger))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("ILogger " + logLevel, ActivityKind.Internal);
+        var severity = NormalizeSeverity(logLevel);
+        if (severity is null)
+            return null;
+
+        var activity = QylActivitySource.Source.StartActivity("ILogger " + severity, ActivityKind.Internal);
         if (activity is null)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, LoggerDomain);
-        activity.SetTag(QylSemanticAttributes.LogSeverity, NormalizeSeverity(logLevel));
+        activity.SetTag(QylSemanticAttributes.LogSeverity, severity);
 
         if (!string.IsNullOrWhiteSpace(eventId.Name))
             activity.SetTag(QylSemanticAttributes.LogEventName, eventId.Name);
@@ -79,7 +83,7 @@ public static class QylInterceptedLogger
         return activity;
     }
 
-    private static string NormalizeSeverity(LogLevel logLevel)
+    private static string? NormalizeSeverity(LogLevel logLevel)
         => logLevel switch
         {
             LogLevel.Trace => QylSemanticAttributes.LogSeverityTrace,
@@ -88,8 +92,8 @@ public static class QylInterceptedLogger
             LogLevel.Warning => QylSemanticAttributes.LogSeverityWarning,
             LogLevel.Error => QylSemanticAttributes.LogSeverityError,
             LogLevel.Critical => QylSemanticAttributes.LogSeverityCritical,
-            LogLevel.None => QylSemanticAttributes.LogSeverityNone,
-            _ => logLevel.ToString(),
+            LogLevel.None => null,
+            _ => QylSemanticAttributes.LogSeverityOther,
         };
 
     private static void RecordException(Activity? activity, Exception exception)

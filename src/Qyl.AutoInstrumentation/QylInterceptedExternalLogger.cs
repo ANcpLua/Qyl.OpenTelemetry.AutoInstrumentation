@@ -43,6 +43,6 @@ public static class QylInterceptedExternalLogger
         if (methodName.StartsWith("Fatal", StringComparison.Ordinal) || methodName.StartsWith("Critical", StringComparison.Ordinal))
             return QylSemanticAttributes.LogSeverityCritical;
 
-        return methodName;
+        return QylSemanticAttributes.LogSeverityOther;
     }
 }

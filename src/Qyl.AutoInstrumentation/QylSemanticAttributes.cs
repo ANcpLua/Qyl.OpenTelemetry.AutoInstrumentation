@@ -90,6 +90,7 @@ public static class QylSemanticAttributes
     public const string LogSeverityError = "Error";
     public const string LogSeverityCritical = "Critical";
     public const string LogSeverityNone = "None";
+    public const string LogSeverityOther = "Other";
     public const string LogEventName = OtelAttributes.EventName;
 
     public const string GraphQlOperationName = GraphqlAttributes.OperationName;
