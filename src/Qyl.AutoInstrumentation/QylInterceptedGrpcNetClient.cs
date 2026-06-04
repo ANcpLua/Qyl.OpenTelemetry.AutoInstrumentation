@@ -83,6 +83,7 @@ public static class QylInterceptedGrpcNetClient
         foreach (var metadataName in configuredMetadata)
         {
             var normalizedName = NormalizeMetadataName(metadataName);
+            List<string>? values = null;
             foreach (var entry in metadata)
             {
                 if (entry.IsBinary ||
@@ -91,9 +92,11 @@ public static class QylInterceptedGrpcNetClient
                     continue;
                 }
 
-                activity.SetTag(prefix + normalizedName, entry.Value);
-                break;
+                (values ??= []).Add(entry.Value);
             }
+
+            if (values is { Count: > 0 })
+                activity.SetTag(prefix + normalizedName, values.ToArray());
         }
     }
 
