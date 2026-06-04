@@ -15,7 +15,7 @@ public static class QylInterceptedGrpcNetClient
             return null;
 
         var service = GetServiceName(clientTypeName);
-        var activity = QylActivitySource.Source.StartActivity("gRPC " + service + "/" + methodName, ActivityKind.Client);
+        var activity = QylActivitySource.Source.StartActivity("gRPC CLIENT", ActivityKind.Client);
         if (activity is null)
             return null;
 
