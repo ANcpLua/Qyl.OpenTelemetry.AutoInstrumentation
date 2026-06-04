@@ -239,9 +239,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
                 EmitLoggerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.NLogLogger)
-                EmitExternalLoggerInterceptor(builder, invocation, index, "log.nlog");
+                EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog");
             else if (invocation.Target.Kind is InterceptorKind.Log4NetLogger)
-                EmitExternalLoggerInterceptor(builder, invocation, index, "log.log4net");
+                EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net");
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
                 EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreQueryable)
@@ -1460,7 +1460,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
-    private static void EmitExternalLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index, string domain)
+    private static void EmitExternalLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index, string domainExpression)
     {
         var target = invocation.Target;
         EmitAttributeAndSignature(
@@ -1494,7 +1494,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.StartActivity(");
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.Append(", ");
-        AppendStringLiteral(builder, domain);
+        builder.Append(domainExpression);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
         builder.Append(", ");

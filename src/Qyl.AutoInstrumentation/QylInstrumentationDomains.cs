@@ -17,6 +17,8 @@ public static class QylInstrumentationDomains
     public const string HttpWebRequest = "http.webrequest";
     public const string JobQuartz = "job.quartz";
     public const string LogILogger = "log.ilogger";
+    public const string LogLog4Net = "log.log4net";
+    public const string LogNLog = "log.nlog";
     public const string MessagingKafka = "messaging.kafka";
     public const string MessagingMassTransit = "messaging.masstransit";
     public const string MessagingNServiceBus = "messaging.nservicebus";
