@@ -382,26 +382,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MeterProviderBuilder_" + target.MethodName, index, target.ReceiverType, "builder", target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.AppendLine("            var result = builder.AddMeter(p0);");
-        builder.AppendLine("            var options = global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current;");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.AspNetCore))");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.AspNetCoreComponentsMeterName);");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.HttpClient))");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.HttpClientMeterName);");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.Npgsql))");
-        builder.AppendLine("            {");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.NpgsqlMeterName);");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.DatabaseMeterName);");
-        builder.AppendLine("            }");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.SqlClient))");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.DatabaseMeterName);");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.NServiceBus))");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.NServiceBusMeterName);");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.NetRuntime))");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.NetRuntimeMeterName);");
-        builder.AppendLine("            if (options.IsInstrumentationEnabled(global::Qyl.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics, global::Qyl.AutoInstrumentation.QylAutoInstrumentationIds.Process))");
-        builder.AppendLine("                result = result.AddMeter(global::Qyl.AutoInstrumentation.QylMetricMeters.ProcessMeterName);");
+        builder.AppendLine("            var qylMeters = global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames();");
+        builder.AppendLine("            return qylMeters.Length is 0 ? result : result.AddMeter(qylMeters);");
         builder.AppendLine();
-        builder.AppendLine("            return result;");
         builder.AppendLine("        }");
         builder.AppendLine();
     }

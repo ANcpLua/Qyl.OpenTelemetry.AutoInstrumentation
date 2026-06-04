@@ -14,4 +14,40 @@ public static class QylMetricMeters
     public const string NServiceBusMeterName = "NServiceBus.Core";
     public const string NetRuntimeMeterName = "OpenTelemetry.Instrumentation.Runtime";
     public const string ProcessMeterName = "OpenTelemetry.Instrumentation.Process";
+
+    public static string[] GetEnabledMeterNames()
+    {
+        var options = QylAutoInstrumentationOptions.Current;
+        var names = new List<string>(8);
+
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.AspNetCore))
+            names.Add(AspNetCoreComponentsMeterName);
+
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
+            names.Add(HttpClientMeterName);
+
+        var databaseMeterEnabled = false;
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Npgsql))
+        {
+            names.Add(NpgsqlMeterName);
+            databaseMeterEnabled = true;
+        }
+
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.SqlClient))
+            databaseMeterEnabled = true;
+
+        if (databaseMeterEnabled)
+            names.Add(DatabaseMeterName);
+
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
+            names.Add(NServiceBusMeterName);
+
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NetRuntime))
+            names.Add(NetRuntimeMeterName);
+
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Process))
+            names.Add(ProcessMeterName);
+
+        return names.ToArray();
+    }
 }
