@@ -67,6 +67,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
             return true;
 
+        if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
+            return true;
+
         if (TryGetDbCommandInvocation(symbol, out target))
             return true;
 
@@ -113,6 +116,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitHttpClientInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
                 EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
+                EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
             else
                 EmitDbCommandInterceptor(builder, invocation, index);
         }
@@ -186,6 +191,50 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreRequestDelegate_" + target.MethodName, index, target.ReceiverType, "requestDelegate", target.Parameters, isAsync: false);
         builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.InvokeAsync(requestDelegate, p0);");
+        builder.AppendLine();
+    }
+
+    private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "EntityFrameworkCoreDbContext_" + target.MethodName, index, target.ReceiverType, "dbContext", target.Parameters, target.IsAsync);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        if (target.IsAsync)
+        {
+            builder.Append("                var result = await dbContext.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(").ConfigureAwait(false);");
+        }
+        else
+        {
+            builder.Append("                var result = dbContext.");
+            builder.Append(target.MethodName);
+            builder.Append('(');
+            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+            builder.AppendLine(");");
+        }
+
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
+        builder.AppendLine("                return result;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
         builder.AppendLine();
     }
 
@@ -380,6 +429,47 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             Parameters(symbol),
             false);
         return true;
+    }
+
+    private static bool TryGetEntityFrameworkCoreDbContextInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!InheritsFromOrIs(symbol.ContainingType, "global::Microsoft.EntityFrameworkCore.DbContext"))
+            return false;
+
+        if (string.Equals(symbol.Name, "SaveChanges", StringComparison.Ordinal) &&
+            symbol.ReturnType.SpecialType is SpecialType.System_Int32 &&
+            TryGetEfCoreSaveChangesParameters(symbol, allowCancellationToken: false, out var parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.EntityFrameworkCoreDbContext,
+                "signals.traces.ENTITYFRAMEWORKCORE",
+                "ENTITYFRAMEWORKCORE",
+                CleanTypeName(symbol.ContainingType),
+                "SaveChanges",
+                "int",
+                parameters,
+                false);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "SaveChangesAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Int32") &&
+            TryGetEfCoreSaveChangesParameters(symbol, allowCancellationToken: true, out parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.EntityFrameworkCoreDbContext,
+                "signals.traces.ENTITYFRAMEWORKCORE",
+                "ENTITYFRAMEWORKCORE",
+                CleanTypeName(symbol.ContainingType),
+                "SaveChangesAsync",
+                "global::System.Threading.Tasks.Task<int>",
+                parameters,
+                true);
+            return true;
+        }
+
+        return false;
     }
 
     private static bool TryGetDbCommandParameters(IMethodSymbol symbol, string methodName, out ImmutableArray<ParameterSpec> parameters)
@@ -599,6 +689,37 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool TryGetEfCoreSaveChangesParameters(IMethodSymbol symbol, bool allowCancellationToken, out ImmutableArray<ParameterSpec> parameters)
+    {
+        if (symbol.Parameters.Length is 0)
+        {
+            parameters = ImmutableArray<ParameterSpec>.Empty;
+            return true;
+        }
+
+        if (symbol.Parameters.Length is 1)
+        {
+            if (symbol.Parameters[0].Type.SpecialType is SpecialType.System_Boolean ||
+                (allowCancellationToken && IsType(symbol.Parameters[0].Type, "global::System.Threading.CancellationToken")))
+            {
+                parameters = Parameters(symbol);
+                return true;
+            }
+        }
+
+        if (allowCancellationToken &&
+            symbol.Parameters.Length is 2 &&
+            symbol.Parameters[0].Type.SpecialType is SpecialType.System_Boolean &&
+            IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
+        {
+            parameters = Parameters(symbol);
+            return true;
+        }
+
+        parameters = ImmutableArray<ParameterSpec>.Empty;
+        return false;
+    }
+
     private static ImmutableArray<ParameterSpec> Parameters(IMethodSymbol symbol)
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
@@ -653,6 +774,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (fullyQualifiedName is "global::System.Object")
             return symbol.SpecialType is SpecialType.System_Object;
 
+        if (fullyQualifiedName is "global::System.Int32")
+            return symbol.SpecialType is SpecialType.System_Int32;
+
         var display = CleanTypeName(symbol);
         return string.Equals(display, fullyQualifiedName, StringComparison.Ordinal);
     }
@@ -698,6 +822,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         HttpClient,
         AspNetCoreRequestDelegate,
+        EntityFrameworkCoreDbContext,
         DbCommand,
     }
 
