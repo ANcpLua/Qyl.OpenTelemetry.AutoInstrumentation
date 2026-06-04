@@ -13,6 +13,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="buildTransitive\Qyl.AutoInstrumentation.Hosting.targets"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+    <None Include="buildTransitive\Qyl.AutoInstrumentation.Hosting.Bootstrap.g.cs"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Qyl.AutoInstrumentation.DiagnosticListeners\Qyl.AutoInstrumentation.DiagnosticListeners.csproj" />
   </ItemGroup>

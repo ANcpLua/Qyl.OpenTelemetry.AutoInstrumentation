@@ -5,9 +5,9 @@ Free, **vendor-neutral .NET zero-code instrumentation runtime — NativeAOT-read
 **Architecture rule (v0.2.0 substrate swap):** C# owns ALL behavior, *and* the runtime is now a
 pure-managed AOT-native library — no native CLR profiler, no IL rewriting, no startup-hook
 attach. The substrate is **Roslyn source generators + `DiagnosticListener` subscriptions +
-`[ModuleInitializer]`**. A consuming app gets instrumentation by referencing
-`Qyl.AutoInstrumentation.Hosting`; the C# compiler emits the boot call directly into the module
-initializer, which NativeAOT understands natively.
+`[ModuleInitializer]`**. `Qyl.AutoInstrumentation.Hosting` ships a build-transitive consumer
+module initializer that roots the qyl bootstrap from a plain `PackageReference`; explicit
+`AddQylAutoInstrumentation()` calls use the same idempotent boot path.
 
 Reuses the OpenTelemetry `ActivitySource` / `Meter` BCL primitives. Semantic conventions are
 baked into a build-time `FrozenSet<string>` by the qyl source generator (no `Assembly.Load`
@@ -52,9 +52,17 @@ Runtime projects inherit `IsAotCompatible`, trim, AOT, and single-file analyzers
 `PublishAot=true` excludes the generator project so NativeAOT publish never tries to publish a
 build-time Roslyn assembly.
 
-Current evidence proves the runtime closure is NativeAOT-clean: a `net10.0` `osx-arm64` consumer
-referencing `Qyl.AutoInstrumentation.Hosting` publishes with `PublishAot=true` and starts. It does
-not claim M1 span emission is proven yet; the coverage ledger still owns that milestone.
+Current evidence proves the runtime closure is NativeAOT-clean and emits spans under NativeAOT:
+
+- `demos/Qyl.LiveInstrumentationDemo` publishes as `net10.0`/`osx-arm64` with
+  `PublishAot=true` and captures `http.client`, `http.server`, `db.efcore`, `db.sqlclient`,
+  and `rpc.grpc` qyl spans.
+- A temporary consumer with only a `PackageReference` to `Qyl.AutoInstrumentation.Hosting` and no
+  explicit qyl startup call publishes with `PublishAot=true` and captures a qyl HttpClient span via
+  the build-transitive bootstrap.
+
+The formal Gate A golden-OTLP normalizer and Gate B no-behavior-change baseline are still tracked
+in `COVERAGE_LEDGER.md`.
 
 ## Projects
 
@@ -63,7 +71,7 @@ not claim M1 span emission is proven yet; the coverage ledger still owns that mi
 | `Qyl.AutoInstrumentation` | net10.0 | API surface: `QylActivitySource`, `QylSelfTelemetry`, `QylInstrumentation.Activate()`, source-gen-fed `QylSemConvRegistry`. |
 | `Qyl.AutoInstrumentation.SourceGenerators` | netstandard2.0 | `IIncrementalGenerator` that emits the semconv `FrozenSet<string>` at compile time. |
 | `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | One `DiagnosticListener` subscriber per instrumented library (HttpClient, AspNetCore, EFCore, SqlClient, gRPC). |
-| `Qyl.AutoInstrumentation.Hosting` | net10.0 | `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
+| `Qyl.AutoInstrumentation.Hosting` | net10.0 | Build-transitive consumer bootstrap + `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
 
 The three runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
 `IsTrimmable`, `EnableTrimAnalyzer`, `EnableAotAnalyzer`, and `EnableSingleFileAnalyzer` all on.
@@ -72,9 +80,9 @@ an accidental runtime reflection or publish-graph regression fails the build ins
 
 ## Status
 
-- **M1 walking skeleton (new substrate)** — *scheduled*: emit one HttpClient CLIENT span from
-  `QylActivitySource` via the HttpClient diagnostic listener subscription, under a NativeAOT-published
-  consumer app, with Gate A (golden span) + Gate B (no-behavior-change) both green.
+- **M1 walking skeleton (new substrate)** — *in progress*: NativeAOT package-reference boot and
+  qyl span emission are proven; Gate A (golden span) + Gate B (no-behavior-change) still need the
+  formal checked-in gate runner.
 
 The substrate-era M1–M12 are preserved in `COVERAGE_LEDGER.md` under the *archived* section
 and remain reproducible from the `v0.1.0-archive` tag.

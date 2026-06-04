@@ -31,7 +31,7 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 
 | Milestone | Goal | Gate A golden | Gate B baseline | State |
 |-----------|------|---------------|-----------------|-------|
-| **M1 AOT walking skeleton** | A NativeAOT-published consumer app, with a `PackageReference` to `Qyl.AutoInstrumentation.Hosting`, emits ONE HttpClient CLIENT span via `QylActivitySource` to a console listener — driven by the `HttpHandlerDiagnosticListener` subscription. | one CLIENT span: method/url/server | app stdout/exit identical w/wo the reference + 0 spans in the control arm | **scheduled** — skeleton compiles ✅ (this commit); span emission + gate.sh re-creation come next. |
+| **M1 AOT walking skeleton** | A NativeAOT-published consumer app, with a `PackageReference` to `Qyl.AutoInstrumentation.Hosting`, emits ONE HttpClient CLIENT span via `QylActivitySource` to a console listener — driven by the `HttpHandlerDiagnosticListener` subscription. | one CLIENT span: method/url/server | app stdout/exit identical w/wo the reference + 0 spans in the control arm | **in-progress** — PackageReference zero-code NativeAOT boot + HttpClient span emission proven locally; formal Gate A/B runner still pending. |
 | M2+ | *not enumerated until M1 is `proven`* (the principle) | — | — | — |
 
 ## Coverage ledger — blueprint §00–§09 + T000–T032 (re-aimed)
@@ -42,11 +42,11 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | §00 DO_NOT_WRITE_IN_CSHARP | COM/ICorProfiler/ReJIT/IL native boundary | `oos: substrate-swap — qyl no longer attaches via the profiler API` |
 | §01 EXISTING_CODE_REUSE | BCL `ActivitySource` / `Meter` / `DiagnosticSource` | `decided` |
 | §02 REPO_SKELETON | 4-project solution + Directory.Build.props + .slnx | **proven** ✅ (this commit) |
-| §03 ATTACHMENT_SURFACE | `[ModuleInitializer]` + `AddQylAutoInstrumentation()` | **proven** ✅ (skeleton — span emission is M1) |
+| §03 ATTACHMENT_SURFACE | build-transitive consumer bootstrap + `[ModuleInitializer]` + `AddQylAutoInstrumentation()` | `in-progress` (PackageReference boot proven locally; formal Gate B pending) |
 | §04 ARCHITECTURE | layer reference model | `decided` (source-gen + listener + module-init triad) |
 | §05 TASK_CHAIN | the 33 chains | tracked below |
 | §06 SEMCONV_COVERAGE | full attribute/metric/span registry | `in-progress` (build-time FrozenSet via source generator) |
-| §07 INSTRUMENTATION_MODULES | per-library coverage | `M1` (HttpClient) / rest `backlog` (one per future milestone) |
+| §07 INSTRUMENTATION_MODULES | per-library coverage | `in-progress` (live demo captures HttpClient, ASP.NET Core, EFCore, SqlClient, gRPC; formal gates pending) |
 | §08 GOLDEN_OUTPUT_SHAPES | SpanData/MetricData/LogRecordData schemas | `M1` (defines Gate A normalizer) |
 | §09 DONE_STATE | final exit criteria | `decided` (the finish line — unchanged from v0.1.0) |
 | T000 establish baseline | env/runtime/AOT publish matrix | `M1` (osx-arm64/net10 cell first) |
@@ -63,10 +63,10 @@ Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *be
 | T011 calltarget ABI | begin/end/exception/async handlers | `oos: substrate-swap — DiagnosticListener replaces this` |
 | T012 source instrumentation runtime | ActivitySource/DiagnosticListener subs | `M1` (HttpClient) / rest `backlog` |
 | T013 bytecode instrumentation runtime | ReJIT rewrite pipeline | `oos: substrate-swap — incompatible with AOT` |
-| T014 http server | ASP.NET Core | `backlog` (subscriber stub in place) |
-| T015 http client | HttpClient | `M1` (THE skeleton instrumentation — subscriber stub in place) |
-| T016 grpc/rpc | Grpc.Net | `backlog` (subscriber stub in place) |
-| T017 database | ADO.NET/EFCore/SqlClient | `backlog` (subscriber stubs in place) |
+| T014 http server | ASP.NET Core | `in-progress` (live qyl span demo; formal Gate A/B pending) |
+| T015 http client | HttpClient | `M1` (PackageReference NativeAOT zero-code span emission proven locally; formal Gate A/B pending) |
+| T016 grpc/rpc | Grpc.Net | `in-progress` (live qyl span demo; formal Gate A/B pending) |
+| T017 database | ADO.NET/EFCore/SqlClient | `in-progress` (EFCore + SqlClient live qyl span demo; formal Gate A/B pending) |
 | T018 cache | StackExchange.Redis | `backlog` |
 | T019 messaging | Kafka/RabbitMQ/Azure/AWS/GCP | `backlog` |
 | T020 cloud sdk | Azure/AWS/GCP SDKs | `backlog` |

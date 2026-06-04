@@ -26,12 +26,17 @@ namespace Qyl.AutoInstrumentation.Hosting;
 /// </summary>
 internal static class ModuleInitializerBoot
 {
+    private static int _booted;
+
     /// <summary>The single qyl entry point invoked by the CLR at module load.</summary>
     [ModuleInitializer]
     [SuppressMessage("Usage", "CA2255",
         Justification = "Module-init IS the AOT-native attach mechanism this package ships; opt-in is the act of referencing Qyl.AutoInstrumentation.Hosting.")]
     public static void Boot()
     {
+        if (Interlocked.Exchange(ref _booted, 1) == 1)
+            return;
+
         QylInstrumentation.Activate();
 
         new HttpClientDiagnosticListener().Subscribe();
