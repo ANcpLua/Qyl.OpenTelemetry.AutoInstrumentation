@@ -79,6 +79,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (TryGetKafkaInvocation(symbol, out target))
             return true;
 
+        if (TryGetMassTransitInvocation(symbol, out target))
+            return true;
+
         if (TryGetStackExchangeRedisInvocation(symbol, out target))
             return true;
 
@@ -166,6 +169,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 EmitKafkaProducerInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.KafkaConsumer)
                 EmitKafkaConsumerInterceptor(builder, invocation, index);
+            else if (invocation.Target.Kind is InterceptorKind.MassTransitMessageOperation)
+                EmitMassTransitInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisStringGetAsync)
                 EmitStackExchangeRedisInterceptor(builder, invocation, index);
             else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
@@ -525,6 +530,48 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitMassTransitInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            "MassTransit_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            "endpoint",
+            target.Parameters,
+            isAsync: true,
+            typeParameterList: target.TypeParameterList,
+            constraintClauses: target.ConstraintClauses);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                await endpoint.");
+        builder.Append(target.MethodName);
+        AppendGenericTypeArgumentList(builder, target.TypeParameterList);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(").ConfigureAwait(false);");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("            finally");
@@ -907,6 +954,20 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string receiverName,
         ImmutableArray<ParameterSpec> parameters,
         bool isAsync)
+        => EmitAttributeAndSignature(builder, location, returnType, methodPrefix, index, receiverType, receiverName, parameters, isAsync, string.Empty, string.Empty);
+
+    private static void EmitAttributeAndSignature(
+        StringBuilder builder,
+        InterceptableLocation location,
+        string returnType,
+        string methodPrefix,
+        int index,
+        string receiverType,
+        string receiverName,
+        ImmutableArray<ParameterSpec> parameters,
+        bool isAsync,
+        string typeParameterList,
+        string constraintClauses)
     {
         var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetInterceptsLocationAttributeSyntax(location);
         builder.Append("        ");
@@ -920,13 +981,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append(methodPrefix);
         builder.Append('_');
         builder.Append(index.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        builder.Append(typeParameterList);
         builder.Append("(this ");
         builder.Append(receiverType);
         builder.Append(' ');
         builder.Append(receiverName);
         AppendParameterList(builder, parameters);
-        builder.AppendLine(")");
+        builder.Append(')');
+        builder.Append(constraintClauses);
+        builder.AppendLine();
     }
+
+    private static void AppendGenericTypeArgumentList(StringBuilder builder, string typeParameterList)
+        => builder.Append(typeParameterList);
 
     private static void AppendParameterList(StringBuilder builder, ImmutableArray<ParameterSpec> parameters)
     {
@@ -1193,6 +1260,38 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         return TryGetKafkaConsumerInvocation(symbol, out target);
     }
+
+    private static bool TryGetMassTransitInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsSupportedMassTransitOperation(symbol.Name) ||
+            !IsTask(symbol.ReturnType) ||
+            !IsMassTransitEndpointType(symbol.ContainingType) ||
+            symbol.Parameters.Length is 0)
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.MassTransitMessageOperation,
+            "signals.traces.MASSTRANSIT",
+            "MASSTRANSIT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType),
+            Parameters(symbol),
+            true,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool IsSupportedMassTransitOperation(string methodName)
+        => methodName is "Publish" or "Send";
+
+    private static bool IsMassTransitEndpointType(ITypeSymbol? symbol)
+        => IsOrImplementsType(symbol, "MassTransit", "IPublishEndpoint") ||
+           IsOrImplementsType(symbol, "MassTransit", "ISendEndpoint");
 
     private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -1896,6 +1995,68 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static string GetTypeParameterList(IMethodSymbol symbol)
+    {
+        if (symbol.TypeParameters.Length is 0)
+            return string.Empty;
+
+        var builder = new StringBuilder();
+        builder.Append('<');
+        for (var i = 0; i < symbol.TypeParameters.Length; i++)
+        {
+            if (i > 0)
+                builder.Append(", ");
+
+            builder.Append(symbol.TypeParameters[i].Name);
+        }
+
+        builder.Append('>');
+        return builder.ToString();
+    }
+
+    private static string GetConstraintClauses(IMethodSymbol symbol)
+    {
+        if (symbol.TypeParameters.Length is 0)
+            return string.Empty;
+
+        var builder = new StringBuilder();
+        foreach (var typeParameter in symbol.TypeParameters)
+        {
+            var constraintClause = GetConstraintClause(typeParameter);
+            if (string.IsNullOrWhiteSpace(constraintClause))
+                continue;
+
+            builder.Append(' ');
+            builder.Append(constraintClause);
+        }
+
+        return builder.ToString();
+    }
+
+    private static string GetConstraintClause(ITypeParameterSymbol typeParameter)
+    {
+        var constraints = ImmutableArray.CreateBuilder<string>();
+
+        if (typeParameter.HasUnmanagedTypeConstraint)
+            constraints.Add("unmanaged");
+        else if (typeParameter.HasValueTypeConstraint)
+            constraints.Add("struct");
+        else if (typeParameter.HasReferenceTypeConstraint)
+            constraints.Add("class");
+        else if (typeParameter.HasNotNullConstraint)
+            constraints.Add("notnull");
+
+        foreach (var constraintType in typeParameter.ConstraintTypes)
+            constraints.Add(CleanTypeName(constraintType));
+
+        if (typeParameter.HasConstructorConstraint)
+            constraints.Add("new()");
+
+        return constraints.Count is 0
+            ? string.Empty
+            : "where " + typeParameter.Name + " : " + string.Join(", ", constraints);
+    }
+
     private static ImmutableArray<ParameterSpec> Parameters(IMethodSymbol symbol)
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
@@ -2106,6 +2267,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         GrpcNetClientAsyncDuplexStreamingCall,
         KafkaProducer,
         KafkaConsumer,
+        MassTransitMessageOperation,
         StackExchangeRedisStringGetAsync,
         GraphQlDocumentExecuter,
         MongoDbCollection,
@@ -2128,7 +2290,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string MethodName,
         string ReturnType,
         ImmutableArray<ParameterSpec> Parameters,
-        bool IsAsync);
+        bool IsAsync,
+        string TypeParameterList = "",
+        string ConstraintClauses = "");
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }
