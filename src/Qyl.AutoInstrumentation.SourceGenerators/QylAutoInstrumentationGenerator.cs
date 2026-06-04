@@ -1979,7 +1979,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         var instrumentationId = GetDbInstrumentationId(symbol.ContainingType);
         target = new InterceptorTarget(
             InterceptorKind.DbCommand,
-            "signals.traces." + instrumentationId,
+            GetDbTraceContractKey(instrumentationId),
             instrumentationId,
             CleanTypeName(symbol.ContainingType),
             methodName,
@@ -3228,6 +3228,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             parameters,
             false,
             AdditionalContractKeys: ContractKeys("signals.metrics.HTTPCLIENT"));
+
+    private static string GetDbTraceContractKey(string instrumentationId)
+        => instrumentationId switch
+        {
+            "ADONET" => "signals.traces.ADONET",
+            "MYSQLCONNECTOR" => "signals.traces.MYSQLCONNECTOR",
+            "MYSQLDATA" => "signals.traces.MYSQLDATA",
+            "NPGSQL" => "signals.traces.NPGSQL",
+            "ORACLEMDA" => "signals.traces.ORACLEMDA",
+            "SQLCLIENT" => "signals.traces.SQLCLIENT",
+            "SQLITE" => "signals.traces.SQLITE",
+            _ => "signals.traces.ADONET",
+        };
 
     private static string[] GetDbMetricContractKeys(string instrumentationId)
         => instrumentationId switch
