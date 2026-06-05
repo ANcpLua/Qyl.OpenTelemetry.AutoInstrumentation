@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 VERIFIER_PATH = ROOT / "tools" / "verify-contract-invariants.py"
+COVERAGE_MATRIX_PATH = ROOT / "docs" / "coverage-matrix.md"
 
 
 def fail(message: str) -> None:
@@ -202,14 +203,102 @@ def build_report(verifier: ModuleType) -> dict[str, Any]:
     }
 
 
+def render_markdown(report: dict[str, Any]) -> str:
+    counts = report["counts"]
+    lines = [
+        "# AOT Interceptor Coverage Matrix",
+        "",
+        "This matrix is generated from `docs/otel-dotnet-auto-60-contract-items.yaml`,",
+        "`src/Qyl.AutoInstrumentation.SourceGenerators/InstrumentationContract.cs`, and",
+        "`src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs`.",
+        "",
+        "It is the review artifact for the 60-item auto-instrumentation contract: upstream",
+        "contract item on the left, qyl NativeAOT interceptor/runtime status on the right.",
+        "",
+        "## Counts",
+        "",
+        "| Count | Value |",
+        "|---|---:|",
+        f"| Total contract items | {counts['total']} |",
+        f"| Source-generated signal bindings | {counts['source_generated_signals']} |",
+        f"| Unsupported NativeAOT parity/dynamic signals | {counts['unsupported_signals']} |",
+        f"| Runtime environment controls | {counts['environment_controls']} |",
+        f"| Runtime instrumentation options | {counts['instrumentation_options']} |",
+        f"| Missing bindings | {counts['missing']} |",
+        "",
+        "## Status legend",
+        "",
+        "| Status | Meaning |",
+        "|---|---|",
+        "| `source_generated_signal` | The source generator has a source-visible call-site binding for this signal. |",
+        "| `unsupported_nativeaot_parity_or_dynamic_signal` | The upstream contract item is retained for parity, but it is not reachable as a NativeAOT source-interceptor signal. |",
+        "| `runtime_environment_control` | The runtime options model binds the global/signal environment control. |",
+        "| `runtime_instrumentation_option` | The runtime options model binds the instrumentation option. |",
+        "| `missing_*` | Fails the gate. |",
+        "",
+        "## Matrix",
+        "",
+        "| # | Contract item | Kind | Key | qyl status | Evidence |",
+        "|---:|---|---|---|---|---|",
+    ]
+
+    for record in report["items"]:
+        evidence = "<br>".join(record["evidence"]) if record["evidence"] else "-"
+        lines.append(
+            "| "
+            + str(record["index"])
+            + " | `"
+            + record["contract_item_id"]
+            + "` | `"
+            + record["kind"]
+            + "` | `"
+            + record["key"]
+            + "` | `"
+            + record["status"]
+            + "` | "
+            + evidence
+            + " |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "// validated 2026-06-05 by tools/verify-contract-coverage-report.py",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def verify_markdown(report: dict[str, Any]) -> None:
+    expected = render_markdown(report)
+    if not COVERAGE_MATRIX_PATH.exists():
+        fail(f"coverage matrix missing: {COVERAGE_MATRIX_PATH}")
+
+    actual = COVERAGE_MATRIX_PATH.read_text(encoding="utf-8")
+    if actual != expected:
+        received = COVERAGE_MATRIX_PATH.with_suffix(".received.md")
+        received.write_text(expected, encoding="utf-8")
+        fail(
+            "coverage matrix is stale\n"
+            f"expected={COVERAGE_MATRIX_PATH}\n"
+            f"received={received}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Verify and optionally emit the 60-item qyl contract coverage report.")
     parser.add_argument("--json", type=Path, help="Write the full machine-readable report to this path.")
+    parser.add_argument("--markdown", type=Path, help="Write the generated coverage matrix markdown to this path.")
     args = parser.parse_args()
 
     report = build_report(load_verifier())
     if args.json is not None:
         args.json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.markdown is not None:
+        args.markdown.write_text(render_markdown(report), encoding="utf-8")
+    else:
+        verify_markdown(report)
 
     counts = report["counts"]
     print(
