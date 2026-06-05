@@ -51,6 +51,8 @@
     <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
     <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
     <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.6</JonSkeetRoslynAnalyzersVersion>
+    <MicrosoftCodeAnalysisPublicApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisPublicApiAnalyzersVersion>
+    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.SqlClient'">true</QylEnablePublicApiAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>
@@ -80,6 +82,11 @@
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="JonSkeet.RoslynAnalyzers"
                       Version="$(JonSkeetRoslynAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers"
+                      Condition="'$(QylEnablePublicApiAnalyzers)' == 'true'"
+                      Version="$(MicrosoftCodeAnalysisPublicApiAnalyzersVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
   </ItemGroup>

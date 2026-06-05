@@ -15,6 +15,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("release build", ["dotnet", "build", "Qyl.AutoInstrumentation.slnx", "-c", "Release"]),
     ("package layout", [sys.executable, "tools/verify-package-layout.py"]),
     ("projectreference behavior", [sys.executable, "tools/verify-projectreference-behavior.py"]),
+    ("public api baseline", [sys.executable, "tools/verify-public-api-baseline.py"]),
     ("environment options behavior", [sys.executable, "tools/verify-environment-options-behavior.py"]),
     ("conformance opt-in", [sys.executable, "tools/verify-conformance-opt-in.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
