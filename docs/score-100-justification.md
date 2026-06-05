@@ -137,9 +137,9 @@ Committed BenchmarkDotNet reports under `docs/benchmarks/` cover JIT and NativeA
 
 | Hot path | JIT intercepted mean | NativeAOT intercepted mean | Intercepted allocation |
 |---|---:|---:|---:|
-| `DbCommand` | `5.5947 ns` | `10.3549 ns` | `-` |
-| `EntityFrameworkCore` | `9.0037 ns` | `11.6833 ns` | `-` |
-| `HttpClient.GetAsync` | `314.6 ns` | `339.8 ns` | `1176 B` |
+| `DbCommand` | `5.1818 ns` | `8.6665 ns` | `-` |
+| `EntityFrameworkCore` | `8.8453 ns` | `11.4763 ns` | `-` |
+| `HttpClient.GetAsync` | `296.9 ns` | `331.9 ns` | `1176 B` |
 
 The `HttpClient` benchmark includes the real `HttpClient` async machinery; the direct baseline allocates
 `704 B`, so the measured qyl delta is `472 B`. The DB and EFCore hot paths are zero-allocation in both runtimes.
@@ -170,6 +170,6 @@ AOT warning gates, and the boundary between source-visible interception and runt
 
 | Risk | Status |
 |---|---|
-| Release tag target is declared before tag creation | Intentional. The tag is created after the version-bump commit and must point at the committed tree containing this document. |
+| Release tag target must match the final evidence commit | The final report verifies `git rev-list -n 1 v0.3.0-pre.1` against `git rev-parse HEAD`. |
 | WebAPI demo third-party warnings | qyl-owned warnings are zero. EFCore/SqlClient package analyzer warnings are treated as app/third-party boundary risk, not hidden as qyl success. |
 | `HttpClient` intercepted benchmark allocates above the direct baseline | The qyl overhead is below one microsecond, but not zero-allocation because the measured path includes real `HttpClient` async request/response machinery and activity export state. DB and EFCore hot paths are zero-allocation. |
