@@ -22,6 +22,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
     ("smoketest", ["bash", "tools/smoketest.sh"]),
+    ("webapi aot demo", [sys.executable, "tools/verify-webapi-aot-demo.py"]),
     ("consumer behavior", [sys.executable, "tools/verify-consumer-behavior.py"]),
     ("nativeaot consumer golden", [sys.executable, "tools/verify-nativeaot-consumer-golden.py"]),
     ("diff whitespace", ["git", "diff", "--check"]),

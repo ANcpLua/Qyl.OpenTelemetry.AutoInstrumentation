@@ -133,8 +133,8 @@ pretending that profiler mechanics survive NativeAOT unchanged.
 - Some third-party libraries may publish under NativeAOT only with their own warnings or
   app-side constraints. Those warnings belong to that library boundary and must be called
   out instead of hidden inside qyl.
-- Benchmarks, full OTLP fixtures, and a web-API NativeAOT CI proof are separate quality
-  gates still needed for a complete 100/100 score. Generator-output snapshots are now
-  covered by the repo's committed golden generated-code fixtures.
+- Benchmarks, full OTLP fixtures, and release evidence are separate quality gates still
+  needed for a complete 100/100 score. Generator-output snapshots and the NativeAOT web
+  API proof are now covered by committed gates.
 
 // validated 2026-06-05 18:34 CEST by tools/verify-rfc-artifact.py and tools/verify-aot-autoinstrumentation-goal.py
