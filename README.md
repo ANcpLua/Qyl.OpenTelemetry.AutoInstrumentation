@@ -24,7 +24,7 @@ current compile-time lane classifies the contract as 33 source-generated signal 
 unsupported NativeAOT parity/dynamic signal promises, seven global controls, and 16 instrumentation
 options. Nothing is silently dropped; unsupported parity requires an explicit reason.
 
-## Substrate-swap note (v0.2.0-pre.1)
+## Substrate-swap note (v0.3.0-pre.1)
 
 Pre-v0.2.0 the runtime was the OpenTelemetry .NET auto-instrumentation native CLR profiler,
 attached via `CORECLR_PROFILER` / `OTEL_DOTNET_AUTO_PLUGINS` / a `dotnet tool` (`qyl install`)

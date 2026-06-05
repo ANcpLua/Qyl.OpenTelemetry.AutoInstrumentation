@@ -129,7 +129,7 @@ def clean_workdir() -> None:
 
 
 def pack_local_packages() -> str:
-    version = f"0.2.0-otlpcollector.{time.time_ns()}"
+    version = f"{read_package_version()}.otlpcollector.{time.time_ns()}"
     projects = (
         ROOT / "src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj",
         ROOT / "src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj",
@@ -163,6 +163,26 @@ def pack_local_packages() -> str:
         raise SystemExit(f"cannot infer package version from {name}")
 
     return name[len(package_prefix) : -len(".nupkg")]
+
+
+def read_package_version() -> str:
+    text = (ROOT / "Directory.Build.props").read_text(encoding="utf-8")
+    prefix = "<Version>"
+    suffix = "</Version>"
+    start = text.find(prefix)
+    if start < 0:
+        raise SystemExit("Directory.Build.props is missing <Version>")
+
+    start += len(prefix)
+    end = text.find(suffix, start)
+    if end < 0:
+        raise SystemExit("Directory.Build.props has unterminated <Version>")
+
+    version = text[start:end].strip()
+    if not version:
+        raise SystemExit("Directory.Build.props has empty <Version>")
+
+    return version
 
 
 def write_consumer(version: str) -> None:

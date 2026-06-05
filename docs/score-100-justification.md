@@ -11,12 +11,12 @@ command-backed: every claim below points at a committed gate, a CI check, or a r
 |---|---|
 | Branch | `claude/projectreference-build-assets` |
 | Current evidence SHA | `0fce5ab2286fb56c86974bf733f4550e60629049` |
-| Current package version | `0.2.0-pre.1` |
-| Next release tag target | `v0.3.0-pre.1` |
+| Current package version | `0.3.0-pre.1` |
+| Release tag target | `v0.3.0-pre.1` |
 | Pull request | `https://github.com/ANcpLua/qyl-dotnet-autoinstrumentation/pull/1` |
 
-The release tag is not created in this document. The tag remains the final step after the PR evidence is
-reviewed and the version bump commit is made.
+The release tag is created after the version-bump commit because a commit cannot include its own SHA in a
+tracked file. The authoritative release commit SHA is the `v0.3.0-pre.1` tag target reported by Git.
 
 ## Local proof commands
 
@@ -170,6 +170,6 @@ AOT warning gates, and the boundary between source-visible interception and runt
 
 | Risk | Status |
 |---|---|
-| Final release tag is not created yet | Intentional. The target is `v0.3.0-pre.1`, but tagging remains after review/version-bump. |
+| Release tag target is declared before tag creation | Intentional. The tag is created after the version-bump commit and must point at the committed tree containing this document. |
 | WebAPI demo third-party warnings | qyl-owned warnings are zero. EFCore/SqlClient package analyzer warnings are treated as app/third-party boundary risk, not hidden as qyl success. |
 | `HttpClient` intercepted benchmark allocates above the direct baseline | The qyl overhead is below one microsecond, but not zero-allocation because the measured path includes real `HttpClient` async request/response machinery and activity export state. DB and EFCore hot paths are zero-allocation. |

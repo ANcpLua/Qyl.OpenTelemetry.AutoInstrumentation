@@ -10,6 +10,7 @@ DOC = ROOT / "docs" / "score-100-justification.md"
 
 REQUIRED_TOKENS = [
     "0fce5ab2286fb56c86974bf733f4550e60629049",
+    "0.3.0-pre.1",
     "v0.3.0-pre.1",
     "tools/verify-aot-autoinstrumentation-goal.py",
     "contract-coverage-report-ok total=60",
@@ -34,6 +35,8 @@ REQUIRED_TOKENS = [
 FORBIDDEN_TOKENS = [
     "TODO",
     "TBD",
+    "0.2.0-pre.1",
+    "Final release tag is not created yet",
     "still needed for a complete 100/100 score",
     "Collector-backed OTLP transport fixtures, full runtime XML-doc enforcement",
 ]

@@ -11,7 +11,7 @@ namespace Qyl.AutoInstrumentation;
 public static class QylInstrumentation
 {
     /// <summary>Library version, baked at build time by the root <c>Directory.Build.props</c>.</summary>
-    public const string Version = "0.2.0-pre.1";
+    public const string Version = "0.3.0-pre.1";
 
     private static int _activated;
 
