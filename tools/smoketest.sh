@@ -198,11 +198,29 @@ assert_generated_interceptor() {
   fi
 }
 
+assert_no_aot_warnings() {
+  local log="$1"
+  local consumer="$2"
+  local matches
+
+  matches="$(grep -Eo '\\b(IL2[0-9]{3}|IL3[0-9]{3}|IL4[0-9]{3}|CA[0-9]{4})\\b' "$log" | sort -u || true)"
+  if [[ -n "$matches" ]]; then
+    echo "AOT warning gate failed for $consumer; found analyzer warnings:" >&2
+    echo "$matches" >&2
+    echo "--- publish log ---" >&2
+    cat "$log" >&2
+    exit 5
+  fi
+
+  echo "aot-warning-gate-ok consumer=$consumer warnings=0"
+}
+
 run_consumer() {
   local name="$1"
   local dir="$2"
   local managed_out="$WORK/$name.managed.stdout"
   local native_out="$WORK/$name.nativeaot.stdout"
+  local publish_log="$WORK/$name.nativeaot.publish.log"
 
   dotnet build "$dir/Consumer.csproj" -c Release -v quiet
   assert_generated_interceptor "$dir"
@@ -216,7 +234,8 @@ run_consumer() {
     -p:SelfContained=true \
     -p:InvariantGlobalization=true \
     -p:TreatWarningsAsErrors=true \
-    -v quiet
+    -v quiet 2>&1 | tee "$publish_log"
+  assert_no_aot_warnings "$publish_log" "$name"
 
   "$dir/bin/Release/net10.0/$RID/publish/Consumer" > "$native_out"
   diff -u "$GOLDEN" "$native_out"
