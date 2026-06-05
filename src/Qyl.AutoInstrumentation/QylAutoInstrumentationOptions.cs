@@ -275,6 +275,9 @@ public sealed class QylAutoInstrumentationOptions
 
         foreach (var instrumentationId in instrumentationIds)
         {
+            if (string.IsNullOrWhiteSpace(instrumentationId))
+                continue;
+
             var variable = BuildSignalSpecificVariable(signal, instrumentationId);
             target[new InstrumentationLookupKey(signal, instrumentationId)] = ReadBoolean(variable) ?? signalDefault;
         }
@@ -370,6 +373,8 @@ public sealed class QylAutoInstrumentationOptions
 
         /// <summary>Runs the Get Hash Code runtime helper used by source-generated qyl interceptors.</summary>
         public override int GetHashCode()
-            => HashCode.Combine(signal, StringComparer.Ordinal.GetHashCode(instrumentationId));
+            => HashCode.Combine(
+                signal,
+                instrumentationId is null ? 0 : StringComparer.Ordinal.GetHashCode(instrumentationId));
     }
 }
