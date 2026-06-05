@@ -19,7 +19,7 @@ public static class QylDbClientMetrics
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
-        if (!ShouldRecord(instrumentationId))
+        if (!OperationDuration.Enabled || !ShouldRecord(instrumentationId))
             return;
 
         var elapsed = TimeProvider.System.GetElapsedTime(startTimestamp);

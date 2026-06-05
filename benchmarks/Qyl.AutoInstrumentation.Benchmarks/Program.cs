@@ -50,7 +50,7 @@ public class HttpClientHotPathBenchmarks : IDisposable
     [Benchmark]
     public async Task<int> InterceptedGetAsync()
     {
-        using var response = await QylInterceptedHttpClient.GetAsync(httpClient, "/");
+        using var response = await QylInterceptedHttpClient.GetAsync(httpClient, "/", HttpCompletionOption.ResponseHeadersRead);
         return (int)response.StatusCode;
     }
 

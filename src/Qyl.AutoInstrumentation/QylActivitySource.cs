@@ -18,6 +18,9 @@ public static class QylActivitySource
         Name,
         QylInstrumentation.Version);
 
+    internal static bool IsRecordingEnabled
+        => Source.HasListeners();
+
     internal static Activity? StartActivity(string operationName, ActivityKind activityKind)
         => Source.HasListeners()
             ? Source.StartActivity(operationName, activityKind)

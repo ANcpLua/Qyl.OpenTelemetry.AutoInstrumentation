@@ -473,7 +473,17 @@ public static class QylInterceptedHttpClient
     }
 
     private static Task<HttpResponseMessage> ObserveResponseAsync(Task<HttpResponseMessage> originalTask, HttpClientObservation observation)
-        => !observation.IsEnabled ? originalTask : ObserveResponseSlowAsync(originalTask, observation);
+    {
+        if (!observation.IsEnabled)
+            return originalTask;
+
+        if (!originalTask.IsCompletedSuccessfully)
+            return ObserveResponseSlowAsync(originalTask, observation);
+
+        RecordResponse(observation, originalTask.Result);
+        observation.Dispose();
+        return originalTask;
+    }
 
     private static async Task<HttpResponseMessage> ObserveResponseSlowAsync(Task<HttpResponseMessage> originalTask, HttpClientObservation observation)
     {
@@ -495,7 +505,17 @@ public static class QylInterceptedHttpClient
     }
 
     private static Task<T> ObserveValueAsync<T>(Task<T> originalTask, HttpClientObservation observation)
-        => !observation.IsEnabled ? originalTask : ObserveValueSlowAsync(originalTask, observation);
+    {
+        if (!observation.IsEnabled)
+            return originalTask;
+
+        if (!originalTask.IsCompletedSuccessfully)
+            return ObserveValueSlowAsync(originalTask, observation);
+
+        RecordSuccess(observation);
+        observation.Dispose();
+        return originalTask;
+    }
 
     private static async Task<T> ObserveValueSlowAsync<T>(Task<T> originalTask, HttpClientObservation observation)
     {
@@ -527,11 +547,14 @@ public static class QylInterceptedHttpClient
 
     private static HttpClientObservation StartHttpClientObservation(string method, string? requestUri)
     {
+        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled, out var metricsEnabled))
+            return default;
+
         Uri? uri = null;
         if (!string.IsNullOrWhiteSpace(requestUri))
             Uri.TryCreate(requestUri, UriKind.RelativeOrAbsolute, out uri);
 
-        return StartHttpClientObservation(method, uri, requestUri);
+        return StartHttpClientObservation(options, traceEnabled, metricsEnabled, method, uri, requestUri);
     }
 
     private static HttpClientObservation StartHttpClientObservation(string method, Uri? requestUri)
@@ -539,12 +562,32 @@ public static class QylInterceptedHttpClient
 
     private static HttpClientObservation StartHttpClientObservation(string method, Uri? requestUri, string? rawRequestUri)
     {
-        var options = QylAutoInstrumentationOptions.Current;
-        var traceEnabled = options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient);
-        var metricsEnabled = options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient);
-        if (!traceEnabled && !metricsEnabled)
+        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled, out var metricsEnabled))
             return default;
 
+        return StartHttpClientObservation(options, traceEnabled, metricsEnabled, method, requestUri, rawRequestUri);
+    }
+
+    private static bool TryGetHttpClientObservationOptions(
+        out QylAutoInstrumentationOptions options,
+        out bool traceEnabled,
+        out bool metricsEnabled)
+    {
+        options = QylAutoInstrumentationOptions.Current;
+        traceEnabled = QylActivitySource.IsRecordingEnabled &&
+                       options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient);
+        metricsEnabled = QylHttpClientMetrics.IsRecordingEnabledFor(options);
+        return traceEnabled || metricsEnabled;
+    }
+
+    private static HttpClientObservation StartHttpClientObservation(
+        QylAutoInstrumentationOptions options,
+        bool traceEnabled,
+        bool metricsEnabled,
+        string method,
+        Uri? requestUri,
+        string? rawRequestUri)
+    {
         method = QylHttpMethod.Normalize(method);
         var startTimeUtc = TimeProvider.System.GetUtcNow().UtcDateTime;
         Activity? activity = null;

@@ -8,9 +8,16 @@ internal static class QylHttpClientMetrics
     private static readonly Meter Meter = new(QylMetricMeters.HttpClientMeterName);
     private static readonly Histogram<double> RequestDuration = Meter.CreateHistogram<double>(QylMetricNames.HttpClientRequestDuration, "s");
 
+    public static bool IsRecordingEnabled
+        => IsRecordingEnabledFor(QylAutoInstrumentationOptions.Current);
+
+    public static bool IsRecordingEnabledFor(QylAutoInstrumentationOptions options)
+        => RequestDuration.Enabled &&
+           options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient);
+
     public static void RecordRequestDuration(DateTime startTimeUtc, string? method, int? statusCode)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
+        if (!IsRecordingEnabled)
             return;
 
         var elapsed = TimeProvider.System.GetUtcNow().UtcDateTime - startTimeUtc;

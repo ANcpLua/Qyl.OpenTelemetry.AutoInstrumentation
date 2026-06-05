@@ -17,7 +17,8 @@ public static class QylNServiceBusMetrics
     /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordDuration(long startTimestamp, string operationName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
+        if (!OperationDuration.Enabled ||
+            !QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
             return;
 
         var elapsed = TimeProvider.System.GetElapsedTime(startTimestamp);

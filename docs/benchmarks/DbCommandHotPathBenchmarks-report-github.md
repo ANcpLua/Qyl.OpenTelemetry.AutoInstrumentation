@@ -10,10 +10,10 @@ Apple M4, 1 CPU, 10 logical and 10 physical cores
 IterationCount=5  LaunchCount=1  WarmupCount=3  
 
 ```
-| Method                      | Runtime        | Mean      | Error     | StdDev    | Ratio  | RatioSD | Allocated | Alloc Ratio |
-|---------------------------- |--------------- |----------:|----------:|----------:|-------:|--------:|----------:|------------:|
-| DirectSqlClientCommand      | .NET 10.0      | 0.0403 ns | 0.0126 ns | 0.0033 ns |   1.01 |    0.10 |         - |          NA |
-| InterceptedSqlClientCommand | .NET 10.0      | 5.1818 ns | 0.0220 ns | 0.0057 ns | 129.29 |    9.23 |         - |          NA |
-|                             |                |           |           |           |        |         |           |             |
-| DirectSqlClientCommand      | NativeAOT 10.0 | 0.0000 ns | 0.0000 ns | 0.0000 ns |      ? |       ? |         - |           ? |
-| InterceptedSqlClientCommand | NativeAOT 10.0 | 8.6665 ns | 0.1217 ns | 0.0316 ns |      ? |       ? |         - |           ? |
+| Method                      | Runtime        | Mean       | Error     | StdDev    | Ratio  | RatioSD | Allocated | Alloc Ratio |
+|---------------------------- |--------------- |-----------:|----------:|----------:|-------:|--------:|----------:|------------:|
+| DirectSqlClientCommand      | .NET 10.0      |  0.0388 ns | 0.0551 ns | 0.0143 ns |   1.12 |    0.55 |         - |          NA |
+| InterceptedSqlClientCommand | .NET 10.0      |  6.4531 ns | 1.7440 ns | 0.4529 ns | 186.09 |   63.75 |         - |          NA |
+|                             |                |            |           |           |        |         |           |             |
+| DirectSqlClientCommand      | NativeAOT 10.0 |  0.0000 ns | 0.0000 ns | 0.0000 ns |      ? |       ? |         - |           ? |
+| InterceptedSqlClientCommand | NativeAOT 10.0 | 10.1629 ns | 2.1380 ns | 0.5552 ns |      ? |       ? |         - |           ? |
