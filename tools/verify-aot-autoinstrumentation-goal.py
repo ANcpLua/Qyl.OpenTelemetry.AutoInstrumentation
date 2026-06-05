@@ -14,6 +14,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("contract coverage report", [sys.executable, "tools/verify-contract-coverage-report.py"]),
     ("release build", ["dotnet", "build", "Qyl.AutoInstrumentation.slnx", "-c", "Release"]),
     ("package layout", [sys.executable, "tools/verify-package-layout.py"]),
+    ("rfc artifact", [sys.executable, "tools/verify-rfc-artifact.py"]),
     ("projectreference behavior", [sys.executable, "tools/verify-projectreference-behavior.py"]),
     ("public api baseline", [sys.executable, "tools/verify-public-api-baseline.py"]),
     ("environment options behavior", [sys.executable, "tools/verify-environment-options-behavior.py"]),
