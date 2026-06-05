@@ -38,6 +38,8 @@ FORBIDDEN_PHRASES = [
     "runtime IL rewrite substrate",
     "StartupHook substrate",
     "AssemblyLoadContext substrate",
+    "still needed for a complete 100/100 score",
+    "Collector-backed OTLP transport fixtures, full runtime XML-doc enforcement",
 ]
 
 
