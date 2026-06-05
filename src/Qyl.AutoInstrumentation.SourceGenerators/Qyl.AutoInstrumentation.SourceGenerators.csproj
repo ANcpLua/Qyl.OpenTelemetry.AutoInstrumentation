@@ -11,6 +11,8 @@
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
 
     <!-- Inherited AOT/trim flags are meaningless on netstandard2.0 — turn them off so the build
          stays warning-free under TreatWarningsAsErrors. -->

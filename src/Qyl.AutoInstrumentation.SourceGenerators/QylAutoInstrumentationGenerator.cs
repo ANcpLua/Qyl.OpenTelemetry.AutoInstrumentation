@@ -7,6 +7,15 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Qyl.AutoInstrumentation.SourceGenerators;
 
+/// <summary>
+/// Emits the qyl source-level auto-instrumentation interceptors used by NativeAOT consumers.
+/// </summary>
+/// <remarks>
+/// The generator runs in the compiler, discovers source-visible invocation expressions, obtains
+/// Roslyn <c>InterceptableLocation</c> data, and emits ordinary C# interceptor methods. Runtime
+/// instrumentation stays in public qyl helper APIs; the generator never emits profiler, startup
+/// hook, reflection, or runtime IL-rewrite code.
+/// </remarks>
 [Generator(LanguageNames.CSharp)]
 public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 {
@@ -15,6 +24,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
+    /// <summary>
+    /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
+    /// </summary>
+    /// <param name="context">Roslyn initialization context supplied by the compiler host.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(static output =>

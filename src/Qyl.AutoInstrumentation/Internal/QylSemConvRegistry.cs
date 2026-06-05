@@ -9,8 +9,8 @@ namespace Qyl.AutoInstrumentation.Internal;
 /// The substrate-era code built this with <c>Assembly.Load</c> + <c>Type.GetFields</c> reflection
 /// over the <c>Qyl.OpenTelemetry.SemanticConventions</c> packages at process startup. That path is
 /// NOT AOT-safe (the trim/AOT analyzers reject <c>Assembly.GetTypes()</c>), so the build-time
-/// source generator now emits a <c>FrozenSet&lt;string&gt;</c> partial via
-/// <see cref="Qyl.AutoInstrumentation.SourceGenerators"/>. The fallback below keeps the file
+/// source generator now emits a <c>FrozenSet&lt;string&gt;</c> partial from the
+/// <c>Qyl.AutoInstrumentation.SourceGenerators</c> assembly. The fallback below keeps the file
 /// compile-clean before the generator runs in a fresh checkout.
 /// </para>
 /// </summary>
