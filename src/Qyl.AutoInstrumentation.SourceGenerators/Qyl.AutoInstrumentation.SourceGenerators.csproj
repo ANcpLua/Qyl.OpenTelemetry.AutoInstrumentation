@@ -9,6 +9,7 @@
 
     <IsRoslynComponent>true</IsRoslynComponent>
     <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 
     <!-- Inherited AOT/trim flags are meaningless on netstandard2.0 — turn them off so the build

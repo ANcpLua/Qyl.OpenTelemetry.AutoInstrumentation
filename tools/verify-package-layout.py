@@ -21,6 +21,8 @@ CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentati
 
 REQUIRED_PACKAGE_ENTRIES = {
     "analyzers/dotnet/cs/Qyl.AutoInstrumentation.SourceGenerators.dll",
+    "build/Qyl.AutoInstrumentation.targets",
+    "build/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs",
     "buildTransitive/Qyl.AutoInstrumentation.targets",
     "buildTransitive/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs",
 }
@@ -122,24 +124,26 @@ def pack_runtime(feed: Path, env: dict[str, str]) -> Path:
     return package
 
 
-def verify_targets(text: str) -> None:
+def verify_targets(name: str, text: str) -> None:
     for token in [
+        "QylAutoInstrumentationCoreBuildAssetsImported",
+        "_QylAutoInstrumentationCoreBuildAssetsAlreadyImported",
         "<InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>",
         "<InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsPreviewNamespaces>",
         "Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs",
     ]:
         if token not in text:
-            fail(f"buildTransitive targets missing token: {token}")
+            fail(f"{name} missing token: {token}")
 
 
-def verify_intercepts_attribute(text: str) -> None:
+def verify_intercepts_attribute(name: str, text: str) -> None:
     for token in [
         "namespace System.Runtime.CompilerServices",
         "internal sealed class InterceptsLocationAttribute",
         "public InterceptsLocationAttribute(int version, string data)",
     ]:
         if token not in text:
-            fail(f"InterceptsLocation attribute source missing token: {token}")
+            fail(f"{name} missing token: {token}")
 
 
 def verify_package(package: Path) -> None:
@@ -155,19 +159,31 @@ def verify_package(package: Path) -> None:
                 if token in lowered:
                     fail(f"package contains forbidden mechanism entry token {token}: {name}")
 
-        targets = archive.read("buildTransitive/Qyl.AutoInstrumentation.targets").decode("utf-8")
-        attribute = archive.read("buildTransitive/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs").decode("utf-8")
+        build_targets = archive.read("build/Qyl.AutoInstrumentation.targets").decode("utf-8")
+        build_attribute = archive.read("build/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs").decode("utf-8")
+        transitive_targets = archive.read("buildTransitive/Qyl.AutoInstrumentation.targets").decode("utf-8")
+        transitive_attribute = archive.read("buildTransitive/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs").decode("utf-8")
         nuspec_name = next((name for name in names if name.endswith(".nuspec")), None)
         if nuspec_name is None:
             fail("package nuspec missing")
 
         nuspec = archive.read(nuspec_name).decode("utf-8")
-        verify_targets(targets)
-        verify_intercepts_attribute(attribute)
+        if build_targets != transitive_targets:
+            fail("build and buildTransitive targets diverged")
+
+        if build_attribute != transitive_attribute:
+            fail("build and buildTransitive InterceptsLocationAttribute sources diverged")
+
+        verify_targets("build targets", build_targets)
+        verify_targets("buildTransitive targets", transitive_targets)
+        verify_intercepts_attribute("build InterceptsLocationAttribute source", build_attribute)
+        verify_intercepts_attribute("buildTransitive InterceptsLocationAttribute source", transitive_attribute)
 
         for name, text in [
-            ("targets", targets),
-            ("InterceptsLocationAttribute", attribute),
+            ("build targets", build_targets),
+            ("build InterceptsLocationAttribute", build_attribute),
+            ("buildTransitive targets", transitive_targets),
+            ("buildTransitive InterceptsLocationAttribute", transitive_attribute),
             ("nuspec", nuspec),
         ]:
             for token in FORBIDDEN_CONTENT_TOKENS:

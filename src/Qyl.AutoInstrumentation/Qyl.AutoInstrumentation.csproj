@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="build\**\*.cs" />
+    <Compile Remove="buildTransitive\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
     <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" Version="3.0.1" />
@@ -23,6 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="build\Qyl.AutoInstrumentation.targets"
+          Pack="true"
+          PackagePath="build\" />
+    <None Include="build\Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
+          Pack="true"
+          PackagePath="build\" />
     <None Include="buildTransitive\Qyl.AutoInstrumentation.targets"
           Pack="true"
           PackagePath="buildTransitive\" />

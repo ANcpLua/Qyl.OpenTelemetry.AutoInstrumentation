@@ -55,6 +55,21 @@ Runtime projects inherit `IsAotCompatible`, trim, AOT, and single-file analyzers
 `PublishAot=true` excludes the generator project so NativeAOT publish never tries to publish a
 build-time Roslyn assembly.
 
+Zero-code interception is a package build-asset contract. A normal consumer uses
+`PackageReference` to `Qyl.AutoInstrumentation`, which supplies the analyzer plus `build/` and
+`buildTransitive/` targets for `InterceptsLocationAttribute` and the interceptor namespace.
+Source-tree dogfooding through `ProjectReference` must make the same build-time pieces explicit:
+reference `Qyl.AutoInstrumentation.csproj` as runtime, reference
+`Qyl.AutoInstrumentation.SourceGenerators.csproj` with
+`OutputItemType="Analyzer" ReferenceOutputAssembly="false"`, and import
+`src/Qyl.AutoInstrumentation/buildTransitive/Qyl.AutoInstrumentation.targets`. For NativeAOT
+publish in that source-tree path, prebuild the generator and include its output DLL as an
+`Analyzer`; do not let `PublishAot=true` traverse the netstandard2.0 generator project. A bare
+runtime `ProjectReference` is not a supported zero-code path because MSBuild resolves it as a
+reference assembly, not as compiler analyzer/build assets.
+`tools/verify-projectreference-behavior.py` proves the supported ProjectReference dogfooding path
+under managed execution and NativeAOT.
+
 Current evidence proves the qyl runtime closure is NativeAOT-clean and emits spans under
 NativeAOT. Library-specific packages call out upstream app-side warning boundaries when the
 instrumented library itself is not warning-clean. The active generator direction is compile-time
