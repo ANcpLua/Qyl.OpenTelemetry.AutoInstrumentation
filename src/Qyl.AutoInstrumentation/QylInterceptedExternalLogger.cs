@@ -13,7 +13,7 @@ public static class QylInterceptedExternalLogger
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, instrumentationId))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity(GetActivityName(instrumentationId), ActivityKind.Internal);
+        var activity = QylActivitySource.StartActivity(GetActivityName(instrumentationId), ActivityKind.Internal);
         if (activity is null)
             return null;
 

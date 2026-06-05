@@ -17,4 +17,9 @@ public static class QylActivitySource
     public static readonly ActivitySource Source = new(
         Name,
         QylInstrumentation.Version);
+
+    internal static Activity? StartActivity(string operationName, ActivityKind activityKind)
+        => Source.HasListeners()
+            ? Source.StartActivity(operationName, activityKind)
+            : null;
 }

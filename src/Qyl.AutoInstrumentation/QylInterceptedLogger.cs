@@ -66,7 +66,7 @@ public static class QylInterceptedLogger
         if (severity is null || !logger.IsEnabled(logLevel))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("ILogger log", ActivityKind.Internal);
+        var activity = QylActivitySource.StartActivity("ILogger log", ActivityKind.Internal);
         if (activity is null)
             return null;
 

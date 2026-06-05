@@ -15,7 +15,7 @@ public sealed class QylAutoInstrumentationOptions
 
     public static QylAutoInstrumentationOptions Current => CurrentHolder.Value;
 
-    private readonly IReadOnlyDictionary<string, bool> _instrumentationEnabled;
+    private readonly IReadOnlyDictionary<InstrumentationLookupKey, bool> _instrumentationEnabled;
 
     private QylAutoInstrumentationOptions(
         bool globalEnabled,
@@ -24,7 +24,7 @@ public sealed class QylAutoInstrumentationOptions
         bool logsEnabled,
         bool captureSensitiveValues,
         bool conformanceProcessorEnabled,
-        IReadOnlyDictionary<string, bool> instrumentationEnabled,
+        IReadOnlyDictionary<InstrumentationLookupKey, bool> instrumentationEnabled,
         bool entityFrameworkCoreSetDbStatementForText,
         bool graphQlSetDocument,
         bool oracleMdaSetDbStatementForText,
@@ -135,7 +135,7 @@ public sealed class QylAutoInstrumentationOptions
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
-        return _instrumentationEnabled.TryGetValue(BuildKey(signal, instrumentationId), out var enabled)
+        return _instrumentationEnabled.TryGetValue(new InstrumentationLookupKey(signal, instrumentationId), out var enabled)
             ? enabled
             : IsSignalEnabled(signal);
     }
@@ -204,7 +204,7 @@ public sealed class QylAutoInstrumentationOptions
         var tracesEnabled = ReadBoolean(TracesEnabledVariable) ?? globalEnabled;
         var metricsEnabled = ReadBoolean(MetricsEnabledVariable) ?? globalEnabled;
         var logsEnabled = ReadBoolean(LogsEnabledVariable) ?? globalEnabled;
-        var instrumentationEnabled = new Dictionary<string, bool>(StringComparer.Ordinal);
+        var instrumentationEnabled = new Dictionary<InstrumentationLookupKey, bool>();
 
         AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Traces, tracesEnabled, TraceInstrumentationIds);
         AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Metrics, metricsEnabled, MetricInstrumentationIds);
@@ -217,7 +217,7 @@ public sealed class QylAutoInstrumentationOptions
             logsEnabled,
             ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
             ReadBoolean(ConformanceEnabledVariable) ?? false,
-            new ReadOnlyDictionary<string, bool>(instrumentationEnabled),
+            new ReadOnlyDictionary<InstrumentationLookupKey, bool>(instrumentationEnabled),
             ReadBoolean("OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT") ?? false,
             ReadBoolean("OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT") ?? false,
             ReadBoolean("OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT") ?? false,
@@ -237,7 +237,7 @@ public sealed class QylAutoInstrumentationOptions
     }
 
     private static void AddSignalInstrumentations(
-        Dictionary<string, bool> target,
+        Dictionary<InstrumentationLookupKey, bool> target,
         QylAutoInstrumentationSignal signal,
         bool signalDefault,
         string[] instrumentationIds)
@@ -247,7 +247,7 @@ public sealed class QylAutoInstrumentationOptions
         foreach (var instrumentationId in instrumentationIds)
         {
             var variable = BuildSignalSpecificVariable(signal, instrumentationId);
-            target[BuildKey(signal, instrumentationId)] = ReadBoolean(variable) ?? signalDefault;
+            target[new InstrumentationLookupKey(signal, instrumentationId)] = ReadBoolean(variable) ?? signalDefault;
         }
     }
 
@@ -279,9 +279,6 @@ public sealed class QylAutoInstrumentationOptions
             QylAutoInstrumentationSignal.Logs => "OTEL_DOTNET_AUTO_LOGS_" + instrumentationId + "_INSTRUMENTATION_ENABLED",
             _ => throw new ArgumentOutOfRangeException(nameof(signal), signal, null),
         };
-
-    private static string BuildKey(QylAutoInstrumentationSignal signal, string instrumentationId)
-        => signal.ToString() + ":" + instrumentationId;
 
     private static bool? ReadBoolean(string variable)
     {
@@ -320,5 +317,27 @@ public sealed class QylAutoInstrumentationOptions
             .Select(static item => item.ToLower(CultureInfo.InvariantCulture))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+    }
+
+    private readonly struct InstrumentationLookupKey : IEquatable<InstrumentationLookupKey>
+    {
+        private readonly QylAutoInstrumentationSignal signal;
+        private readonly string instrumentationId;
+
+        internal InstrumentationLookupKey(QylAutoInstrumentationSignal signal, string instrumentationId)
+        {
+            this.signal = signal;
+            this.instrumentationId = instrumentationId;
+        }
+
+        public bool Equals(InstrumentationLookupKey other)
+            => signal == other.signal &&
+               string.Equals(instrumentationId, other.instrumentationId, StringComparison.Ordinal);
+
+        public override bool Equals(object? obj)
+            => obj is InstrumentationLookupKey other && Equals(other);
+
+        public override int GetHashCode()
+            => HashCode.Combine(signal, StringComparer.Ordinal.GetHashCode(instrumentationId));
     }
 }

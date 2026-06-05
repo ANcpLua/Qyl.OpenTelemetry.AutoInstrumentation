@@ -10,7 +10,7 @@ public static class QylInterceptedAzure
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Azure))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Azure SDK", ActivityKind.Client);
+        var activity = QylActivitySource.StartActivity("Azure SDK", ActivityKind.Client);
         if (activity is null)
             return null;
 

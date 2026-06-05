@@ -14,7 +14,7 @@ public static class QylInterceptedElastic
         var activityName = string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal)
             ? "Elastic transport request"
             : "Elasticsearch request";
-        var activity = QylActivitySource.Source.StartActivity(activityName, ActivityKind.Client);
+        var activity = QylActivitySource.StartActivity(activityName, ActivityKind.Client);
         if (activity is null)
             return null;
 

@@ -10,7 +10,7 @@ public static class QylInterceptedRedis
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.StackExchangeRedis))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Redis command", ActivityKind.Client);
+        var activity = QylActivitySource.StartActivity("Redis command", ActivityKind.Client);
         if (activity is null)
             return null;
 

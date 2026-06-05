@@ -133,9 +133,9 @@ pretending that profiler mechanics survive NativeAOT unchanged.
 - Some third-party libraries may publish under NativeAOT only with their own warnings or
   app-side constraints. Those warnings belong to that library boundary and must be called
   out instead of hidden inside qyl.
-- Benchmarks, collector-backed OTLP transport fixtures, full runtime XML-doc enforcement, and
-  release evidence are separate quality gates still needed for a complete 100/100 score.
-  Generator-output snapshots, source-generator XML-doc enforcement, the NativeAOT web API proof,
-  and canonical OTLP-shaped fixtures are now covered by committed gates.
+- Collector-backed OTLP transport fixtures, full runtime XML-doc enforcement, and release evidence
+  are separate quality gates still needed for a complete 100/100 score. BenchmarkDotNet JIT/NativeAOT
+  hot-path reports, generator-output snapshots, source-generator XML-doc enforcement, the NativeAOT
+  web API proof, and canonical OTLP-shaped fixtures are now covered by committed gates.
 
-// validated 2026-06-05 18:34 CEST by tools/verify-rfc-artifact.py and tools/verify-aot-autoinstrumentation-goal.py
+// validated 2026-06-05 19:46 CEST by tools/verify-rfc-artifact.py, tools/verify-benchmark-report.py, and tools/verify-aot-autoinstrumentation-goal.py

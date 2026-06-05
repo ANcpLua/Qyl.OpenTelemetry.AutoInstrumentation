@@ -18,6 +18,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("projectreference behavior", [sys.executable, "tools/verify-projectreference-behavior.py"]),
     ("public api baseline", [sys.executable, "tools/verify-public-api-baseline.py"]),
     ("xml doc enforcement", [sys.executable, "tools/verify-xml-doc-enforcement.py"]),
+    ("benchmark report", [sys.executable, "tools/verify-benchmark-report.py"]),
     ("environment options behavior", [sys.executable, "tools/verify-environment-options-behavior.py"]),
     ("conformance opt-in", [sys.executable, "tools/verify-conformance-opt-in.py"]),
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),

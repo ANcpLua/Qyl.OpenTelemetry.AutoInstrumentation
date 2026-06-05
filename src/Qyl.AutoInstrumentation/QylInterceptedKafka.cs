@@ -36,7 +36,7 @@ public static class QylInterceptedKafka
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Kafka))
             return null;
 
-        var activity = QylActivitySource.Source.StartActivity("Kafka message", activityKind);
+        var activity = QylActivitySource.StartActivity("Kafka message", activityKind);
         if (activity is null)
             return null;
 
