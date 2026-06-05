@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Grpc.Core;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -23,7 +24,7 @@ public static class QylInterceptedGrpcNetClient
         activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         activity.SetTag(QylSemanticAttributes.RpcService, service);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
-        SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcRequestMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadata, requestMetadata);
+        SetConfiguredMetadata(activity, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadataMap, requestMetadata);
         return activity;
     }
 
@@ -87,21 +88,21 @@ public static class QylInterceptedGrpcNetClient
         => activity?.Dispose();
 
     private static void SetResponseMetadata(Activity? activity, Metadata? metadata)
-        => SetConfiguredMetadata(activity, QylSemanticAttributes.GrpcResponseMetadataPrefix, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadata, metadata);
+        => SetConfiguredMetadata(activity, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadataMap, metadata);
 
-    private static void SetConfiguredMetadata(Activity? activity, string prefix, string[] configuredMetadata, Metadata? metadata)
+    private static void SetConfiguredMetadata(Activity? activity, QylCapturedNameMap configuredMetadata, Metadata? metadata)
     {
-        if (activity is null || metadata is null || configuredMetadata.Length is 0)
+        if (activity is null || metadata is null || configuredMetadata.Count is 0)
             return;
 
-        foreach (var metadataName in configuredMetadata)
+        for (var index = 0; index < configuredMetadata.Count; index++)
         {
-            var normalizedName = NormalizeMetadataName(metadataName);
+            var lookupName = configuredMetadata.GetLookupName(index);
             List<string>? values = null;
             foreach (var entry in metadata)
             {
                 if (entry.IsBinary ||
-                    !string.Equals(entry.Key, normalizedName, StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(entry.Key, lookupName, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -110,12 +111,9 @@ public static class QylInterceptedGrpcNetClient
             }
 
             if (values is { Count: > 0 })
-                activity.SetTag(prefix + normalizedName, values.ToArray());
+                activity.SetTag(configuredMetadata.GetTagName(index), values.Count is 1 ? values[0] : values.ToArray());
         }
     }
-
-    private static string NormalizeMetadataName(string metadataName)
-        => metadataName.Trim().ToLowerInvariant().Replace('_', '-');
 
     private static string GetServiceName(string clientTypeName)
     {

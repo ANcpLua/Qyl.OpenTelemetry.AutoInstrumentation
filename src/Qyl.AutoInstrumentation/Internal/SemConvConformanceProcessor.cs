@@ -18,12 +18,20 @@ namespace Qyl.AutoInstrumentation.Internal;
 /// </summary>
 internal static class SemConvConformanceProcessor
 {
+    private static int _explicitlyEnabled;
+
+    internal static void Enable()
+        => Interlocked.Exchange(ref _explicitlyEnabled, 1);
+
     /// <summary>
     /// Inspect a stopped <see cref="Activity"/> and emit one <c>qyl.semconv.attribute.checks</c>
     /// observation per attribute key.
     /// </summary>
     public static void OnActivityStopped(Activity activity)
     {
+        if (!IsEnabled())
+            return;
+
         try
         {
             foreach (var tag in activity.TagObjects)
@@ -40,4 +48,8 @@ internal static class SemConvConformanceProcessor
                 new KeyValuePair<string, object?>(QylSemanticAttributes.ExceptionType, exception.GetType().Name));
         }
     }
+
+    private static bool IsEnabled()
+        => Volatile.Read(ref _explicitlyEnabled) is 1 ||
+           QylAutoInstrumentationOptions.Current.ConformanceProcessorEnabled;
 }

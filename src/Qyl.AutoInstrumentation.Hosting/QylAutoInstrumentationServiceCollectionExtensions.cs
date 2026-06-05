@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation.Hosting;
 
@@ -21,4 +22,27 @@ public static class QylAutoInstrumentationServiceCollectionExtensions
         QylAutoInstrumentationBootstrap.Boot();
         return services;
     }
+
+    /// <summary>Idempotently activate qyl auto-instrumentation with explicit hosting options.</summary>
+    public static IServiceCollection AddQylAutoInstrumentation(
+        this IServiceCollection services,
+        Action<QylAutoInstrumentationHostingOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+
+        var options = new QylAutoInstrumentationHostingOptions();
+        configure(options);
+        if (options.EnableConformanceProcessor)
+            SemConvConformanceProcessor.Enable();
+
+        QylAutoInstrumentationBootstrap.Boot();
+        return services;
+    }
+}
+
+/// <summary>Options for explicit qyl hosting activation.</summary>
+public sealed class QylAutoInstrumentationHostingOptions
+{
+    /// <summary>Enable the development-only semconv conformance counter.</summary>
+    public bool EnableConformanceProcessor { get; set; }
 }

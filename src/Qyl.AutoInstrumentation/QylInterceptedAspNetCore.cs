@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -86,7 +87,7 @@ public static class QylInterceptedAspNetCore
         if (route is not null)
             activity.SetTag(QylSemanticAttributes.HttpRoute, route);
 
-        SetConfiguredHeaders(activity, QylSemanticAttributes.HttpRequestHeaderPrefix, options.AspNetCoreCapturedRequestHeaders, context.Request.Headers);
+        SetConfiguredHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, context.Request.Headers);
         return activity;
     }
 
@@ -126,7 +127,7 @@ public static class QylInterceptedAspNetCore
             return;
 
         activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, context.Response.StatusCode);
-        SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaders, context.Response.Headers);
+        SetConfiguredHeaders(activity, QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaderMap, context.Response.Headers);
         if (context.Response.StatusCode >= 500)
         {
             activity.SetTag(QylSemanticAttributes.ErrorType, context.Response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -137,20 +138,17 @@ public static class QylInterceptedAspNetCore
     private static RequestDelegate Observe(RequestDelegate requestDelegate)
         => requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
 
-    private static void SetConfiguredHeaders(Activity activity, string prefix, string[] configuredHeaders, IHeaderDictionary headers)
+    private static void SetConfiguredHeaders(Activity activity, QylCapturedNameMap configuredHeaders, IHeaderDictionary headers)
     {
-        if (configuredHeaders.Length is 0)
+        if (configuredHeaders.Count is 0)
             return;
 
-        foreach (var headerName in configuredHeaders)
+        for (var index = 0; index < configuredHeaders.Count; index++)
         {
-            if (headers.TryGetValue(headerName, out var values) && values.Count > 0)
-                activity.SetTag(prefix + NormalizeHeaderName(headerName), values.ToArray());
+            if (headers.TryGetValue(configuredHeaders.GetLookupName(index), out var values) && values.Count > 0)
+                activity.SetTag(configuredHeaders.GetTagName(index), values.Count is 1 ? values[0] : values.ToArray());
         }
     }
-
-    private static string NormalizeHeaderName(string headerName)
-        => headerName.Trim().ToLowerInvariant().Replace('_', '-');
 
     private static string TrimQueryPrefix(string? query)
         => string.IsNullOrEmpty(query) || query[0] is not '?'

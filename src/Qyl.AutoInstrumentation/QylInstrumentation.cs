@@ -16,8 +16,8 @@ public static class QylInstrumentation
     private static int _activated;
 
     /// <summary>
-    /// Activate qyl: subscribe an <see cref="ActivityListener"/> that runs the M3 semconv-
-    /// conformance check on every emitted span from the qyl ActivitySource. Idempotent.
+    /// Activate qyl: subscribe an <see cref="ActivityListener"/> for qyl spans. The M3 semconv
+    /// conformance counter remains default-off and is checked only after explicit opt-in.
     /// </summary>
     /// <returns><c>true</c> on the first activation, <c>false</c> on subsequent calls.</returns>
     public static bool Activate()

@@ -16,6 +16,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("package layout", [sys.executable, "tools/verify-package-layout.py"]),
     ("projectreference behavior", [sys.executable, "tools/verify-projectreference-behavior.py"]),
     ("environment options behavior", [sys.executable, "tools/verify-environment-options-behavior.py"]),
+    ("conformance opt-in", [sys.executable, "tools/verify-conformance-opt-in.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
     ("consumer behavior", [sys.executable, "tools/verify-consumer-behavior.py"]),
     ("nativeaot consumer golden", [sys.executable, "tools/verify-nativeaot-consumer-golden.py"]),

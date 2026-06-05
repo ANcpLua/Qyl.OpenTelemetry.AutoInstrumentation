@@ -134,6 +134,11 @@ The agent emits runtime values only when the instrumented library supplied them 
 `DiagnosticSource` payloads or the current `Activity`. It does not invent fallback URLs, database
 names, SQL statements, routes, methods, status codes, or RPC methods.
 
+The semconv conformance processor is a development gate, not a production hot-path cost. Its
+`qyl.semconv.attribute.checks` counter is default-off and runs only when
+`QYL_CONFORMANCE_ENABLED=1` is set or the host calls
+`AddQylAutoInstrumentation(o => o.EnableConformanceProcessor = true)`.
+
 Semantic rules live in the diagnostic listener layer:
 
 - Stable OpenTelemetry keys are emitted; deprecated aliases such as `http.url`, `http.status_code`,

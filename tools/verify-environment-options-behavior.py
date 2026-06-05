@@ -29,6 +29,7 @@ Console.WriteLine("global=" + options.GlobalEnabled);
 Console.WriteLine("traces=" + options.TracesEnabled);
 Console.WriteLine("metrics=" + options.MetricsEnabled);
 Console.WriteLine("logs=" + options.LogsEnabled);
+Console.WriteLine("conformance=" + options.ConformanceProcessorEnabled);
 Console.WriteLine("trace.http=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient));
 Console.WriteLine("trace.sql=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.SqlClient));
 Console.WriteLine("metric.http=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient));
@@ -59,6 +60,7 @@ DEFAULT_EXPECTED = """global=True
 traces=True
 metrics=True
 logs=True
+conformance=False
 trace.http=True
 trace.sql=True
 metric.http=True
@@ -88,6 +90,7 @@ GLOBAL_DISABLED_HTTP_TRACE_ENABLED_EXPECTED = """global=False
 traces=False
 metrics=False
 logs=False
+conformance=False
 trace.http=True
 trace.sql=False
 metric.http=False
@@ -117,6 +120,7 @@ SIGNAL_AND_SPECIFIC_OVERRIDES_EXPECTED = """global=False
 traces=True
 metrics=True
 logs=True
+conformance=False
 trace.http=True
 trace.sql=False
 metric.http=True
@@ -146,6 +150,7 @@ OPTIONS_EXPECTED = """global=True
 traces=True
 metrics=True
 logs=True
+conformance=True
 trace.http=True
 trace.sql=True
 metric.http=True
@@ -353,6 +358,7 @@ def main() -> None:
                     "OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION": "true",
                     "OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION": "true",
                     "OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED": "true",
+                    "QYL_CONFORMANCE_ENABLED": "true",
                 },
             ),
             OPTIONS_EXPECTED,

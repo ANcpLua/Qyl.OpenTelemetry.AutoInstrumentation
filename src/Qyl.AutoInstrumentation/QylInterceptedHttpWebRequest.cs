@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -41,7 +42,7 @@ public static class QylInterceptedHttpWebRequest
             }
         }
 
-        SetConfiguredHeaders(activity, QylSemanticAttributes.HttpRequestHeaderPrefix, options.HttpClientCapturedRequestHeaders, request.Headers);
+        SetConfiguredHeaders(activity, options.HttpClientCapturedRequestHeaderMap, request.Headers);
         return activity;
     }
 
@@ -72,7 +73,7 @@ public static class QylInterceptedHttpWebRequest
         if (activity is not null)
         {
             activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
-            SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaders, response.Headers);
+            SetConfiguredHeaders(activity, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap, response.Headers);
             if (markErrorForStatus && statusCode >= 400)
             {
                 activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -91,21 +92,18 @@ public static class QylInterceptedHttpWebRequest
             statusCode);
     }
 
-    private static void SetConfiguredHeaders(Activity activity, string prefix, string[] configuredHeaders, WebHeaderCollection headers)
+    private static void SetConfiguredHeaders(Activity activity, QylCapturedNameMap configuredHeaders, WebHeaderCollection headers)
     {
-        if (configuredHeaders.Length is 0)
+        if (configuredHeaders.Count is 0)
             return;
 
-        foreach (var headerName in configuredHeaders)
+        for (var index = 0; index < configuredHeaders.Count; index++)
         {
-            var values = headers.GetValues(headerName);
+            var values = headers.GetValues(configuredHeaders.GetLookupName(index));
             if (values is { Length: > 0 })
-                activity.SetTag(prefix + NormalizeHeaderName(headerName), values);
+                activity.SetTag(configuredHeaders.GetTagName(index), values.Length is 1 ? values[0] : values);
         }
     }
-
-    private static string NormalizeHeaderName(string headerName)
-        => headerName.Trim().ToLowerInvariant().Replace('_', '-');
 
     private static string RedactQuery(string url)
     {

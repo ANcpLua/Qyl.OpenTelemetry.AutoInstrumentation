@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -475,7 +476,7 @@ public static class QylInterceptedHttpClient
     {
         var observation = StartHttpClientObservation(request.Method.Method, request.RequestUri, null);
         if (observation.Activity is not null)
-            SetConfiguredHeaders(observation.Activity, QylSemanticAttributes.HttpRequestHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaders, request.Headers, request.Content?.Headers);
+            SetConfiguredHeaders(observation.Activity, QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaderMap, request.Headers, request.Content?.Headers);
 
         return observation;
     }
@@ -542,7 +543,7 @@ public static class QylInterceptedHttpClient
         if (activity is not null)
         {
             activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
-            SetConfiguredHeaders(activity, QylSemanticAttributes.HttpResponseHeaderPrefix, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaders, response.Headers, response.Content?.Headers);
+            SetConfiguredHeaders(activity, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap, response.Headers, response.Content?.Headers);
 
             if (statusCode >= 400)
             {
@@ -602,26 +603,38 @@ public static class QylInterceptedHttpClient
             : url[..queryStart] + "?Redacted" + url[fragmentStart..];
     }
 
-    private static void SetConfiguredHeaders(Activity activity, string prefix, IReadOnlyList<string> configuredHeaders, params System.Net.Http.Headers.HttpHeaders?[] headerSources)
+    private static void SetConfiguredHeaders(Activity activity, QylCapturedNameMap configuredHeaders, params System.Net.Http.Headers.HttpHeaders?[] headerSources)
     {
         if (configuredHeaders.Count is 0)
             return;
 
-        foreach (var headerName in configuredHeaders)
+        for (var index = 0; index < configuredHeaders.Count; index++)
         {
+            var lookupName = configuredHeaders.GetLookupName(index);
             foreach (var source in headerSources)
             {
-                if (source is null || !source.TryGetValues(headerName, out var values))
+                if (source is null || !source.TryGetValues(lookupName, out var values))
                     continue;
 
-                activity.SetTag(prefix + NormalizeHeaderName(headerName), values.ToArray());
+                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValue(values));
                 break;
             }
         }
     }
 
-    private static string NormalizeHeaderName(string headerName)
-        => headerName.Replace('_', '-').ToLower(CultureInfo.InvariantCulture);
+    private static object ToTagValue(IEnumerable<string> values)
+    {
+        if (values is string[] array)
+            return array.Length is 1 ? array[0] : array;
+
+        if (values is IReadOnlyCollection<string> { Count: 1 })
+        {
+            foreach (var value in values)
+                return value;
+        }
+
+        return values.ToArray();
+    }
 
     private readonly record struct HttpClientObservation(
         Activity? Activity,

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -10,14 +11,11 @@ public sealed class QylAutoInstrumentationOptions
     private const string MetricsEnabledVariable = "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED";
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
     private const string CaptureSensitiveValuesVariable = "QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES";
+    private const string ConformanceEnabledVariable = "QYL_CONFORMANCE_ENABLED";
 
     public static QylAutoInstrumentationOptions Current => CurrentHolder.Value;
 
     private readonly IReadOnlyDictionary<string, bool> _instrumentationEnabled;
-
-    static QylAutoInstrumentationOptions()
-    {
-    }
 
     private QylAutoInstrumentationOptions(
         bool globalEnabled,
@@ -25,6 +23,7 @@ public sealed class QylAutoInstrumentationOptions
         bool metricsEnabled,
         bool logsEnabled,
         bool captureSensitiveValues,
+        bool conformanceProcessorEnabled,
         IReadOnlyDictionary<string, bool> instrumentationEnabled,
         bool entityFrameworkCoreSetDbStatementForText,
         bool graphQlSetDocument,
@@ -48,6 +47,7 @@ public sealed class QylAutoInstrumentationOptions
         MetricsEnabled = metricsEnabled;
         LogsEnabled = logsEnabled;
         CaptureSensitiveValues = captureSensitiveValues;
+        ConformanceProcessorEnabled = conformanceProcessorEnabled;
         _instrumentationEnabled = instrumentationEnabled;
         EntityFrameworkCoreSetDbStatementForText = entityFrameworkCoreSetDbStatementForText;
         GraphQlSetDocument = graphQlSetDocument;
@@ -61,6 +61,12 @@ public sealed class QylAutoInstrumentationOptions
         GrpcNetClientCapturedResponseMetadata = grpcNetClientCapturedResponseMetadata;
         HttpClientCapturedRequestHeaders = httpClientCapturedRequestHeaders;
         HttpClientCapturedResponseHeaders = httpClientCapturedResponseHeaders;
+        AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, aspNetCoreCapturedRequestHeaders);
+        AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, aspNetCoreCapturedResponseHeaders);
+        GrpcNetClientCapturedRequestMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcRequestMetadataPrefix, grpcNetClientCapturedRequestMetadata, normalizeLookupName: true);
+        GrpcNetClientCapturedResponseMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcResponseMetadataPrefix, grpcNetClientCapturedResponseMetadata, normalizeLookupName: true);
+        HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, httpClientCapturedRequestHeaders);
+        HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, httpClientCapturedResponseHeaders);
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
         AspNetUrlQueryRedactionDisabled = aspNetUrlQueryRedactionDisabled;
@@ -76,6 +82,8 @@ public sealed class QylAutoInstrumentationOptions
     public bool LogsEnabled { get; }
 
     public bool CaptureSensitiveValues { get; }
+
+    public bool ConformanceProcessorEnabled { get; }
 
     public bool EntityFrameworkCoreSetDbStatementForText { get; }
 
@@ -101,6 +109,18 @@ public sealed class QylAutoInstrumentationOptions
 
     public string[] HttpClientCapturedResponseHeaders { get; }
 
+    internal QylCapturedNameMap AspNetCoreCapturedRequestHeaderMap { get; }
+
+    internal QylCapturedNameMap AspNetCoreCapturedResponseHeaderMap { get; }
+
+    internal QylCapturedNameMap GrpcNetClientCapturedRequestMetadataMap { get; }
+
+    internal QylCapturedNameMap GrpcNetClientCapturedResponseMetadataMap { get; }
+
+    internal QylCapturedNameMap HttpClientCapturedRequestHeaderMap { get; }
+
+    internal QylCapturedNameMap HttpClientCapturedResponseHeaderMap { get; }
+
     public bool AspNetCoreUrlQueryRedactionDisabled { get; }
 
     public bool HttpClientUrlQueryRedactionDisabled { get; }
@@ -123,48 +143,6 @@ public sealed class QylAutoInstrumentationOptions
     public bool HasAnyActivityInstrumentationEnabled()
         => HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, TraceInstrumentationIds) ||
            HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, LogInstrumentationIds);
-
-    private static class CurrentHolder
-    {
-        internal static readonly QylAutoInstrumentationOptions Value = Load();
-    }
-
-    private static QylAutoInstrumentationOptions Load()
-    {
-        var globalEnabled = ReadBoolean(GlobalEnabledVariable) ?? true;
-        var tracesEnabled = ReadBoolean(TracesEnabledVariable) ?? globalEnabled;
-        var metricsEnabled = ReadBoolean(MetricsEnabledVariable) ?? globalEnabled;
-        var logsEnabled = ReadBoolean(LogsEnabledVariable) ?? globalEnabled;
-        var instrumentationEnabled = new Dictionary<string, bool>(StringComparer.Ordinal);
-
-        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Traces, tracesEnabled, TraceInstrumentationIds);
-        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Metrics, metricsEnabled, MetricInstrumentationIds);
-        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Logs, logsEnabled, LogInstrumentationIds);
-
-        return new QylAutoInstrumentationOptions(
-            globalEnabled,
-            tracesEnabled,
-            metricsEnabled,
-            logsEnabled,
-            ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
-            new ReadOnlyDictionary<string, bool>(instrumentationEnabled),
-            ReadBoolean("OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT") ?? false,
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
-            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION") ?? false,
-            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION") ?? false,
-            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED") ?? false);
-    }
 
     private static readonly string[] TraceInstrumentationIds =
     [
@@ -215,12 +193,57 @@ public sealed class QylAutoInstrumentationOptions
         QylAutoInstrumentationIds.NLog,
     ];
 
+    private static class CurrentHolder
+    {
+        internal static readonly QylAutoInstrumentationOptions Value = Load();
+    }
+
+    private static QylAutoInstrumentationOptions Load()
+    {
+        var globalEnabled = ReadBoolean(GlobalEnabledVariable) ?? true;
+        var tracesEnabled = ReadBoolean(TracesEnabledVariable) ?? globalEnabled;
+        var metricsEnabled = ReadBoolean(MetricsEnabledVariable) ?? globalEnabled;
+        var logsEnabled = ReadBoolean(LogsEnabledVariable) ?? globalEnabled;
+        var instrumentationEnabled = new Dictionary<string, bool>(StringComparer.Ordinal);
+
+        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Traces, tracesEnabled, TraceInstrumentationIds);
+        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Metrics, metricsEnabled, MetricInstrumentationIds);
+        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Logs, logsEnabled, LogInstrumentationIds);
+
+        return new QylAutoInstrumentationOptions(
+            globalEnabled,
+            tracesEnabled,
+            metricsEnabled,
+            logsEnabled,
+            ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
+            ReadBoolean(ConformanceEnabledVariable) ?? false,
+            new ReadOnlyDictionary<string, bool>(instrumentationEnabled),
+            ReadBoolean("OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT") ?? false,
+            ReadBoolean("OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT") ?? false,
+            ReadBoolean("OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT") ?? false,
+            ReadBoolean("OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT") ?? false,
+            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
+            ReadList("OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
+            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION") ?? false,
+            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION") ?? false,
+            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION") ?? false,
+            ReadBoolean("OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED") ?? false);
+    }
+
     private static void AddSignalInstrumentations(
         Dictionary<string, bool> target,
         QylAutoInstrumentationSignal signal,
         bool signalDefault,
         string[] instrumentationIds)
     {
+        ArgumentNullException.ThrowIfNull(instrumentationIds);
+
         foreach (var instrumentationId in instrumentationIds)
         {
             var variable = BuildSignalSpecificVariable(signal, instrumentationId);
