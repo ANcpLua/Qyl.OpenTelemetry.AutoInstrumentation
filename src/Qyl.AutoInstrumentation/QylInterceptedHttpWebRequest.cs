@@ -4,12 +4,17 @@ using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted HTTP Web Request.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedHttpWebRequest);</code></example>
 public static class QylInterceptedHttpWebRequest
 {
 
+    /// <summary>Runs the Get Start Time Utc runtime helper used by source-generated qyl interceptors.</summary>
     public static DateTime GetStartTimeUtc()
         => TimeProvider.System.GetUtcNow().UtcDateTime;
 
+    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(HttpWebRequest request, string methodName)
     {
         var options = QylAutoInstrumentationOptions.Current;
@@ -46,6 +51,7 @@ public static class QylInterceptedHttpWebRequest
         return activity;
     }
 
+    /// <summary>Runs the Record Result runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordResult(Activity? activity, DateTime startTimeUtc, string? method, object? result)
     {
         int? statusCode = null;
@@ -56,6 +62,7 @@ public static class QylInterceptedHttpWebRequest
         RecordDuration(startTimeUtc, method, statusCode);
     }
 
+    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, DateTime startTimeUtc, string? method, Exception exception)
     {
         int? statusCode = null;

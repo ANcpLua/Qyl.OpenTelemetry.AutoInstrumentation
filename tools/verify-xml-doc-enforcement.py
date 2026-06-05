@@ -7,6 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_GENERATOR_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Qyl.AutoInstrumentation.SourceGenerators.csproj"
+RUNTIME_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 
 
 REQUIRED_TOKENS = [
@@ -19,19 +20,19 @@ def fail(message: str) -> None:
     raise SystemExit(message)
 
 
-def verify_project_contract() -> None:
-    text = SOURCE_GENERATOR_PROJECT.read_text(encoding="utf-8")
+def verify_project_contract(project: Path, label: str) -> None:
+    text = project.read_text(encoding="utf-8")
     for token in REQUIRED_TOKENS:
         if token not in text:
-            fail(f"source generator XML-doc enforcement token missing: {token}")
+            fail(f"{label} XML-doc enforcement token missing: {token}")
 
 
-def verify_source_generator_build() -> None:
+def verify_project_build(project: Path, label: str) -> None:
     completed = subprocess.run(
         [
             "dotnet",
             "build",
-            str(SOURCE_GENERATOR_PROJECT),
+            str(project),
             "-c",
             "Release",
             "-v",
@@ -45,15 +46,17 @@ def verify_source_generator_build() -> None:
     )
     if completed.returncode != 0:
         fail(
-            "source generator XML-doc enforcement build failed\n"
+            f"{label} XML-doc enforcement build failed\n"
             f"exit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
         )
 
 
 def main() -> None:
-    verify_project_contract()
-    verify_source_generator_build()
-    print("xml-doc-enforcement-ok scope=source-generator")
+    verify_project_contract(SOURCE_GENERATOR_PROJECT, "source generator")
+    verify_project_contract(RUNTIME_PROJECT, "runtime")
+    verify_project_build(SOURCE_GENERATOR_PROJECT, "source generator")
+    verify_project_build(RUNTIME_PROJECT, "runtime")
+    print("xml-doc-enforcement-ok scope=source-generator,runtime")
 
 
 if __name__ == "__main__":

@@ -4,9 +4,13 @@ using System.Diagnostics;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted database Command.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedDbCommand);</code></example>
 public static class QylInterceptedDbCommand
 {
 
+    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(DbCommand command, string instrumentationId, string operationName)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -40,10 +44,12 @@ public static class QylInterceptedDbCommand
         return activity;
     }
 
+    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordSuccess(Activity? activity)
     {
     }
 
+    /// <summary>Observes an asynchronous database command and records qyl success, exception, and duration telemetry.</summary>
     public static async Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(task);
@@ -68,6 +74,7 @@ public static class QylInterceptedDbCommand
         }
     }
 
+    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);

@@ -4,6 +4,9 @@ using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Auto Instrumentation Options.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylAutoInstrumentationOptions);</code></example>
 public sealed class QylAutoInstrumentationOptions
 {
     private const string GlobalEnabledVariable = "OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED";
@@ -13,6 +16,7 @@ public sealed class QylAutoInstrumentationOptions
     private const string CaptureSensitiveValuesVariable = "QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES";
     private const string ConformanceEnabledVariable = "QYL_CONFORMANCE_ENABLED";
 
+    /// <summary>Well-known Current value used by qyl auto-instrumentation.</summary>
     public static QylAutoInstrumentationOptions Current => CurrentHolder.Value;
 
     private readonly IReadOnlyDictionary<InstrumentationLookupKey, bool> _instrumentationEnabled;
@@ -73,40 +77,58 @@ public sealed class QylAutoInstrumentationOptions
         SqlClientNetFxIlRewriteRequested = sqlClientNetFxIlRewriteRequested;
     }
 
+    /// <summary>Gets the configured Global Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool GlobalEnabled { get; }
 
+    /// <summary>Gets the configured Traces Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool TracesEnabled { get; }
 
+    /// <summary>Gets the configured Metrics Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool MetricsEnabled { get; }
 
+    /// <summary>Gets the configured Logs Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool LogsEnabled { get; }
 
+    /// <summary>Gets the configured Capture Sensitive Values value for the current qyl auto-instrumentation runtime.</summary>
     public bool CaptureSensitiveValues { get; }
 
+    /// <summary>Gets the configured Conformance Processor Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool ConformanceProcessorEnabled { get; }
 
+    /// <summary>Gets the configured Entity Framework Core Set database Statement For Text value for the current qyl auto-instrumentation runtime.</summary>
     public bool EntityFrameworkCoreSetDbStatementForText { get; }
 
+    /// <summary>Gets the configured Graph Ql Set Document value for the current qyl auto-instrumentation runtime.</summary>
     public bool GraphQlSetDocument { get; }
 
+    /// <summary>Gets the configured Oracle Mda Set database Statement For Text value for the current qyl auto-instrumentation runtime.</summary>
     public bool OracleMdaSetDbStatementForText { get; }
 
+    /// <summary>Gets the configured Sql Client Set database Statement For Text value for the current qyl auto-instrumentation runtime.</summary>
     public bool SqlClientSetDbStatementForText { get; }
 
+    /// <summary>Gets the configured ASP.NET Captured Request Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] AspNetCapturedRequestHeaders { get; }
 
+    /// <summary>Gets the configured ASP.NET Captured Response Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] AspNetCapturedResponseHeaders { get; }
 
+    /// <summary>Gets the configured ASP.NET Core Captured Request Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] AspNetCoreCapturedRequestHeaders { get; }
 
+    /// <summary>Gets the configured ASP.NET Core Captured Response Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] AspNetCoreCapturedResponseHeaders { get; }
 
+    /// <summary>Gets the configured gRPC Net Client Captured Request Metadata value for the current qyl auto-instrumentation runtime.</summary>
     public string[] GrpcNetClientCapturedRequestMetadata { get; }
 
+    /// <summary>Gets the configured gRPC Net Client Captured Response Metadata value for the current qyl auto-instrumentation runtime.</summary>
     public string[] GrpcNetClientCapturedResponseMetadata { get; }
 
+    /// <summary>Gets the configured HTTP Client Captured Request Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] HttpClientCapturedRequestHeaders { get; }
 
+    /// <summary>Gets the configured HTTP Client Captured Response Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] HttpClientCapturedResponseHeaders { get; }
 
     internal QylCapturedNameMap AspNetCoreCapturedRequestHeaderMap { get; }
@@ -121,16 +143,22 @@ public sealed class QylAutoInstrumentationOptions
 
     internal QylCapturedNameMap HttpClientCapturedResponseHeaderMap { get; }
 
+    /// <summary>Gets the configured ASP.NET Core Url Query Redaction Disabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool AspNetCoreUrlQueryRedactionDisabled { get; }
 
+    /// <summary>Gets the configured HTTP Client Url Query Redaction Disabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool HttpClientUrlQueryRedactionDisabled { get; }
 
+    /// <summary>Gets the configured ASP.NET Url Query Redaction Disabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool AspNetUrlQueryRedactionDisabled { get; }
 
+    /// <summary>Gets the configured Sql Client Net Fx Il Rewrite Requested value for the current qyl auto-instrumentation runtime.</summary>
     public bool SqlClientNetFxIlRewriteRequested { get; }
 
+    /// <summary>Well-known Sql Client Net Fx Il Rewrite Enabled value used by qyl auto-instrumentation.</summary>
     public bool SqlClientNetFxIlRewriteEnabled => false;
 
+    /// <summary>Runs the Is Instrumentation Enabled runtime helper used by source-generated qyl interceptors.</summary>
     public bool IsInstrumentationEnabled(QylAutoInstrumentationSignal signal, string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
@@ -140,6 +168,7 @@ public sealed class QylAutoInstrumentationOptions
             : IsSignalEnabled(signal);
     }
 
+    /// <summary>Runs the Has Any Activity Instrumentation Enabled runtime helper used by source-generated qyl interceptors.</summary>
     public bool HasAnyActivityInstrumentationEnabled()
         => HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, TraceInstrumentationIds) ||
            HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, LogInstrumentationIds);
@@ -330,13 +359,16 @@ public sealed class QylAutoInstrumentationOptions
             this.instrumentationId = instrumentationId;
         }
 
+        /// <summary>Runs the Equals runtime helper used by source-generated qyl interceptors.</summary>
         public bool Equals(InstrumentationLookupKey other)
             => signal == other.signal &&
                string.Equals(instrumentationId, other.instrumentationId, StringComparison.Ordinal);
 
+        /// <summary>Runs the Equals runtime helper used by source-generated qyl interceptors.</summary>
         public override bool Equals(object? obj)
             => obj is InstrumentationLookupKey other && Equals(other);
 
+        /// <summary>Runs the Get Hash Code runtime helper used by source-generated qyl interceptors.</summary>
         public override int GetHashCode()
             => HashCode.Combine(signal, StringComparer.Ordinal.GetHashCode(instrumentationId));
     }

@@ -3,9 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Logger.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedLogger);</code></example>
 public static class QylInterceptedLogger
 {
 
+    /// <summary>Runs the generic Microsoft.Extensions.Logging log helper used by source-generated qyl interceptors.</summary>
     public static void Log<TState>(
         ILogger logger,
         LogLevel logLevel,
@@ -33,6 +37,7 @@ public static class QylInterceptedLogger
         }
     }
 
+    /// <summary>Runs the Log Extension runtime helper used by source-generated qyl interceptors.</summary>
     public static void LogExtension(
         ILogger logger,
         LogLevel logLevel,

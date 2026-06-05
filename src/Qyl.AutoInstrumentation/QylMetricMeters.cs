@@ -7,14 +7,22 @@ namespace Qyl.AutoInstrumentation;
 /// </summary>
 public static class QylMetricMeters
 {
+    /// <summary>Well-known ASP.NET Core Components Meter Name value used by qyl auto-instrumentation.</summary>
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
+    /// <summary>Well-known HTTP Client Meter Name value used by qyl auto-instrumentation.</summary>
     public const string HttpClientMeterName = "System.Net.Http";
+    /// <summary>Well-known Database Meter Name value used by qyl auto-instrumentation.</summary>
     public const string DatabaseMeterName = "Qyl.AutoInstrumentation.Database";
+    /// <summary>Well-known Npgsql Meter Name value used by qyl auto-instrumentation.</summary>
     public const string NpgsqlMeterName = "Npgsql";
+    /// <summary>Well-known N Service Bus Meter Name value used by qyl auto-instrumentation.</summary>
     public const string NServiceBusMeterName = "NServiceBus.Core";
+    /// <summary>Well-known Net Runtime Meter Name value used by qyl auto-instrumentation.</summary>
     public const string NetRuntimeMeterName = "OpenTelemetry.Instrumentation.Runtime";
+    /// <summary>Well-known Process Meter Name value used by qyl auto-instrumentation.</summary>
     public const string ProcessMeterName = "OpenTelemetry.Instrumentation.Process";
 
+    /// <summary>Runs the Get Enabled Meter Names runtime helper used by source-generated qyl interceptors.</summary>
     public static string[] GetEnabledMeterNames()
     {
         var options = QylAutoInstrumentationOptions.Current;

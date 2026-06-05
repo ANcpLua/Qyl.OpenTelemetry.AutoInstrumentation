@@ -2,8 +2,12 @@ using System.Diagnostics;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted External Logger.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedExternalLogger);</code></example>
 public static class QylInterceptedExternalLogger
 {
+    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string instrumentationId, string domain, string methodName, string? severityName)
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
@@ -22,6 +26,7 @@ public static class QylInterceptedExternalLogger
         return activity;
     }
 
+    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);

@@ -12,6 +12,7 @@ namespace Qyl.AutoInstrumentation;
 public static class QylInterceptedHttpClient
 {
 
+    /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -36,6 +37,7 @@ public static class QylInterceptedHttpClient
         }
     }
 
+    /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -60,6 +62,7 @@ public static class QylInterceptedHttpClient
         }
     }
 
+    /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -84,6 +87,7 @@ public static class QylInterceptedHttpClient
         }
     }
 
+    /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -108,6 +112,7 @@ public static class QylInterceptedHttpClient
         }
     }
 
+    /// <summary>Runs the Send Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -116,6 +121,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Send Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -124,6 +130,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Send Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -132,6 +139,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Send Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
@@ -140,6 +148,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
@@ -148,6 +157,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
@@ -156,6 +166,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -164,6 +175,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -172,6 +184,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, HttpCompletionOption completionOption)
     {
         ThrowIfNullClient(client);
@@ -180,6 +193,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, HttpCompletionOption completionOption)
     {
         ThrowIfNullClient(client);
@@ -188,6 +202,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, string? requestUri, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -196,6 +211,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> GetAsync(HttpClient client, Uri? requestUri, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -204,6 +220,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Post Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
@@ -212,6 +229,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Post Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
@@ -220,6 +238,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Post Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -228,6 +247,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Post Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PostAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -236,6 +256,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Put Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
@@ -244,6 +265,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Put Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
@@ -252,6 +274,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Put Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -260,6 +283,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Put Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PutAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -268,6 +292,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Patch Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, string? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
@@ -276,6 +301,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Patch Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, Uri? requestUri, HttpContent? content)
     {
         ThrowIfNullClient(client);
@@ -284,6 +310,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Patch Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, string? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -292,6 +319,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Patch Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> PatchAsync(HttpClient client, Uri? requestUri, HttpContent? content, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -300,6 +328,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Delete Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
@@ -308,6 +337,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Delete Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
@@ -316,6 +346,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Delete Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -324,6 +355,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Delete Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> DeleteAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -332,6 +364,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get String Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<string> GetStringAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
@@ -340,6 +373,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get String Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<string> GetStringAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
@@ -348,6 +382,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get String Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<string> GetStringAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -356,6 +391,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get String Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<string> GetStringAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -364,6 +400,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Byte Array Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
@@ -372,6 +409,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Byte Array Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
@@ -380,6 +418,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Byte Array Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -388,6 +427,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Byte Array Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<byte[]> GetByteArrayAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -396,6 +436,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Stream Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<Stream> GetStreamAsync(HttpClient client, string? requestUri)
     {
         ThrowIfNullClient(client);
@@ -404,6 +445,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Stream Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<Stream> GetStreamAsync(HttpClient client, Uri? requestUri)
     {
         ThrowIfNullClient(client);
@@ -412,6 +454,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Stream Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<Stream> GetStreamAsync(HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -420,6 +463,7 @@ public static class QylInterceptedHttpClient
         catch (Exception exception) { RecordException(observation, exception); observation.Dispose(); throw; }
     }
 
+    /// <summary>Runs the Get Stream Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<Stream> GetStreamAsync(HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
         ThrowIfNullClient(client);
@@ -642,8 +686,10 @@ public static class QylInterceptedHttpClient
         string? Method,
         bool RecordMetrics)
     {
+        /// <summary>Well-known Is Enabled value used by qyl auto-instrumentation.</summary>
         public bool IsEnabled => Activity is not null || RecordMetrics;
 
+        /// <summary>Runs the Dispose runtime helper used by source-generated qyl interceptors.</summary>
         public void Dispose()
             => Activity?.Dispose();
     }

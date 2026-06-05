@@ -4,9 +4,13 @@ using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted gRPC Net Client.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedGrpcNetClient);</code></example>
 public static class QylInterceptedGrpcNetClient
 {
 
+    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string clientTypeName, string methodName, Metadata? requestMetadata)
     {
         ArgumentNullException.ThrowIfNull(clientTypeName);
@@ -28,6 +32,7 @@ public static class QylInterceptedGrpcNetClient
         return activity;
     }
 
+    /// <summary>Observes an asynchronous gRPC unary response and records qyl success, exception, and response metadata telemetry.</summary>
     public static async Task<TResponse> ObserveUnaryResponseAsync<TResponse>(
         Task<TResponse> responseTask,
         Task<Metadata> responseHeadersTask,
@@ -54,6 +59,7 @@ public static class QylInterceptedGrpcNetClient
         }
     }
 
+    /// <summary>Runs the Observe Response Headers Async runtime helper used by source-generated qyl interceptors.</summary>
     public static async Task<Metadata> ObserveResponseHeadersAsync(Task<Metadata> responseHeadersTask, Activity? activity)
     {
         var metadata = await responseHeadersTask.ConfigureAwait(false);
@@ -61,6 +67,7 @@ public static class QylInterceptedGrpcNetClient
         return metadata;
     }
 
+    /// <summary>Runs the Capture Completed Response Headers runtime helper used by source-generated qyl interceptors.</summary>
     public static void CaptureCompletedResponseHeaders(Task<Metadata>? responseHeadersTask, Activity? activity)
     {
         if (activity is null || responseHeadersTask is null || !responseHeadersTask.IsCompletedSuccessfully)
@@ -69,12 +76,14 @@ public static class QylInterceptedGrpcNetClient
         SetResponseMetadata(activity, responseHeadersTask.Result);
     }
 
+    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
     }
 
+    /// <summary>Runs the Record Streaming Complete runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordStreamingComplete(Activity? activity)
     {
         if (activity is null)
@@ -84,6 +93,7 @@ public static class QylInterceptedGrpcNetClient
         activity.Dispose();
     }
 
+    /// <summary>Runs the Dispose runtime helper used by source-generated qyl interceptors.</summary>
     public static void Dispose(Activity? activity)
         => activity?.Dispose();
 

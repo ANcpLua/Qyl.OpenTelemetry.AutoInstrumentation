@@ -6,6 +6,8 @@
     <AssemblyName>Qyl.AutoInstrumentation</AssemblyName>
     <PackageId>Qyl.AutoInstrumentation</PackageId>
     <Description>AOT-native zero-code .NET instrumentation core. Source-generated semconv registry + Activity/Meter primitives. NO IL rewriting, NO CLR profiler attach.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>

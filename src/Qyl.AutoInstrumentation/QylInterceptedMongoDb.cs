@@ -2,9 +2,13 @@ using System.Diagnostics;
 
 namespace Qyl.AutoInstrumentation;
 
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Mongo Db.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedMongoDb);</code></example>
 public static class QylInterceptedMongoDb
 {
 
+    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string operationName)
     {
         ArgumentNullException.ThrowIfNull(operationName);
@@ -24,10 +28,12 @@ public static class QylInterceptedMongoDb
         return activity;
     }
 
+    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordSuccess(Activity? activity)
     {
     }
 
+    /// <summary>Runs the Observe Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task ObserveAsync(Task? task, Activity? activity)
     {
         if (activity is null || task is null)
@@ -39,6 +45,7 @@ public static class QylInterceptedMongoDb
         return ObserveSlowAsync(task, activity);
     }
 
+    /// <summary>Observes an asynchronous MongoDB command and records qyl success or exception telemetry.</summary>
     public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
     {
         if (activity is null || task is null)
@@ -87,6 +94,7 @@ public static class QylInterceptedMongoDb
         }
     }
 
+    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
