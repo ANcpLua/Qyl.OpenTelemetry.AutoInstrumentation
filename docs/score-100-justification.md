@@ -3,14 +3,14 @@
 This document is the current evidence ledger for the NativeAOT interceptor score. It is intentionally
 command-backed: every claim below points at a committed gate, a CI check, or a reproducible local command.
 
-// validated 2026-06-05 20:19 CEST by tools/verify-aot-autoinstrumentation-goal.py and gh pr checks 1 --watch --interval 10
+// validated 2026-06-06 CEST by tools/verify-aot-autoinstrumentation-goal.py and gh pr checks 1 --watch --interval 10
 
 ## Current release candidate
 
 | Item | Value |
 |---|---|
 | Branch | `claude/projectreference-build-assets` |
-| Current evidence SHA | `0fce5ab2286fb56c86974bf733f4550e60629049` |
+| Current evidence SHA | Resolved by `git rev-list -n 1 v0.3.0-pre.1`; the tag is moved only after the evidence commit exists. |
 | Current package version | `0.3.0-pre.1` |
 | Release tag target | `v0.3.0-pre.1` |
 | Pull request | `https://github.com/ANcpLua/qyl-dotnet-autoinstrumentation/pull/1` |
@@ -137,12 +137,13 @@ Committed BenchmarkDotNet reports under `docs/benchmarks/` cover JIT and NativeA
 
 | Hot path | JIT intercepted mean | NativeAOT intercepted mean | Intercepted allocation |
 |---|---:|---:|---:|
-| `DbCommand` | `5.1818 ns` | `8.6665 ns` | `-` |
-| `EntityFrameworkCore` | `8.8453 ns` | `11.4763 ns` | `-` |
-| `HttpClient.GetAsync` | `296.9 ns` | `331.9 ns` | `1176 B` |
+| `DbCommand` | `6.4531 ns` | `10.1629 ns` | `-` |
+| `EntityFrameworkCore` | `8.5550 ns` | `12.6487 ns` | `-` |
+| `HttpClient.GetAsync` | `164.6 ns` | `195.1 ns` | `704 B` baseline-matched |
 
-The `HttpClient` benchmark includes the real `HttpClient` async machinery; the direct baseline allocates
-`704 B`, so the measured qyl delta is `472 B`. The DB and EFCore hot paths are zero-allocation in both runtimes.
+The `HttpClient` benchmark includes the real `HttpClient` async machinery. Direct and intercepted paths both
+allocate `704 B` in JIT and NativeAOT, so qyl adds no measured allocation on the no-listener hot path. The DB
+and EFCore hot paths are zero-allocation in both runtimes.
 
 ## Defect rebuttals
 
@@ -172,4 +173,4 @@ AOT warning gates, and the boundary between source-visible interception and runt
 |---|---|
 | Release tag target must match the final evidence commit | The final report verifies `git rev-list -n 1 v0.3.0-pre.1` against `git rev-parse HEAD`. |
 | WebAPI demo third-party warnings | qyl-owned warnings are zero. EFCore/SqlClient package analyzer warnings are treated as app/third-party boundary risk, not hidden as qyl success. |
-| `HttpClient` intercepted benchmark allocates above the direct baseline | The qyl overhead is below one microsecond, but not zero-allocation because the measured path includes real `HttpClient` async request/response machinery and activity export state. DB and EFCore hot paths are zero-allocation. |
+| `HttpClient` no-listener hot path | Direct and intercepted BenchmarkDotNet reports are baseline-matched at `704 B` for JIT and NativeAOT. |

@@ -12,13 +12,12 @@ public static class QylNServiceBusMetrics
 
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
     public static long GetTimestamp()
-        => TimeProvider.System.GetTimestamp();
+        => IsRecordingEnabled ? TimeProvider.System.GetTimestamp() : 0;
 
     /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordDuration(long startTimestamp, string operationName)
     {
-        if (!OperationDuration.Enabled ||
-            !QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
+        if (startTimestamp is 0 || !IsRecordingEnabled)
             return;
 
         var elapsed = TimeProvider.System.GetElapsedTime(startTimestamp);
@@ -31,6 +30,10 @@ public static class QylNServiceBusMetrics
                 new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationName, NormalizeOperation(operationName)));
         }
     }
+
+    internal static bool IsRecordingEnabled
+        => OperationDuration.Enabled &&
+           QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus);
 
     private static string NormalizeOperation(string operationName)
         => string.Equals(operationName, "Send", StringComparison.Ordinal)

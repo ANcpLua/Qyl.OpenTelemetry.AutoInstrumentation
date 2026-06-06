@@ -10,10 +10,10 @@ Apple M4, 1 CPU, 10 logical and 10 physical cores
 IterationCount=5  LaunchCount=1  WarmupCount=3  
 
 ```
-| Method                   | Runtime        | Mean       | Error     | StdDev    | Median     | Ratio | RatioSD | Allocated | Alloc Ratio |
-|------------------------- |--------------- |-----------:|----------:|----------:|-----------:|------:|--------:|----------:|------------:|
-| DirectExecuteSqlRaw      | .NET 10.0      |  0.0248 ns | 0.1563 ns | 0.0406 ns |  0.0000 ns |     ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | .NET 10.0      |  8.5550 ns | 0.0474 ns | 0.0073 ns |  8.5548 ns |     ? |       ? |         - |           ? |
-|                          |                |            |           |           |            |       |         |           |             |
-| DirectExecuteSqlRaw      | NativeAOT 10.0 |  0.0000 ns | 0.0000 ns | 0.0000 ns |  0.0000 ns |     ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 12.6487 ns | 2.7103 ns | 0.7039 ns | 12.3591 ns |     ? |       ? |         - |           ? |
+| Method                   | Runtime        | Mean       | Error     | StdDev    | Ratio | RatioSD | Allocated | Alloc Ratio |
+|------------------------- |--------------- |-----------:|----------:|----------:|------:|--------:|----------:|------------:|
+| DirectExecuteSqlRaw      | .NET 10.0      |  0.0259 ns | 0.0912 ns | 0.0237 ns |     ? |       ? |         - |           ? |
+| InterceptedExecuteSqlRaw | .NET 10.0      |  8.6182 ns | 0.3493 ns | 0.0541 ns |     ? |       ? |         - |           ? |
+|                          |                |            |           |           |       |         |           |             |
+| DirectExecuteSqlRaw      | NativeAOT 10.0 |  0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
+| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 11.7514 ns | 0.7761 ns | 0.2015 ns |     ? |       ? |         - |           ? |

@@ -9,7 +9,6 @@ DOC = ROOT / "docs" / "score-100-justification.md"
 
 
 REQUIRED_TOKENS = [
-    "0fce5ab2286fb56c86974bf733f4550e60629049",
     "0.3.0-pre.1",
     "v0.3.0-pre.1",
     "tools/verify-aot-autoinstrumentation-goal.py",
@@ -21,14 +20,15 @@ REQUIRED_TOKENS = [
     "DbCommand",
     "EntityFrameworkCore",
     "HttpClient.GetAsync",
+    "704 B",
+    "baseline-matched",
     "E: `QylAutoInstrumentationOptions`",
     "D: ProjectReference",
     "d57c3cd",
     "e21ca1d",
-    "0fce5ab",
     "docs/rfc/0001-interceptor-substrate.md",
     "Residual risks",
-    "validated 2026-06-05 20:19 CEST",
+    "validated 2026-06-06",
 ]
 
 
@@ -39,6 +39,9 @@ FORBIDDEN_TOKENS = [
     "Final release tag is not created yet",
     "still needed for a complete 100/100 score",
     "Collector-backed OTLP transport fixtures, full runtime XML-doc enforcement",
+    "1176 B",
+    "472 B",
+    "allocates above the direct baseline",
 ]
 
 

@@ -12,8 +12,8 @@ IterationCount=5  LaunchCount=1  WarmupCount=3
 ```
 | Method              | Runtime        | Mean     | Error    | StdDev  | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
 |-------------------- |--------------- |---------:|---------:|--------:|------:|--------:|-------:|----------:|------------:|
-| DirectGetAsync      | .NET 10.0      | 155.1 ns |  2.18 ns | 0.57 ns |  1.00 |    0.00 | 0.0069 |     704 B |        1.00 |
-| InterceptedGetAsync | .NET 10.0      | 164.6 ns | 10.50 ns | 1.62 ns |  1.06 |    0.01 | 0.0069 |     704 B |        1.00 |
+| DirectGetAsync      | .NET 10.0      | 155.2 ns |  7.36 ns | 1.91 ns |  1.00 |    0.02 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | .NET 10.0      | 174.3 ns | 35.80 ns | 5.54 ns |  1.12 |    0.03 | 0.0069 |     704 B |        1.00 |
 |                     |                |          |          |         |       |         |        |           |             |
-| DirectGetAsync      | NativeAOT 10.0 | 194.6 ns | 20.30 ns | 3.14 ns |  1.00 |    0.02 | 0.0069 |     704 B |        1.00 |
-| InterceptedGetAsync | NativeAOT 10.0 | 195.1 ns |  5.53 ns | 0.86 ns |  1.00 |    0.02 | 0.0069 |     704 B |        1.00 |
+| DirectGetAsync      | NativeAOT 10.0 | 190.9 ns | 17.05 ns | 2.64 ns |  1.00 |    0.02 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | NativeAOT 10.0 | 195.3 ns | 12.69 ns | 3.30 ns |  1.02 |    0.02 | 0.0069 |     704 B |        1.00 |

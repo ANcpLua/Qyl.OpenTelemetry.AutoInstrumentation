@@ -50,11 +50,19 @@ public static class QylInterceptedDbCommand
     }
 
     /// <summary>Observes an asynchronous database command and records qyl success, exception, and duration telemetry.</summary>
-    public static async Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
+    public static Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(task);
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
+        if (activity is null && !QylDbClientMetrics.IsRecordingEnabled(instrumentationId))
+            return task;
+
+        return ObserveSlowAsync(task, activity, metricStart, instrumentationId);
+    }
+
+    private static async Task<T> ObserveSlowAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
+    {
         try
         {
             var result = await task.ConfigureAwait(false);

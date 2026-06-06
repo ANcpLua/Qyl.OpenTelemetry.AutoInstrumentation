@@ -12,14 +12,14 @@ public static class QylDbClientMetrics
 
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
     public static long GetTimestamp()
-        => TimeProvider.System.GetTimestamp();
+        => OperationDuration.Enabled ? TimeProvider.System.GetTimestamp() : 0;
 
     /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordDuration(long startTimestamp, string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
-        if (!OperationDuration.Enabled || !ShouldRecord(instrumentationId))
+        if (startTimestamp is 0 || !IsRecordingEnabled(instrumentationId))
             return;
 
         var elapsed = TimeProvider.System.GetElapsedTime(startTimestamp);
@@ -30,6 +30,9 @@ public static class QylDbClientMetrics
                 new KeyValuePair<string, object?>(QylSemanticAttributes.DbSystemName, GetDbSystemName(instrumentationId)));
         }
     }
+
+    internal static bool IsRecordingEnabled(string instrumentationId)
+        => OperationDuration.Enabled && ShouldRecord(instrumentationId);
 
     private static bool ShouldRecord(string instrumentationId)
         => instrumentationId switch
