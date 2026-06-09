@@ -1,184 +1,151 @@
 # qyl-dotnet-autoinstrumentation
 
-Free, **vendor-neutral .NET zero-code instrumentation runtime — NativeAOT-ready**.
+A .NET 10, NativeAOT-ready, vendor-neutral auto-instrumentation library.
 
-**Architecture rule (v0.2.0 substrate swap):** C# owns ALL behavior, *and* the runtime is now a
-pure-managed AOT-native library — no native CLR profiler, no IL rewriting, no startup-hook
-attach. The substrate is **Roslyn source generators + `DiagnosticListener` subscriptions +
-`[ModuleInitializer]`**. `Qyl.AutoInstrumentation.Hosting` ships a build-transitive consumer
-module initializer that roots the qyl bootstrap from a plain `PackageReference`; explicit
-`AddQylAutoInstrumentation()` calls use the same idempotent boot path.
+The current product is pure managed code. It uses Roslyn source generators,
+`DiagnosticListener`, `ActivitySource`, `Meter`, build-transitive package assets, and
+`[ModuleInitializer]` bootstrapping. It does not use a CLR profiler, startup hook,
+runtime IL rewrite, attach tool, plugin store, or reflection-based dispatch.
 
-Reuses the OpenTelemetry `ActivitySource` / `Meter` BCL primitives. Semantic conventions are
-baked into a build-time `FrozenSet<string>` by the qyl source generator (no `Assembly.Load`
-reflection — the substrate-era path was JIT-only).
+## What this repository ships
 
-**Method:** milestone-gated. Every milestone passes BOTH gates before the next starts:
-- **Gate A — Golden-OTLP** — emitted signals match a checked-in golden, volatile fields normalized.
-- **Gate B — No-behavior-change** — app stdout/stderr/exit/exceptions identical with vs without the
-  `Qyl.AutoInstrumentation.Hosting` reference.
+| Package project | Purpose |
+|---|---|
+| `src/Qyl.AutoInstrumentation` | Core runtime APIs, semantic helpers, metric helpers, generated-interceptor targets, and package build assets. |
+| `src/Qyl.AutoInstrumentation.SourceGenerators` | Build-time Roslyn generator for contract-gated source interceptors and generated semantic registries. |
+| `src/Qyl.AutoInstrumentation.DiagnosticListeners` | Shared DiagnosticListener substrate and runtime payload readers for framework/library events. |
+| `src/Qyl.AutoInstrumentation.Hosting` | General application bootstrap package with build-transitive module initializer and service registration. |
+| `src/Qyl.AutoInstrumentation.EntityFrameworkCore` | EFCore-specific bootstrap/listener package kept separate so EFCore dependencies and AOT warnings do not leak into non-EF apps. |
+| `src/Qyl.AutoInstrumentation.SqlClient` | Microsoft.Data.SqlClient-specific bootstrap/listener package kept separate for the same dependency-boundary reason. |
 
-Coverage is tracked in `COVERAGE_LEDGER.md` and the 60-item OpenTelemetry .NET auto
-instrumentation contract is mirrored in `docs/otel-dotnet-auto-60-contract-items.yaml`. The
-current compile-time lane classifies the contract as 33 source-generated signal promises, four
-unsupported NativeAOT parity/dynamic signal promises, seven global controls, and 16 instrumentation
-options. Nothing is silently dropped; unsupported parity requires an explicit reason.
+The repository also contains real consumer demos, source-generator snapshots, NativeAOT
+smoke consumers, OTLP-shaped fixtures, and package-layout checks. These are not decorative;
+they are the product proof surface.
 
-## Substrate-swap note (v0.3.0-pre.1)
+## Install shape
 
-Pre-v0.2.0 the runtime was the OpenTelemetry .NET auto-instrumentation native CLR profiler,
-attached via `CORECLR_PROFILER` / `OTEL_DOTNET_AUTO_PLUGINS` / a `dotnet tool` (`qyl install`)
-that deployed the qyl plugin into the substrate's plugin store. That substrate gave us 12 proven
-milestones — but it was fundamentally JIT-only and cannot run under NativeAOT-published apps.
+Use package references. A normal app should not call qyl boot APIs just to get baseline
+instrumentation.
 
-This release rips out the substrate-attach surface (`qyl.AutoInstrumentation.Cli`,
-`qyl.AutoInstrumentation.Plugin`, `spike/` fixtures, `gate.sh`) and replaces it with a
-pure-managed library that ships as a NuGet package an app references directly. The
-substrate-era milestones (M1–M12) are **archived in git history** at tag `v0.1.0-archive` for
-reference.
+```xml
+<ItemGroup>
+  <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="0.3.0-pre.1" />
+</ItemGroup>
+```
 
-## Analyzer + NativeAOT proof
+Add package-specific references only when the app uses those libraries:
 
-The repo build is gated by the requested analyzer stack:
+```xml
+<ItemGroup>
+  <PackageReference Include="Qyl.AutoInstrumentation.EntityFrameworkCore" Version="0.3.0-pre.1" />
+  <PackageReference Include="Qyl.AutoInstrumentation.SqlClient" Version="0.3.0-pre.1" />
+</ItemGroup>
+```
 
-- `ANcpLua.Analyzers` `2.0.2`
-- `Microsoft.CodeAnalysis.Analyzers` `5.3.0`
-- `ErrorProne.NET.CoreAnalyzers` `0.8.2-beta.1`
-- `ErrorProne.NET.Structs` `0.6.1-beta.1`
-- `Roslynator.Analyzers` `4.15.0`
-- `JonSkeet.RoslynAnalyzers` `1.0.0-beta.6`
+`PackageReference` is the supported zero-code path because NuGet carries the analyzer,
+`build/`, and `buildTransitive/` assets into the consuming compilation. A bare runtime
+`ProjectReference` is not equivalent: MSBuild does not automatically flow analyzer and
+build assets from a referenced project. The verified dogfooding path explicitly references
+the runtime project, the generator project as an analyzer, and the core targets file.
 
-`Microsoft.CodeAnalysis.CSharp` is pinned to `5.3.0` for the build-time source-generator project.
-Runtime projects inherit `IsAotCompatible`, trim, AOT, and single-file analyzers with
-`TreatWarningsAsErrors=true`. The source-generator project is intentionally different: it targets
-`netstandard2.0` and runs only inside the compiler. Normal repo builds use it as an analyzer;
-`PublishAot=true` excludes the generator project so NativeAOT publish never tries to publish a
-build-time Roslyn assembly.
+## How bootstrapping works
 
-Zero-code interception is a package build-asset contract. A normal consumer uses
-`PackageReference` to `Qyl.AutoInstrumentation`, which supplies the analyzer plus `build/` and
-`buildTransitive/` targets for `InterceptsLocationAttribute` and the interceptor namespace.
-Source-tree dogfooding through `ProjectReference` must make the same build-time pieces explicit:
-reference `Qyl.AutoInstrumentation.csproj` as runtime, reference
-`Qyl.AutoInstrumentation.SourceGenerators.csproj` with
-`OutputItemType="Analyzer" ReferenceOutputAssembly="false"`, and import
-`src/Qyl.AutoInstrumentation/buildTransitive/Qyl.AutoInstrumentation.targets`. For NativeAOT
-publish in that source-tree path, prebuild the generator and include its output DLL as an
-`Analyzer`; do not let `PublishAot=true` traverse the netstandard2.0 generator project. A bare
-runtime `ProjectReference` is not a supported zero-code path because MSBuild resolves it as a
-reference assembly, not as compiler analyzer/build assets.
-`tools/verify-projectreference-behavior.py` proves the supported ProjectReference dogfooding path
-under managed execution and NativeAOT.
+1. Build assets enable the interceptor namespace and include a local
+   `InterceptsLocationAttribute` source file for consumers.
+2. The source generator discovers supported source-visible call-sites and emits ordinary C#
+   interceptors annotated with `[InterceptsLocation]`.
+3. Package bootstrap code runs through `[ModuleInitializer]` and activates qyl once per
+   process.
+4. Runtime listeners consume values supplied by framework/library events or current
+   activities. Missing values stay missing.
+5. Emitted telemetry uses stable OpenTelemetry attributes by default. Raw sensitive values
+   such as `url.full`, `url.path`, and `db.query.text` are gated off unless explicitly enabled.
 
-Current evidence proves the qyl runtime closure is NativeAOT-clean and emits spans under
-NativeAOT. Library-specific packages call out upstream app-side warning boundaries when the
-instrumented library itself is not warning-clean. The active generator direction is compile-time
-interception for source-visible call-sites: no CLR profiling, no startup hooks, no runtime IL
-rewriting, no reflection, and no dynamic dispatch. The source generator now gates emitter targets
-against the generated contract manifest: 33 source-generated signal promises are eligible for
-interceptor or meter registration, while `signals.traces.ASPNET`, `signals.traces.WCFCORE`,
-`signals.traces.WCFSERVICE`, and `signals.metrics.ASPNET` are retained only as unsupported
-NativeAOT parity/dynamic items.
+## Supported proof surface
 
-- `demos/Qyl.LiveInstrumentationDemo` publishes as `net10.0`/`osx-arm64` with
-  `PublishAot=true` and captures `http.client`, `http.server`, `db.efcore`, `db.sqlclient`,
-  and `rpc.grpc` qyl spans.
-- A temporary consumer with only a `PackageReference` to `Qyl.AutoInstrumentation.Hosting` and no
-  explicit qyl startup call publishes with `PublishAot=true` and captures a qyl HttpClient span via
-  the build-transitive bootstrap.
-- `demos/Qyl.RealEfCoreDemo` proves the EFCore-specific package against real
-  `CommandExecutedEventData` and `CommandErrorEventData` payloads under managed and NativeAOT
-  execution. EFCore is not warning-clean under NativeAOT in .NET 10.0.8: the proof uses the
-  supported compiled-model path and intentionally demotes EFCore's own IL warnings for publish,
-  then runs the native binary.
-- `demos/Qyl.RealGrpcClientDemo` proves `Grpc.Net.Client` success and Unavailable failure paths
-  under managed and warning-clean NativeAOT execution. It uses `WebApplication.CreateSlimBuilder`
-  for the local h2c proof server and reads only AOT-safe gRPC activity tags.
-- `demos/Qyl.RealSqlClientDemo` proves `Microsoft.Data.SqlClient` command success and SQL Server
-  error paths under managed and NativeAOT execution. The qyl listener is warning-clean; the app
-  publish intentionally demotes `Microsoft.Data.SqlClient` 7.0.1 trim/AOT warnings and must not use
-  `InvariantGlobalization=true` because SqlClient throws in invariant globalization mode.
-- A temporary consumer with only `PackageReference` wiring for
-  `Qyl.AutoInstrumentation.EntityFrameworkCore` and no qyl startup call restored from locally
-  packed nupkgs and captured `PASS name=DB INSERT`, proving the EFCore build-transitive bootstrap.
-- A temporary gRPC consumer with only `PackageReference` wiring for
-  `Qyl.AutoInstrumentation.Hosting` and no qyl startup call restored from locally packed nupkgs
-  and captured `PASS name=gRPC qyl.LiveProbe/Collect`.
-- A temporary SqlClient consumer with only `PackageReference` wiring for
-  `Qyl.AutoInstrumentation.SqlClient` and no qyl startup call restored from locally packed nupkgs,
-  published under NativeAOT, and captured `PASS name=SQL SELECT operation=SELECT`.
+| Area | Evidence |
+|---|---|
+| HttpClient | Real managed and NativeAOT demo using BCL `HttpHandlerDiagnosticListener` events. |
+| ASP.NET Core | Real managed and NativeAOT Kestrel demo using framework listener payloads. |
+| EFCore | Real managed and NativeAOT demo using typed command event payloads and an EF compiled model. |
+| Grpc.Net.Client | Real managed and NativeAOT demo using public gRPC activity tags. |
+| Microsoft.Data.SqlClient | Real managed and NativeAOT demo using SqlClient diagnostic payloads; SqlClient's own AOT warnings are treated as an app-side library boundary. |
+| Package boot | Temporary PackageReference consumers prove zero-code bootstrap for Hosting, EFCore, and SqlClient packages. |
+| ProjectReference dogfood | Explicit analyzer/targets dogfooding path proves local source-tree development without pretending a bare ProjectReference is enough. |
 
-The formal Gate A golden-OTLP normalizer and Gate B no-behavior-change baseline are still tracked
-in `COVERAGE_LEDGER.md`.
+## Runtime rules
 
-## Projects
+- Do not invent runtime values. If the instrumented library did not expose a value, qyl does
+  not synthesize it from guesses.
+- Do not put full URLs, request paths, query strings, IDs, exception messages, or arbitrary
+  caller text in span names.
+- Prefer bounded attributes: route templates over raw paths, database operation/summary over
+  raw statements, well-known error identifiers over exception messages.
+- Consume deprecated OpenTelemetry aliases as inputs only; do not re-emit them as canonical
+  output.
+- Keep metric instruments and activity sources process-level, not per request.
+- Keep conformance/self-telemetry opt-in when it adds per-span work.
 
-| Project | TFM | Role |
-|---|---|---|
-| `Qyl.AutoInstrumentation` | net10.0 | API surface: `QylActivitySource`, `QylSelfTelemetry`, `QylInstrumentation.Activate()`, source-gen-fed `QylSemConvRegistry`. |
-| `Qyl.AutoInstrumentation.SourceGenerators` | netstandard2.0 | `IIncrementalGenerator` that emits the semconv `FrozenSet<string>` at compile time plus compile-time interceptors for source-visible call-sites. |
-| `Qyl.AutoInstrumentation.DiagnosticListeners` | net10.0 | Shared `DiagnosticListener` substrate and built-in subscribers for HttpClient, ASP.NET Core, gRPC, plus synthetic EFCore and SqlClient semantic proof events. |
-| `Qyl.AutoInstrumentation.EntityFrameworkCore` | net10.0 | EFCore-specific build-transitive bootstrap and typed command payload reader. Kept out of the shared host so non-EFCore apps do not inherit EFCore package warnings. |
-| `Qyl.AutoInstrumentation.SqlClient` | net10.0 | Microsoft.Data.SqlClient-specific build-transitive bootstrap and command payload reader. Kept out of the shared host so non-SqlClient apps do not inherit SqlClient package warnings. |
-| `Qyl.AutoInstrumentation.Hosting` | net10.0 | Build-transitive consumer bootstrap + `[ModuleInitializer]` auto-boot + `IServiceCollection.AddQylAutoInstrumentation()`. |
+## Configuration
 
-The runtime projects build under `TreatWarningsAsErrors=true` with `IsAotCompatible`,
-`IsTrimmable`, `EnableTrimAnalyzer`, `EnableAotAnalyzer`, and `EnableSingleFileAnalyzer` all on.
-The source-generator project is build-time-only and explicitly excluded from NativeAOT publish.
-Analyzer or AOT regressions fail the repo build; upstream NativeAOT warnings from EFCore and
-SqlClient are documented at the app publish boundary.
+`QylAutoInstrumentationOptions` reads the 60-item OpenTelemetry .NET auto-instrumentation
+contract mirrored in `docs/otel-dotnet-auto-60-contract-items.yaml`. Contract coverage is
+reported in `docs/coverage-matrix.md`.
 
-## Runtime semantics
+Sensitive capture is off by default:
 
-The agent emits runtime values only when the instrumented library supplied them through
-`DiagnosticSource` payloads or the current `Activity`. It does not invent fallback URLs, database
-names, SQL statements, routes, methods, status codes, or RPC methods.
+```bash
+QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true
+```
 
-The semconv conformance processor is a development gate, not a production hot-path cost. Its
-`qyl.semconv.attribute.checks` counter is default-off and runs only when
-`QYL_CONFORMANCE_ENABLED=1` is set or the host calls
-`AddQylAutoInstrumentation(o => o.EnableConformanceProcessor = true)`.
+The conformance processor is off by default:
 
-Semantic rules live in the diagnostic listener layer:
+```bash
+QYL_CONFORMANCE_ENABLED=1
+```
 
-- Stable OpenTelemetry keys are emitted; deprecated aliases such as `http.url`, `http.status_code`,
-  `http.method`, `db.statement`, and `db.name` are consumed as input only.
-- Sensitive raw values are off by default. `url.full`, `url.path`, and `db.query.text` are emitted
-  only when `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true`.
-- HTTP method values are normalized to the stable well-known set; unknown methods emit `_OTHER`
-  with `http.request.method_original`.
-- HTTP span status follows the stable HTTP rules: client `4xx+` and server `5xx+` become
-  `ActivityStatusCode.Error` and get low-cardinality `error.type`.
-- Database spans prefer bounded `db.operation.name` and `db.query.summary`; raw query text remains
-  privacy-gated.
+## Verification
 
-`demos/Qyl.LiveInstrumentationDemo` now checks both sides of this contract: every covered domain
-must emit its required safe attributes, and privacy-gated attributes must not leak with defaults.
-`demos/Qyl.RealHttpClientDemo` uses real .NET `HttpClient` traffic and BCL
-`HttpHandlerDiagnosticListener` events to prove runtime extraction for 503 and connection-failure
-paths under managed and NativeAOT execution. `demos/Qyl.RealAspNetCoreDemo` does the same for
-Kestrel/EndpointRouting via the `Microsoft.AspNetCore` listener. `demos/Qyl.RealEfCoreDemo`
-does the same for EFCore command success and provider-error paths, with the EFCore compiled-model
-NativeAOT prerequisite called out explicitly. `demos/Qyl.RealGrpcClientDemo` proves real
-`Grpc.Net.Client` success and failure activity tags. `demos/Qyl.RealSqlClientDemo` proves
-`Microsoft.Data.SqlClient` command success and SQL Server error payloads. The compile-time
-interceptor lane now gates 33 source-generated signal promises from the 60-item contract. The
-per-library matrix lives in `docs/RUNTIME_SEMANTICS.md`.
+The broad handoff gate is:
 
-## Status
+```bash
+python3 tools/verify-aot-autoinstrumentation-goal.py
+```
 
-- **Compile-time contract lane** — *in progress*: the 60-item contract is represented in
-  `InstrumentationContract`; 33 source-generated signal promises are generator-gated, four
-  parity/dynamic signal promises are explicitly unsupported for NativeAOT, all 23 environment
-  controls/options are read by `QylAutoInstrumentationOptions`, and
-  `tools/verify-consumer-behavior.py` proves a deterministic baseline-vs-hosting consumer run has
-  identical stdout, stderr, caught-exception output, async return output, and exit code.
-  `tools/verify-nativeaot-consumer-golden.py` publishes an instrumented `net10.0` consumer with
-  NativeAOT and checks a normalized offline qyl HTTP client activity golden.
-  `tools/verify-aot-autoinstrumentation-goal.py` runs the current goal gate end-to-end:
-  contract invariants, 60-item contract coverage report, Release build, deterministic consumer
-  source-interceptor consumer proof, deterministic consumer behavior, NativeAOT consumer golden,
-  and diff whitespace.
+Important focused gates:
 
-The substrate-era M1–M12 are preserved in `COVERAGE_LEDGER.md` under the *archived* section
-and remain reproducible from the `v0.1.0-archive` tag.
+```bash
+python3 tools/verify-package-layout.py
+python3 tools/verify-projectreference-behavior.py
+python3 tools/verify-source-interceptor-consumer.py
+python3 tools/verify-nativeaot-consumer-golden.py
+python3 tools/verify-otlp-golden-fixtures.py
+python3 tools/verify-otlp-collector-fixtures.py
+python3 tools/verify-webapi-aot-demo.py
+bash tools/smoketest.sh
+```
+
+Benchmark measurements live in `benchmarks/Qyl.AutoInstrumentation.Benchmarks`. They are
+measurement evidence, not product code.
+
+## NativeAOT boundaries
+
+- The source generator targets `netstandard2.0` because it runs inside the compiler. It is
+  excluded from NativeAOT publish graphs; consumers receive its analyzer output at build time.
+- EFCore NativeAOT requires a compiled model. The compiled model in the demo is generated by
+  EF tooling and may contain `System.Reflection`; that is not qyl runtime dispatch.
+- Microsoft.Data.SqlClient currently emits its own trim/AOT warnings and does not support
+  invariant globalization. qyl keeps this boundary explicit instead of hiding it in Hosting.
+- Classic ASP.NET and WCF dynamic parity items from the upstream contract are explicitly
+  unsupported for this NativeAOT/source-generator substrate.
+
+## Current limitations and next work
+
+- Finish a full OTLP export normalizer instead of only OTLP-shaped committed fixtures.
+- Add automated update flow for the 60-item contract manifest and generated coverage matrix.
+- Expand source-generator target coverage only where call-sites are source-visible and stable.
+- Add benchmark budget gates once the measurement noise floor is stable across CI runners.
+- Improve user experience around package selection, ProjectReference dogfooding, and failure
+  messages when build assets are missing.
+
+See `CHANGELOG.md` for the synthesized five-commit history and continuation plan.

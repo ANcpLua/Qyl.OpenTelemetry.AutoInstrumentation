@@ -6,13 +6,11 @@ using Microsoft.CodeAnalysis.Text;
 namespace Qyl.AutoInstrumentation.SourceGenerators;
 
 /// <summary>
-/// AOT-native replacement for the substrate-era reflection registry.
+/// AOT-native semantic registry generator.
 ///
 /// <para>
-/// The substrate-era M3 milestone built the conformance registry at process startup by
-/// <c>Assembly.Load("Qyl.OpenTelemetry.SemanticConventions")</c> → <c>asm.GetTypes()</c> →
-/// <c>type.GetFields()</c>. That path is fundamentally unsafe under NativeAOT and is rejected by
-/// the trim/AOT analyzer (RUC/IL2026/IL3050).
+/// The registry is generated at build time so runtime code can use a static lookup with no
+/// dynamic discovery cost and no NativeAOT trimming roots.
 /// </para>
 ///
 /// <para>

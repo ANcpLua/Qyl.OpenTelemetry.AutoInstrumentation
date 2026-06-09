@@ -3,7 +3,7 @@
   <!--
     Root-of-repo MSBuild defaults shared by every project under src/.
 
-    Rationale (substrate-swap, post v0.3.0-pre.1):
+    Rationale:
     The runtime used to be the OpenTelemetry .NET auto-instrumentation native CLR profiler;
     we now ship a pure-managed runtime that runs under NativeAOT-published apps. Runtime
     projects MUST stay AOT-clean: trim analyzer, AOT analyzer, and single-file analyzer are
@@ -33,7 +33,7 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-    <!-- One version source of truth across all packed projects. Bumped on every milestone-bumping commit. -->
+    <!-- One version source of truth across all packed projects. Bump only after validation. -->
     <Version>0.3.0-pre.1</Version>
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/qyl-dotnet-autoinstrumentation</RepositoryUrl>

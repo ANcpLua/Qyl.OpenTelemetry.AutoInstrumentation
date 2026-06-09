@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - claude/**
 
 jobs:
   webapi-aot-demo:

@@ -1,6 +1,6 @@
 # RFC 0001: AOT-native source interceptor substrate
 
-Status: draft for review
+Status: accepted substrate contract
 
 ## Summary
 
@@ -137,4 +137,4 @@ pretending that profiler mechanics survive NativeAOT unchanged.
   snapshots, source-generator XML-doc enforcement, the NativeAOT web API proof, and canonical
   OTLP-shaped fixtures are covered by committed gates. Hot-path measurements live in the
   BenchmarkDotNet project under `benchmarks/`.
-- The release tag remains the last step after the PR evidence is reviewed.
+- Release tags must be verified against the final validated commit after any history rewrite.

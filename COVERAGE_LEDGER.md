@@ -1,132 +1,87 @@
-# qyl Auto-Instrumentation — Coverage Ledger & Milestone Gates
+# Coverage ledger
 
-> Operating contract (locked):
-> 1. **Total coverage** — every blueprint box has a row + status here. A box with no row is a bug.
->    `out-of-scope` is permitted *only* with a written reason. Silent drops are forbidden.
-> 2. **Per-milestone gates** — a milestone is `proven` only when BOTH gates are green.
->    The next milestone MUST NOT start until the prior is `proven`.
->
-> Decision locked (v0.2.0-pre.1 substrate swap): **runtime = pure-managed library**, AOT-native.
-> Source generators + `DiagnosticListener` subscriptions + `[ModuleInitializer]` replace the
-> external CLR profiler / IL-rewriting substrate that backed M1–M12 of the v0.1.0 series.
+This ledger tracks current AOT auto-instrumentation coverage. It is not a scorecard and not a
+history diary. Use it to decide what is implemented, what is verified, and what is intentionally
+outside this substrate.
 
-## Gate definitions (unchanged)
+## Architecture contract
 
-| Gate | Name | Pass condition |
-|------|------|----------------|
-| A | Golden-OTLP | Emitted signals → canonical OTLP, volatile fields normalized (TraceId/SpanId/timestamps/durations/host.*), diffed against checked-in golden. **Zero semantic diff.** |
-| B | No-behavior-change | App run WITH vs WITHOUT a reference to `Qyl.AutoInstrumentation.Hosting`: identical stdout, stderr, exit code, exceptions (thrown+caught), return values. **App-invisible.** |
+Current substrate:
 
-Gate B is captured **baseline-first**: the WITHOUT-reference run is recorded *before* any
-`PackageReference` is added.
+- .NET 10 managed runtime libraries,
+- Roslyn source generators,
+- source-visible `[InterceptsLocation]` interceptors,
+- `DiagnosticListener` and `Activity` payload consumption,
+- build/buildTransitive package assets,
+- `[ModuleInitializer]` bootstrap.
 
-## Status legend
-`proven` done+gated · `M1`/`M{n}` scheduled to that milestone · `in-progress` · `decided` (design fixed, no code) ·
-`reuse` (inherited from BCL primitives — qyl writes none) · `cross-cutting` (enforced by every gate) ·
-`backlog` (has a home, not yet scheduled — assigned to a milestone before work starts) ·
-`archived` (proven under v0.1.0 substrate, see `v0.1.0-archive` tag) ·
-`oos:<reason>` (explicitly dropped, reason required)
+Forbidden product mechanisms:
 
-## Milestones (post-swap)
+- CLR profiler attach,
+- startup hooks,
+- runtime IL rewriting or ReJIT,
+- dynamic plugin loading,
+- reflection-based instrumentation dispatch.
 
-| Milestone | Goal | Gate A golden | Gate B baseline | State |
-|-----------|------|---------------|-----------------|-------|
-| **M1 AOT walking skeleton** | A NativeAOT-published consumer app, with a `PackageReference` to `Qyl.AutoInstrumentation.Hosting`, emits ONE HttpClient CLIENT span via `QylActivitySource` to a console listener — driven by the `HttpHandlerDiagnosticListener` subscription. | one CLIENT span: method/url/server | app stdout/exit identical w/wo the reference + 0 spans in the control arm | **in-progress** — PackageReference zero-code NativeAOT boot + deterministic offline HttpClient activity golden are proven by `tools/verify-nativeaot-consumer-golden.py`; source-generated interceptor emission is proven by `tools/verify-source-interceptor-consumer.py`; deterministic Gate B consumer runner exists in `tools/verify-consumer-behavior.py`; `tools/verify-contract-coverage-report.py` proves the 60-item coverage map; `tools/verify-aot-autoinstrumentation-goal.py` runs the current combined goal gate. Full OTLP export normalizer still pending. |
-| M2+ | *not enumerated until M1 is `proven`* (the principle) | — | — | — |
-
-## 60-item OpenTelemetry .NET auto-instrumentation contract
+## Contract classification
 
 Source of truth:
 
 - `docs/otel-dotnet-auto-60-contract-items.yaml`
 - `src/Qyl.AutoInstrumentation.SourceGenerators/InstrumentationContract.cs`
+- `docs/coverage-matrix.md`
 
-Current compile-time NativeAOT classification:
+Current classification:
 
-| Contract slice | Count | Current binding |
+| Slice | Count | Binding |
 |---|---:|---|
-| Signal-specific promises | 37 | 33 source-generated signal promises plus 4 unsupported NativeAOT parity/dynamic promises. |
-| Source-generated signal promises | 33 | `QylAutoInstrumentationGenerator` gates interceptor targets through `InstrumentationContract.TryGetSourceGeneratedSignal`. |
-| Unsupported NativeAOT parity/dynamic signal promises | 4 | `signals.traces.ASPNET`, `signals.traces.WCFCORE`, `signals.traces.WCFSERVICE`, `signals.metrics.ASPNET`; retained in the manifest but rejected by the source-generator target gate. |
-| Global environment controls | 7 | `QylAutoInstrumentationOptions` reads global/signal defaults and derives signal-specific pattern variables. |
-| Instrumentation options | 16 | `QylAutoInstrumentationOptions` reads all option environment variables; raw/sensitive emissions stay default-off. |
-| Total contract items | 60 | `InstrumentationContract.TotalCount`. |
+| Total contract items | 60 | `InstrumentationContract.TotalCount` |
+| Source-generated signal promises | 33 | Eligible for generator-gated interception or meter registration. |
+| Unsupported NativeAOT parity/dynamic signal promises | 4 | Classic ASP.NET/WCF/dynamic parity items retained with explicit unsupported status. |
+| Global environment controls | 7 | Read by `QylAutoInstrumentationOptions`. |
+| Instrumentation options | 16 | Read by `QylAutoInstrumentationOptions`; sensitive raw values remain default-off. |
 
-Unsupported NativeAOT parity/dynamic paths are not backlog emitters. These items require .NET
-Framework, bytecode/runtime rewriting, or runtime dispatch surfaces that this generator explicitly
-does not implement. Treating them as source-generated work would violate the architecture rule: no
-CLR profiling, no startup hooks, no runtime IL rewriting, no reflection, and no dynamic dispatch.
+## Verified behavior
 
-The source-generated signal set covers source-visible call-sites and meter registration only.
-Third-party binary internals and unsupported/dynamic call paths remain intentionally ignored.
+| Area | Evidence |
+|---|---|
+| Package layout | `tools/verify-package-layout.py` validates analyzer/build/buildTransitive assets and forbids profiler/reflection tokens in package assets. |
+| ProjectReference dogfood | `tools/verify-projectreference-behavior.py` proves the supported explicit analyzer/targets path and the unsupported bare runtime ProjectReference path. |
+| Public API | `tools/verify-public-api-baseline.py` gates package API drift. |
+| XML docs | `tools/verify-xml-doc-enforcement.py` gates public runtime and source-generator docs. |
+| Source generator snapshots | `tools/verify-generator-snapshots.py` compares generated output to checked-in verified snapshots. |
+| Source interceptor consumer | `tools/verify-source-interceptor-consumer.py` proves generated interceptors execute in managed and NativeAOT consumers. |
+| Smoke consumers | `tools/smoketest.sh` packs local packages, creates PackageReference and ProjectReference consumers, and verifies output. |
+| AOT warning gate | Smoke publishing fails on supported-consumer IL/trim/AOT warnings. |
+| WebAPI AOT demo | `tools/verify-webapi-aot-demo.py` publishes and runs the NativeAOT web API proof. |
+| OTLP-shaped fixture | `tools/verify-otlp-golden-fixtures.py` validates normalized offline activity output. |
+| Collector fixture | `tools/verify-otlp-collector-fixtures.py` validates collector-backed telemetry fixture output. |
+| Consumer behavior | `tools/verify-consumer-behavior.py` checks baseline-vs-instrumented output equivalence. |
+| NativeAOT consumer golden | `tools/verify-nativeaot-consumer-golden.py` checks a normalized NativeAOT qyl HTTP client activity golden. |
 
-## Coverage ledger — blueprint §00–§09 + T000–T032 (re-aimed)
+The broad handoff command is:
 
-| Ref | What | Status |
-|-----|------|--------|
-| §00 LANGUAGE_OWNERSHIP | C# owns behavior; AOT-compatible code only | `decided` |
-| §00 DO_NOT_WRITE_IN_CSHARP | COM/ICorProfiler/ReJIT/IL native boundary | `oos: substrate-swap — qyl no longer attaches via the profiler API` |
-| §01 EXISTING_CODE_REUSE | BCL `ActivitySource` / `Meter` / `DiagnosticSource` | `decided` |
-| §02 REPO_SKELETON | 4-project solution + Directory.Build.props + .slnx | **proven** ✅ (this commit) |
-| §03 ATTACHMENT_SURFACE | build-transitive consumer bootstrap + `[ModuleInitializer]` + `AddQylAutoInstrumentation()` | `in-progress` (PackageReference boot proven locally; formal Gate B pending) |
-| §04 ARCHITECTURE | layer reference model | `decided` (source-gen + listener + module-init triad) |
-| §05 TASK_CHAIN | the 33 chains | tracked below |
-| §06 SEMCONV_COVERAGE | full attribute/metric/span registry | `in-progress` (build-time FrozenSet via source generator) |
-| §07 INSTRUMENTATION_MODULES | per-library coverage | `in-progress` (live demo captures HttpClient, ASP.NET Core, EFCore, SqlClient, gRPC with safe semantic attributes; formal gates pending) |
-| §08 GOLDEN_OUTPUT_SHAPES | SpanData/MetricData/LogRecordData schemas | `M1` (defines Gate A normalizer) |
-| §09 DONE_STATE | final exit criteria | `decided` (the finish line — unchanged from v0.1.0) |
-| T000 establish baseline | env/runtime/AOT publish matrix | `M1` (osx-arm64/net10 cell first) |
-| T001 reuse decision | BCL primitives + source-gen | `proven` (this commit) |
-| T002 repo bootstrap | solution/packages/CI | `M1` (solution proven ✅; CI `backlog`) |
-| T003 semconv generation | Weaver → `FrozenSet<string>` | `in-progress` (build-time generator emits `QylSemConvRegistry.g.cs`; runtime reflection path removed) |
-| T004 native profiler boundary | CLSID/protocol/events | `oos: substrate-swap` |
-| T005 startup hook | `Initialize()` entrypoint | `oos: replaced by [ModuleInitializer]` |
-| T006 loader | ALC resolver + activate managed profiler | `oos: not needed under AOT — direct PackageReference` |
-| T007 configuration | env/file/precedence/redaction | `M1` (console listener only) / rest `backlog` |
-| T008 resource detection | service/host/os/process/k8s/cloud | `backlog` |
-| T009 provider bootstrap | Tracer/Meter/Logger providers | `M1` (Tracer via ActivityListener) / Meter+Logger `backlog` |
-| T010 rule manifest | data-defined rule compiler | `backlog` (differentiator) |
-| T011 calltarget ABI | begin/end/exception/async handlers | `oos: substrate-swap — DiagnosticListener replaces this` |
-| T012 source instrumentation runtime | ActivitySource/DiagnosticListener subs | `in-progress` (central semantic policy + live domain proof; formal Gate A/B pending) |
-| T013 bytecode instrumentation runtime | ReJIT rewrite pipeline | `oos: substrate-swap — incompatible with AOT` |
-| T014 http server | ASP.NET Core | `in-progress` (real Kestrel 204 + unhandled-exception 500 paths proven under managed, NativeAOT, and PackageReference zero-code; formal Gate A/B pending) |
-| T015 http client | HttpClient | `M1` (real `HttpHandlerDiagnosticListener` 503 + connection-error paths proven under managed, NativeAOT, and PackageReference zero-code; formal Gate A/B pending) |
-| T016 grpc/rpc | Grpc.Net | `in-progress` (live qyl span demo; formal Gate A/B pending) |
-| T017 database | ADO.NET/EFCore/SqlClient | `in-progress` (real EFCore and Microsoft.Data.SqlClient command success/error payloads proven under managed + NativeAOT; formal Gate A/B pending) |
-| T018 cache | StackExchange.Redis | `backlog` |
-| T019 messaging | Kafka/RabbitMQ/Azure/AWS/GCP | `backlog` |
-| T020 cloud sdk | Azure/AWS/GCP SDKs | `backlog` |
-| T021 faas | Lambda/Functions/GCF | `backlog` |
-| T022 object stores | S3/Blob/GCS | `backlog` |
-| T023 graphql | GraphQL.NET | `backlog` |
-| T024 logging | ILogger/log4net/NLog/Serilog | `backlog` |
-| T025 runtime/process | runtime+process metrics | `backlog` |
-| T026 feature flags | flag evaluation events | `backlog` |
-| T027 genai | OpenAI/Anthropic/Bedrock/Azure AI | `backlog` (differentiator) |
-| T028 mcp | client/server spans + transports | `backlog` (differentiator) |
-| T029 exceptions | span/log exception events | `backlog` |
-| T030 profiles | pprof/CPU/alloc/wall profiles | `oos: OTel profiling signal pre-stable; revisit when spec ships GA` |
-| T031 security/safety | no-behavior-change, sensitive-off-by-default | `cross-cutting` (enforced by Gate B every milestone) |
-| T032 test matrix | runtimes × OS/arch × hosts | `cross-cutting` (gates run per-cell; new M1 = osx-arm64/net10 only) |
+```bash
+python3 tools/verify-aot-autoinstrumentation-goal.py
+```
 
-## Archived (v0.1.0 substrate) milestones
+## Current library coverage
 
-The following 12 milestones are `archived` — proven under the v0.1.0 substrate (CLR profiler +
-`OTEL_DOTNET_AUTO_PLUGINS`) and reproducible from tag `v0.1.0-archive`. They are preserved here
-as the historical audit trail; their *gates* (Gate A / Gate B) port forward unchanged, their
-*mechanism* does not.
+Detailed runtime extraction rules live in `docs/RUNTIME_SEMANTICS.md`.
 
-| Milestone | Goal (v0.1.0) | State |
-|-----------|---------------|-------|
-| M1 Walking Skeleton (substrate-era) | One HttpClient CLIENT span via substrate attach | `archived` ✅ proven osx-arm64/net8 |
-| M2 First qyl code (substrate-era) | qyl plugin via `OTEL_DOTNET_AUTO_PLUGINS` | `archived` ✅ |
-| M3 Generated registry (substrate-era) | Reflection over `Qyl.OpenTelemetry.SemanticConventions` (922 keys) | `archived` ✅ |
-| M4 Self-telemetry (substrate-era) | `qyl.semconv.attribute.checks` counter | `archived` ✅ (counter contract preserved in new `QylSelfTelemetry`) |
-| M5 Unknown path (substrate-era) | `verdict=unknown` on real data | `archived` ✅ |
-| M6 Logs signal (substrate-era) | ILogger record with trace correlation | `archived` ✅ |
-| M7 Gate runner (substrate-era) | `spike/gate.sh` | `archived` ✅ (mechanism: substrate attach) |
-| M8 First qyl instrumentation (substrate-era) | GenAI span | `archived` ✅ |
-| M9 MCP span (substrate-era) | `mcp.*` client span | `archived` ✅ |
-| M10 Enforcement (substrate-era) | `gate.sh --strict` | `archived` ✅ |
-| M11 Distributable tool (substrate-era) | `qyl install` deploys into substrate store | `archived` ✅ (entire mechanism `oos` under AOT) |
-| M12 Breadth fan-out (substrate-era) | DB/messaging/RPC spans through gate.sh | `archived` ✅ |
+| Library area | Current status |
+|---|---|
+| HttpClient | Real managed and NativeAOT proof through BCL diagnostic listener/activity tags. |
+| ASP.NET Core | Real managed and NativeAOT trace proof through ASP.NET Core listener payloads. |
+| EFCore | Real managed and NativeAOT proof with compiled model; upstream EFCore AOT warnings are app-boundary issues. |
+| Grpc.Net.Client | Real managed and NativeAOT proof through public gRPC activity tags. |
+| Microsoft.Data.SqlClient | Real managed and NativeAOT proof; upstream SqlClient AOT/globalization limits are app-boundary issues. |
+| Classic ASP.NET/WCF dynamic parity | Explicitly unsupported for this NativeAOT/source-generator substrate. |
+
+## Open work
+
+- Full OTLP export normalizer for Gate A.
+- Stable benchmark budget thresholds.
+- One-command contract update/regeneration flow.
+- More source-visible interceptor targets with bounded names and stable attributes.
+- Better consumer diagnostics when package build assets are missing.
