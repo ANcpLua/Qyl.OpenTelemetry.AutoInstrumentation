@@ -1,0 +1,29 @@
+name: qyl-webapi-aot-demo
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - claude/**
+
+jobs:
+  webapi-aot-demo:
+    name: webapi-aot-demo (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish and run NativeAOT web API demo
+        run: python3 tools/verify-webapi-aot-demo.py

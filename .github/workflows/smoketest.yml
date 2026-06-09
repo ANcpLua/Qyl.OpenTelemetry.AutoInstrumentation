@@ -1,0 +1,26 @@
+name: qyl-smoketest
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  smoke:
+    name: smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run PackageReference and ProjectReference smoke tests
+        run: bash tools/smoketest.sh
