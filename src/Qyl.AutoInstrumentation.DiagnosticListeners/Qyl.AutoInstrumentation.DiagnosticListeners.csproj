@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.AutoInstrumentation.DiagnosticListeners</RootNamespace>
+    <AssemblyName>Qyl.AutoInstrumentation.DiagnosticListeners</AssemblyName>
+    <PackageId>Qyl.AutoInstrumentation.DiagnosticListeners</PackageId>
+    <Description>AOT-native DiagnosticListener subscribers — qyl's replacement for the substrate's IL-rewriting CallTarget integrations.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
+  </ItemGroup>
+
+</Project>

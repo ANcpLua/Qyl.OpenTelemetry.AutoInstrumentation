@@ -1,0 +1,39 @@
+using System.Diagnostics;
+
+namespace Qyl.AutoInstrumentation;
+
+/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Wcf Client.</summary>
+/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+/// <example><code>var apiType = typeof(QylInterceptedWcfClient);</code></example>
+public static class QylInterceptedWcfClient
+{
+
+    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
+    public static Activity? StartActivity(string clientType, string methodName)
+    {
+        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.WcfClient))
+            return null;
+
+        var activity = QylActivitySource.StartActivity("WCF CLIENT", ActivityKind.Client);
+        if (activity is null)
+            return null;
+
+        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcWcfClient);
+        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf);
+        activity.SetTag(QylSemanticAttributes.RpcService, clientType);
+        activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
+        return activity;
+    }
+
+    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
+    public static void RecordSuccess(Activity? activity)
+    {
+    }
+
+    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
+    public static void RecordException(Activity? activity, Exception exception)
+    {
+        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
+        activity?.SetStatus(ActivityStatusCode.Error);
+    }
+}

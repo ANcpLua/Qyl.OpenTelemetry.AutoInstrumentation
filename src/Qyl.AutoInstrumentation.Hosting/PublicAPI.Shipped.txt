@@ -1,0 +1,10 @@
+#nullable enable
+Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap
+Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions
+Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions.EnableConformanceProcessor.get -> bool
+Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions.EnableConformanceProcessor.set -> void
+Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions.QylAutoInstrumentationHostingOptions() -> void
+Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions
+static Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap.Boot() -> void
+static Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions.AddQylAutoInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions.AddQylAutoInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Qyl.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
