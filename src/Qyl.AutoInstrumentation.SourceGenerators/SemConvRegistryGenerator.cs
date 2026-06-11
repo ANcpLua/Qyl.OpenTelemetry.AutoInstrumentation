@@ -114,7 +114,7 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
            value.IndexOf('.') >= 0 &&
            value.IndexOf(' ') < 0 &&
            value[0] is not '.' &&
-           value[value.Length - 1] is not '.';
+           value[^1] is not '.';
 
     private static bool IsTemplateAttribute(IFieldSymbol field, string value)
         => value.EndsWithOrdinal(".header") ||
@@ -125,8 +125,7 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
     private static ImmutableArray<string> ToSortedImmutableArray(HashSet<string> values)
     {
         var builder = ImmutableArray.CreateBuilder<string>(values.Count);
-        foreach (var value in values)
-            builder.Add(value);
+        builder.AddRange(values);
 
         builder.Sort(StringComparer.Ordinal);
         return builder.ToImmutable();
@@ -177,7 +176,7 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
     private sealed class SemConvRegistryModel
     {
         public static readonly SemConvRegistryModel Empty =
-            new(false, ImmutableArray<string>.Empty, ImmutableArray<string>.Empty);
+            new(false, [], []);
 
         public SemConvRegistryModel(bool shouldEmit, ImmutableArray<string> keys, ImmutableArray<string> templatePrefixes)
         {

@@ -14,8 +14,7 @@ public static class QylInterceptedQuartz
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Quartz))
             return null;
 
-        var activity = QylActivitySource.StartActivity("Quartz execute", ActivityKind.Internal);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.QuartzExecute, ActivityKind.Internal) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.JobQuartz);

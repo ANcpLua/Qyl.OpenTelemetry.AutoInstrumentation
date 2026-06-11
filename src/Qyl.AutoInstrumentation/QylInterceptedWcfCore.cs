@@ -14,8 +14,7 @@ public static class QylInterceptedWcfCore
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.WcfCore))
             return null;
 
-        var activity = QylActivitySource.StartActivity("CoreWCF SERVER", ActivityKind.Server);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.CoreWcfServer, ActivityKind.Server) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcWcfCore);

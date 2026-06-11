@@ -14,8 +14,7 @@ public static class QylInterceptedGraphQl
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.GraphQl))
             return null;
 
-        var activity = QylActivitySource.StartActivity("GraphQL execute", ActivityKind.Internal);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.GraphQlExecute, ActivityKind.Internal) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.GraphQl);

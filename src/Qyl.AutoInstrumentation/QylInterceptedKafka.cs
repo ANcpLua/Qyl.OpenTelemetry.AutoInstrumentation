@@ -7,7 +7,6 @@ namespace Qyl.AutoInstrumentation;
 /// <example><code>var apiType = typeof(QylInterceptedKafka);</code></example>
 public static class QylInterceptedKafka
 {
-
     /// <summary>Runs the Start Producer Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartProducerActivity()
         => StartActivity(
@@ -44,8 +43,7 @@ public static class QylInterceptedKafka
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Kafka))
             return null;
 
-        var activity = QylActivitySource.StartActivity("Kafka message", activityKind);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.KafkaMessage, activityKind) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingKafka);

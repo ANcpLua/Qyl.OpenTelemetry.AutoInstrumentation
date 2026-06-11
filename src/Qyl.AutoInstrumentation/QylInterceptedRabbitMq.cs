@@ -14,8 +14,7 @@ public static class QylInterceptedRabbitMq
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.RabbitMq))
             return null;
 
-        var activity = QylActivitySource.StartActivity("RabbitMQ publish", ActivityKind.Producer);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.RabbitMqPublish, ActivityKind.Producer) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingRabbitMq);

@@ -17,8 +17,7 @@ public static class QylInterceptedMongoDb
             return null;
 
         var operation = NormalizeOperation(operationName);
-        var activity = QylActivitySource.StartActivity("MongoDB command", ActivityKind.Client);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.MongoDbCommand, ActivityKind.Client) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbMongoDb);

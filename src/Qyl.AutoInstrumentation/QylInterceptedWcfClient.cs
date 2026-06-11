@@ -14,8 +14,7 @@ public static class QylInterceptedWcfClient
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.WcfClient))
             return null;
 
-        var activity = QylActivitySource.StartActivity("WCF CLIENT", ActivityKind.Client);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(QylActivityNames.WcfClient, ActivityKind.Client) is not { } activity)
             return null;
 
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcWcfClient);
