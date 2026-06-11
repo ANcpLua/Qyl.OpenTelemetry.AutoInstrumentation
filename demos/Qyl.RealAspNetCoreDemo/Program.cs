@@ -116,7 +116,10 @@ internal sealed record AspNetCoreReport(
             if (span.Tags.ContainsKey("url.path"))
                 failures.Add("url.path leaked with default privacy policy");
 
-            if (!StringComparer.Ordinal.Equals(span.Name, "HTTP SERVER GET"))
+            var expectedName = span.Tags.TryGetValue("http.route", out var spanRoute)
+                ? $"GET {spanRoute}"
+                : "GET";
+            if (!StringComparer.Ordinal.Equals(span.Name, expectedName))
                 failures.Add($"unexpected high-cardinality span name: {span.Name}");
         }
 

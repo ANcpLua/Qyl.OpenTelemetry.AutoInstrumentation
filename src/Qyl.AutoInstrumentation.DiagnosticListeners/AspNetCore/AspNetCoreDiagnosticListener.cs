@@ -40,7 +40,7 @@ public sealed class AspNetCoreDiagnosticListener : DiagnosticListenerSubscriber
                          DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.HttpServerRequest, ActivityKind.Server);
+        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.HttpServer(method, route), ActivityKind.Server);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpServer);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);

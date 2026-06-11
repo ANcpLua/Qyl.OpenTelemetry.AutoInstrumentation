@@ -16,7 +16,7 @@ public static class QylInterceptedEntityFrameworkCore
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.EntityFrameworkCore))
             return null;
 
-        var activity = QylActivitySource.StartActivity("EF Core operation", ActivityKind.Client);
+        var activity = QylActivitySource.StartActivity(QylActivityNames.DbCommand(operationName), ActivityKind.Client);
         if (activity is null)
             return null;
 

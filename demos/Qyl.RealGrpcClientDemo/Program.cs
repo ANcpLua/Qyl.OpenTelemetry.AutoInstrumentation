@@ -136,7 +136,7 @@ internal sealed record GrpcClientReport(
 
         foreach (var span in grpcSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "gRPC qyl.LiveProbe/Collect"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "qyl.LiveProbe/Collect"))
                 failures.Add($"unexpected gRPC span name: {span.Name}");
         }
 

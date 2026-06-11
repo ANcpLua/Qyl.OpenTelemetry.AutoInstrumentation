@@ -2,7 +2,6 @@
   "forbiddenStrings": [],
   "matchedStrings": [
     "GET",
-    "HTTP client request",
     "Qyl.AutoInstrumentation",
     "downstream.example",
     "http.client",

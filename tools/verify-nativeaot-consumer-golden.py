@@ -82,7 +82,7 @@ static void EmitSyntheticHttpClientEvent()
 '''
 
 
-EXPECTED_GOLDEN = """name=HTTP client request
+EXPECTED_GOLDEN = """name=GET
 kind=Client
 error.type=503
 http.request.method=GET

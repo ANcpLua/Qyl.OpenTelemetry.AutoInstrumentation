@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Telemetry semantics
+
+- URL emission now always requires `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true`;
+  the upstream `OTEL_DOTNET_EXPERIMENTAL_*_DISABLE_URL_QUERY_REDACTION` flags only upgrade
+  redacted to raw once emission is on. Previously the redaction flag alone emitted a fully
+  unredacted `url.full` (HttpClient/HttpWebRequest) and raw `url.query` (ASP.NET Core),
+  bypassing the sensitive-values gate.
+- Span names are now OTel-semconv-shaped low-cardinality values composed by
+  `QylActivityNames` helpers instead of fixed literals: HTTP client spans use the normalized
+  method (`GET`, fallback `HTTP` for `_OTHER`), HTTP server spans use `{method} {route}`,
+  gRPC client spans use the full `{rpc.service}/{rpc.method}` name, and database spans use
+  `DB {operation}` / `SQL {operation}`. The `QylActivityNames` string constants were removed.
+
 ### Real consumer demos
 
 - Added real Confluent.Kafka, RabbitMQ.Client, and MongoDB.Driver demos that prove

@@ -93,7 +93,7 @@ dotnet pack src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj -c Releas
 dotnet pack src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj -c Release -o /tmp/qyl-pack
 dotnet pack src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj -c Release -o /tmp/qyl-pack
 # A temp consumer with PackageReference=Qyl.AutoInstrumentation.Hosting and no qyl startup call
-# restored from /tmp/qyl-pack and printed: PASS name=gRPC qyl.LiveProbe/Collect.
+# restored from /tmp/qyl-pack and printed: PASS name=qyl.LiveProbe/Collect.
 ```
 
 Real Microsoft.Data.SqlClient, project-reference bootstrap simulation:

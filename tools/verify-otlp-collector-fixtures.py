@@ -24,7 +24,6 @@ EXPORTER_VERSION = "1.15.3"
 
 REQUIRED_STRINGS = (
     "Qyl.AutoInstrumentation",
-    "HTTP client request",
     "qyl.instrumentation.domain",
     "http.client",
     "http.request.method",

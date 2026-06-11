@@ -22,7 +22,7 @@ public static class QylInterceptedHttpWebRequest
             return null;
 
         var method = QylHttpMethod.Normalize(request.Method);
-        var activity = QylActivitySource.StartActivity("HTTP client request", ActivityKind.Client);
+        var activity = QylActivitySource.StartActivity(QylActivityNames.HttpClient(method), ActivityKind.Client);
         if (activity is null)
             return null;
 

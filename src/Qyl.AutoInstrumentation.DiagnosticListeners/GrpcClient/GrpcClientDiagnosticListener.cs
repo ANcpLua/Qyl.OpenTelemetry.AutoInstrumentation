@@ -38,7 +38,7 @@ public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
                          DiagnosticPayloadReader.GetInt32(payload, "grpc.status_code");
         var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
 
-        using var activity = QylActivitySource.Source.StartActivity("gRPC CLIENT", ActivityKind.Client);
+        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.GrpcClient(service, method), ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
         SemanticTagWriter.Set(activity, SemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);

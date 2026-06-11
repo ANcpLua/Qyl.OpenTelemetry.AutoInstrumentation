@@ -77,7 +77,7 @@ public static class QylInterceptedAspNetCore
 
         var method = QylHttpMethod.Normalize(context.Request.Method);
         var route = GetRoute(context);
-        var activity = QylActivitySource.StartActivity(QylActivityNames.HttpServerRequest, ActivityKind.Server);
+        var activity = QylActivitySource.StartActivity(QylActivityNames.HttpServer(method, route), ActivityKind.Server);
         if (activity is null)
             return null;
 

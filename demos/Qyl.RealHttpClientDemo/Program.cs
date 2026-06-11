@@ -130,7 +130,7 @@ internal sealed record HttpClientReport(
             if (span.Tags.ContainsKey("url.full"))
                 failures.Add("url.full leaked with default privacy policy");
 
-            if (!StringComparer.Ordinal.Equals(span.Name, "HTTP GET"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "GET"))
                 failures.Add($"unexpected high-cardinality span name: {span.Name}");
         }
 

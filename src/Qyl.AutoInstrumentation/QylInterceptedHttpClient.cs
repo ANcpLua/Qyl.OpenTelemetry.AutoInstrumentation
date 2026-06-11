@@ -587,7 +587,7 @@ public static class QylInterceptedHttpClient
         if (traceEnabled)
         {
             requestUri = ResolveRequestUri(client, requestUri);
-            activity = QylActivitySource.StartActivity("HTTP client request", ActivityKind.Client);
+            activity = QylActivitySource.StartActivity(QylActivityNames.HttpClient(method), ActivityKind.Client);
             if (activity is not null)
             {
                 activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);

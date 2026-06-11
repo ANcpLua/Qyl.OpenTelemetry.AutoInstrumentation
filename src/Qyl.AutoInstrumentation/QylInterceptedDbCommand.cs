@@ -21,11 +21,11 @@ public static class QylInterceptedDbCommand
         if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, instrumentationId))
             return null;
 
-        var activity = QylActivitySource.StartActivity("DB client command", ActivityKind.Client);
+        var operation = NormalizeOperation(operationName, command);
+        var activity = QylActivitySource.StartActivity(QylActivityNames.DbCommand(operation), ActivityKind.Client);
         if (activity is null)
             return null;
 
-        var operation = NormalizeOperation(operationName, command);
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbClient);
         activity.SetTag(QylSemanticAttributes.DbSystemName, GetDbSystemName(instrumentationId));
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);

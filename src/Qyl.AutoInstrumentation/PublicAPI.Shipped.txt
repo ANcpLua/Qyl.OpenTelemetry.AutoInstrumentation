@@ -60,10 +60,11 @@ Qyl.AutoInstrumentation.QylMetricNames
 Qyl.AutoInstrumentation.QylNServiceBusMetrics
 Qyl.AutoInstrumentation.QylSelfTelemetry
 Qyl.AutoInstrumentation.QylSemanticAttributes
-const Qyl.AutoInstrumentation.QylActivityNames.DbClientCommand = "DB client command" -> string!
-const Qyl.AutoInstrumentation.QylActivityNames.EntityFrameworkCoreOperation = "EF Core operation" -> string!
-const Qyl.AutoInstrumentation.QylActivityNames.HttpClientRequest = "HTTP client request" -> string!
-const Qyl.AutoInstrumentation.QylActivityNames.HttpServerRequest = "HTTP server request" -> string!
+static Qyl.AutoInstrumentation.QylActivityNames.DbCommand(string? operation) -> string!
+static Qyl.AutoInstrumentation.QylActivityNames.GrpcClient(string? service, string? method) -> string!
+static Qyl.AutoInstrumentation.QylActivityNames.HttpClient(string? normalizedMethod) -> string!
+static Qyl.AutoInstrumentation.QylActivityNames.HttpServer(string? normalizedMethod, string? route) -> string!
+static Qyl.AutoInstrumentation.QylActivityNames.SqlClientCommand(string? operation) -> string!
 const Qyl.AutoInstrumentation.QylActivitySource.Name = "Qyl.AutoInstrumentation" -> string!
 const Qyl.AutoInstrumentation.QylAutoInstrumentationIds.AdoNet = "ADONET" -> string!
 const Qyl.AutoInstrumentation.QylAutoInstrumentationIds.AspNet = "ASPNET" -> string!
