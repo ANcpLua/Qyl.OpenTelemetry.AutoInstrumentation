@@ -5,8 +5,12 @@
   <Project Path="demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj" />
   <Project Path="demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj" />
   <Project Path="demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj" />
+  <Project Path="demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj" />
   <Project Path="demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj" />
+  <Project Path="demos/Qyl.RealNServiceBusDemo/Qyl.RealNServiceBusDemo.csproj" />
+  <Project Path="demos/Qyl.RealQuartzDemo/Qyl.RealQuartzDemo.csproj" />
   <Project Path="demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj" />
+  <Project Path="demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj" />
   <Project Path="demos/Qyl.RealSqlClientDemo/Qyl.RealSqlClientDemo.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj" />

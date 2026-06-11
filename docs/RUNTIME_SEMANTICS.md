@@ -41,6 +41,10 @@ Set `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true` to emit these raw va
 | Confluent.Kafka | Source-generated interceptors on `IProducer<K,V>.Produce`/`ProduceAsync` and `IConsumer<K,V>.Consume`; no DiagnosticListener involved. | Real Kafka 4.1 broker proof covers async produce, sync produce, consume polling, and unreachable-broker produce failure (`error.type=ProduceException`2``). Consumer spans are per `Consume` call, including empty polls. NativeAOT requires `TrimmerRootAssembly=Confluent.Kafka` because librdkafka delegate wiring resolves the library's own `NativeMethods` members through reflection that trimming removes; Confluent.Kafka 2.14.2 also emits its own IL2104 trim warning. | `messaging.system=kafka`, `messaging.operation.type=send`/`receive`, `messaging.operation.name`, `error.type` on failure. | Real managed + NativeAOT proof, with explicit Confluent.Kafka app-side trimmer-root boundary. |
 | RabbitMQ.Client | Source-generated interceptors on `IChannel.BasicPublishAsync`; no DiagnosticListener involved. | Real RabbitMQ 4 broker proof covers default-exchange publish to a declared queue and missing-exchange publish failure. Publisher confirmations are enabled so the failed publish faults the awaited `ValueTask` deterministically (`error.type=AlreadyClosedException`). RabbitMQ.Client 7.2.1 publishes under NativeAOT without warnings. | `messaging.system=rabbitmq`, `messaging.operation.type=send`, `messaging.operation.name=publish`, `error.type` on failure. | Real managed + NativeAOT proof. |
 | MongoDB.Driver | Source-generated interceptors on `IMongoCollection<T>` command methods (`InsertOneAsync`, `CountDocumentsAsync`, `DeleteManyAsync`, ...); no DiagnosticListener involved. | Real MongoDB 8 proof covers insert, count, delete, and duplicate-key insert failure (`error.type=MongoWriteException`). Operation names are normalized (`insert`, `count`, `delete`). NativeAOT requires `TrimmerRootAssembly` for `MongoDB.Bson` and `MongoDB.Driver`: the untrimmed-rooted binary runs, while the trimmed binary hangs in driver initialization before any I/O; the driver also emits its own IL2104/IL3053 warnings. | `db.system.name=mongodb`, `db.operation.name`, `db.query.summary`, `error.type` on failure; `db.query.text` privacy-gated. | Real managed + NativeAOT proof, with explicit MongoDB.Driver app-side trimmer-root boundary. |
+| StackExchange.Redis | Source-generated interceptors on `IDatabaseAsync` commands (`StringSetAsync`, `StringGetAsync`, `KeyDeleteAsync`, `ExecuteAsync`, ...); no DiagnosticListener involved. | Real Redis 8 proof covers SET/GET/DEL round-trip and an unknown `ExecuteAsync` command failure (`error.type=RedisServerException`). StackExchange.Redis 2.13.17 publishes under NativeAOT with zero IL warnings and no trimmer roots. | `db.system.name=redis`, `db.operation.name` (Redis command name), `db.query.summary`, `error.type` on failure. | Real managed + NativeAOT proof. |
+| Quartz | Source-generated interceptors on source-visible `IJob.Execute` calls; no DiagnosticListener involved. | Real in-process Quartz 3.18 scheduler proof: the scheduler fires a job that delegates to inner jobs through source-visible `Execute` calls, covering success and a throwing job (`error.type=InvalidOperationException`). Scheduler-internal job dispatch happens inside Quartz.dll and is structurally not reachable by source interception; only source-visible `Execute` composition calls are. NativeAOT requires `TrimmerRootAssembly=Quartz` because Quartz instantiates its type-load helper and jobs through `Activator.CreateInstance`; Quartz also emits its own IL2104/IL3053 warnings. | `qyl.instrumentation.domain=job.quartz`, `error.type` on failure; span kind Internal. | Real managed + NativeAOT proof for source-visible call sites, with explicit dispatch-boundary statement and Quartz app-side trimmer-root boundary. |
+| MassTransit | Source-generated interceptors on `IPublishEndpoint.Publish` and `ISendEndpoint.Send`; no DiagnosticListener involved. | Real RabbitMQ 4 broker proof on the MassTransit 8.x open-source line (9.x is commercial) covers publish, queue send, and a deterministic publish failure: MassTransit rejects namespace-less message types inside the intercepted call (`error.type=ArgumentException`). NativeAOT works when the app chains a source-generated `JsonSerializerContext` into MassTransit's serializer options; without it message serialization throws under AOT. MassTransit emits its own IL trim/AOT warnings. | `messaging.system=masstransit`, `messaging.operation.type=send`, `messaging.operation.name=publish`/`send`, `error.type` on failure. | Real managed + NativeAOT proof, with explicit app-side STJ source-generation requirement. |
+| NServiceBus | Source-generated interceptors on `IMessageSession.Publish`/`Send`; no DiagnosticListener involved. | Real NServiceBus 10 endpoint proof on the LearningTransport with assembly scanning disabled and explicit handler registration: publish, routed send with a real handler round-trip, and an unrouted send failure (`error.type=Exception`; NServiceBus throws the base exception type for missing routes). NativeAOT is structurally blocked by NServiceBus itself: endpoint creation unconditionally constructs a Reflection.Emit proxy creator (`MessageMapper` → `ConcreteProxyCreator`), which cannot run under NativeAOT. | `messaging.system=nservicebus`, `messaging.operation.type=send`, `messaging.operation.name=publish`/`send`, `error.type` on failure. | Real managed proof; NativeAOT is an explicit NServiceBus library boundary (Reflection.Emit at endpoint creation). |
 
 ## Evidence Commands
 
@@ -178,6 +182,63 @@ dotnet publish demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj -c Release -
 # Both runs printed Pass=true with insert/count/delete spans and 1 MongoWriteException error span.
 
 docker rm -f qyl-mongodb-probe
+```
+
+Real StackExchange.Redis, source-interceptor proof:
+
+```bash
+docker run -d --name qyl-redis-probe -p 16379:6379 redis:8
+export QYL_REDIS_CONFIGURATION=127.0.0.1:16379
+
+dotnet run --project demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-redis-aot /p:PublishAot=true /p:TreatWarningsAsErrors=false
+/tmp/qyl-real-redis-aot/Qyl.RealRedisDemo
+# Both runs printed Pass=true with SET/GET/DEL success spans and 1 RedisServerException error
+# span from an unknown ExecuteAsync command. The AOT publish produced zero IL warnings.
+
+docker rm -f qyl-redis-probe
+```
+
+Real Quartz, source-interceptor proof (in-process scheduler, no container):
+
+```bash
+dotnet run --project demos/Qyl.RealQuartzDemo/Qyl.RealQuartzDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealQuartzDemo/Qyl.RealQuartzDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-quartz-aot /p:PublishAot=true /p:TreatWarningsAsErrors=false
+/tmp/qyl-real-quartz-aot/Qyl.RealQuartzDemo
+# TreatWarningsAsErrors=false is intentional here because Quartz 3.18.1 emits its own
+# IL2104/IL3053 warnings. The demo csproj roots Quartz for the trimmer because Quartz
+# instantiates its type-load helper and jobs through Activator.CreateInstance.
+# Both runs printed Pass=true with 1 success span and 1 InvalidOperationException error span
+# from source-visible IJob.Execute delegation inside a scheduler-fired job.
+```
+
+Real MassTransit, source-interceptor proof:
+
+```bash
+docker run -d --name qyl-rabbitmq-probe -p 5673:5672 rabbitmq:4
+export QYL_RABBITMQ_URI=amqp://guest:guest@127.0.0.1:5673
+
+dotnet run --project demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-masstransit-aot /p:PublishAot=true /p:TreatWarningsAsErrors=false
+/tmp/qyl-real-masstransit-aot/Qyl.RealMassTransitDemo
+# TreatWarningsAsErrors=false is intentional here because MassTransit 8.5.10 emits its own IL
+# trim/AOT warnings. NativeAOT works because the demo chains a source-generated
+# JsonSerializerContext into MassTransit's serializer options.
+# Both runs printed Pass=true with publish/send success spans and 1 ArgumentException error
+# span from MassTransit rejecting a namespace-less message type inside the intercepted call.
+
+docker rm -f qyl-rabbitmq-probe
+```
+
+Real NServiceBus, source-interceptor proof (LearningTransport, no container, managed only):
+
+```bash
+dotnet run --project demos/Qyl.RealNServiceBusDemo/Qyl.RealNServiceBusDemo.csproj -c Release --no-build
+# Printed Pass=true with publish/send success spans (including a real handler round-trip) and
+# 1 error span from an unrouted send. NativeAOT is not run: NServiceBus 10 endpoint creation
+# unconditionally constructs a Reflection.Emit proxy creator (MessageMapper ->
+# ConcreteProxyCreator), which NativeAOT structurally cannot execute. That boundary belongs to
+# NServiceBus, not qyl; the interceptor binding itself is AOT-clean.
 ```
 
 Synthetic multi-domain semantic proof:

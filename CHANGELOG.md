@@ -9,6 +9,12 @@
   `IMongoCollection<T>` commands) against real Docker-backed brokers under managed and
   NativeAOT runs, including pinned error-path spans and the app-side `TrimmerRootAssembly`
   boundaries for Confluent.Kafka and MongoDB.Driver.
+- Added real StackExchange.Redis, Quartz, MassTransit, and NServiceBus demos completing the
+  source-interceptor proof surface: Redis is AOT-warning-free, Quartz proves source-visible
+  `IJob.Execute` delegation under a real scheduler (rooted for AOT), MassTransit 8.x publishes
+  to real RabbitMQ under NativeAOT via an app-side source-generated `JsonSerializerContext`,
+  and NServiceBus 10 is a documented managed-only boundary because its endpoint creation
+  requires Reflection.Emit.
 
 ### Documentation and handoff
 

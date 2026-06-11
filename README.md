@@ -73,6 +73,10 @@ the runtime project, the generator project as an analyzer, and the core targets 
 | Confluent.Kafka | Real managed and NativeAOT demo using source-generated producer/consumer interceptors against a real broker; NativeAOT needs an app-side `TrimmerRootAssembly` for Confluent.Kafka. |
 | RabbitMQ.Client | Real managed and NativeAOT demo using source-generated `BasicPublishAsync` interceptors against a real broker, with publisher confirmations proving the error path. |
 | MongoDB.Driver | Real managed and NativeAOT demo using source-generated `IMongoCollection<T>` interceptors against a real server; NativeAOT needs app-side `TrimmerRootAssembly` roots for MongoDB.Bson/MongoDB.Driver. |
+| StackExchange.Redis | Real managed and NativeAOT demo using source-generated `IDatabaseAsync` command interceptors against a real server; AOT publish is warning-free with no roots. |
+| Quartz | Real managed and NativeAOT demo: a real scheduler fires a job whose source-visible `IJob.Execute` delegation calls are intercepted; scheduler-internal dispatch is an explicit non-goal. NativeAOT needs `TrimmerRootAssembly=Quartz`. |
+| MassTransit | Real managed and NativeAOT demo (MassTransit 8.x OSS line) using source-generated `Publish`/`Send` interceptors against a real RabbitMQ broker; NativeAOT needs an app-side source-generated `JsonSerializerContext` chained into MassTransit's serializer. |
+| NServiceBus | Real managed demo using source-generated `IMessageSession` interceptors on a real LearningTransport endpoint with a handler round-trip; NativeAOT is structurally blocked by NServiceBus's Reflection.Emit proxy creator — an NServiceBus library boundary. |
 | Package boot | Temporary PackageReference consumers prove zero-code bootstrap for Hosting, EFCore, and SqlClient packages. |
 | ProjectReference dogfood | Explicit analyzer/targets dogfooding path proves local source-tree development without pretending a bare ProjectReference is enough. |
 
