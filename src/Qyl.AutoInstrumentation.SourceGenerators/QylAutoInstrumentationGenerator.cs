@@ -255,7 +255,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 InterceptorKind.EntityFrameworkCoreDbContext => EmitEntityFrameworkCoreDbContextInterceptor,
                 InterceptorKind.EntityFrameworkCoreQueryable => EmitEntityFrameworkCoreQueryableInterceptor,
                 InterceptorKind.DbCommand => EmitDbCommandInterceptor,
-                _ => EmitDbCommandInterceptor,
+                _ => throw new InvalidOperationException("Unsupported interceptor kind: " + invocation.Target.Kind),
             };
 
             emitter(builder, invocation, index);

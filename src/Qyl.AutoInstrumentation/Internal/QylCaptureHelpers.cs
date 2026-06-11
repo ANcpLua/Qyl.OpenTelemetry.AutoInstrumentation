@@ -14,7 +14,8 @@ internal static class QylCaptureHelpers
     public static void SetHttpHeaders(
         Activity? activity,
         QylCapturedNameMap configuredHeaders,
-        params HttpHeaders?[] headerSources)
+        HttpHeaders? primaryHeaders,
+        HttpHeaders? contentHeaders)
     {
         if (activity is null || configuredHeaders.Count is 0)
             return;
@@ -22,14 +23,11 @@ internal static class QylCaptureHelpers
         for (var index = 0; index < configuredHeaders.Count; index++)
         {
             var lookupName = configuredHeaders.GetLookupName(index);
-            foreach (var source in headerSources)
-            {
-                if (source is null || !source.TryGetValues(lookupName, out var values))
-                    continue;
 
-                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
-                break;
-            }
+            if (TrySetHeaderTag(activity, configuredHeaders, index, lookupName, primaryHeaders))
+                continue;
+
+            TrySetHeaderTag(activity, configuredHeaders, index, lookupName, contentHeaders);
         }
     }
 
@@ -102,6 +100,9 @@ internal static class QylCaptureHelpers
             : url[..queryStart] + "?Redacted" + url[fragmentStart..];
     }
 
+    public static string FormatUrlFull(string url, bool queryRedactionDisabled)
+        => queryRedactionDisabled ? url : RedactQuery(url);
+
     public static string TrimQueryPrefix(string? query)
         => string.IsNullOrEmpty(query) || query[0] is not '?'
             ? query ?? string.Empty
@@ -114,4 +115,18 @@ internal static class QylCaptureHelpers
 
     private static string[] ToTagValues(IEnumerable<string> values)
         => values as string[] ?? values.ToArray();
+
+    private static bool TrySetHeaderTag(
+        Activity activity,
+        QylCapturedNameMap configuredHeaders,
+        int index,
+        string lookupName,
+        HttpHeaders? headers)
+    {
+        if (headers is null || !headers.TryGetValues(lookupName, out var values))
+            return false;
+
+        activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
+        return true;
+    }
 }

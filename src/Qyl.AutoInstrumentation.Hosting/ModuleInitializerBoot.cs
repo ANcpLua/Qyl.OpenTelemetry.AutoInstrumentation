@@ -26,15 +26,6 @@ namespace Qyl.AutoInstrumentation.Hosting;
 /// </summary>
 internal static class ModuleInitializerBoot
 {
-    private static readonly Action[] DiagnosticListeners =
-    [
-        static () => new HttpClientDiagnosticListener().Subscribe(),
-        static () => new AspNetCoreDiagnosticListener().Subscribe(),
-        static () => new EntityFrameworkCoreDiagnosticListener().Subscribe(),
-        static () => new SqlClientDiagnosticListener().Subscribe(),
-        static () => new GrpcClientDiagnosticListener().Subscribe(),
-    ];
-
     private static int _booted;
 
     /// <summary>The single qyl entry point invoked by the CLR at module load.</summary>
@@ -47,8 +38,15 @@ internal static class ModuleInitializerBoot
             return;
 
         QylInstrumentation.Activate();
+        RegisterDiagnosticListeners();
+    }
 
-        foreach (var subscribe in DiagnosticListeners)
-            subscribe();
+    private static void RegisterDiagnosticListeners()
+    {
+        new HttpClientDiagnosticListener().Subscribe();
+        new AspNetCoreDiagnosticListener().Subscribe();
+        new EntityFrameworkCoreDiagnosticListener().Subscribe();
+        new SqlClientDiagnosticListener().Subscribe();
+        new GrpcClientDiagnosticListener().Subscribe();
     }
 }

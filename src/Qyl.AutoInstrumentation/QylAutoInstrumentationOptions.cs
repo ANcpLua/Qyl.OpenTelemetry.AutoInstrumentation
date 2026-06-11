@@ -15,6 +15,36 @@ public sealed class QylAutoInstrumentationOptions
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
     private const string CaptureSensitiveValuesVariable = "QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES";
     private const string ConformanceEnabledVariable = "QYL_CONFORMANCE_ENABLED";
+    private const string EntityFrameworkCoreDbStatementVariable =
+        "OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT";
+    private const string GraphQlSetDocumentVariable = "OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT";
+    private const string OracleMdaSetDbStatementVariable =
+        "OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT";
+    private const string SqlClientSetDbStatementVariable = "OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT";
+    private const string AspNetRequestHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
+    private const string AspNetResponseHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
+    private const string AspNetCoreRequestHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
+    private const string AspNetCoreResponseHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
+    private const string GrpcClientRequestMetadataVariable =
+        "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA";
+    private const string GrpcClientResponseMetadataVariable =
+        "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA";
+    private const string HttpClientRequestHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
+    private const string HttpClientResponseHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
+    private const string AspNetCoreUrlQueryRedactionDisabledVariable =
+        "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION";
+    private const string HttpClientUrlQueryRedactionDisabledVariable =
+        "OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION";
+    private const string AspNetUrlQueryRedactionDisabledVariable =
+        "OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION";
+    private const string SqlClientNetFxIlRewriteRequestedVariable =
+        "OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED";
 
     /// <summary>Well-known Current value used by qyl auto-instrumentation.</summary>
     public static QylAutoInstrumentationOptions Current => CurrentHolder.Value;
@@ -247,22 +277,22 @@ public sealed class QylAutoInstrumentationOptions
             ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
             ReadBoolean(ConformanceEnabledVariable) ?? false,
             new ReadOnlyDictionary<InstrumentationLookupKey, bool>(instrumentationEnabled),
-            ReadBoolean("OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT") ?? false,
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"),
-            ReadList("OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"),
-            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION") ?? false,
-            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION") ?? false,
-            ReadBoolean("OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION") ?? false,
-            ReadBoolean("OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED") ?? false);
+            ReadBoolean(EntityFrameworkCoreDbStatementVariable) ?? false,
+            ReadBoolean(GraphQlSetDocumentVariable) ?? false,
+            ReadBoolean(OracleMdaSetDbStatementVariable) ?? false,
+            ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
+            ReadList(AspNetRequestHeadersVariable),
+            ReadList(AspNetResponseHeadersVariable),
+            ReadList(AspNetCoreRequestHeadersVariable),
+            ReadList(AspNetCoreResponseHeadersVariable),
+            ReadList(GrpcClientRequestMetadataVariable),
+            ReadList(GrpcClientResponseMetadataVariable),
+            ReadList(HttpClientRequestHeadersVariable),
+            ReadList(HttpClientResponseHeadersVariable),
+            ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
+            ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false,
+            ReadBoolean(AspNetUrlQueryRedactionDisabledVariable) ?? false,
+            ReadBoolean(SqlClientNetFxIlRewriteRequestedVariable) ?? false);
     }
 
     private static void AddSignalInstrumentations(

@@ -39,11 +39,9 @@ public static class QylInterceptedHttpWebRequest
             if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
             {
                 var requestUri = request.RequestUri.ToString();
-                var urlFull = options.HttpClientUrlQueryRedactionDisabled
-                    ? requestUri
-                    : QylCaptureHelpers.RedactQuery(requestUri);
-
-                activity.SetTag(QylSemanticAttributes.UrlFull, urlFull);
+                activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(
+                    requestUri,
+                    options.HttpClientUrlQueryRedactionDisabled));
             }
         }
 

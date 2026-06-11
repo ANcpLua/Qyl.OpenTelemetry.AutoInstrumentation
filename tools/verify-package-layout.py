@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import os
 import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
+
+from verify_helpers import clean_env, read_version, run_checked
 
 try:
     import fcntl
@@ -15,7 +16,6 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-PROPS_PATH = ROOT / "Directory.Build.props"
 CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 
 
@@ -53,53 +53,6 @@ FORBIDDEN_CONTENT_TOKENS = [
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def clean_env() -> dict[str, str]:
-    env = dict(os.environ)
-    for key in list(env):
-        if key.startswith("OTEL_") or key.startswith("QYL_"):
-            del env[key]
-
-    env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
-    env["DOTNET_NOLOGO"] = "1"
-    env["MSBUILDDISABLENODEREUSE"] = "1"
-    return env
-
-
-def read_version() -> str:
-    text = PROPS_PATH.read_text(encoding="utf-8")
-    prefix = "<Version>"
-    suffix = "</Version>"
-    start = text.find(prefix)
-    if start < 0:
-        fail("Directory.Build.props is missing <Version>")
-
-    end = text.find(suffix, start)
-    if end < 0:
-        fail("Directory.Build.props has unterminated <Version>")
-
-    return text[start + len(prefix):end].strip()
-
-
-def run_checked(command: list[str], cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if completed.returncode != 0:
-        fail(
-            "command failed: "
-            + " ".join(command)
-            + f"\nexit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
-        )
-
-    return completed
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> Path:

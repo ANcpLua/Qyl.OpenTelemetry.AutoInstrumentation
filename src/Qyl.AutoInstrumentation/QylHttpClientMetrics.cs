@@ -20,6 +20,11 @@ internal static class QylHttpClientMetrics
         if (!IsRecordingEnabled)
             return;
 
+        RecordRequestDurationUnchecked(startTimeUtc, method, statusCode);
+    }
+
+    internal static void RecordRequestDurationUnchecked(DateTime startTimeUtc, string? method, int? statusCode)
+    {
         var elapsed = TimeProvider.System.GetUtcNow().UtcDateTime - startTimeUtc;
         if (elapsed.TotalSeconds >= 0)
         {
@@ -34,5 +39,4 @@ internal static class QylHttpClientMetrics
             RequestDuration.Record(elapsed.TotalSeconds, in tags);
         }
     }
-
 }

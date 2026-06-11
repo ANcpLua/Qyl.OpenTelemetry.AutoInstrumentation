@@ -16,7 +16,7 @@ public static class QylInterceptedHttpClient
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var observation = StartHttpClientObservation(request);
+        using var observation = StartHttpClientObservation(request);
         if (!observation.IsEnabled)
             return client.Send(request);
 
@@ -31,17 +31,13 @@ public static class QylInterceptedHttpClient
             RecordException(observation, exception);
             throw;
         }
-        finally
-        {
-            observation.Dispose();
-        }
     }
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var observation = StartHttpClientObservation(request);
+        using var observation = StartHttpClientObservation(request);
         if (!observation.IsEnabled)
             return client.Send(request, cancellationToken);
 
@@ -56,17 +52,13 @@ public static class QylInterceptedHttpClient
             RecordException(observation, exception);
             throw;
         }
-        finally
-        {
-            observation.Dispose();
-        }
     }
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var observation = StartHttpClientObservation(request);
+        using var observation = StartHttpClientObservation(request);
         if (!observation.IsEnabled)
             return client.Send(request, completionOption);
 
@@ -81,17 +73,13 @@ public static class QylInterceptedHttpClient
             RecordException(observation, exception);
             throw;
         }
-        finally
-        {
-            observation.Dispose();
-        }
     }
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken)
     {
         ThrowIfInvalidCallTarget(client, request);
-        var observation = StartHttpClientObservation(request);
+        using var observation = StartHttpClientObservation(request);
         if (!observation.IsEnabled)
             return client.Send(request, completionOption, cancellationToken);
 
@@ -105,10 +93,6 @@ public static class QylInterceptedHttpClient
         {
             RecordException(observation, exception);
             throw;
-        }
-        finally
-        {
-            observation.Dispose();
         }
     }
 
@@ -616,9 +600,9 @@ public static class QylInterceptedHttpClient
                     if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
                     {
                         var urlFull = rawRequestUri ?? requestUri.ToString();
-                        activity.SetTag(
-                            QylSemanticAttributes.UrlFull,
-                            options.HttpClientUrlQueryRedactionDisabled ? urlFull : QylCaptureHelpers.RedactQuery(urlFull));
+                        activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(
+                            urlFull,
+                            options.HttpClientUrlQueryRedactionDisabled));
                     }
                 }
             }
@@ -680,7 +664,7 @@ public static class QylInterceptedHttpClient
         if (!observation.RecordMetrics)
             return;
 
-        QylHttpClientMetrics.RecordRequestDuration(
+        QylHttpClientMetrics.RecordRequestDurationUnchecked(
             observation.StartTimeUtc,
             observation.Method,
             statusCode);
@@ -690,7 +674,7 @@ public static class QylInterceptedHttpClient
         Activity? Activity,
         DateTime StartTimeUtc,
         string? Method,
-        bool RecordMetrics)
+        bool RecordMetrics) : IDisposable
     {
         /// <summary>Well-known Is Enabled value used by qyl auto-instrumentation.</summary>
         public bool IsEnabled => Activity is not null || RecordMetrics;
