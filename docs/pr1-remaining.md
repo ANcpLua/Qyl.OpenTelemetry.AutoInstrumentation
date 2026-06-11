@@ -168,5 +168,5 @@ aot-autoinstrumentation-goal-ok
 
 ```text
 To github.com:ANcpLua/qyl-dotnet-autoinstrumentation.git
- + 4d22e94...363417e v0.3.0-pre.1 -> v0.3.0-pre.1 (forced update)
+Everything up-to-date
 ```
