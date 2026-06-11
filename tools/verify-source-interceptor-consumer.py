@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import os
 import platform
 import subprocess
 import tempfile
 from pathlib import Path
+
+from verify_helpers import clean_env, read_version, run_checked
 
 try:
     import fcntl
@@ -15,7 +16,6 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-PROPS_PATH = ROOT / "Directory.Build.props"
 CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Qyl.AutoInstrumentation.DiagnosticListeners.csproj"
 HOSTING_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.Hosting" / "Qyl.AutoInstrumentation.Hosting.csproj"
@@ -25,6 +25,8 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
+using System.Net;
+using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Qyl.AutoInstrumentation;
 
@@ -67,6 +69,85 @@ if (captured.Count == 1)
     Console.WriteLine(QylSemanticAttributes.LogSeverity + "=" + severity);
 }
 
+using var http = new HttpClient(new StatusHandler(HttpStatusCode.InternalServerError))
+{
+    BaseAddress = new Uri("https://qyl-source.invalid"),
+};
+http.DefaultRequestHeaders.Add("x-qyl-source", "default-header");
+
+try
+{
+    await http.GetStringAsync("/failure");
+}
+catch (HttpRequestException exception)
+{
+    var status = exception.StatusCode.HasValue
+        ? ((int)exception.StatusCode.Value).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        : "<null>";
+    Console.WriteLine("http.exception.status=" + status);
+}
+
+var httpActivity = captured.FirstOrDefault(static activity =>
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.QylInstrumentationDomain &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            QylInstrumentationDomains.HttpClient,
+            StringComparison.Ordinal)));
+
+if (httpActivity is not null)
+{
+    var tags = httpActivity.TagObjects.ToDictionary(
+        static tag => tag.Key,
+        static tag => FormatTagValue(tag.Value),
+        StringComparer.Ordinal);
+    tags.TryGetValue(QylSemanticAttributes.ServerAddress, out var serverAddress);
+    tags.TryGetValue("http.request.header.x-qyl-source", out var capturedHeader);
+    tags.TryGetValue(QylSemanticAttributes.HttpResponseStatusCode, out var statusCode);
+    tags.TryGetValue(QylSemanticAttributes.ErrorType, out var errorType);
+
+    Console.WriteLine("http.activity.status=" + httpActivity.Status);
+    Console.WriteLine(QylSemanticAttributes.ServerAddress + "=" + serverAddress);
+    Console.WriteLine("http.request.header.x-qyl-source=" + capturedHeader);
+    Console.WriteLine(QylSemanticAttributes.HttpResponseStatusCode + "=" + statusCode);
+    Console.WriteLine(QylSemanticAttributes.ErrorType + "=" + errorType);
+}
+
+using var content = new StringContent("payload");
+content.Headers.Add("x-qyl-content", "content-header");
+using var postHttp = new HttpClient(new StatusHandler(HttpStatusCode.NoContent))
+{
+    BaseAddress = new Uri("https://qyl-source.invalid"),
+};
+using (await postHttp.PostAsync("/content", content))
+{
+}
+
+var postActivity = captured.FirstOrDefault(static activity =>
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.HttpResponseStatusCode &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            "500",
+            StringComparison.Ordinal)) is false &&
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.QylInstrumentationDomain &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            QylInstrumentationDomains.HttpClient,
+            StringComparison.Ordinal)));
+
+if (postActivity is not null)
+{
+    var tags = postActivity.TagObjects.ToDictionary(
+        static tag => tag.Key,
+        static tag => FormatTagValue(tag.Value),
+        StringComparer.Ordinal);
+    tags.TryGetValue("http.request.header.x-qyl-content", out var capturedContentHeader);
+
+    Console.WriteLine("http.request.header.x-qyl-content=" + capturedContentHeader);
+}
+
 ILogger throwingLogger = new ThrowingLogger();
 try
 {
@@ -86,6 +167,11 @@ catch (InvalidOperationException exception)
 Console.WriteLine("activity.count.after.throw=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 return 0;
+
+static string FormatTagValue(object? value)
+    => value is string[] values
+        ? string.Join(",", values)
+        : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
 
 internal sealed class CapturingLogger : ILogger
 {
@@ -107,6 +193,16 @@ internal sealed class CapturingLogger : ILogger
         Calls++;
         Last = logLevel + ":" + eventId.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + formatter(state, exception);
     }
+}
+
+internal sealed class StatusHandler(HttpStatusCode statusCode) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        => Task.FromResult(new HttpResponseMessage(statusCode)
+        {
+            RequestMessage = request,
+            Content = new StringContent("failure"),
+        });
 }
 
 internal sealed class ThrowingLogger : ILogger
@@ -133,60 +229,21 @@ activity.name=ILogger log
 activity.kind=Internal
 qyl.instrumentation.domain=log.ilogger
 log.severity=Warning
+http.exception.status=500
+http.activity.status=Error
+server.address=qyl-source.invalid
+http.request.header.x-qyl-source=default-header
+http.response.status_code=500
+error.type=500
+http.request.header.x-qyl-content=content-header
 throwing.type=InvalidOperationException
 throwing.message=logger-failure
-activity.count.after.throw=2
+activity.count.after.throw=4
 """
 
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def clean_env() -> dict[str, str]:
-    env = dict(os.environ)
-    for key in list(env):
-        if key.startswith("OTEL_") or key.startswith("QYL_"):
-            del env[key]
-
-    env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
-    env["DOTNET_NOLOGO"] = "1"
-    return env
-
-
-def read_version() -> str:
-    text = PROPS_PATH.read_text(encoding="utf-8")
-    prefix = "<Version>"
-    suffix = "</Version>"
-    start = text.find(prefix)
-    if start < 0:
-        fail("Directory.Build.props is missing <Version>")
-
-    end = text.find(suffix, start)
-    if end < 0:
-        fail("Directory.Build.props has unterminated <Version>")
-
-    return text[start + len(prefix):end].strip()
-
-
-def run_checked(command: list[str], cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if completed.returncode != 0:
-        fail(
-            "command failed: "
-            + " ".join(command)
-            + f"\nexit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
-        )
-
-    return completed
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:
@@ -263,6 +320,10 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "// Intercepted call at ",
         "ILogger_Log_",
         "global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(",
+        "HttpClient_GetStringAsync_",
+        "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync(",
+        "HttpClient_PostAsync_",
+        "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.PostAsync(",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")
@@ -344,6 +405,7 @@ def verify_completed(name: str, completed: subprocess.CompletedProcess[str]) -> 
 
 def main() -> None:
     env = clean_env()
+    env["OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"] = "x-qyl-source,x-qyl-content"
     version = read_version()
     with tempfile.TemporaryDirectory(prefix="qyl-source-interceptor-") as temp:
         root = Path(temp)

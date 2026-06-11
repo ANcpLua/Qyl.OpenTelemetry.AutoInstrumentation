@@ -1,4 +1,5 @@
 using ANcpLua.Roslyn.Utilities;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -24,6 +25,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
+    private delegate void InterceptorEmitter(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index);
 
     /// <summary>
     /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
@@ -216,64 +222,44 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         for (var index = 0; index < invocations.Length; index++)
         {
             var invocation = invocations[index];
-            if (invocation.Target.Kind is InterceptorKind.HttpClient)
-                EmitHttpClientInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.HttpWebRequest)
-                EmitHttpWebRequestInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreWebApplicationBuilderBuild)
-                EmitAspNetCoreWebApplicationBuilderBuildInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreRequestDelegate)
-                EmitAspNetCoreRequestDelegateInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.AspNetCoreEndpointMap)
-                EmitAspNetCoreEndpointMapInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.MeterProviderBuilderAddMeter)
-                EmitMeterProviderBuilderAddMeterInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.AzureClient)
-                EmitAzureClientInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.ElasticsearchClient or InterceptorKind.ElasticTransport)
-                EmitElasticInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.WcfClient)
-                EmitWcfClientInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncUnaryCall)
-                EmitGrpcNetClientAsyncUnaryInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall)
-                EmitGrpcNetClientAsyncServerStreamingInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncClientStreamingCall)
-                EmitGrpcNetClientAsyncClientStreamingInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall)
-                EmitGrpcNetClientAsyncDuplexStreamingInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.KafkaProducer)
-                EmitKafkaProducerInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.KafkaConsumer)
-                EmitKafkaConsumerInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.MassTransitMessageOperation)
-                EmitMassTransitInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.NServiceBusMessageOperation)
-                EmitNServiceBusInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.QuartzJobExecute)
-                EmitQuartzInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.StackExchangeRedisCommandAsync)
-                EmitStackExchangeRedisInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.GraphQlDocumentExecuter)
-                EmitGraphQlInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.MongoDbCollection)
-                EmitMongoDbInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.RabbitMqBasicPublish)
-                EmitRabbitMqInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.ILoggerExtensionLog)
-                EmitLoggerExtensionInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.ILoggerLog)
-                EmitLoggerInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.NLogLogger)
-                EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog");
-            else if (invocation.Target.Kind is InterceptorKind.Log4NetLogger)
-                EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net");
-            else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreDbContext)
-                EmitEntityFrameworkCoreDbContextInterceptor(builder, invocation, index);
-            else if (invocation.Target.Kind is InterceptorKind.EntityFrameworkCoreQueryable)
-                EmitEntityFrameworkCoreQueryableInterceptor(builder, invocation, index);
-            else
-                EmitDbCommandInterceptor(builder, invocation, index);
+            InterceptorEmitter emitter = invocation.Target.Kind switch
+            {
+                InterceptorKind.HttpClient => EmitHttpClientInterceptor,
+                InterceptorKind.HttpWebRequest => EmitHttpWebRequestInterceptor,
+                InterceptorKind.AspNetCoreWebApplicationBuilderBuild => EmitAspNetCoreWebApplicationBuilderBuildInterceptor,
+                InterceptorKind.AspNetCoreRequestDelegate => EmitAspNetCoreRequestDelegateInterceptor,
+                InterceptorKind.AspNetCoreEndpointMap => EmitAspNetCoreEndpointMapInterceptor,
+                InterceptorKind.MeterProviderBuilderAddMeter => EmitMeterProviderBuilderAddMeterInterceptor,
+                InterceptorKind.AzureClient => EmitAzureClientInterceptor,
+                InterceptorKind.ElasticsearchClient => EmitElasticInterceptor,
+                InterceptorKind.ElasticTransport => EmitElasticInterceptor,
+                InterceptorKind.WcfClient => EmitWcfClientInterceptor,
+                InterceptorKind.GrpcNetClientAsyncUnaryCall => EmitGrpcNetClientAsyncUnaryInterceptor,
+                InterceptorKind.GrpcNetClientAsyncServerStreamingCall => EmitGrpcNetClientAsyncServerStreamingInterceptor,
+                InterceptorKind.GrpcNetClientAsyncClientStreamingCall => EmitGrpcNetClientAsyncClientStreamingInterceptor,
+                InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall => EmitGrpcNetClientAsyncDuplexStreamingInterceptor,
+                InterceptorKind.KafkaProducer => EmitKafkaProducerInterceptor,
+                InterceptorKind.KafkaConsumer => EmitKafkaConsumerInterceptor,
+                InterceptorKind.MassTransitMessageOperation => EmitMassTransitInterceptor,
+                InterceptorKind.NServiceBusMessageOperation => EmitNServiceBusInterceptor,
+                InterceptorKind.QuartzJobExecute => EmitQuartzInterceptor,
+                InterceptorKind.StackExchangeRedisCommandAsync => EmitStackExchangeRedisInterceptor,
+                InterceptorKind.GraphQlDocumentExecuter => EmitGraphQlInterceptor,
+                InterceptorKind.MongoDbCollection => EmitMongoDbInterceptor,
+                InterceptorKind.RabbitMqBasicPublish => EmitRabbitMqInterceptor,
+                InterceptorKind.ILoggerExtensionLog => EmitLoggerExtensionInterceptor,
+                InterceptorKind.ILoggerLog => EmitLoggerInterceptor,
+                InterceptorKind.NLogLogger => static (builder, invocation, index)
+                    => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog"),
+                InterceptorKind.Log4NetLogger => static (builder, invocation, index)
+                    => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net"),
+                InterceptorKind.EntityFrameworkCoreDbContext => EmitEntityFrameworkCoreDbContextInterceptor,
+                InterceptorKind.EntityFrameworkCoreQueryable => EmitEntityFrameworkCoreQueryableInterceptor,
+                InterceptorKind.DbCommand => EmitDbCommandInterceptor,
+                _ => throw new InvalidOperationException("Unsupported interceptor kind: " + invocation.Target.Kind),
+            };
+
+            emitter(builder, invocation, index);
         }
 
         builder.AppendLine("    }");
@@ -283,6 +269,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("}");
 
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+    }
+
+    private static void EmitActivityDisposeFinally(StringBuilder builder)
+    {
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
     }
 
     private static void EmitHttpClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -335,10 +329,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, metricStartTimeUtc, httpWebRequest.Method, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -395,10 +386,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         if (!target.IsAsync)
         {
-            builder.AppendLine("            finally");
-            builder.AppendLine("            {");
-            builder.AppendLine("                activity?.Dispose();");
-            builder.AppendLine("            }");
+            EmitActivityDisposeFinally(builder);
         }
         builder.AppendLine("        }");
         builder.AppendLine();
@@ -495,10 +483,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -569,10 +554,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -638,10 +620,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -673,17 +652,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                    observedResponseHeaders,");
         builder.AppendLine("                    call.GetStatus,");
         builder.AppendLine("                    call.GetTrailers,");
-        builder.AppendLine("                    () =>");
-        builder.AppendLine("                    {");
-        builder.AppendLine("                        try");
-        builder.AppendLine("                        {");
-        builder.AppendLine("                            call.Dispose();");
-        builder.AppendLine("                        }");
-        builder.AppendLine("                        finally");
-        builder.AppendLine("                        {");
-        builder.AppendLine("                            global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(activity);");
-        builder.AppendLine("                        }");
-        builder.AppendLine("                    });");
+        EmitGrpcDisposeAction(builder);
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
@@ -904,10 +873,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -933,10 +899,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -972,10 +935,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1018,10 +978,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1099,10 +1056,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1231,12 +1185,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         if (!target.IsAsync)
-        {
-            builder.AppendLine("            finally");
-            builder.AppendLine("            {");
-            builder.AppendLine("                activity?.Dispose();");
-            builder.AppendLine("            }");
-        }
+            EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1283,10 +1232,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1395,10 +1341,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1532,10 +1475,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1590,10 +1530,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }

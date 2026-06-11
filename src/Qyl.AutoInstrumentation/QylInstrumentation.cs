@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
@@ -16,8 +15,8 @@ public static class QylInstrumentation
     private static int _activated;
 
     /// <summary>
-    /// Activate qyl: subscribe an <see cref="ActivityListener"/> for qyl spans. The M3 semconv
-    /// conformance counter remains default-off and is checked only after explicit opt-in.
+    /// Activate qyl runtime metrics and the development-only semconv conformance listener when it
+    /// is explicitly opted in.
     /// </summary>
     /// <returns><c>true</c> on the first activation, <c>false</c> on subsequent calls.</returns>
     public static bool Activate()
@@ -25,15 +24,7 @@ public static class QylInstrumentation
         if (Interlocked.Exchange(ref _activated, 1) == 1)
             return false;
 
-        if (QylAutoInstrumentationOptions.Current.HasAnyActivityInstrumentationEnabled())
-        {
-            ActivitySource.AddActivityListener(new ActivityListener
-            {
-                ShouldListenTo = static source => source.Name == QylActivitySource.Name,
-                Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-                ActivityStopped = SemConvConformanceProcessor.OnActivityStopped,
-            });
-        }
+        SemConvConformanceProcessor.EnsureListenerRegisteredIfEnabled();
 
         QylRuntimeProcessMetrics.Initialize();
 

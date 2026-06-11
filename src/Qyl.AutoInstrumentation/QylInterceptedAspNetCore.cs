@@ -92,13 +92,13 @@ public static class QylInterceptedAspNetCore
             var query = context.Request.QueryString.Value;
             activity.SetTag(
                 QylSemanticAttributes.UrlQuery,
-                options.AspNetCoreUrlQueryRedactionDisabled ? TrimQueryPrefix(query) : "REDACTED");
+                options.AspNetCoreUrlQueryRedactionDisabled ? QylCaptureHelpers.TrimQueryPrefix(query) : "REDACTED");
         }
 
         if (route is not null)
             activity.SetTag(QylSemanticAttributes.HttpRoute, route);
 
-        SetConfiguredHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, context.Request.Headers);
+        QylCaptureHelpers.SetRequestHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, context.Request.Headers);
         return activity;
     }
 
@@ -138,7 +138,10 @@ public static class QylInterceptedAspNetCore
             return;
 
         activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, context.Response.StatusCode);
-        SetConfiguredHeaders(activity, QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaderMap, context.Response.Headers);
+        QylCaptureHelpers.SetRequestHeaders(
+            activity,
+            QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaderMap,
+            context.Response.Headers);
         if (context.Response.StatusCode >= 500)
         {
             activity.SetTag(QylSemanticAttributes.ErrorType, context.Response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -148,23 +151,6 @@ public static class QylInterceptedAspNetCore
 
     private static RequestDelegate Observe(RequestDelegate requestDelegate)
         => requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
-
-    private static void SetConfiguredHeaders(Activity activity, QylCapturedNameMap configuredHeaders, IHeaderDictionary headers)
-    {
-        if (configuredHeaders.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredHeaders.Count; index++)
-        {
-            if (headers.TryGetValue(configuredHeaders.GetLookupName(index), out var values) && values.Count > 0)
-                activity.SetTag(configuredHeaders.GetTagName(index), values.Count is 1 ? values[0] : values.ToArray());
-        }
-    }
-
-    private static string TrimQueryPrefix(string? query)
-        => string.IsNullOrEmpty(query) || query[0] is not '?'
-            ? query ?? string.Empty
-            : query[1..];
 
     private static string? GetRoute(HttpContext context)
         => context.GetEndpoint() is RouteEndpoint routeEndpoint

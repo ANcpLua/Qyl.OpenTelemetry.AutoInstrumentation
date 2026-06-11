@@ -39,15 +39,13 @@ public static class QylInterceptedHttpWebRequest
             if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
             {
                 var requestUri = request.RequestUri.ToString();
-                var urlFull = options.HttpClientUrlQueryRedactionDisabled
-                    ? requestUri
-                    : RedactQuery(requestUri);
-
-                activity.SetTag(QylSemanticAttributes.UrlFull, urlFull);
+                activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(
+                    requestUri,
+                    options.HttpClientUrlQueryRedactionDisabled));
             }
         }
 
-        SetConfiguredHeaders(activity, options.HttpClientCapturedRequestHeaderMap, request.Headers);
+        QylCaptureHelpers.SetRequestHeaders(activity, options.HttpClientCapturedRequestHeaderMap, request.Headers);
         return activity;
     }
 
@@ -80,7 +78,10 @@ public static class QylInterceptedHttpWebRequest
         if (activity is not null)
         {
             activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
-            SetConfiguredHeaders(activity, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap, response.Headers);
+            QylCaptureHelpers.SetRequestHeaders(
+                activity,
+                QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap,
+                response.Headers);
             if (markErrorForStatus && statusCode >= 400)
             {
                 activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -102,28 +103,4 @@ public static class QylInterceptedHttpWebRequest
             statusCode);
     }
 
-    private static void SetConfiguredHeaders(Activity activity, QylCapturedNameMap configuredHeaders, WebHeaderCollection headers)
-    {
-        if (configuredHeaders.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredHeaders.Count; index++)
-        {
-            var values = headers.GetValues(configuredHeaders.GetLookupName(index));
-            if (values is { Length: > 0 })
-                activity.SetTag(configuredHeaders.GetTagName(index), values.Length is 1 ? values[0] : values);
-        }
-    }
-
-    private static string RedactQuery(string url)
-    {
-        var queryStart = url.IndexOf('?', StringComparison.Ordinal);
-        if (queryStart < 0)
-            return url;
-
-        var fragmentStart = url.IndexOf('#', queryStart);
-        return fragmentStart < 0
-            ? url[..queryStart] + "?Redacted"
-            : url[..queryStart] + "?Redacted" + url[fragmentStart..];
-    }
 }

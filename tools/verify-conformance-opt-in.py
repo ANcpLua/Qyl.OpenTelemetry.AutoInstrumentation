@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import os
 import subprocess
 import tempfile
 from pathlib import Path
+
+from verify_helpers import clean_env, read_version, run_checked
 
 try:
     import fcntl
@@ -14,7 +15,6 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-PROPS_PATH = ROOT / "Directory.Build.props"
 CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Qyl.AutoInstrumentation.DiagnosticListeners.csproj"
 HOSTING_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.Hosting" / "Qyl.AutoInstrumentation.Hosting.csproj"
@@ -60,58 +60,13 @@ using (var activity = QylActivitySource.Source.StartActivity("conformance probe"
 }
 
 Console.WriteLine("mode=" + mode);
+Console.WriteLine("hasListeners=" + QylActivitySource.Source.HasListeners().ToString(System.Globalization.CultureInfo.InvariantCulture));
 Console.WriteLine("checks=" + checks.ToString(System.Globalization.CultureInfo.InvariantCulture));
 '''
 
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def clean_env() -> dict[str, str]:
-    env = dict(os.environ)
-    for key in list(env):
-        if key.startswith("OTEL_") or key.startswith("QYL_"):
-            del env[key]
-
-    env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
-    env["DOTNET_NOLOGO"] = "1"
-    return env
-
-
-def read_version() -> str:
-    text = PROPS_PATH.read_text(encoding="utf-8")
-    prefix = "<Version>"
-    suffix = "</Version>"
-    start = text.find(prefix)
-    if start < 0:
-        fail("Directory.Build.props is missing <Version>")
-
-    end = text.find(suffix, start)
-    if end < 0:
-        fail("Directory.Build.props has unterminated <Version>")
-
-    return text[start + len(prefix):end].strip()
-
-
-def run_checked(command: list[str], cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if completed.returncode != 0:
-        fail(
-            "command failed: "
-            + " ".join(command)
-            + f"\nexit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
-        )
-
-    return completed
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:
@@ -195,16 +150,16 @@ def main() -> None:
         run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], project.parent, env)
         assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
 
-        assert_output("default off", run_scenario(assembly, env, "direct", {}), "mode=direct\nchecks=0\n")
+        assert_output("default off", run_scenario(assembly, env, "direct", {}), "mode=direct\nhasListeners=False\nchecks=0\n")
         assert_output(
             "environment opt-in",
             run_scenario(assembly, env, "direct", {"QYL_CONFORMANCE_ENABLED": "true"}),
-            "mode=direct\nchecks=1\n",
+            "mode=direct\nhasListeners=True\nchecks=1\n",
         )
         assert_output(
             "hosting opt-in",
             run_scenario(assembly, env, "hosting", {}),
-            "mode=hosting\nchecks=1\n",
+            "mode=hosting\nhasListeners=True\nchecks=1\n",
         )
 
     print("conformance-opt-in-ok")

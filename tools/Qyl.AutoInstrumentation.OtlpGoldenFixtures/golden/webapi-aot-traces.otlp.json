@@ -131,6 +131,12 @@
                   "value": {
                     "stringValue": "http.client"
                   }
+                },
+                {
+                  "key": "server.address",
+                  "value": {
+                    "stringValue": "qyl-webapi.invalid"
+                  }
                 }
               ],
               "endTimeUnixNano": "0",

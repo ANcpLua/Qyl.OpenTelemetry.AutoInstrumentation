@@ -19,9 +19,26 @@ namespace Qyl.AutoInstrumentation.Internal;
 internal static class SemConvConformanceProcessor
 {
     private static int _explicitlyEnabled;
+    private static int _listenerRegistered;
 
     internal static void Enable()
-        => Interlocked.Exchange(ref _explicitlyEnabled, 1);
+    {
+        Interlocked.Exchange(ref _explicitlyEnabled, 1);
+        EnsureListenerRegisteredIfEnabled();
+    }
+
+    internal static void EnsureListenerRegisteredIfEnabled()
+    {
+        if (!IsEnabled() || Interlocked.Exchange(ref _listenerRegistered, 1) == 1)
+            return;
+
+        ActivitySource.AddActivityListener(new ActivityListener
+        {
+            ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+            Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = OnActivityStopped,
+        });
+    }
 
     /// <summary>
     /// Inspect a stopped <see cref="Activity"/> and emit one <c>qyl.semconv.attribute.checks</c>
@@ -49,7 +66,7 @@ internal static class SemConvConformanceProcessor
         }
     }
 
-    private static bool IsEnabled()
+    internal static bool IsEnabled()
         => Volatile.Read(ref _explicitlyEnabled) is 1 ||
            QylAutoInstrumentationOptions.Current.ConformanceProcessorEnabled;
 }

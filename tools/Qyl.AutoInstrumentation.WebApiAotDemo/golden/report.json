@@ -54,17 +54,6 @@
       "Tags": {
         "http.request.method": "GET",
         "http.response.status_code": "204",
-        "qyl.instrumentation.domain": "http.client"
-      }
-    },
-    {
-      "Kind": "Client",
-      "Name": "HTTP client request",
-      "Signal": "activity",
-      "Status": "Unset",
-      "Tags": {
-        "http.request.method": "GET",
-        "http.response.status_code": "204",
         "qyl.instrumentation.domain": "http.client",
         "server.address": "127.0.0.1",
         "server.port": "<port>"
@@ -81,6 +70,18 @@
         "qyl.instrumentation.domain": "http.client",
         "server.address": "127.0.0.1",
         "server.port": "<port>"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "HTTP client request",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "qyl-webapi.invalid"
       }
     },
     {
@@ -143,7 +144,8 @@
       "Tags": {
         "http.request.method": "GET",
         "http.response.status_code": "204",
-        "qyl.instrumentation.domain": "http.client"
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "qyl-webapi.invalid"
       }
     },
     {

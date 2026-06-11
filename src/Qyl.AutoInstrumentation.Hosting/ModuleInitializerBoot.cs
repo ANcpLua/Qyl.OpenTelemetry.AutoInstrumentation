@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Qyl.AutoInstrumentation.DiagnosticListeners;
 using Qyl.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 using Qyl.AutoInstrumentation.DiagnosticListeners.EntityFrameworkCore;
 using Qyl.AutoInstrumentation.DiagnosticListeners.GrpcClient;
@@ -24,6 +25,15 @@ namespace Qyl.AutoInstrumentation.Hosting;
 /// </summary>
 internal static class ModuleInitializerBoot
 {
+    private static readonly DiagnosticListenerSubscriber[] DiagnosticListeners =
+    [
+        new HttpClientDiagnosticListener(),
+        new AspNetCoreDiagnosticListener(),
+        new EntityFrameworkCoreDiagnosticListener(),
+        new SqlClientDiagnosticListener(),
+        new GrpcClientDiagnosticListener(),
+    ];
+
     private static int _booted;
 
     /// <summary>The single qyl entry point invoked by the CLR at module load.</summary>
@@ -36,11 +46,14 @@ internal static class ModuleInitializerBoot
             return;
 
         QylInstrumentation.Activate();
+        RegisterDiagnosticListeners();
+    }
 
-        new HttpClientDiagnosticListener().Subscribe();
-        new AspNetCoreDiagnosticListener().Subscribe();
-        new EntityFrameworkCoreDiagnosticListener().Subscribe();
-        new SqlClientDiagnosticListener().Subscribe();
-        new GrpcClientDiagnosticListener().Subscribe();
+    private static void RegisterDiagnosticListeners()
+    {
+        foreach (var listener in DiagnosticListeners)
+        {
+            listener.Subscribe();
+        }
     }
 }
