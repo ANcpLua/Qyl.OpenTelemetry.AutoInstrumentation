@@ -1,3 +1,4 @@
+<!-- Filed 2026-06-11 as https://github.com/Particular/NServiceBus/issues/7817 -->
 <!-- Template: Improvement request (.github/ISSUE_TEMPLATE/improvement_request.yml) -->
 <!-- Issue title: -->
 # Defer ConcreteProxyCreator's AssemblyBuilder construction so endpoints without interface messages can start under NativeAOT
