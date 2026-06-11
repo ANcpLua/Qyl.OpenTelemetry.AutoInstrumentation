@@ -26,6 +26,43 @@ git status --short
 Work from `main` unless the task explicitly asks for a topic branch. Do not leave stale local
 branches, stashes, staged files, or unrelated untracked files behind.
 
+## Build and test reality
+
+- SDK is pinned by `global.json` (10.0.300, `rollForward: latestFeature`).
+- Build everything: `dotnet build Qyl.AutoInstrumentation.slnx`.
+- `TreatWarningsAsErrors` is on repo-wide with a heavy analyzer stack (trim/AOT/single-file
+  analyzers, ErrorProne.NET, Roslynator, PublicApiAnalyzers on packaged projects). A clean
+  build is the validation floor; analyzer regressions fail the build by design.
+- There are no `dotnet test` projects. Behavior is proven by the Python verifiers in `tools/`
+  and the snapshot fixture under `tests/Qyl.AutoInstrumentation.SourceGenerators.Snapshots`
+  (compare against `verified/`). Route changes through the validation table below.
+- Public API changes require updating the `PublicAPI.Shipped.txt`/`PublicAPI.Unshipped.txt`
+  baselines next to each packaged project (`python3 tools/verify-public-api-baseline.py`).
+- CI runs `tools/smoketest.sh` on every push/PR (ubuntu + macos), plus the OTLP collector
+  fixture and WebAPI AOT demo workflows under `.github/workflows/`.
+
+## Mechanism flow (big picture)
+
+1. Package `build/`/`buildTransitive/` assets enable the `Qyl.AutoInstrumentation.Generated`
+   interceptor namespace in the consumer and inject a local `InterceptsLocationAttribute`
+   source file.
+2. `Qyl.AutoInstrumentation.SourceGenerators` (netstandard2.0, runs inside the compiler)
+   discovers supported source-visible call-sites and emits ordinary C# `[InterceptsLocation]`
+   interceptors plus generated semantic registries.
+3. `[ModuleInitializer]` bootstrap in the Hosting/EFCore/SqlClient packages activates qyl once
+   per process — no app code changes.
+4. Runtime listeners (`Qyl.AutoInstrumentation.DiagnosticListeners`) consume framework/library
+   DiagnosticListener payloads. Missing values stay missing; never synthesize.
+5. Output uses stable OpenTelemetry attributes with bounded values (route templates over raw
+   paths, no raw text in span names — see `docs/RUNTIME_SEMANTICS.md`). Sensitive capture is
+   gated behind `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true`; the conformance
+   processor behind `QYL_CONFORMANCE_ENABLED=1`.
+
+Key gotcha: a bare `ProjectReference` to the runtime project does NOT flow analyzer/build
+assets — `PackageReference` is the supported zero-code path. The dogfood path references the
+runtime project, the generator project as analyzer, and the core targets file explicitly
+(proven by `tools/verify-projectreference-behavior.py`).
+
 ## Architecture invariants
 
 Never reintroduce these mechanisms into product code or package assets:
