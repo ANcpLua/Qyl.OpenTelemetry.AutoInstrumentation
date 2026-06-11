@@ -89,6 +89,12 @@
                   }
                 },
                 {
+                  "key": "db.system.name",
+                  "value": {
+                    "stringValue": "sqlite"
+                  }
+                },
+                {
                   "key": "qyl.instrumentation.domain",
                   "value": {
                     "stringValue": "db.efcore"
@@ -218,6 +224,12 @@
                   "key": "db.query.summary",
                   "value": {
                     "stringValue": "Text SELECT"
+                  }
+                },
+                {
+                  "key": "db.system.name",
+                  "value": {
+                    "stringValue": "microsoft.sql_server"
                   }
                 },
                 {

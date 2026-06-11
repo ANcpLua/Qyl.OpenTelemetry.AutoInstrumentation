@@ -8,6 +8,7 @@
       "Tags": {
         "db.operation.name": "CREATE",
         "db.query.summary": "CREATE",
+        "db.system.name": "other_sql",
         "qyl.instrumentation.domain": "db.client"
       }
     },
@@ -19,6 +20,7 @@
       "Tags": {
         "db.operation.name": "INSERT",
         "db.query.summary": "ExecuteSqlRaw INSERT",
+        "db.system.name": "sqlite",
         "qyl.instrumentation.domain": "db.efcore"
       }
     },
@@ -30,6 +32,7 @@
       "Tags": {
         "db.operation.name": "SELECT",
         "db.query.summary": "SELECT",
+        "db.system.name": "other_sql",
         "error.type": "InvalidOperationException",
         "qyl.instrumentation.domain": "db.client"
       }
@@ -104,6 +107,7 @@
       "Tags": {
         "db.operation.name": "SELECT",
         "db.query.summary": "Text SELECT",
+        "db.system.name": "microsoft.sql_server",
         "error.type": "System.InvalidOperationException",
         "qyl.instrumentation.domain": "db.sqlclient"
       }
@@ -133,6 +137,7 @@
       "Tags": {
         "db.operation.name": "INSERT",
         "db.query.summary": "ExecuteSqlRaw INSERT",
+        "db.system.name": "sqlite",
         "qyl.instrumentation.domain": "db.efcore"
       }
     },
@@ -169,6 +174,7 @@
       "Tags": {
         "db.operation.name": "SELECT",
         "db.query.summary": "Text SELECT",
+        "db.system.name": "microsoft.sql_server",
         "error.type": "System.InvalidOperationException",
         "qyl.instrumentation.domain": "db.sqlclient"
       }

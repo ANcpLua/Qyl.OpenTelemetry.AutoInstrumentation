@@ -14,6 +14,10 @@
   method (`GET`, fallback `HTTP` for `_OTHER`), HTTP server spans use `{method} {route}`,
   gRPC client spans use the full `{rpc.service}/{rpc.method}` name, and database spans use
   `DB {operation}` / `SQL {operation}`. The `QylActivityNames` string constants were removed.
+- Demo assertions and the WebApiAotDemo report filter now use the current semconv registry
+  keys `db.system.name` / `rpc.system.name` that the runtime actually emits; the stale
+  `db.system` / `rpc.system` keys had kept the EFCore and gRPC demos red and silently dropped
+  `db.system.name` from the WebApiAotDemo golden.
 
 ### Real consumer demos
 

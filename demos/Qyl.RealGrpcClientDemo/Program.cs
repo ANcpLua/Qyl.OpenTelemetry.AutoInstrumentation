@@ -125,7 +125,7 @@ internal sealed record GrpcClientReport(
 
         Require(successSpan, "OK span", failures);
         Require(failureSpan, "Unavailable span", failures);
-        RequireTag(successSpan, "rpc.system", "grpc", failures);
+        RequireTag(successSpan, "rpc.system.name", "grpc", failures);
         RequireTag(successSpan, "rpc.service", "qyl.LiveProbe", failures);
         RequireTag(successSpan, "rpc.method", "Collect", failures);
         RequireTag(successSpan, "rpc.grpc.status_code", "0", failures);

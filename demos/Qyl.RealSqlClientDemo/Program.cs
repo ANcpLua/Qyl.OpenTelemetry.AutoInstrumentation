@@ -129,7 +129,7 @@ internal sealed record SqlClientReport(
 
         Require(successSelect, "successful SELECT span", failures);
         Require(errorSelect, "error SELECT span", failures);
-        RequireTag(successSelect, "db.system", "microsoft.sql_server", failures);
+        RequireTag(successSelect, "db.system.name", "microsoft.sql_server", failures);
         RequireTag(successSelect, "db.namespace", "tempdb", failures);
         RequireTag(successSelect, "db.operation.name", "SELECT", failures);
         RequireTag(successSelect, "db.query.summary", "Text SELECT", failures);

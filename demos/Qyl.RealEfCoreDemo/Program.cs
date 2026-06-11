@@ -102,8 +102,8 @@ internal sealed record EfCoreReport(
         Require(insertSpan, "INSERT span", failures);
         Require(updateSpan, "UPDATE span", failures);
         Require(errorSpan, "SqliteException span", failures);
-        RequireTag(insertSpan, "db.system", "sqlite", failures);
-        RequireTag(updateSpan, "db.system", "sqlite", failures);
+        RequireTag(insertSpan, "db.system.name", "sqlite", failures);
+        RequireTag(updateSpan, "db.system.name", "sqlite", failures);
         RequireTag(insertSpan, "db.operation.name", "INSERT", failures);
         RequireTag(updateSpan, "db.operation.name", "UPDATE", failures);
         RequireTag(insertSpan, "db.query.summary", "ExecuteSqlRaw INSERT", failures);

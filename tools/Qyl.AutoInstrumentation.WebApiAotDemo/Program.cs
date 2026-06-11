@@ -217,7 +217,7 @@ internal sealed record WebApiAotReport(
             "http.response.status_code",
             "server.address",
             "server.port",
-            "db.system",
+            "db.system.name",
             "db.operation.name",
             "db.query.summary",
             "error.type",
