@@ -28,7 +28,10 @@ public static class QylInterceptedGrpcNetClient
         activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         activity.SetTag(QylSemanticAttributes.RpcService, service);
         activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
-        SetConfiguredMetadata(activity, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadataMap, requestMetadata);
+        QylCaptureHelpers.SetMetadataHeaders(
+            activity,
+            QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadataMap,
+            requestMetadata);
         return activity;
     }
 
@@ -98,32 +101,10 @@ public static class QylInterceptedGrpcNetClient
         => activity?.Dispose();
 
     private static void SetResponseMetadata(Activity? activity, Metadata? metadata)
-        => SetConfiguredMetadata(activity, QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadataMap, metadata);
-
-    private static void SetConfiguredMetadata(Activity? activity, QylCapturedNameMap configuredMetadata, Metadata? metadata)
-    {
-        if (activity is null || metadata is null || configuredMetadata.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredMetadata.Count; index++)
-        {
-            var lookupName = configuredMetadata.GetLookupName(index);
-            List<string>? values = null;
-            foreach (var entry in metadata)
-            {
-                if (entry.IsBinary ||
-                    !string.Equals(entry.Key, lookupName, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                (values ??= []).Add(entry.Value);
-            }
-
-            if (values is { Count: > 0 })
-                activity.SetTag(configuredMetadata.GetTagName(index), values.ToArray());
-        }
-    }
+        => QylCaptureHelpers.SetMetadataHeaders(
+            activity,
+            QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadataMap,
+            metadata);
 
     private static string GetServiceName(string clientTypeName)
     {

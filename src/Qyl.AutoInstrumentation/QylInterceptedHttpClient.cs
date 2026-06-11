@@ -540,7 +540,11 @@ public static class QylInterceptedHttpClient
     {
         var observation = StartHttpClientObservation(request.Method.Method, request.RequestUri, null);
         if (observation.Activity is not null)
-            SetConfiguredHeaders(observation.Activity, QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaderMap, request.Headers, request.Content?.Headers);
+            QylCaptureHelpers.SetHttpHeaders(
+                observation.Activity,
+                QylAutoInstrumentationOptions.Current.HttpClientCapturedRequestHeaderMap,
+                request.Headers,
+                request.Content?.Headers);
 
         return observation;
     }
@@ -614,7 +618,7 @@ public static class QylInterceptedHttpClient
                         var urlFull = rawRequestUri ?? requestUri.ToString();
                         activity.SetTag(
                             QylSemanticAttributes.UrlFull,
-                            options.HttpClientUrlQueryRedactionDisabled ? urlFull : RedactQuery(urlFull));
+                            options.HttpClientUrlQueryRedactionDisabled ? urlFull : QylCaptureHelpers.RedactQuery(urlFull));
                     }
                 }
             }
@@ -630,7 +634,11 @@ public static class QylInterceptedHttpClient
         if (activity is not null)
         {
             activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
-            SetConfiguredHeaders(activity, QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap, response.Headers, response.Content?.Headers);
+            QylCaptureHelpers.SetHttpHeaders(
+                activity,
+                QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap,
+                response.Headers,
+                response.Content?.Headers);
 
             if (statusCode >= 400)
             {
@@ -676,45 +684,6 @@ public static class QylInterceptedHttpClient
             observation.StartTimeUtc,
             observation.Method,
             statusCode);
-    }
-
-    private static string RedactQuery(string url)
-    {
-        var queryStart = url.IndexOf('?', StringComparison.Ordinal);
-        if (queryStart < 0)
-            return url;
-
-        var fragmentStart = url.IndexOf('#', queryStart);
-        return fragmentStart < 0
-            ? url[..queryStart] + "?Redacted"
-            : url[..queryStart] + "?Redacted" + url[fragmentStart..];
-    }
-
-    private static void SetConfiguredHeaders(Activity activity, QylCapturedNameMap configuredHeaders, params System.Net.Http.Headers.HttpHeaders?[] headerSources)
-    {
-        if (configuredHeaders.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredHeaders.Count; index++)
-        {
-            var lookupName = configuredHeaders.GetLookupName(index);
-            foreach (var source in headerSources)
-            {
-                if (source is null || !source.TryGetValues(lookupName, out var values))
-                    continue;
-
-                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
-                break;
-            }
-        }
-    }
-
-    private static string[] ToTagValues(IEnumerable<string> values)
-    {
-        if (values is string[] array)
-            return array;
-
-        return values.ToArray();
     }
 
     private readonly record struct HttpClientObservation(
