@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Real consumer demos
+
+- Added real Confluent.Kafka, RabbitMQ.Client, and MongoDB.Driver demos that prove
+  source-generated interceptors (producer/consumer, `BasicPublishAsync`, and
+  `IMongoCollection<T>` commands) against real Docker-backed brokers under managed and
+  NativeAOT runs, including pinned error-path spans and the app-side `TrimmerRootAssembly`
+  boundaries for Confluent.Kafka and MongoDB.Driver.
+
 ### Documentation and handoff
 
 - Replaced the release-history-heavy README with a current operational guide for the .NET 10

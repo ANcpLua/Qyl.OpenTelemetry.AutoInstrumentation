@@ -38,6 +38,9 @@ Set `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true` to emit these raw va
 | EFCore | `Qyl.AutoInstrumentation.EntityFrameworkCore` package; `Microsoft.EntityFrameworkCore` listener; typed `CommandExecutedEventData` and `CommandErrorEventData` payloads. | Real .NET 10 Sqlite proof covers `ExecuteSqlRaw` insert/update and provider command error. Extracted values come from `Command`, `CommandSource`, `Context.Database.ProviderName`, `DbConnection.Database`, and provider exception type. Plain EFCore NativeAOT without a compiled model fails at runtime; compiled-model NativeAOT runs, but EFCore itself still emits trim/AOT warnings. | `db.system.name`, `db.namespace`, `db.operation.name`, `db.query.summary`, `error.type`; `db.query.text` privacy-gated. | Real managed + NativeAOT runtime proof, with explicit EFCore app-side warning boundary. |
 | SqlClient | `Qyl.AutoInstrumentation.SqlClient` package; `SqlClientDiagnosticListener`; Microsoft.Data.SqlClient command payload key-value entries carrying `SqlCommand` and `SqlException`. The shared host consumes only the synthetic `qyl.db.sqlclient` event. Compile-time SqlClient command emitters remain contract items. | Real SQL Server proof covers `WriteCommandAfter` for CREATE/INSERT/SELECT and `WriteCommandError` for SQL Server error 208. Extracted values come from `SqlCommand.CommandText`, `CommandType`, `Connection.Database`, `Connection.DataSource`, and `SqlException.Number`. `System.Data.SqlClient` is still pending. NativeAOT runs, but Microsoft.Data.SqlClient 7.0.1 itself emits trim/AOT warnings and does not support `InvariantGlobalization=true`. | `db.system.name=microsoft.sql_server`, `db.namespace`, `db.operation.name`, `db.query.summary`, `server.address`, `server.port`, `error.type` for SQL errors; `db.query.text` privacy-gated. | Real managed + NativeAOT runtime proof for Microsoft.Data.SqlClient, with explicit SqlClient app-side warning and globalization boundary. |
 | Grpc.Net.Client | `Grpc.Net.Client` listener; real `Grpc.Net.Client.GrpcOut.Stop` activity tags `grpc.method` and `grpc.status_code`; synthetic aliases still consumed when supplied. | Real .NET 10 proof covers successful unary call (`grpc.status_code=0`) and connection failure (`grpc.status_code=14`, `Unavailable`). `grpc.method=/qyl.LiveProbe/Collect` is split into `rpc.service=qyl.LiveProbe` and `rpc.method=Collect`. The AOT-safe public activity tags do not expose `server.address`/`server.port`; those are emitted only when supplied by aliases. | `rpc.system=grpc`, `rpc.service`, `rpc.method`, `rpc.grpc.status_code`, `error.type` for non-zero status; optional `server.address`/`server.port` only when supplied. | Real managed + NativeAOT proof. |
+| Confluent.Kafka | Source-generated interceptors on `IProducer<K,V>.Produce`/`ProduceAsync` and `IConsumer<K,V>.Consume`; no DiagnosticListener involved. | Real Kafka 4.1 broker proof covers async produce, sync produce, consume polling, and unreachable-broker produce failure (`error.type=ProduceException`2``). Consumer spans are per `Consume` call, including empty polls. NativeAOT requires `TrimmerRootAssembly=Confluent.Kafka` because librdkafka delegate wiring resolves the library's own `NativeMethods` members through reflection that trimming removes; Confluent.Kafka 2.14.2 also emits its own IL2104 trim warning. | `messaging.system=kafka`, `messaging.operation.type=send`/`receive`, `messaging.operation.name`, `error.type` on failure. | Real managed + NativeAOT proof, with explicit Confluent.Kafka app-side trimmer-root boundary. |
+| RabbitMQ.Client | Source-generated interceptors on `IChannel.BasicPublishAsync`; no DiagnosticListener involved. | Real RabbitMQ 4 broker proof covers default-exchange publish to a declared queue and missing-exchange publish failure. Publisher confirmations are enabled so the failed publish faults the awaited `ValueTask` deterministically (`error.type=AlreadyClosedException`). RabbitMQ.Client 7.2.1 publishes under NativeAOT without warnings. | `messaging.system=rabbitmq`, `messaging.operation.type=send`, `messaging.operation.name=publish`, `error.type` on failure. | Real managed + NativeAOT proof. |
+| MongoDB.Driver | Source-generated interceptors on `IMongoCollection<T>` command methods (`InsertOneAsync`, `CountDocumentsAsync`, `DeleteManyAsync`, ...); no DiagnosticListener involved. | Real MongoDB 8 proof covers insert, count, delete, and duplicate-key insert failure (`error.type=MongoWriteException`). Operation names are normalized (`insert`, `count`, `delete`). NativeAOT requires `TrimmerRootAssembly` for `MongoDB.Bson` and `MongoDB.Driver`: the untrimmed-rooted binary runs, while the trimmed binary hangs in driver initialization before any I/O; the driver also emits its own IL2104/IL3053 warnings. | `db.system.name=mongodb`, `db.operation.name`, `db.query.summary`, `error.type` on failure; `db.query.text` privacy-gated. | Real managed + NativeAOT proof, with explicit MongoDB.Driver app-side trimmer-root boundary. |
 
 ## Evidence Commands
 
@@ -115,6 +118,66 @@ dotnet pack src/Qyl.AutoInstrumentation.SqlClient/Qyl.AutoInstrumentation.SqlCli
 # PASS name=SQL SELECT operation=SELECT server=127.0.0.1:11433.
 
 docker rm -f qyl-sqlclient-probe
+```
+
+Real Confluent.Kafka, source-interceptor proof:
+
+```bash
+docker run -d --name qyl-kafka-probe -p 19092:19092 \
+  -e KAFKA_NODE_ID=1 \
+  -e KAFKA_PROCESS_ROLES=broker,controller \
+  -e KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:19092,CONTROLLER://0.0.0.0:9093 \
+  -e KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:19092 \
+  -e KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+  -e KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT \
+  -e KAFKA_CONTROLLER_QUORUM_VOTERS=1@localhost:9093 \
+  -e KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+  -e KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0 \
+  apache/kafka:4.1.0
+export QYL_KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:19092
+
+dotnet run --project demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-kafka-aot /p:PublishAot=true /p:TreatWarningsAsErrors=false
+/tmp/qyl-real-kafka-aot/Qyl.RealKafkaDemo
+# TreatWarningsAsErrors=false is intentional here because Confluent.Kafka 2.14.2 emits its own
+# IL2104 trim warning. The demo csproj roots Confluent.Kafka for the trimmer because librdkafka
+# delegate wiring reflects over the library's own NativeMethods members.
+# Both runs printed Pass=true with 2 producer spans, >=2 consumer spans, and 1
+# ProduceException`2 error span.
+
+docker rm -f qyl-kafka-probe
+```
+
+Real RabbitMQ.Client, source-interceptor proof:
+
+```bash
+docker run -d --name qyl-rabbitmq-probe -p 5673:5672 rabbitmq:4
+export QYL_RABBITMQ_URI=amqp://guest:guest@127.0.0.1:5673
+
+dotnet run --project demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-rabbitmq-aot /p:PublishAot=true /p:TreatWarningsAsErrors=false
+/tmp/qyl-real-rabbitmq-aot/Qyl.RealRabbitMqDemo
+# Both runs printed Pass=true with 1 publish span and 1 AlreadyClosedException error span from
+# a missing-exchange publish under publisher confirmations.
+
+docker rm -f qyl-rabbitmq-probe
+```
+
+Real MongoDB.Driver, source-interceptor proof:
+
+```bash
+docker run -d --name qyl-mongodb-probe -p 27018:27017 mongo:8
+export QYL_MONGODB_CONNECTION_STRING=mongodb://127.0.0.1:27018
+
+dotnet run --project demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj -c Release --no-build
+dotnet publish demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj -c Release -r osx-arm64 --self-contained true -o /tmp/qyl-real-mongodb-aot /p:PublishAot=true /p:TreatWarningsAsErrors=false
+/tmp/qyl-real-mongodb-aot/Qyl.RealMongoDbDemo
+# TreatWarningsAsErrors=false is intentional here because MongoDB.Driver/MongoDB.Bson 3.9.0 emit
+# their own IL2104/IL3053 warnings. The demo csproj roots MongoDB.Bson and MongoDB.Driver for the
+# trimmer; without the roots the NativeAOT binary hangs in driver initialization before any I/O.
+# Both runs printed Pass=true with insert/count/delete spans and 1 MongoWriteException error span.
+
+docker rm -f qyl-mongodb-probe
 ```
 
 Synthetic multi-domain semantic proof:

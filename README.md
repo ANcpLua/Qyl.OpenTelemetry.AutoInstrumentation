@@ -70,6 +70,9 @@ the runtime project, the generator project as an analyzer, and the core targets 
 | EFCore | Real managed and NativeAOT demo using typed command event payloads and an EF compiled model. |
 | Grpc.Net.Client | Real managed and NativeAOT demo using public gRPC activity tags. |
 | Microsoft.Data.SqlClient | Real managed and NativeAOT demo using SqlClient diagnostic payloads; SqlClient's own AOT warnings are treated as an app-side library boundary. |
+| Confluent.Kafka | Real managed and NativeAOT demo using source-generated producer/consumer interceptors against a real broker; NativeAOT needs an app-side `TrimmerRootAssembly` for Confluent.Kafka. |
+| RabbitMQ.Client | Real managed and NativeAOT demo using source-generated `BasicPublishAsync` interceptors against a real broker, with publisher confirmations proving the error path. |
+| MongoDB.Driver | Real managed and NativeAOT demo using source-generated `IMongoCollection<T>` interceptors against a real server; NativeAOT needs app-side `TrimmerRootAssembly` roots for MongoDB.Bson/MongoDB.Driver. |
 | Package boot | Temporary PackageReference consumers prove zero-code bootstrap for Hosting, EFCore, and SqlClient packages. |
 | ProjectReference dogfood | Explicit analyzer/targets dogfooding path proves local source-tree development without pretending a bare ProjectReference is enough. |
 
