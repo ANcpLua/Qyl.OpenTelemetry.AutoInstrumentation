@@ -73,6 +73,7 @@ using var http = new HttpClient(new StatusHandler(HttpStatusCode.InternalServerE
 {
     BaseAddress = new Uri("https://qyl-source.invalid"),
 };
+http.DefaultRequestHeaders.Add("x-qyl-source", "default-header");
 
 try
 {
@@ -98,14 +99,53 @@ if (httpActivity is not null)
 {
     var tags = httpActivity.TagObjects.ToDictionary(
         static tag => tag.Key,
-        static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+        static tag => FormatTagValue(tag.Value),
         StringComparer.Ordinal);
+    tags.TryGetValue(QylSemanticAttributes.ServerAddress, out var serverAddress);
+    tags.TryGetValue("http.request.header.x-qyl-source", out var capturedHeader);
     tags.TryGetValue(QylSemanticAttributes.HttpResponseStatusCode, out var statusCode);
     tags.TryGetValue(QylSemanticAttributes.ErrorType, out var errorType);
 
     Console.WriteLine("http.activity.status=" + httpActivity.Status);
+    Console.WriteLine(QylSemanticAttributes.ServerAddress + "=" + serverAddress);
+    Console.WriteLine("http.request.header.x-qyl-source=" + capturedHeader);
     Console.WriteLine(QylSemanticAttributes.HttpResponseStatusCode + "=" + statusCode);
     Console.WriteLine(QylSemanticAttributes.ErrorType + "=" + errorType);
+}
+
+using var content = new StringContent("payload");
+content.Headers.Add("x-qyl-content", "content-header");
+using var postHttp = new HttpClient(new StatusHandler(HttpStatusCode.NoContent))
+{
+    BaseAddress = new Uri("https://qyl-source.invalid"),
+};
+using (await postHttp.PostAsync("/content", content))
+{
+}
+
+var postActivity = captured.FirstOrDefault(static activity =>
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.HttpResponseStatusCode &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            "500",
+            StringComparison.Ordinal)) is false &&
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.QylInstrumentationDomain &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            QylInstrumentationDomains.HttpClient,
+            StringComparison.Ordinal)));
+
+if (postActivity is not null)
+{
+    var tags = postActivity.TagObjects.ToDictionary(
+        static tag => tag.Key,
+        static tag => FormatTagValue(tag.Value),
+        StringComparer.Ordinal);
+    tags.TryGetValue("http.request.header.x-qyl-content", out var capturedContentHeader);
+
+    Console.WriteLine("http.request.header.x-qyl-content=" + capturedContentHeader);
 }
 
 ILogger throwingLogger = new ThrowingLogger();
@@ -127,6 +167,11 @@ catch (InvalidOperationException exception)
 Console.WriteLine("activity.count.after.throw=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 return 0;
+
+static string FormatTagValue(object? value)
+    => value is string[] values
+        ? string.Join(",", values)
+        : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
 
 internal sealed class CapturingLogger : ILogger
 {
@@ -186,11 +231,14 @@ qyl.instrumentation.domain=log.ilogger
 log.severity=Warning
 http.exception.status=500
 http.activity.status=Error
+server.address=qyl-source.invalid
+http.request.header.x-qyl-source=default-header
 http.response.status_code=500
 error.type=500
+http.request.header.x-qyl-content=content-header
 throwing.type=InvalidOperationException
 throwing.message=logger-failure
-activity.count.after.throw=3
+activity.count.after.throw=4
 """
 
 
@@ -274,6 +322,8 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(",
         "HttpClient_GetStringAsync_",
         "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync(",
+        "HttpClient_PostAsync_",
+        "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.PostAsync(",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")
@@ -355,6 +405,7 @@ def verify_completed(name: str, completed: subprocess.CompletedProcess[str]) -> 
 
 def main() -> None:
     env = clean_env()
+    env["OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"] = "x-qyl-source,x-qyl-content"
     version = read_version()
     with tempfile.TemporaryDirectory(prefix="qyl-source-interceptor-") as temp:
         root = Path(temp)

@@ -19,7 +19,7 @@ Source inventory
 
 ## Responsibility map
 
-- `QylInterceptedHttpClient`: observes supported `HttpClient` calls, records response/error/status/duration state, shares the synchronous `Send` path without delegate allocation, and delegates header/query formatting to core helpers.
+- `QylInterceptedHttpClient`: observes supported `HttpClient` calls, records effective URI, default/content request headers, response/error/status/duration state, shares the synchronous `Send` path without delegate allocation, and delegates header/query formatting to core helpers.
 - `QylInterceptedHttpWebRequest`: observes `HttpWebRequest` calls with the same URL-full formatting rule as `HttpClient`.
 - `QylCaptureHelpers`: owns captured header/metadata tag shape and URL/query formatting helpers; captured values stay arrays even for one value.
 - `QylHttpClientMetrics`: keeps the checked public metric entry point and exposes an internal unchecked path for callers that already proved recording is enabled.
@@ -54,9 +54,9 @@ aot-warning-gate-ok consumer=project-reference warnings=0
 smoketest-ok rid=osx-arm64
 webapi-aot-demo-ok qyl_warnings=0
 otlp-golden-fixtures-ok
-Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781148459053132000.nupkg'.
+Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781150195632936000.nupkg'.
 otlp-collector-fixtures-ok
-otlp-collector-fixtures-elapsed=5.4s
+otlp-collector-fixtures-elapsed=4.9s
 consumer-behavior-ok
 nativeaot-consumer-golden-ok
 aot-autoinstrumentation-goal-ok
@@ -80,18 +80,18 @@ aot-autoinstrumentation-goal-partial-ok selected=diff whitespace
 
 ```text
 // ***** Found 12 benchmark(s) in total *****
-| DirectSqlClientCommand      | .NET 10.0      | 0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
-| InterceptedSqlClientCommand | .NET 10.0      | 5.0931 ns | 0.0513 ns | 0.0079 ns |     ? |       ? |         - |           ? |
+| DirectSqlClientCommand      | .NET 10.0      | 0.1380 ns | 0.4785 ns | 0.1243 ns |     ? |       ? |         - |           ? |
+| InterceptedSqlClientCommand | .NET 10.0      | 5.8820 ns | 1.0565 ns | 0.1635 ns |     ? |       ? |         - |           ? |
 | DirectSqlClientCommand      | NativeAOT 10.0 | 0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
-| InterceptedSqlClientCommand | NativeAOT 10.0 | 9.0142 ns | 0.1370 ns | 0.0356 ns |     ? |       ? |         - |           ? |
+| InterceptedSqlClientCommand | NativeAOT 10.0 | 9.5546 ns | 1.0325 ns | 0.1598 ns |     ? |       ? |         - |           ? |
 | DirectExecuteSqlRaw      | .NET 10.0      |  0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | .NET 10.0      |  9.3700 ns | 0.9909 ns | 0.2573 ns |     ? |       ? |         - |           ? |
-| DirectExecuteSqlRaw      | NativeAOT 10.0 |  0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 11.5618 ns | 0.4219 ns | 0.1096 ns |     ? |       ? |         - |           ? |
-| DirectGetAsync      | .NET 10.0      | 159.6 ns |  6.23 ns | 0.96 ns |  1.00 |    0.01 | 0.0069 |     704 B |        1.00 |
-| InterceptedGetAsync | .NET 10.0      | 165.3 ns |  7.15 ns | 1.86 ns |  1.04 |    0.01 | 0.0069 |     704 B |        1.00 |
-| DirectGetAsync      | NativeAOT 10.0 | 205.1 ns | 26.48 ns | 6.88 ns |  1.00 |    0.04 | 0.0069 |     704 B |        1.00 |
-| InterceptedGetAsync | NativeAOT 10.0 | 197.3 ns |  9.93 ns | 1.54 ns |  0.96 |    0.03 | 0.0069 |     704 B |        1.00 |
-Global total time: 00:04:21 (261.2 sec), executed benchmarks: 12
+| InterceptedExecuteSqlRaw | .NET 10.0      |  8.8009 ns | 0.0577 ns | 0.0150 ns |     ? |       ? |         - |           ? |
+| DirectExecuteSqlRaw      | NativeAOT 10.0 |  0.0176 ns | 0.1082 ns | 0.0281 ns |     ? |       ? |         - |           ? |
+| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 12.1969 ns | 0.5800 ns | 0.0898 ns |     ? |       ? |         - |           ? |
+| DirectGetAsync      | .NET 10.0      | 166.7 ns |  24.76 ns |  6.43 ns |  1.00 |    0.05 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | .NET 10.0      | 167.5 ns |   3.28 ns |  0.51 ns |  1.01 |    0.03 | 0.0069 |     704 B |        1.00 |
+| DirectGetAsync      | NativeAOT 10.0 | 199.8 ns |  17.58 ns |  2.72 ns |  1.00 |    0.02 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | NativeAOT 10.0 | 227.2 ns | 185.02 ns | 28.63 ns |  1.14 |    0.13 | 0.0069 |     704 B |        1.00 |
+Global total time: 00:04:04 (244.16 sec), executed benchmarks: 12
 hotpath-benchmarks-ok artifacts=/var/folders/33/h4mz_z3x7ys2phgr3zm2wnq40000gn/T//qyl-benchmarkdotnet-artifacts
 ```

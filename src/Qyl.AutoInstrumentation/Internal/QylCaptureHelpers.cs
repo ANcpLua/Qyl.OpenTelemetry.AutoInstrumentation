@@ -16,6 +16,14 @@ internal static class QylCaptureHelpers
         QylCapturedNameMap configuredHeaders,
         HttpHeaders? primaryHeaders,
         HttpHeaders? contentHeaders)
+        => SetHttpHeaders(activity, configuredHeaders, primaryHeaders, null, contentHeaders);
+
+    public static void SetHttpHeaders(
+        Activity? activity,
+        QylCapturedNameMap configuredHeaders,
+        HttpHeaders? primaryHeaders,
+        HttpHeaders? fallbackHeaders,
+        HttpHeaders? contentHeaders)
     {
         if (activity is null || configuredHeaders.Count is 0)
             return;
@@ -25,6 +33,9 @@ internal static class QylCaptureHelpers
             var lookupName = configuredHeaders.GetLookupName(index);
 
             if (TrySetHeaderTag(activity, configuredHeaders, index, lookupName, primaryHeaders))
+                continue;
+
+            if (TrySetHeaderTag(activity, configuredHeaders, index, lookupName, fallbackHeaders))
                 continue;
 
             TrySetHeaderTag(activity, configuredHeaders, index, lookupName, contentHeaders);

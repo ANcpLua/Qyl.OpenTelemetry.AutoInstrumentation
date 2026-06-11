@@ -155,7 +155,7 @@ internal sealed record WebApiAotReport(
             HasTag(activity, "qyl.instrumentation.domain", "http.client") &&
             HasTag(activity, "http.request.method", "GET") &&
             HasTag(activity, "http.response.status_code", "204") &&
-            !activity.Tags.ContainsKey("server.address")));
+            HasTag(activity, "server.address", "qyl-webapi.invalid")));
 
         AddRequired(signals, failures, "efcore.sqlite", activities.FirstOrDefault(static activity =>
             HasTag(activity, "qyl.instrumentation.domain", "db.efcore")));
