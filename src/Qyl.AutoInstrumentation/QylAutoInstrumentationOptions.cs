@@ -259,10 +259,10 @@ public sealed class QylAutoInstrumentationOptions
 
     private static QylAutoInstrumentationOptions Load()
     {
-        var globalEnabled = ReadBoolean(GlobalEnabledVariable) ?? true;
-        var tracesEnabled = ReadBoolean(TracesEnabledVariable) ?? globalEnabled;
-        var metricsEnabled = ReadBoolean(MetricsEnabledVariable) ?? globalEnabled;
-        var logsEnabled = ReadBoolean(LogsEnabledVariable) ?? globalEnabled;
+        var globalEnabled = EnvironmentOptions.ReadBoolean(GlobalEnabledVariable) ?? true;
+        var tracesEnabled = EnvironmentOptions.ReadBoolean(TracesEnabledVariable) ?? globalEnabled;
+        var metricsEnabled = EnvironmentOptions.ReadBoolean(MetricsEnabledVariable) ?? globalEnabled;
+        var logsEnabled = EnvironmentOptions.ReadBoolean(LogsEnabledVariable) ?? globalEnabled;
         var instrumentationEnabled = new Dictionary<InstrumentationLookupKey, bool>();
 
         AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Traces, tracesEnabled, TraceInstrumentationIds);
@@ -274,25 +274,25 @@ public sealed class QylAutoInstrumentationOptions
             tracesEnabled,
             metricsEnabled,
             logsEnabled,
-            ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
-            ReadBoolean(ConformanceEnabledVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(ConformanceEnabledVariable) ?? false,
             new ReadOnlyDictionary<InstrumentationLookupKey, bool>(instrumentationEnabled),
-            ReadBoolean(EntityFrameworkCoreDbStatementVariable) ?? false,
-            ReadBoolean(GraphQlSetDocumentVariable) ?? false,
-            ReadBoolean(OracleMdaSetDbStatementVariable) ?? false,
-            ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
-            ReadList(AspNetRequestHeadersVariable),
-            ReadList(AspNetResponseHeadersVariable),
-            ReadList(AspNetCoreRequestHeadersVariable),
-            ReadList(AspNetCoreResponseHeadersVariable),
-            ReadList(GrpcClientRequestMetadataVariable),
-            ReadList(GrpcClientResponseMetadataVariable),
-            ReadList(HttpClientRequestHeadersVariable),
-            ReadList(HttpClientResponseHeadersVariable),
-            ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
-            ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false,
-            ReadBoolean(AspNetUrlQueryRedactionDisabledVariable) ?? false,
-            ReadBoolean(SqlClientNetFxIlRewriteRequestedVariable) ?? false);
+            EnvironmentOptions.ReadBoolean(EntityFrameworkCoreDbStatementVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(GraphQlSetDocumentVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(OracleMdaSetDbStatementVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
+            EnvironmentOptions.ReadList(AspNetRequestHeadersVariable),
+            EnvironmentOptions.ReadList(AspNetResponseHeadersVariable),
+            EnvironmentOptions.ReadList(AspNetCoreRequestHeadersVariable),
+            EnvironmentOptions.ReadList(AspNetCoreResponseHeadersVariable),
+            EnvironmentOptions.ReadList(GrpcClientRequestMetadataVariable),
+            EnvironmentOptions.ReadList(GrpcClientResponseMetadataVariable),
+            EnvironmentOptions.ReadList(HttpClientRequestHeadersVariable),
+            EnvironmentOptions.ReadList(HttpClientResponseHeadersVariable),
+            EnvironmentOptions.ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(AspNetUrlQueryRedactionDisabledVariable) ?? false,
+            EnvironmentOptions.ReadBoolean(SqlClientNetFxIlRewriteRequestedVariable) ?? false);
     }
 
     private static void AddSignalInstrumentations(
@@ -309,7 +309,8 @@ public sealed class QylAutoInstrumentationOptions
                 continue;
 
             var variable = BuildSignalSpecificVariable(signal, instrumentationId);
-            target[new InstrumentationLookupKey(signal, instrumentationId)] = ReadBoolean(variable) ?? signalDefault;
+            target[new InstrumentationLookupKey(signal, instrumentationId)] =
+                EnvironmentOptions.ReadBoolean(variable) ?? signalDefault;
         }
     }
 
@@ -342,43 +343,46 @@ public sealed class QylAutoInstrumentationOptions
             _ => throw new ArgumentOutOfRangeException(nameof(signal), signal, null),
         };
 
-    private static bool? ReadBoolean(string variable)
+    private static class EnvironmentOptions
     {
-        var value = Environment.GetEnvironmentVariable(variable);
-        if (string.IsNullOrWhiteSpace(value))
-            return null;
-
-        if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "1", StringComparison.Ordinal) ||
-            string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "on", StringComparison.OrdinalIgnoreCase))
+        internal static bool? ReadBoolean(string variable)
         {
-            return true;
+            var value = Environment.GetEnvironmentVariable(variable);
+            if (string.IsNullOrWhiteSpace(value))
+                return null;
+
+            if (string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "1", StringComparison.Ordinal) ||
+                string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "on", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "0", StringComparison.Ordinal) ||
+                string.Equals(value, "no", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(value, "off", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return bool.TryParse(value, out var parsed) ? parsed : null;
         }
 
-        if (string.Equals(value, "false", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "0", StringComparison.Ordinal) ||
-            string.Equals(value, "no", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "off", StringComparison.OrdinalIgnoreCase))
+        internal static string[] ReadList(string variable)
         {
-            return false;
+            var value = Environment.GetEnvironmentVariable(variable);
+            if (string.IsNullOrWhiteSpace(value))
+                return [];
+
+            return value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(static item => item.Length > 0)
+                .Select(static item => item.ToLower(CultureInfo.InvariantCulture))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
         }
-
-        return bool.TryParse(value, out var parsed) ? parsed : null;
-    }
-
-    private static string[] ReadList(string variable)
-    {
-        var value = Environment.GetEnvironmentVariable(variable);
-        if (string.IsNullOrWhiteSpace(value))
-            return [];
-
-        return value
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(static item => item.Length > 0)
-            .Select(static item => item.ToLower(CultureInfo.InvariantCulture))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
     }
 
     private readonly struct InstrumentationLookupKey : IEquatable<InstrumentationLookupKey>

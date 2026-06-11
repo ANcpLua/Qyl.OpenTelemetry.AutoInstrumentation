@@ -215,17 +215,20 @@ assert_no_aot_warnings() {
   echo "aot-warning-gate-ok consumer=$consumer warnings=0"
 }
 
-run_consumer() {
-  local name="$1"
-  local dir="$2"
-  local managed_out="$WORK/$name.managed.stdout"
-  local native_out="$WORK/$name.nativeaot.stdout"
-  local publish_log="$WORK/$name.nativeaot.publish.log"
+run_managed_consumer() {
+  local dir="$1"
+  local managed_out="$2"
 
   dotnet build "$dir/Consumer.csproj" -c Release -v quiet
   assert_generated_interceptor "$dir"
   dotnet "$dir/bin/Release/net10.0/Consumer.dll" > "$managed_out"
   diff -u "$GOLDEN" "$managed_out"
+}
+
+publish_nativeaot_consumer() {
+  local name="$1"
+  local dir="$2"
+  local publish_log="$3"
 
   dotnet publish "$dir/Consumer.csproj" \
     -c Release \
@@ -236,9 +239,23 @@ run_consumer() {
     -p:TreatWarningsAsErrors=true \
     -v quiet 2>&1 | tee "$publish_log"
   assert_no_aot_warnings "$publish_log" "$name"
+}
+
+run_nativeaot_consumer() {
+  local dir="$1"
+  local native_out="$2"
 
   "$dir/bin/Release/net10.0/$RID/publish/Consumer" > "$native_out"
   diff -u "$GOLDEN" "$native_out"
+}
+
+run_consumer() {
+  local name="$1"
+  local dir="$2"
+
+  run_managed_consumer "$dir" "$WORK/$name.managed.stdout"
+  publish_nativeaot_consumer "$name" "$dir" "$WORK/$name.nativeaot.publish.log"
+  run_nativeaot_consumer "$dir" "$WORK/$name.nativeaot.stdout"
 }
 
 write_package_consumer "$WORK/pkg-consumer"

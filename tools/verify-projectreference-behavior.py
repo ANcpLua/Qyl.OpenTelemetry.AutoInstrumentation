@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import os
 import platform
-import subprocess
 import tempfile
 from pathlib import Path
+
+from verify_helpers import clean_env, run_checked
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -99,38 +99,6 @@ log.severity=Information
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def clean_env() -> dict[str, str]:
-    env = dict(os.environ)
-    for key in list(env):
-        if key.startswith("OTEL_") or key.startswith("QYL_"):
-            del env[key]
-
-    env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
-    env["DOTNET_NOLOGO"] = "1"
-    env["MSBUILDDISABLENODEREUSE"] = "1"
-    return env
-
-
-def run_checked(command: list[str], cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    completed = subprocess.run(
-        command,
-        cwd=cwd,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-    if completed.returncode != 0:
-        fail(
-            "command failed: "
-            + " ".join(command)
-            + f"\nexit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
-        )
-
-    return completed
 
 
 def runtime_identifier() -> str:

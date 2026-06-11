@@ -14,78 +14,35 @@ public static class QylInterceptedHttpClient
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
-    {
-        ThrowIfInvalidCallTarget(client, request);
-        using var observation = StartHttpClientObservation(request);
-        if (!observation.IsEnabled)
-            return client.Send(request);
-
-        try
-        {
-            var response = client.Send(request);
-            RecordResponse(observation, response);
-            return response;
-        }
-        catch (Exception exception)
-        {
-            RecordException(observation, exception);
-            throw;
-        }
-    }
+        => SendCore(client, request, default, default, HttpClientSendOverload.Default);
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        ThrowIfInvalidCallTarget(client, request);
-        using var observation = StartHttpClientObservation(request);
-        if (!observation.IsEnabled)
-            return client.Send(request, cancellationToken);
-
-        try
-        {
-            var response = client.Send(request, cancellationToken);
-            RecordResponse(observation, response);
-            return response;
-        }
-        catch (Exception exception)
-        {
-            RecordException(observation, exception);
-            throw;
-        }
-    }
+        => SendCore(client, request, default, cancellationToken, HttpClientSendOverload.CancellationToken);
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption)
-    {
-        ThrowIfInvalidCallTarget(client, request);
-        using var observation = StartHttpClientObservation(request);
-        if (!observation.IsEnabled)
-            return client.Send(request, completionOption);
-
-        try
-        {
-            var response = client.Send(request, completionOption);
-            RecordResponse(observation, response);
-            return response;
-        }
-        catch (Exception exception)
-        {
-            RecordException(observation, exception);
-            throw;
-        }
-    }
+        => SendCore(client, request, completionOption, default, HttpClientSendOverload.CompletionOption);
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request, HttpCompletionOption completionOption, CancellationToken cancellationToken)
+        => SendCore(client, request, completionOption, cancellationToken, HttpClientSendOverload.CompletionOptionCancellationToken);
+
+    private static HttpResponseMessage SendCore(
+        HttpClient client,
+        HttpRequestMessage request,
+        HttpCompletionOption completionOption,
+        CancellationToken cancellationToken,
+        HttpClientSendOverload overload)
     {
         ThrowIfInvalidCallTarget(client, request);
         using var observation = StartHttpClientObservation(request);
         if (!observation.IsEnabled)
-            return client.Send(request, completionOption, cancellationToken);
+            return SendOriginal(client, request, completionOption, cancellationToken, overload);
 
         try
         {
-            var response = client.Send(request, completionOption, cancellationToken);
+            var response = SendOriginal(client, request, completionOption, cancellationToken, overload);
             RecordResponse(observation, response);
             return response;
         }
@@ -95,6 +52,21 @@ public static class QylInterceptedHttpClient
             throw;
         }
     }
+
+    private static HttpResponseMessage SendOriginal(
+        HttpClient client,
+        HttpRequestMessage request,
+        HttpCompletionOption completionOption,
+        CancellationToken cancellationToken,
+        HttpClientSendOverload overload)
+        => overload switch
+        {
+            HttpClientSendOverload.Default => client.Send(request),
+            HttpClientSendOverload.CancellationToken => client.Send(request, cancellationToken),
+            HttpClientSendOverload.CompletionOption => client.Send(request, completionOption),
+            HttpClientSendOverload.CompletionOptionCancellationToken => client.Send(request, completionOption, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(overload), overload, null),
+        };
 
     /// <summary>Runs the Send Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task<HttpResponseMessage> SendAsync(HttpClient client, HttpRequestMessage request)
@@ -682,5 +654,13 @@ public static class QylInterceptedHttpClient
         /// <summary>Runs the Dispose runtime helper used by source-generated qyl interceptors.</summary>
         public void Dispose()
             => Activity?.Dispose();
+    }
+
+    private enum HttpClientSendOverload
+    {
+        Default,
+        CancellationToken,
+        CompletionOption,
+        CompletionOptionCancellationToken,
     }
 }

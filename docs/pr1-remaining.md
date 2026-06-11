@@ -19,14 +19,16 @@ Source inventory
 
 ## Responsibility map
 
-- `QylInterceptedHttpClient`: observes supported `HttpClient` calls, records response/error/duration state, and delegates header/query formatting to core helpers.
+- `QylInterceptedHttpClient`: observes supported `HttpClient` calls, records response/error/duration state, shares the synchronous `Send` path without delegate allocation, and delegates header/query formatting to core helpers.
 - `QylInterceptedHttpWebRequest`: observes `HttpWebRequest` calls with the same URL-full formatting rule as `HttpClient`.
 - `QylCaptureHelpers`: owns captured header/metadata tag shape and URL/query formatting helpers; captured values stay arrays even for one value.
 - `QylHttpClientMetrics`: keeps the checked public metric entry point and exposes an internal unchecked path for callers that already proved recording is enabled.
-- `QylAutoInstrumentationOptions`: owns environment variable binding and instrumentation option defaults through named constants.
+- `QylAutoInstrumentationOptions`: owns instrumentation option defaults and delegates environment parsing to its nested `EnvironmentOptions` reader.
 - `ModuleInitializerBoot`: owns idempotent activation and diagnostic-listener registration.
-- `QylAutoInstrumentationGenerator`: maps known interceptor kinds to emitters and fails fast for an unhandled kind instead of silently emitting the wrong wrapper.
+- `QylAutoInstrumentationGenerator`: maps known interceptor kinds to emitters, shares repeated activity-dispose emission, and fails fast for an unhandled kind instead of silently emitting the wrong wrapper.
 - `tools/verify_helpers.py`: owns shared verifier process environment, version reading, and checked subprocess execution.
+- `tools/Qyl.AutoInstrumentation.WebApiAotDemo/Program.cs`: owns the WebAPI NativeAOT demo source used by `tools/verify-webapi-aot-demo.py`.
+- `tools/smoketest.sh`: owns package-reference and project-reference smoke fixtures with separate managed build, NativeAOT publish, and NativeAOT run phases.
 - `tools/verify-aot-autoinstrumentation-goal.py`: owns the full handoff gate; filtered runs print a partial marker and cannot be mistaken for full release evidence.
 
 ## Live output evidence
@@ -36,6 +38,9 @@ Source inventory
 ```text
 contract-invariants-ok
 contract-coverage-report-ok total=60 source_generated_signals=33 unsupported_signals=4 environment_controls=7 instrumentation_options=16
+Build succeeded.
+0 Warning(s)
+0 Error(s)
 package-layout-ok
 projectreference-behavior-ok
 public-api-baseline-ok
@@ -49,9 +54,9 @@ aot-warning-gate-ok consumer=project-reference warnings=0
 smoketest-ok rid=osx-arm64
 webapi-aot-demo-ok qyl_warnings=0
 otlp-golden-fixtures-ok
-Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781145718972185000.nupkg'.
+Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781146957297871000.nupkg'.
 otlp-collector-fixtures-ok
-otlp-collector-fixtures-elapsed=5.4s
+otlp-collector-fixtures-elapsed=5.6s
 consumer-behavior-ok
 nativeaot-consumer-golden-ok
 aot-autoinstrumentation-goal-ok
@@ -68,12 +73,18 @@ aot-autoinstrumentation-goal-partial-ok selected=diff whitespace
 
 ```text
 // ***** Found 12 benchmark(s) in total *****
-| InterceptedSqlClientCommand | .NET 10.0      | 6.2278 ns | 1.4975 ns | 0.3889 ns | 760.96 |  919.53 |         - |          NA |
-| InterceptedSqlClientCommand | NativeAOT 10.0 | 9.8237 ns | 2.1743 ns | 0.5647 ns |      ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | .NET 10.0      |  9.7249 ns | 0.9422 ns | 0.2447 ns |  9.7613 ns |     ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 13.1259 ns | 2.8094 ns | 0.4348 ns | 13.1527 ns |     ? |       ? |         - |           ? |
-| InterceptedGetAsync | .NET 10.0      | 178.8 ns | 16.58 ns |  2.57 ns |  1.03 |    0.07 | 0.0069 |     704 B |        1.00 |
-| InterceptedGetAsync | NativeAOT 10.0 | 199.7 ns |  4.62 ns |  1.20 ns |  1.03 |    0.01 | 0.0069 |     704 B |        1.00 |
-Global total time: 00:04:00 (240.16 sec), executed benchmarks: 12
+| DirectSqlClientCommand      | .NET 10.0      | 0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
+| InterceptedSqlClientCommand | .NET 10.0      | 5.0931 ns | 0.0513 ns | 0.0079 ns |     ? |       ? |         - |           ? |
+| DirectSqlClientCommand      | NativeAOT 10.0 | 0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
+| InterceptedSqlClientCommand | NativeAOT 10.0 | 9.0142 ns | 0.1370 ns | 0.0356 ns |     ? |       ? |         - |           ? |
+| DirectExecuteSqlRaw      | .NET 10.0      |  0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
+| InterceptedExecuteSqlRaw | .NET 10.0      |  9.3700 ns | 0.9909 ns | 0.2573 ns |     ? |       ? |         - |           ? |
+| DirectExecuteSqlRaw      | NativeAOT 10.0 |  0.0000 ns | 0.0000 ns | 0.0000 ns |     ? |       ? |         - |           ? |
+| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 11.5618 ns | 0.4219 ns | 0.1096 ns |     ? |       ? |         - |           ? |
+| DirectGetAsync      | .NET 10.0      | 159.6 ns |  6.23 ns | 0.96 ns |  1.00 |    0.01 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | .NET 10.0      | 165.3 ns |  7.15 ns | 1.86 ns |  1.04 |    0.01 | 0.0069 |     704 B |        1.00 |
+| DirectGetAsync      | NativeAOT 10.0 | 205.1 ns | 26.48 ns | 6.88 ns |  1.00 |    0.04 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | NativeAOT 10.0 | 197.3 ns |  9.93 ns | 1.54 ns |  0.96 |    0.03 | 0.0069 |     704 B |        1.00 |
+Global total time: 00:04:21 (261.2 sec), executed benchmarks: 12
 hotpath-benchmarks-ok artifacts=/var/folders/33/h4mz_z3x7ys2phgr3zm2wnq40000gn/T//qyl-benchmarkdotnet-artifacts
 ```

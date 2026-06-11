@@ -270,6 +270,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
+    private static void EmitActivityDisposeFinally(StringBuilder builder)
+    {
+        builder.AppendLine("            finally");
+        builder.AppendLine("            {");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("            }");
+    }
+
     private static void EmitHttpClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
@@ -320,10 +328,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(activity, metricStartTimeUtc, httpWebRequest.Method, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -380,10 +385,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         if (!target.IsAsync)
         {
-            builder.AppendLine("            finally");
-            builder.AppendLine("            {");
-            builder.AppendLine("                activity?.Dispose();");
-            builder.AppendLine("            }");
+            EmitActivityDisposeFinally(builder);
         }
         builder.AppendLine("        }");
         builder.AppendLine();
@@ -480,10 +482,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -554,10 +553,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -623,10 +619,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -889,10 +882,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -918,10 +908,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -957,10 +944,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1003,10 +987,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1084,10 +1065,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1268,10 +1246,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1380,10 +1355,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1517,10 +1489,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1575,10 +1544,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        builder.AppendLine("            finally");
-        builder.AppendLine("            {");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("            }");
+        EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
