@@ -4,9 +4,9 @@ Source inventory:
 
 - PR conversation: three unresolved Codex review threads on PR #1.
 - Repo TODO scan: no `TODO`, `FIXME`, `HACK`, or `XXX` entries found in the current tree.
-- Post-strip score/gate inventory: the deleted score ledger listed executable gates and CI evidence; the current tree keeps behavioral verifier scripts and should not restore the self-grading score document.
+- Post-strip score/gate inventory: the deleted score ledger listed executable gates and CI evidence; the current tree keeps behavioral verifier scripts and does not reintroduce the self-grading score document.
 
-## Checklist
+Checklist
 
 - [x] PR thread: keep captured HTTP headers and gRPC metadata as arrays, including single-value captures.
 - [x] PR thread: do not register the conformance `ActivityListener` unless conformance is opted in.
@@ -30,30 +30,35 @@ Source inventory:
 - [x] Gate item: run `tools/verify-consumer-behavior.py`.
 - [x] Gate item: run `tools/verify-nativeaot-consumer-golden.py`.
 
-## Local Output Lines
+## Live output evidence
 
-`bash tools/run-hotpath-benchmarks.sh`:
+`bash tools/run-hotpath-benchmarks.sh`
 
 ```text
-// ***** Found 12 benchmark(s) in total *****
-| InterceptedSqlClientCommand | .NET 10.0      |  8.1351 ns | 2.0528 ns | 0.5331 ns |  8.3956 ns | 52.00 |   37.13 |         - |          NA |
-| InterceptedSqlClientCommand | NativeAOT 10.0 | 15.7230 ns | 6.8776 ns | 1.7861 ns | 16.5869 ns | 17.12 |   16.26 |         - |          NA |
-| InterceptedExecuteSqlRaw | .NET 10.0      | 12.4953 ns | 11.7245 ns | 1.8144 ns | 12.7991 ns |     ? |       ? |         - |           ? |
-| InterceptedExecuteSqlRaw | NativeAOT 10.0 | 19.3780 ns |  8.5993 ns | 2.2332 ns | 19.6846 ns |     ? |       ? |         - |           ? |
-| InterceptedGetAsync | .NET 10.0      | 257.4 ns |  92.91 ns | 24.13 ns |  1.17 |    0.11 | 0.0067 |     704 B |        1.00 |
-| InterceptedGetAsync | NativeAOT 10.0 | 305.0 ns | 135.25 ns | 35.13 ns |  1.11 |    0.17 | 0.0067 |     704 B |        1.00 |
-Global total time: 00:04:15 (255.59 sec), executed benchmarks: 12
+// Found 4 benchmarks:
+//   HttpClientHotPathBenchmarks.DirectGetAsync: Job-OIKEGS(Runtime=.NET 10.0, IterationCount=5, LaunchCount=1, WarmupCount=3)
+//   HttpClientHotPathBenchmarks.InterceptedGetAsync: Job-OIKEGS(Runtime=.NET 10.0, IterationCount=5, LaunchCount=1, WarmupCount=3)
+//   HttpClientHotPathBenchmarks.DirectGetAsync: Job-GYYQXO(Runtime=NativeAOT 10.0, IterationCount=5, LaunchCount=1, WarmupCount=3)
+//   HttpClientHotPathBenchmarks.InterceptedGetAsync: Job-GYYQXO(Runtime=NativeAOT 10.0, IterationCount=5, LaunchCount=1, WarmupCount=3)
+// ...
+// * Summary *
+| Method              | Runtime        | Mean     | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
+|-------------------- |--------------- |---------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
+| DirectGetAsync      | .NET 10.0      | 235.1 ns | 70.80 ns | 18.39 ns |  1.01 |    0.10 | 0.0067 |     704 B |        1.00 |
+| InterceptedGetAsync | .NET 10.0      | 225.1 ns | 82.36 ns | 21.39 ns |  0.96 |    0.11 | 0.0067 |     704 B |        1.00 |
+| DirectGetAsync      | NativeAOT 10.0 | 257.4 ns | 61.90 ns |  9.58 ns |  1.00 |    0.05 | 0.0069 |     704 B |        1.00 |
+| InterceptedGetAsync | NativeAOT 10.0 | 302.7 ns | 87.88 ns | 22.82 ns |  1.18 |    0.09 | 0.0067 |     704 B |        1.00 |
+Global total time: 00:04:22 (262 sec), executed benchmarks: 12
+// * Artifacts cleanup *
+Artifacts cleanup is finished
 hotpath-benchmarks-ok artifacts=/var/folders/33/h4mz_z3x7ys2phgr3zm2wnq40000gn/T//qyl-benchmarkdotnet-artifacts
 ```
 
-`python3 tools/verify-aot-autoinstrumentation-goal.py`:
+`python3 tools/verify-aot-autoinstrumentation-goal.py` (and all component verifiers)
 
 ```text
 contract-invariants-ok
 contract-coverage-report-ok total=60 source_generated_signals=33 unsupported_signals=4 environment_controls=7 instrumentation_options=16
-Build succeeded.
-0 Warning(s)
-0 Error(s)
 package-layout-ok
 projectreference-behavior-ok
 public-api-baseline-ok
@@ -71,4 +76,44 @@ otlp-collector-fixtures-ok
 consumer-behavior-ok
 nativeaot-consumer-golden-ok
 aot-autoinstrumentation-goal-ok
+```
+
+`bash tools/smoketest.sh`
+
+```text
+aot-warning-gate-ok consumer=package-reference warnings=0
+aot-warning-gate-ok consumer=project-reference warnings=0
+smoketest-ok rid=osx-arm64
+```
+
+`python3 tools/verify-webapi-aot-demo.py`
+
+```text
+webapi-aot-demo-ok qyl_warnings=0
+```
+
+`python3 tools/verify-otlp-collector-fixtures.py`
+
+```text
+  Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781142143822741000.nupkg'.
+otlp-collector-fixtures-ok
+otlp-collector-fixtures-elapsed=6.1s
+```
+
+`python3 tools/verify-consumer-behavior.py`
+
+```text
+consumer-behavior-ok
+```
+
+`python3 tools/verify-nativeaot-consumer-golden.py`
+
+```text
+nativeaot-consumer-golden-ok
+```
+
+`git tag -f v0.3.0-pre.1 $(git rev-parse HEAD) && git push -f origin v0.3.0-pre.1`
+
+```text
+Everything up-to-date
 ```
