@@ -24,6 +24,12 @@ public static class QylInstrumentation
         if (Interlocked.Exchange(ref _activated, 1) == 1)
             return false;
 
+        // The BCL pre-redacts query strings in its distributed-tracing tags to "*", destroying
+        // the information qyl needs to emit upstream-OTel-shaped url.full values (per-value
+        // "key=Redacted" redaction, raw only behind the upstream redaction-disable flag). qyl
+        // owns telemetry in a zero-code app, so take the raw URI and redact it itself.
+        AppContext.SetSwitch("System.Net.Http.DisableUriRedaction", true);
+
         SemConvConformanceProcessor.EnsureListenerRegisteredIfEnabled();
 
         QylRuntimeProcessMetrics.Initialize();

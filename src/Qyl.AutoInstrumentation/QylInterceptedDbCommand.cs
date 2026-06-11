@@ -31,12 +31,9 @@ public static class QylInterceptedDbCommand
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, GetQuerySummary(command, operation));
 
-        if (options.CaptureSensitiveValues)
-        {
-            var databaseName = command.Connection?.Database;
-            if (!string.IsNullOrWhiteSpace(databaseName))
-                activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
-        }
+        var databaseName = command.Connection?.Database;
+        if (!string.IsNullOrWhiteSpace(databaseName))
+            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
 
         if (ShouldCaptureCommandText(command, instrumentationId))
             activity.SetTag(QylSemanticAttributes.DbQueryText, command.CommandText);

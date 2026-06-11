@@ -54,9 +54,11 @@ branches, stashes, staged files, or unrelated untracked files behind.
 4. Runtime listeners (`Qyl.AutoInstrumentation.DiagnosticListeners`) consume framework/library
    DiagnosticListener payloads. Missing values stay missing; never synthesize.
 5. Output uses stable OpenTelemetry attributes with bounded values (route templates over raw
-   paths, no raw text in span names — see `docs/RUNTIME_SEMANTICS.md`). Sensitive capture is
-   gated behind `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true`; the conformance
-   processor behind `QYL_CONFORMANCE_ENABLED=1`.
+   paths, no raw text in span names — see `docs/RUNTIME_SEMANTICS.md`). Query-string values are
+   redacted by default (upstream `OTEL_DOTNET_EXPERIMENTAL_*_DISABLE_URL_QUERY_REDACTION`
+   flags switch redacted to raw); `db.query.text` sits behind the upstream
+   `SET_DBSTATEMENT_FOR_TEXT` flags; the conformance processor behind
+   `QYL_CONFORMANCE_ENABLED=1`.
 
 Key gotcha: a bare `ProjectReference` to the runtime project does NOT flow analyzer/build
 assets — `PackageReference` is the supported zero-code path. The dogfood path references the

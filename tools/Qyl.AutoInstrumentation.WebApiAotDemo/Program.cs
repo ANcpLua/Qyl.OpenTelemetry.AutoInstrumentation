@@ -167,12 +167,8 @@ internal sealed record WebApiAotReport(
 
         foreach (var signal in signals)
         {
-            if (signal.Tags.ContainsKey("url.full") ||
-                signal.Tags.ContainsKey("url.path") ||
-                signal.Tags.ContainsKey("db.query.text"))
-            {
-                failures.Add("sensitive raw value leaked in " + signal.Signal);
-            }
+            if (signal.Tags.ContainsKey("db.query.text"))
+                failures.Add("db.query.text leaked with default options in " + signal.Signal);
         }
 
         return new WebApiAotReport(

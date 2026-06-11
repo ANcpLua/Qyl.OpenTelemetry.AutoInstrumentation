@@ -9,7 +9,6 @@ Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.AspNetCoreCapturedRequestH
 Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.AspNetCoreCapturedResponseHeaders.get -> string![]!
 Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.AspNetCoreUrlQueryRedactionDisabled.get -> bool
 Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.AspNetUrlQueryRedactionDisabled.get -> bool
-Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.CaptureSensitiveValues.get -> bool
 Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.ConformanceProcessorEnabled.get -> bool
 Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.EntityFrameworkCoreSetDbStatementForText.get -> bool
 Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.GlobalEnabled.get -> bool

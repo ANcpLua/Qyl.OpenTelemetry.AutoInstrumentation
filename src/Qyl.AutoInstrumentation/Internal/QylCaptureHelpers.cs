@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
@@ -106,18 +107,45 @@ internal static class QylCaptureHelpers
             return url;
 
         var fragmentStart = url.IndexOf('#', queryStart);
+        var queryEnd = fragmentStart < 0 ? url.Length : fragmentStart;
+        var redacted = RedactQueryValues(url[(queryStart + 1)..queryEnd]);
         return fragmentStart < 0
-            ? url[..queryStart] + "?Redacted"
-            : url[..queryStart] + "?Redacted" + url[fragmentStart..];
+            ? url[..(queryStart + 1)] + redacted
+            : url[..(queryStart + 1)] + redacted + url[fragmentStart..];
+    }
+
+    public static string RedactQueryValues(string query)
+    {
+        if (query.IndexOf('=', StringComparison.Ordinal) < 0)
+            return query;
+
+        var builder = new StringBuilder(2 * query.Length);
+        var index = 0;
+        while (index < query.Length)
+        {
+            var current = query[index];
+            if (current is '=')
+            {
+                builder.Append("=Redacted");
+                index++;
+                while (index < query.Length && query[index] is not '&')
+                    index++;
+                if (index < query.Length)
+                    builder.Append('&');
+            }
+            else
+            {
+                builder.Append(current);
+            }
+
+            index++;
+        }
+
+        return builder.ToString();
     }
 
     public static string FormatUrlFull(string url, bool queryRedactionDisabled)
         => queryRedactionDisabled ? url : RedactQuery(url);
-
-    public static string TrimQueryPrefix(string? query)
-        => string.IsNullOrEmpty(query) || query[0] is not '?'
-            ? query ?? string.Empty
-            : query[1..];
 
     private static string[] ToTagValues(StringValues values)
         => values.Count is 0

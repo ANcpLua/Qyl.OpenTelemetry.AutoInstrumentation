@@ -39,7 +39,7 @@ Current classification:
 | Source-generated signal promises | 33 | Eligible for generator-gated interception or meter registration. |
 | Unsupported NativeAOT parity/dynamic signal promises | 4 | Classic ASP.NET/WCF/dynamic parity items retained with explicit unsupported status. |
 | Global environment controls | 7 | Read by `QylAutoInstrumentationOptions`. |
-| Instrumentation options | 16 | Read by `QylAutoInstrumentationOptions`; sensitive raw values remain default-off. |
+| Instrumentation options | 16 | Read by `QylAutoInstrumentationOptions`; raw query/statement values remain behind upstream opt-in flags. |
 
 ## Verified behavior
 

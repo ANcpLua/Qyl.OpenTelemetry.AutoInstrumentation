@@ -7,8 +7,10 @@
     "http.client",
     "http.request.method",
     "http.response.status_code",
+    "https://downstream.example/probe?access_token=Redacted",
     "qyl.instrumentation.domain",
-    "server.address"
+    "server.address",
+    "url.full"
   ],
   "request": {
     "contentType": "application/x-protobuf",

@@ -84,17 +84,17 @@ public static class QylInterceptedAspNetCore
         activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
         activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
 
-        if (options.CaptureSensitiveValues)
-            activity.SetTag(QylSemanticAttributes.UrlPath, context.Request.Path.Value);
+        activity.SetTag(QylSemanticAttributes.UrlPath, context.Request.Path.Value);
 
         if (context.Request.QueryString.HasValue)
         {
-            var query = context.Request.QueryString.Value;
+            // url.query is the query component without the leading '?' that QueryString.Value carries.
+            var query = context.Request.QueryString.Value![1..];
             activity.SetTag(
                 QylSemanticAttributes.UrlQuery,
-                options.CaptureSensitiveValues && options.AspNetCoreUrlQueryRedactionDisabled
-                    ? QylCaptureHelpers.TrimQueryPrefix(query)
-                    : "REDACTED");
+                options.AspNetCoreUrlQueryRedactionDisabled
+                    ? query
+                    : QylCaptureHelpers.RedactQueryValues(query));
         }
 
         if (route is not null)

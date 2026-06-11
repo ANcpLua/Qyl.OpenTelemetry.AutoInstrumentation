@@ -89,6 +89,7 @@ http.request.method=GET
 http.response.status_code=503
 qyl.instrumentation.domain=http.client
 server.address=qyl.local
+url.full=https://qyl.local/nativeaot/client?id=Redacted
 """
 
 

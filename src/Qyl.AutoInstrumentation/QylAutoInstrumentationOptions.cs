@@ -13,7 +13,6 @@ public sealed class QylAutoInstrumentationOptions
     private const string TracesEnabledVariable = "OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED";
     private const string MetricsEnabledVariable = "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED";
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
-    private const string CaptureSensitiveValuesVariable = "QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES";
     private const string ConformanceEnabledVariable = "QYL_CONFORMANCE_ENABLED";
     private const string EntityFrameworkCoreDbStatementVariable =
         "OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT";
@@ -56,7 +55,6 @@ public sealed class QylAutoInstrumentationOptions
         bool tracesEnabled,
         bool metricsEnabled,
         bool logsEnabled,
-        bool captureSensitiveValues,
         bool conformanceProcessorEnabled,
         IReadOnlyDictionary<InstrumentationLookupKey, bool> instrumentationEnabled,
         bool entityFrameworkCoreSetDbStatementForText,
@@ -80,7 +78,6 @@ public sealed class QylAutoInstrumentationOptions
         TracesEnabled = tracesEnabled;
         MetricsEnabled = metricsEnabled;
         LogsEnabled = logsEnabled;
-        CaptureSensitiveValues = captureSensitiveValues;
         ConformanceProcessorEnabled = conformanceProcessorEnabled;
         _instrumentationEnabled = instrumentationEnabled;
         EntityFrameworkCoreSetDbStatementForText = entityFrameworkCoreSetDbStatementForText;
@@ -118,9 +115,6 @@ public sealed class QylAutoInstrumentationOptions
 
     /// <summary>Gets the configured Logs Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool LogsEnabled { get; }
-
-    /// <summary>Gets the configured Capture Sensitive Values value for the current qyl auto-instrumentation runtime.</summary>
-    public bool CaptureSensitiveValues { get; }
 
     /// <summary>Gets the configured Conformance Processor Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool ConformanceProcessorEnabled { get; }
@@ -274,7 +268,6 @@ public sealed class QylAutoInstrumentationOptions
             tracesEnabled,
             metricsEnabled,
             logsEnabled,
-            EnvironmentOptions.ReadBoolean(CaptureSensitiveValuesVariable) ?? false,
             EnvironmentOptions.ReadBoolean(ConformanceEnabledVariable) ?? false,
             new ReadOnlyDictionary<InstrumentationLookupKey, bool>(instrumentationEnabled),
             EnvironmentOptions.ReadBoolean(EntityFrameworkCoreDbStatementVariable) ?? false,

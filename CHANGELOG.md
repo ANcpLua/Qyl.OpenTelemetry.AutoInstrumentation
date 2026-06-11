@@ -4,11 +4,16 @@
 
 ### Telemetry semantics
 
-- URL emission now always requires `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true`;
-  the upstream `OTEL_DOTNET_EXPERIMENTAL_*_DISABLE_URL_QUERY_REDACTION` flags only upgrade
-  redacted to raw once emission is on. Previously the redaction flag alone emitted a fully
-  unredacted `url.full` (HttpClient/HttpWebRequest) and raw `url.query` (ASP.NET Core),
-  bypassing the sensitive-values gate.
+- Adopted the upstream OpenTelemetry .NET privacy model and removed the
+  `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES` option entirely: `url.full` is always
+  emitted on client spans and `url.path`/`url.query` on server spans, with query values
+  redacted per key (`?token=Redacted`, keys stay) exactly like upstream; the
+  `OTEL_DOTNET_EXPERIMENTAL_*_DISABLE_URL_QUERY_REDACTION` flags only switch redacted to raw.
+  `db.namespace` is always emitted; `db.query.text` sits solely behind the upstream
+  `SET_DBSTATEMENT_FOR_TEXT` flags. Bootstrap sets `System.Net.Http.DisableUriRedaction`
+  because the BCL otherwise collapses query strings to `*` before qyl can redact per value.
+  (This supersedes the interim fix that gated URL emission behind the sensitive-values flag;
+  the original bug — the redaction flag alone emitting fully unredacted URLs — stays fixed.)
 - Span names are now OTel-semconv-shaped low-cardinality values composed by
   `QylActivityNames` helpers instead of fixed literals: HTTP client spans use the normalized
   method (`GET`, fallback `HTTP` for `_OTHER`), HTTP server spans use `{method} {route}`,

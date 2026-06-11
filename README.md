@@ -58,8 +58,9 @@ the runtime project, the generator project as an analyzer, and the core targets 
    process.
 4. Runtime listeners consume values supplied by framework/library events or current
    activities. Missing values stay missing.
-5. Emitted telemetry uses stable OpenTelemetry attributes by default. Raw sensitive values
-   such as `url.full`, `url.path`, and `db.query.text` are gated off unless explicitly enabled.
+5. Emitted telemetry uses stable OpenTelemetry attributes by default. Query-string values in
+   `url.full`/`url.query` are redacted to `Redacted` (keys stay); raw query values and
+   `db.query.text` are upstream-flag opt-ins.
 
 ## Supported proof surface
 
@@ -99,10 +100,11 @@ the runtime project, the generator project as an analyzer, and the core targets 
 contract mirrored in `docs/otel-dotnet-auto-60-contract-items.yaml`. Contract coverage is
 reported in `docs/coverage-matrix.md`.
 
-Sensitive capture is off by default:
+Query values are redacted by default; the upstream flags switch redacted to raw:
 
 ```bash
-QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES=true
+OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION=true
+OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION=true
 ```
 
 The conformance processor is off by default:

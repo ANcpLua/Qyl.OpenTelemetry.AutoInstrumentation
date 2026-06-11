@@ -127,8 +127,10 @@ internal sealed record HttpClientReport(
 
         foreach (var span in httpClientSpans)
         {
-            if (span.Tags.ContainsKey("url.full"))
-                failures.Add("url.full leaked with default privacy policy");
+            if (!span.Tags.ContainsKey("url.full"))
+                failures.Add("url.full missing on client span");
+            else if (span.Tags["url.full"].Contains('?') && !span.Tags["url.full"].Contains("=Redacted", StringComparison.Ordinal))
+                failures.Add("url.full query not redacted by default");
 
             if (!StringComparer.Ordinal.Equals(span.Name, "GET"))
                 failures.Add($"unexpected high-cardinality span name: {span.Name}");

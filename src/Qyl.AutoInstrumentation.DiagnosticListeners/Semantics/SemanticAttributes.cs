@@ -30,13 +30,11 @@ internal static class SemanticAttributes
 
     public static readonly SemanticAttributeDefinition UrlFull = new(
         QylSemanticAttributes.UrlFull,
-        SemanticStability.Stable,
-        Sensitive: true);
+        SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition UrlPath = new(
         QylSemanticAttributes.UrlPath,
-        SemanticStability.Stable,
-        Sensitive: true);
+        SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition ServerAddress = new(
         QylSemanticAttributes.ServerAddress,
@@ -64,8 +62,7 @@ internal static class SemanticAttributes
 
     public static readonly SemanticAttributeDefinition DbQueryText = new(
         QylSemanticAttributes.DbQueryText,
-        SemanticStability.Stable,
-        Sensitive: true);
+        SemanticStability.Stable);
 
     public static readonly SemanticAttributeDefinition RpcSystem = new(
         QylSemanticAttributes.RpcSystem,

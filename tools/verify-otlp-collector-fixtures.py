@@ -31,15 +31,13 @@ REQUIRED_STRINGS = (
     "http.response.status_code",
     "server.address",
     "downstream.example",
+    "url.full",
+    "https://downstream.example/probe?access_token=Redacted",
 )
 
 FORBIDDEN_STRINGS = (
-    "url.full",
     "url.path",
-    "access_token",
     "super-secret",
-    "/probe",
-    "?access_token",
 )
 
 

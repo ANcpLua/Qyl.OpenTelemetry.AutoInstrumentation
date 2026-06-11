@@ -40,7 +40,14 @@ internal static class HttpSemantics
 
     public static void SetUrlTags(Activity? activity, string? url, string? serverAddress, int? serverPort)
     {
-        SemanticTagWriter.Set(activity, SemanticAttributes.UrlFull, url);
+        SemanticTagWriter.Set(
+            activity,
+            SemanticAttributes.UrlFull,
+            url is null
+                ? null
+                : global::Qyl.AutoInstrumentation.Internal.QylCaptureHelpers.FormatUrlFull(
+                    url,
+                    global::Qyl.AutoInstrumentation.QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled));
 
         Uri? uri = null;
         if (!string.IsNullOrWhiteSpace(url))

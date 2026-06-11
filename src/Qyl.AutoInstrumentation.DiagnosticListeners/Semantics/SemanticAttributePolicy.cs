@@ -8,12 +8,8 @@ internal sealed class SemanticAttributePolicy
 
     private SemanticAttributePolicy()
     {
-        CaptureSensitiveValues = QylAutoInstrumentationOptions.Current.CaptureSensitiveValues;
     }
 
-    public bool CaptureSensitiveValues { get; }
-
     public bool ShouldWrite(SemanticAttributeDefinition attribute)
-        => attribute.Stability is not SemanticStability.Deprecated &&
-           (!attribute.Sensitive || CaptureSensitiveValues);
+        => attribute.Stability is not SemanticStability.Deprecated;
 }

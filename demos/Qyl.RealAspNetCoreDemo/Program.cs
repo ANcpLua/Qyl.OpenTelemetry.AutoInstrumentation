@@ -113,8 +113,8 @@ internal sealed record AspNetCoreReport(
 
         foreach (var span in httpServerSpans)
         {
-            if (span.Tags.ContainsKey("url.path"))
-                failures.Add("url.path leaked with default privacy policy");
+            if (!span.Tags.ContainsKey("url.path"))
+                failures.Add("url.path missing on server span");
 
             var expectedName = span.Tags.TryGetValue("http.route", out var spanRoute)
                 ? $"GET {spanRoute}"
