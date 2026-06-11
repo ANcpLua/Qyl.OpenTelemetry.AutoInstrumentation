@@ -36,7 +36,7 @@ public static class QylInterceptedHttpWebRequest
             if (!request.RequestUri.IsDefaultPort)
                 activity.SetTag(QylSemanticAttributes.ServerPort, request.RequestUri.Port);
 
-            if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
+            if (options.CaptureSensitiveValues)
             {
                 var requestUri = request.RequestUri.ToString();
                 activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(

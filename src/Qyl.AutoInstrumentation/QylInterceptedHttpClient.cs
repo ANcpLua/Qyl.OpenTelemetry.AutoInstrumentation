@@ -602,7 +602,7 @@ public static class QylInterceptedHttpClient
                             activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
                     }
 
-                    if (options.CaptureSensitiveValues || options.HttpClientUrlQueryRedactionDisabled)
+                    if (options.CaptureSensitiveValues)
                     {
                         var urlFull = requestUri.IsAbsoluteUri ? requestUri.ToString() : rawRequestUri ?? requestUri.ToString();
                         activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(

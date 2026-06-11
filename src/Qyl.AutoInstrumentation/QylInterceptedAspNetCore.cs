@@ -92,7 +92,9 @@ public static class QylInterceptedAspNetCore
             var query = context.Request.QueryString.Value;
             activity.SetTag(
                 QylSemanticAttributes.UrlQuery,
-                options.AspNetCoreUrlQueryRedactionDisabled ? QylCaptureHelpers.TrimQueryPrefix(query) : "REDACTED");
+                options.CaptureSensitiveValues && options.AspNetCoreUrlQueryRedactionDisabled
+                    ? QylCaptureHelpers.TrimQueryPrefix(query)
+                    : "REDACTED");
         }
 
         if (route is not null)
