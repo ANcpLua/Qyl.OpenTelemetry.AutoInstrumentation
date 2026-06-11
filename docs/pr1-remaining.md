@@ -3,7 +3,7 @@
 Source inventory
 - PR conversation: PR #1 is merged at `9a4c2f3`; three Codex review threads remain unresolved in GitHub UI, but their requested code changes are applied on the post-merge continuation branch.
 - Repo TODO scan: no `TODO`, `FIXME`, `HACK`, or `XXX` markers outside this evidence document for the current PR scope.
-- Post-strip score/gate inventory: behavioral gate scripts exist in-tree and are used directly; the deleted self-grading ledger is not restored.
+- Post-strip score/gate inventory: behavioral gate scripts exist in-tree and are used directly; the deleted self-grading score document is not restored. `COVERAGE_LEDGER.md` remains the tracked product coverage ledger.
 - Publication note: this document is part of the final branch head, so `v0.3.0-pre.1` and the GitHub Release target must be retargeted after the final commit.
 
 ## Completed checklist
@@ -19,12 +19,12 @@ Source inventory
 
 ## Responsibility map
 
-- `QylInterceptedHttpClient`: observes supported `HttpClient` calls, records response/error/duration state, shares the synchronous `Send` path without delegate allocation, and delegates header/query formatting to core helpers.
+- `QylInterceptedHttpClient`: observes supported `HttpClient` calls, records response/error/status/duration state, shares the synchronous `Send` path without delegate allocation, and delegates header/query formatting to core helpers.
 - `QylInterceptedHttpWebRequest`: observes `HttpWebRequest` calls with the same URL-full formatting rule as `HttpClient`.
 - `QylCaptureHelpers`: owns captured header/metadata tag shape and URL/query formatting helpers; captured values stay arrays even for one value.
 - `QylHttpClientMetrics`: keeps the checked public metric entry point and exposes an internal unchecked path for callers that already proved recording is enabled.
 - `QylAutoInstrumentationOptions`: owns instrumentation option defaults and delegates environment parsing to its nested `EnvironmentOptions` reader.
-- `ModuleInitializerBoot`: owns idempotent activation and diagnostic-listener registration.
+- `ModuleInitializerBoot`: owns idempotent activation and subscribes the explicit diagnostic-listener registry.
 - `QylAutoInstrumentationGenerator`: maps known interceptor kinds to emitters, shares repeated activity-dispose emission, and fails fast for an unhandled kind instead of silently emitting the wrong wrapper.
 - `tools/verify_helpers.py`: owns shared verifier process environment, version reading, and checked subprocess execution.
 - `tools/Qyl.AutoInstrumentation.WebApiAotDemo/Program.cs`: owns the WebAPI NativeAOT demo source used by `tools/verify-webapi-aot-demo.py`.
@@ -54,15 +54,22 @@ aot-warning-gate-ok consumer=project-reference warnings=0
 smoketest-ok rid=osx-arm64
 webapi-aot-demo-ok qyl_warnings=0
 otlp-golden-fixtures-ok
-Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781146957297871000.nupkg'.
+Successfully created package '/tmp/qyl-otlp-collector-fixtures/feed/Qyl.AutoInstrumentation.0.3.0-pre.1.otlpcollector.1781148459053132000.nupkg'.
 otlp-collector-fixtures-ok
-otlp-collector-fixtures-elapsed=5.6s
+otlp-collector-fixtures-elapsed=5.4s
 consumer-behavior-ok
 nativeaot-consumer-golden-ok
 aot-autoinstrumentation-goal-ok
 ```
 
 `python3 tools/verify-aot-autoinstrumentation-goal.py --only 'diff whitespace'`
+
+```text
+== diff whitespace ==
+aot-autoinstrumentation-goal-partial-ok selected=diff whitespace
+```
+
+`python3 tools/verify-aot-autoinstrumentation-goal.py --only 'contract invariants,diff whitespace' --skip 'contract invariants'`
 
 ```text
 == diff whitespace ==

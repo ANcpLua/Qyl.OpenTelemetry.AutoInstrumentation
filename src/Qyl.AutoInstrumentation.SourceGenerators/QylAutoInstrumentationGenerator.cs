@@ -651,17 +651,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                    observedResponseHeaders,");
         builder.AppendLine("                    call.GetStatus,");
         builder.AppendLine("                    call.GetTrailers,");
-        builder.AppendLine("                    () =>");
-        builder.AppendLine("                    {");
-        builder.AppendLine("                        try");
-        builder.AppendLine("                        {");
-        builder.AppendLine("                            call.Dispose();");
-        builder.AppendLine("                        }");
-        builder.AppendLine("                        finally");
-        builder.AppendLine("                        {");
-        builder.AppendLine("                            global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(activity);");
-        builder.AppendLine("                        }");
-        builder.AppendLine("                    });");
+        EmitGrpcDisposeAction(builder);
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
@@ -1194,12 +1184,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         if (!target.IsAsync)
-        {
-            builder.AppendLine("            finally");
-            builder.AppendLine("            {");
-            builder.AppendLine("                activity?.Dispose();");
-            builder.AppendLine("            }");
-        }
+            EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }

@@ -25,6 +25,8 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
+using System.Net;
+using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Qyl.AutoInstrumentation;
 
@@ -65,6 +67,45 @@ if (captured.Count == 1)
     Console.WriteLine("activity.kind=" + activity.Kind);
     Console.WriteLine(QylSemanticAttributes.QylInstrumentationDomain + "=" + domain);
     Console.WriteLine(QylSemanticAttributes.LogSeverity + "=" + severity);
+}
+
+using var http = new HttpClient(new StatusHandler(HttpStatusCode.InternalServerError))
+{
+    BaseAddress = new Uri("https://qyl-source.invalid"),
+};
+
+try
+{
+    await http.GetStringAsync("/failure");
+}
+catch (HttpRequestException exception)
+{
+    var status = exception.StatusCode.HasValue
+        ? ((int)exception.StatusCode.Value).ToString(System.Globalization.CultureInfo.InvariantCulture)
+        : "<null>";
+    Console.WriteLine("http.exception.status=" + status);
+}
+
+var httpActivity = captured.FirstOrDefault(static activity =>
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.QylInstrumentationDomain &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            QylInstrumentationDomains.HttpClient,
+            StringComparison.Ordinal)));
+
+if (httpActivity is not null)
+{
+    var tags = httpActivity.TagObjects.ToDictionary(
+        static tag => tag.Key,
+        static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+        StringComparer.Ordinal);
+    tags.TryGetValue(QylSemanticAttributes.HttpResponseStatusCode, out var statusCode);
+    tags.TryGetValue(QylSemanticAttributes.ErrorType, out var errorType);
+
+    Console.WriteLine("http.activity.status=" + httpActivity.Status);
+    Console.WriteLine(QylSemanticAttributes.HttpResponseStatusCode + "=" + statusCode);
+    Console.WriteLine(QylSemanticAttributes.ErrorType + "=" + errorType);
 }
 
 ILogger throwingLogger = new ThrowingLogger();
@@ -109,6 +150,16 @@ internal sealed class CapturingLogger : ILogger
     }
 }
 
+internal sealed class StatusHandler(HttpStatusCode statusCode) : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        => Task.FromResult(new HttpResponseMessage(statusCode)
+        {
+            RequestMessage = request,
+            Content = new StringContent("failure"),
+        });
+}
+
 internal sealed class ThrowingLogger : ILogger
 {
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -133,9 +184,13 @@ activity.name=ILogger log
 activity.kind=Internal
 qyl.instrumentation.domain=log.ilogger
 log.severity=Warning
+http.exception.status=500
+http.activity.status=Error
+http.response.status_code=500
+error.type=500
 throwing.type=InvalidOperationException
 throwing.message=logger-failure
-activity.count.after.throw=2
+activity.count.after.throw=3
 """
 
 
@@ -217,6 +272,8 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "// Intercepted call at ",
         "ILogger_Log_",
         "global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(",
+        "HttpClient_GetStringAsync_",
+        "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync(",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")

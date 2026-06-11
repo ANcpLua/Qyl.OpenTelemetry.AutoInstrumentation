@@ -36,7 +36,7 @@ public static class QylInterceptedHttpClient
         HttpClientSendOverload overload)
     {
         ThrowIfInvalidCallTarget(client, request);
-        using var observation = StartHttpClientObservation(request);
+        var observation = StartHttpClientObservation(request);
         if (!observation.IsEnabled)
             return SendOriginal(client, request, completionOption, cancellationToken, overload);
 
@@ -50,6 +50,10 @@ public static class QylInterceptedHttpClient
         {
             RecordException(observation, exception);
             throw;
+        }
+        finally
+        {
+            observation.Dispose();
         }
     }
 
@@ -511,7 +515,7 @@ public static class QylInterceptedHttpClient
             return default;
 
         Uri? uri = null;
-        if (!string.IsNullOrWhiteSpace(requestUri))
+        if (traceEnabled && !string.IsNullOrWhiteSpace(requestUri))
             Uri.TryCreate(requestUri, UriKind.RelativeOrAbsolute, out uri);
 
         return StartHttpClientObservation(options, traceEnabled, metricsEnabled, method, uri, requestUri);
@@ -549,7 +553,7 @@ public static class QylInterceptedHttpClient
         string? rawRequestUri)
     {
         method = QylHttpMethod.Normalize(method);
-        var startTimeUtc = TimeProvider.System.GetUtcNow().UtcDateTime;
+        var startTimeUtc = metricsEnabled ? TimeProvider.System.GetUtcNow().UtcDateTime : default;
         Activity? activity = null;
 
         if (traceEnabled)
@@ -597,10 +601,7 @@ public static class QylInterceptedHttpClient
                 response.Content?.Headers);
 
             if (statusCode >= 400)
-            {
-                activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(CultureInfo.InvariantCulture));
-                activity.SetStatus(ActivityStatusCode.Error);
-            }
+                RecordHttpStatusError(activity, statusCode);
         }
 
         RecordDuration(observation, statusCode);
@@ -625,10 +626,35 @@ public static class QylInterceptedHttpClient
 
     private static void RecordException(HttpClientObservation observation, Exception exception)
     {
+        if (exception is HttpRequestException { StatusCode: { } statusCode })
+        {
+            RecordResponseStatusException(observation, (int)statusCode);
+            return;
+        }
+
         var activity = observation.Activity;
         activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
         activity?.SetStatus(ActivityStatusCode.Error);
         RecordDuration(observation, null);
+    }
+
+    private static void RecordResponseStatusException(HttpClientObservation observation, int statusCode)
+    {
+        var activity = observation.Activity;
+        if (activity is not null)
+        {
+            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
+            if (statusCode >= 400)
+                RecordHttpStatusError(activity, statusCode);
+        }
+
+        RecordDuration(observation, statusCode);
+    }
+
+    private static void RecordHttpStatusError(Activity activity, int statusCode)
+    {
+        activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(CultureInfo.InvariantCulture));
+        activity.SetStatus(ActivityStatusCode.Error);
     }
 
     private static void RecordDuration(HttpClientObservation observation, int? statusCode)
