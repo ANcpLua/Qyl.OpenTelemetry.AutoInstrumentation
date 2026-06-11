@@ -121,7 +121,7 @@ public static class QylInterceptedGrpcNetClient
             }
 
             if (values is { Count: > 0 })
-                activity.SetTag(configuredMetadata.GetTagName(index), values.Count is 1 ? values[0] : values.ToArray());
+                activity.SetTag(configuredMetadata.GetTagName(index), values.ToArray());
         }
     }
 

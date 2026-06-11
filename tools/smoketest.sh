@@ -203,7 +203,7 @@ assert_no_aot_warnings() {
   local consumer="$2"
   local matches
 
-  matches="$(grep -Eo '\\b(IL2[0-9]{3}|IL3[0-9]{3}|IL4[0-9]{3}|CA[0-9]{4})\\b' "$log" | sort -u || true)"
+  matches="$(grep -Eo '\b(IL2[0-9]{3}|IL3[0-9]{3}|IL4[0-9]{3}|CA[0-9]{4})\b' "$log" | sort -u || true)"
   if [[ -n "$matches" ]]; then
     echo "AOT warning gate failed for $consumer; found analyzer warnings:" >&2
     echo "$matches" >&2

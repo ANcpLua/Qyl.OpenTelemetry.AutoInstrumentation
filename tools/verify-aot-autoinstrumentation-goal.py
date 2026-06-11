@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -32,9 +33,11 @@ COMMANDS: list[tuple[str, list[str]]] = [
 
 
 def main() -> None:
+    env = dict(os.environ)
+    env["MSBUILDDISABLENODEREUSE"] = "1"
     for name, command in COMMANDS:
         print(f"== {name} ==")
-        completed = subprocess.run(command, cwd=ROOT, check=False)
+        completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
         if completed.returncode != 0:
             raise SystemExit(f"{name} failed with exit code {completed.returncode}")
 

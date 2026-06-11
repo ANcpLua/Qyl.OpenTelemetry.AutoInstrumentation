@@ -60,6 +60,7 @@ using (var activity = QylActivitySource.Source.StartActivity("conformance probe"
 }
 
 Console.WriteLine("mode=" + mode);
+Console.WriteLine("hasListeners=" + QylActivitySource.Source.HasListeners().ToString(System.Globalization.CultureInfo.InvariantCulture));
 Console.WriteLine("checks=" + checks.ToString(System.Globalization.CultureInfo.InvariantCulture));
 '''
 
@@ -76,6 +77,7 @@ def clean_env() -> dict[str, str]:
 
     env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
     env["DOTNET_NOLOGO"] = "1"
+    env["MSBUILDDISABLENODEREUSE"] = "1"
     return env
 
 
@@ -195,16 +197,16 @@ def main() -> None:
         run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], project.parent, env)
         assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
 
-        assert_output("default off", run_scenario(assembly, env, "direct", {}), "mode=direct\nchecks=0\n")
+        assert_output("default off", run_scenario(assembly, env, "direct", {}), "mode=direct\nhasListeners=False\nchecks=0\n")
         assert_output(
             "environment opt-in",
             run_scenario(assembly, env, "direct", {"QYL_CONFORMANCE_ENABLED": "true"}),
-            "mode=direct\nchecks=1\n",
+            "mode=direct\nhasListeners=True\nchecks=1\n",
         )
         assert_output(
             "hosting opt-in",
             run_scenario(assembly, env, "hosting", {}),
-            "mode=hosting\nchecks=1\n",
+            "mode=hosting\nhasListeners=True\nchecks=1\n",
         )
 
     print("conformance-opt-in-ok")

@@ -111,7 +111,7 @@ public static class QylInterceptedHttpWebRequest
         {
             var values = headers.GetValues(configuredHeaders.GetLookupName(index));
             if (values is { Length: > 0 })
-                activity.SetTag(configuredHeaders.GetTagName(index), values.Length is 1 ? values[0] : values);
+                activity.SetTag(configuredHeaders.GetTagName(index), values);
         }
     }
 

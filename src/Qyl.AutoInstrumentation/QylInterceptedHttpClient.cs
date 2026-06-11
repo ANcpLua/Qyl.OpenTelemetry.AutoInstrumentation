@@ -703,22 +703,16 @@ public static class QylInterceptedHttpClient
                 if (source is null || !source.TryGetValues(lookupName, out var values))
                     continue;
 
-                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValue(values));
+                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
                 break;
             }
         }
     }
 
-    private static object ToTagValue(IEnumerable<string> values)
+    private static string[] ToTagValues(IEnumerable<string> values)
     {
         if (values is string[] array)
-            return array.Length is 1 ? array[0] : array;
-
-        if (values is IReadOnlyCollection<string> { Count: 1 })
-        {
-            foreach (var value in values)
-                return value;
-        }
+            return array;
 
         return values.ToArray();
     }

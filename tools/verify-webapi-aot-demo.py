@@ -296,6 +296,7 @@ def clean_env() -> dict[str, str]:
 
     env["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1"
     env["DOTNET_NOLOGO"] = "1"
+    env["MSBUILDDISABLENODEREUSE"] = "1"
     return env
 
 
