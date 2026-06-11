@@ -1,3 +1,4 @@
+using ANcpLua.Roslyn.Utilities;
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -1605,7 +1606,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         int index,
         string receiverType,
         string receiverName,
-        ImmutableArray<ParameterSpec> parameters,
+        EquatableArray<ParameterSpec> parameters,
         bool isAsync)
         => EmitAttributeAndSignature(builder, location, returnType, methodPrefix, index, receiverType, receiverName, parameters, isAsync, string.Empty, string.Empty);
 
@@ -1617,7 +1618,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         int index,
         string receiverType,
         string receiverName,
-        ImmutableArray<ParameterSpec> parameters,
+        EquatableArray<ParameterSpec> parameters,
         bool isAsync,
         string typeParameterList,
         string constraintClauses)
@@ -1651,7 +1652,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void AppendGenericTypeArgumentList(StringBuilder builder, string typeParameterList)
         => builder.Append(typeParameterList);
 
-    private static void AppendParameterList(StringBuilder builder, ImmutableArray<ParameterSpec> parameters)
+    private static void AppendParameterList(StringBuilder builder, EquatableArray<ParameterSpec> parameters)
     {
         foreach (var parameter in parameters)
         {
@@ -1670,7 +1671,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
     }
 
-    private static void AppendArgumentList(StringBuilder builder, ImmutableArray<ParameterSpec> parameters, bool includeLeadingComma)
+    private static void AppendArgumentList(StringBuilder builder, EquatableArray<ParameterSpec> parameters, bool includeLeadingComma)
     {
         for (var i = 0; i < parameters.Length; i++)
         {
@@ -1809,7 +1810,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         var methodName = symbol.Name;
-        var isAsync = methodName.EndsWith("Async", StringComparison.Ordinal);
+        var isAsync = methodName.EndsWithOrdinal("Async");
         if (!TryGetHttpWebRequestReturn(symbol, methodName, isAsync, out var returnType))
             return false;
 
@@ -1833,7 +1834,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return false;
 
         var methodName = symbol.Name;
-        var isAsync = methodName.EndsWith("Async", StringComparison.Ordinal);
+        var isAsync = methodName.EndsWithOrdinal("Async");
         if (!TryGetDbCommandParameters(symbol, methodName, out var parameters))
             return false;
 
@@ -2030,14 +2031,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsAzureClientType(ITypeSymbol? symbol)
     {
         if (symbol is not INamedTypeSymbol named ||
-            !named.Name.EndsWith("Client", StringComparison.Ordinal))
+            !named.Name.EndsWithOrdinal("Client"))
         {
             return false;
         }
 
         var namespaceName = named.ContainingNamespace.ToDisplayString();
-        return namespaceName.StartsWith("Azure.", StringComparison.Ordinal) &&
-               !namespaceName.StartsWith("Azure.Core", StringComparison.Ordinal);
+        return namespaceName.StartsWithOrdinal("Azure.") &&
+               !namespaceName.StartsWithOrdinal("Azure.Core");
     }
 
     private static bool TryGetAzureClientOperationReturn(ITypeSymbol returnType, out bool isAsync)
@@ -2127,12 +2128,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool IsElasticsearchClientType(ITypeSymbol? symbol)
     {
         if (symbol is not INamedTypeSymbol named ||
-            !named.Name.EndsWith("Client", StringComparison.Ordinal))
+            !named.Name.EndsWithOrdinal("Client"))
         {
             return false;
         }
 
-        return named.ContainingNamespace.ToDisplayString().StartsWith("Elastic.Clients.Elasticsearch", StringComparison.Ordinal);
+        return named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("Elastic.Clients.Elasticsearch");
     }
 
     private static bool IsSupportedElasticTransportMethod(string methodName)
@@ -2197,7 +2198,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsSystemServiceModelType(ITypeSymbol? symbol)
         => symbol is INamedTypeSymbol named &&
-           named.ContainingNamespace.ToDisplayString().StartsWith("System.ServiceModel", StringComparison.Ordinal);
+           named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("System.ServiceModel");
 
     private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -2980,9 +2981,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetEntityFrameworkCoreQueryableReturn(ITypeSymbol returnType)
         => IsTask(returnType) || TryGetTaskResult(returnType, out _);
 
-    private static bool TryGetDbCommandParameters(IMethodSymbol symbol, string methodName, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetDbCommandParameters(IMethodSymbol symbol, string methodName, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (string.Equals(methodName, "ExecuteReader", StringComparison.Ordinal))
             return TryGetDbExecuteReaderParameters(symbol, allowCancellationToken: false, out parameters);
 
@@ -3053,7 +3054,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static InterceptorTarget HttpTarget(IMethodSymbol symbol, string methodName, string returnType, ImmutableArray<ParameterSpec> parameters)
+    private static InterceptorTarget HttpTarget(IMethodSymbol symbol, string methodName, string returnType, EquatableArray<ParameterSpec> parameters)
         => new(
             InterceptorKind.HttpClient,
             "signals.traces.HTTPCLIENT",
@@ -3078,20 +3079,20 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             _ => "signals.traces.ADONET",
         };
 
-    private static string[] GetDbMetricContractKeys(string instrumentationId)
+    private static EquatableArray<string> GetDbMetricContractKeys(string instrumentationId)
         => instrumentationId switch
         {
             "NPGSQL" => ContractKeys("signals.metrics.NPGSQL"),
             "SQLCLIENT" => ContractKeys("signals.metrics.SQLCLIENT"),
-            _ => Array.Empty<string>(),
+            _ => default,
         };
 
-    private static string[] ContractKeys(params string[] contractKeys)
-        => contractKeys;
+    private static EquatableArray<string> ContractKeys(params string[] contractKeys)
+        => contractKeys.ToEquatableArray();
 
-    private static bool TryGetSendShape(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetSendShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length is < 1 or > 3 ||
             !IsType(symbol.Parameters[0].Type, "global::System.Net.Http.HttpRequestMessage"))
         {
@@ -3125,9 +3126,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool TryGetRequestUriShape(IMethodSymbol symbol, bool allowCompletionOption, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetRequestUriShape(IMethodSymbol symbol, bool allowCompletionOption, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length is < 1 or > 3)
             return false;
 
@@ -3164,9 +3165,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool TryGetRequestUriContentShape(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetRequestUriContentShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length is not (2 or 3))
             return false;
 
@@ -3187,23 +3188,23 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool TryGetNoParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetNoParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
         if (symbol.Parameters.Length is 0)
         {
-            parameters = ImmutableArray<ParameterSpec>.Empty;
+            parameters = default;
             return true;
         }
 
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         return false;
     }
 
-    private static bool TryGetOptionalCancellationTokenParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetOptionalCancellationTokenParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
         if (symbol.Parameters.Length is 0)
         {
-            parameters = ImmutableArray<ParameterSpec>.Empty;
+            parameters = default;
             return true;
         }
 
@@ -3213,15 +3214,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return true;
         }
 
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         return false;
     }
 
-    private static bool TryGetDbExecuteReaderParameters(IMethodSymbol symbol, bool allowCancellationToken, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetDbExecuteReaderParameters(IMethodSymbol symbol, bool allowCancellationToken, out EquatableArray<ParameterSpec> parameters)
     {
         if (symbol.Parameters.Length is 0)
         {
-            parameters = ImmutableArray<ParameterSpec>.Empty;
+            parameters = default;
             return true;
         }
 
@@ -3244,13 +3245,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return true;
         }
 
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         return false;
     }
 
-    private static bool TryGetKafkaProduceParameters(IMethodSymbol symbol, bool isAsync, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetKafkaProduceParameters(IMethodSymbol symbol, bool isAsync, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length is not (2 or 3))
             return false;
 
@@ -3285,9 +3286,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string.Equals(named.ConstructedFrom.ContainingNamespace.ToDisplayString(), "System", StringComparison.Ordinal) &&
         IsConstructedGeneric(named.TypeArguments[0], "Confluent.Kafka", "DeliveryReport`2");
 
-    private static bool TryGetKafkaConsumeParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetKafkaConsumeParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length is 0)
             return true;
 
@@ -3305,9 +3306,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static bool TryGetRedisCommandParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetRedisCommandParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (!CanEmitRedisParameters(symbol))
             return false;
 
@@ -3347,9 +3348,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return true;
     }
 
-    private static bool TryGetRedisStringGetParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetRedisStringGetParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length is < 1 or > 2)
             return false;
 
@@ -3369,11 +3370,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return true;
     }
 
-    private static bool TryGetEfCoreSaveChangesParameters(IMethodSymbol symbol, bool allowCancellationToken, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetEfCoreSaveChangesParameters(IMethodSymbol symbol, bool allowCancellationToken, out EquatableArray<ParameterSpec> parameters)
     {
         if (symbol.Parameters.Length is 0)
         {
-            parameters = ImmutableArray<ParameterSpec>.Empty;
+            parameters = default;
             return true;
         }
 
@@ -3396,13 +3397,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             return true;
         }
 
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         return false;
     }
 
-    private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out ImmutableArray<ParameterSpec> parameters)
+    private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
-        parameters = ImmutableArray<ParameterSpec>.Empty;
+        parameters = default;
         if (symbol.Parameters.Length < 3)
             return false;
 
@@ -3508,7 +3509,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static string GetTypeParameterListFromFormattedTypes(
         string receiverType,
         string returnType,
-        ImmutableArray<ParameterSpec> parameters)
+        EquatableArray<ParameterSpec> parameters)
     {
         var names = new List<string>();
         AddFormattedTypeParameterNames(receiverType, names);
@@ -3596,7 +3597,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             : "where " + typeParameter.Name + " : " + string.Join(", ", constraints);
     }
 
-    private static ImmutableArray<ParameterSpec> Parameters(IMethodSymbol symbol)
+    private static EquatableArray<ParameterSpec> Parameters(IMethodSymbol symbol)
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
         for (var i = 0; i < symbol.Parameters.Length; i++)
@@ -3606,7 +3607,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 GetDefaultValueExpression(symbol.Parameters[i]),
                 symbol.Parameters[i].IsParams));
 
-        return builder.ToImmutable();
+        return builder.ToImmutable().AsEquatableArray();
     }
 
     private static string GetDefaultValueExpression(IParameterSymbol parameter)
@@ -3759,25 +3760,25 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static string GetDbInstrumentationId(ITypeSymbol type)
     {
         var display = CleanTypeName(type);
-        if (display.StartsWith("global::Microsoft.Data.SqlClient.", StringComparison.Ordinal) ||
-            display.StartsWith("global::System.Data.SqlClient.", StringComparison.Ordinal))
+        if (display.StartsWithOrdinal("global::Microsoft.Data.SqlClient.") ||
+            display.StartsWithOrdinal("global::System.Data.SqlClient."))
         {
             return "SQLCLIENT";
         }
 
-        if (display.StartsWith("global::Microsoft.Data.Sqlite.", StringComparison.Ordinal))
+        if (display.StartsWithOrdinal("global::Microsoft.Data.Sqlite."))
             return "SQLITE";
 
-        if (display.StartsWith("global::Npgsql.", StringComparison.Ordinal))
+        if (display.StartsWithOrdinal("global::Npgsql."))
             return "NPGSQL";
 
-        if (display.StartsWith("global::MySqlConnector.", StringComparison.Ordinal))
+        if (display.StartsWithOrdinal("global::MySqlConnector."))
             return "MYSQLCONNECTOR";
 
-        if (display.StartsWith("global::MySql.Data.", StringComparison.Ordinal))
+        if (display.StartsWithOrdinal("global::MySql.Data."))
             return "MYSQLDATA";
 
-        if (display.StartsWith("global::Oracle.ManagedDataAccess.", StringComparison.Ordinal))
+        if (display.StartsWithOrdinal("global::Oracle.ManagedDataAccess."))
             return "ORACLEMDA";
 
         return "ADONET";
@@ -3879,12 +3880,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string ReceiverType,
         string MethodName,
         string ReturnType,
-        ImmutableArray<ParameterSpec> Parameters,
+        EquatableArray<ParameterSpec> Parameters,
         bool IsAsync,
         string TypeParameterList = "",
         string ConstraintClauses = "",
         string ExtensionContainingType = "",
-        string[]? AdditionalContractKeys = null);
+        EquatableArray<string> AdditionalContractKeys = default);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }

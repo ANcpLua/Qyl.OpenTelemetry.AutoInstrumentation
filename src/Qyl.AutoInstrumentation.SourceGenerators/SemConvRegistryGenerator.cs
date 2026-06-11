@@ -1,3 +1,4 @@
+using ANcpLua.Roslyn.Utilities;
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -100,16 +101,12 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
 
     private static bool IsSemConvAttributesType(INamedTypeSymbol type)
     {
-        if (!type.Name.EndsWith("Attributes", StringComparison.Ordinal))
+        if (!type.Name.EndsWithOrdinal("Attributes"))
             return false;
 
         var namespaceName = type.ContainingNamespace.ToDisplayString();
-        return namespaceName.StartsWith(
-                   "Qyl.OpenTelemetry.SemanticConventions.Attributes.",
-                   StringComparison.Ordinal) ||
-               namespaceName.StartsWith(
-                   "Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.",
-                   StringComparison.Ordinal);
+        return namespaceName.StartsWithOrdinal("Qyl.OpenTelemetry.SemanticConventions.Attributes.") ||
+               namespaceName.StartsWithOrdinal("Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.");
     }
 
     private static bool IsAttributeKey(string value)
@@ -120,10 +117,10 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
            value[value.Length - 1] is not '.';
 
     private static bool IsTemplateAttribute(IFieldSymbol field, string value)
-        => value.EndsWith(".header", StringComparison.Ordinal) ||
-           value.EndsWith(".metadata", StringComparison.Ordinal) ||
-           field.Name.EndsWith("Header", StringComparison.Ordinal) ||
-           field.Name.EndsWith("Metadata", StringComparison.Ordinal);
+        => value.EndsWithOrdinal(".header") ||
+           value.EndsWithOrdinal(".metadata") ||
+           field.Name.EndsWithOrdinal("Header") ||
+           field.Name.EndsWithOrdinal("Metadata");
 
     private static ImmutableArray<string> ToSortedImmutableArray(HashSet<string> values)
     {
