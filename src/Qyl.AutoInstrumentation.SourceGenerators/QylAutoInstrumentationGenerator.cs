@@ -35,6 +35,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         StringBuilder builder,
         InterceptorTarget target);
 
+    private delegate void TraceStatementEmitter(
+        StringBuilder builder,
+        InterceptorTarget target);
+
     private delegate bool SymbolInterceptorMatcher(
         IMethodSymbol symbol,
         out InterceptorTarget target);
@@ -335,6 +339,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             target.TypeParameterList,
             target.ConstraintClauses);
         builder.AppendLine("        {");
+        descriptor.AppendBeforeActivityStatement?.Invoke(builder, target);
         builder.Append("            var activity = ");
         descriptor.AppendStartActivityExpression(builder, target);
         builder.AppendLine(";");
@@ -348,6 +353,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            {");
         builder.Append("                ");
         builder.AppendLine(descriptor.RecordExceptionStatement);
+        descriptor.AppendAfterExceptionStatement?.Invoke(builder, target);
         if (descriptor.RuntimeObservesAsync)
             builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("                throw;");
@@ -381,16 +387,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 builder.Append("                await ");
                 AppendInvocationCall(builder, target, descriptor.ReceiverName);
                 builder.AppendLine(".ConfigureAwait(false);");
-                builder.Append("                ");
-                builder.AppendLine(descriptor.RecordSuccessStatement);
+                EmitTraceSuccess(builder, target, descriptor);
                 return;
             }
 
             builder.Append("                var result = await ");
             AppendInvocationCall(builder, target, descriptor.ReceiverName);
             builder.AppendLine(".ConfigureAwait(false);");
-            builder.Append("                ");
-            builder.AppendLine(descriptor.RecordSuccessStatement);
+            EmitTraceSuccess(builder, target, descriptor);
             builder.AppendLine("                return result;");
             return;
         }
@@ -400,17 +404,25 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.Append("                ");
             AppendInvocationCall(builder, target, descriptor.ReceiverName);
             builder.AppendLine(";");
-            builder.Append("                ");
-            builder.AppendLine(descriptor.RecordSuccessStatement);
+            EmitTraceSuccess(builder, target, descriptor);
             return;
         }
 
         builder.Append("                var result = ");
         AppendInvocationCall(builder, target, descriptor.ReceiverName);
         builder.AppendLine(";");
+        EmitTraceSuccess(builder, target, descriptor);
+        builder.AppendLine("                return result;");
+    }
+
+    private static void EmitTraceSuccess(
+        StringBuilder builder,
+        InterceptorTarget target,
+        TraceInterceptorBodyDescriptor descriptor)
+    {
         builder.Append("                ");
         builder.AppendLine(descriptor.RecordSuccessStatement);
-        builder.AppendLine("                return result;");
+        descriptor.AppendAfterSuccessStatement?.Invoke(builder, target);
     }
 
     private static bool IsTaskLikeReturnWithoutResult(string returnType)
@@ -442,6 +454,23 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.StartActivity(");
         AppendStringLiteral(builder, target.MethodName);
         builder.Append(')');
+    }
+
+    private static void AppendNServiceBusMetricStartStatement(StringBuilder builder, InterceptorTarget target)
+        => builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.GetTimestamp();");
+
+    private static void AppendNServiceBusStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
+    private static void AppendNServiceBusRecordDurationStatement(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.AppendLine(");");
     }
 
     private static void AppendStackExchangeRedisStartActivity(StringBuilder builder, InterceptorTarget target)
@@ -1056,47 +1085,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);"));
 
     private static void EmitNServiceBusInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
+        => EmitTraceInterceptor(
             builder,
-            invocation.Location,
-            target.ReturnType,
-            "NServiceBus_" + target.MethodName,
+            invocation,
             index,
-            target.ReceiverType,
-            "endpoint",
-            target.Parameters,
-            isAsync: true,
-            typeParameterList: target.TypeParameterList,
-            constraintClauses: target.ConstraintClauses);
-        builder.AppendLine("        {");
-        builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.GetTimestamp();");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.StartActivity(");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                await ");
-        AppendInvocationCall(builder, target, "endpoint");
-        builder.AppendLine(".ConfigureAwait(false);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);");
-        builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);");
-        builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+            new TraceInterceptorBodyDescriptor(
+                "NServiceBus",
+                "endpoint",
+                AppendNServiceBusStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);",
+                AppendBeforeActivityStatement: AppendNServiceBusMetricStartStatement,
+                AppendAfterSuccessStatement: AppendNServiceBusRecordDurationStatement,
+                AppendAfterExceptionStatement: AppendNServiceBusRecordDurationStatement));
 
     private static void EmitQuartzInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
@@ -3888,7 +3889,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string RecordSuccessStatement,
         string RecordExceptionStatement,
         bool RuntimeObservesAsync = false,
-        string ObserveAsyncMethod = "");
+        string ObserveAsyncMethod = "",
+        TraceStatementEmitter? AppendBeforeActivityStatement = null,
+        TraceStatementEmitter? AppendAfterSuccessStatement = null,
+        TraceStatementEmitter? AppendAfterExceptionStatement = null);
 
     private readonly record struct InterceptorMatcherDescriptor
     {
