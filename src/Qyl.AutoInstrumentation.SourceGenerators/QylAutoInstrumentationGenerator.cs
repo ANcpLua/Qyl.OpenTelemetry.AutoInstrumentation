@@ -90,7 +90,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreWebApplicationBuilderBuild, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreWebApplicationBuilder", "builder", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "Build")),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreRequestDelegate", "requestDelegate", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "InvokeAsync")),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreEndpointMap", "endpoints", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore")),
-            new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, InterceptorSignalOwnership.Metric, InterceptorErrorPolicy.None, InterceptorDurationPolicy.None, EmitMeterProviderBuilderAddMeterInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, InterceptorSignalOwnership.Metric, InterceptorErrorPolicy.None, InterceptorDurationPolicy.None, MeterProviderBuilderBody: new MeterProviderBuilderBodyDescriptor("MeterProviderBuilder", "builder", "global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()")),
             new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("AzureClient", "client", AppendAzureStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
@@ -279,6 +279,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (descriptor.ForwardingBody.IsDefined)
             {
                 EmitForwardingInterceptor(builder, invocation, index, descriptor.ForwardingBody);
+                continue;
+            }
+
+            if (descriptor.MeterProviderBuilderBody.IsDefined)
+            {
+                EmitMeterProviderBuilderAddMeterInterceptor(builder, invocation, index, descriptor.MeterProviderBuilderBody);
                 continue;
             }
 
@@ -726,15 +732,21 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
-    private static void EmitMeterProviderBuilderAddMeterInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    private static void EmitMeterProviderBuilderAddMeterInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        MeterProviderBuilderBodyDescriptor descriptor)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "MeterProviderBuilder_" + target.MethodName, index, target.ReceiverType, "builder", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName, target.Parameters, isAsync: false);
         builder.AppendLine("        {");
         builder.Append("            var result = ");
-        AppendInvocationCall(builder, target, "builder");
+        AppendInvocationCall(builder, target, descriptor.ReceiverName);
         builder.AppendLine(";");
-        builder.AppendLine("            var qylMeters = global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames();");
+        builder.Append("            var qylMeters = ");
+        builder.Append(descriptor.EnabledMeterNamesExpression);
+        builder.AppendLine(";");
         if (string.IsNullOrEmpty(target.ExtensionContainingType))
         {
             builder.AppendLine("            return qylMeters.Length is 0 ? result : result.AddMeter(qylMeters);");
@@ -3624,8 +3636,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorEmitter? Emitter = null,
         TraceInterceptorBodyDescriptor TraceBody = default,
         ForwardingInterceptorBodyDescriptor ForwardingBody = default,
+        MeterProviderBuilderBodyDescriptor MeterProviderBuilderBody = default,
         LoggerBodyDescriptor LoggerBody = default,
         ExternalLoggerBodyDescriptor ExternalLoggerBody = default);
+
+    private readonly record struct MeterProviderBuilderBodyDescriptor(
+        string MethodPrefix,
+        string ReceiverName,
+        string EnabledMeterNamesExpression,
+        bool IsDefined = true);
 
     private readonly record struct LoggerBodyDescriptor(
         LoggerInterceptorBodyKind Kind,
