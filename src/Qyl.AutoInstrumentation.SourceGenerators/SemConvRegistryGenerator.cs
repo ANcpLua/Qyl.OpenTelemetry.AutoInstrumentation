@@ -125,7 +125,8 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
     private static ImmutableArray<string> ToSortedImmutableArray(HashSet<string> values)
     {
         var builder = ImmutableArray.CreateBuilder<string>(values.Count);
-        builder.AddRange(values);
+        foreach (var value in values)
+            builder.Add(value);
 
         builder.Sort(StringComparer.Ordinal);
         return builder.ToImmutable();
@@ -176,7 +177,7 @@ public sealed class SemConvRegistryGenerator : IIncrementalGenerator
     private sealed class SemConvRegistryModel
     {
         public static readonly SemConvRegistryModel Empty =
-            new(false, [], []);
+            new(false, ImmutableArray<string>.Empty, ImmutableArray<string>.Empty);
 
         public SemConvRegistryModel(bool shouldEmit, ImmutableArray<string> keys, ImmutableArray<string> templatePrefixes)
         {
