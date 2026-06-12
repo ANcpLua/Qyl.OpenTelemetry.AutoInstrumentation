@@ -29,33 +29,7 @@ public static class QylInterceptedQuartz
 
     /// <summary>Runs the Observe Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task ObserveAsync(Task? task, Activity? activity)
-    {
-        if (activity is null || task is null)
-        {
-            activity?.Dispose();
-            return task!;
-        }
-
-        return ObserveSlowAsync(task, activity);
-    }
-
-    private static async Task ObserveSlowAsync(Task task, Activity activity)
-    {
-        try
-        {
-            await task.ConfigureAwait(false);
-            RecordSuccess(activity);
-        }
-        catch (Exception exception)
-        {
-            RecordException(activity, exception);
-            throw;
-        }
-        finally
-        {
-            activity.Dispose();
-        }
-    }
+        => QylActivityObserver.ObserveAsync(task, activity);
 
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)

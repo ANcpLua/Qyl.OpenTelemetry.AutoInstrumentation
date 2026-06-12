@@ -450,12 +450,33 @@ def verify_intercepted_runtime_error_policy() -> None:
                 fail(f"intercepted runtime helper must delegate error policy to QylActivityStatus: {path.relative_to(ROOT)} {token}")
 
 
+def verify_intercepted_runtime_async_observer_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityObserver.cs").read_text()
+    for token in [
+        "public static Task ObserveAsync(Task? task, Activity? activity)",
+        "public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)",
+        "QylActivityStatus.RecordException(activity, exception);",
+        "activity.Dispose();",
+    ]:
+        if token not in helper:
+            fail(f"QylActivityObserver must own async activity observation token: {token}")
+
+    allowed_local_observers = {
+        "QylInterceptedDbCommand.cs",
+    }
+    for path in sorted((ROOT / "src" / "Qyl.AutoInstrumentation").glob("QylIntercepted*.cs")):
+        text = path.read_text()
+        if "ObserveSlowAsync" in text and path.name not in allowed_local_observers:
+            fail(f"intercepted runtime helper must delegate async observation to QylActivityObserver: {path.relative_to(ROOT)}")
+
+
 def verify_behavior_semantics_contract() -> None:
     generator = GENERATOR_PATH.read_text()
     if "global::Qyl.AutoInstrumentation.QylIntercepted" not in generator:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
+    verify_intercepted_runtime_async_observer_policy()
 
     for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:
         if token in generator:

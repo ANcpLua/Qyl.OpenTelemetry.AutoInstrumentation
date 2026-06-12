@@ -35,64 +35,11 @@ public static class QylInterceptedMongoDb
 
     /// <summary>Runs the Observe Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task ObserveAsync(Task? task, Activity? activity)
-    {
-        if (activity is null || task is null)
-        {
-            activity?.Dispose();
-            return task!;
-        }
+        => QylActivityObserver.ObserveAsync(task, activity);
 
-        return ObserveSlowAsync(task, activity);
-    }
-
-    /// <summary>Observes an asynchronous MongoDB command and records qyl success or exception telemetry.</summary>
+    /// <summary>Observes an asynchronous operation and records qyl exception telemetry.</summary>
     public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
-    {
-        if (activity is null || task is null)
-        {
-            activity?.Dispose();
-            return task!;
-        }
-
-        return ObserveSlowAsync(task, activity);
-    }
-
-    private static async Task ObserveSlowAsync(Task task, Activity activity)
-    {
-        try
-        {
-            await task.ConfigureAwait(false);
-            RecordSuccess(activity);
-        }
-        catch (Exception exception)
-        {
-            RecordException(activity, exception);
-            throw;
-        }
-        finally
-        {
-            activity.Dispose();
-        }
-    }
-
-    private static async Task<T> ObserveSlowAsync<T>(Task<T> task, Activity activity)
-    {
-        try
-        {
-            var result = await task.ConfigureAwait(false);
-            RecordSuccess(activity);
-            return result;
-        }
-        catch (Exception exception)
-        {
-            RecordException(activity, exception);
-            throw;
-        }
-        finally
-        {
-            activity.Dispose();
-        }
-    }
+        => QylActivityObserver.ObserveAsync(task, activity);
 
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
