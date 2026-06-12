@@ -243,6 +243,17 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMongoDbDemo
   - tools/verify-real-mongodb-demo.py
+  conformance_signals:
+  - kind: span
+    name: mongodb.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
   key: signals.traces.MYSQLCONNECTOR
   lane: source_interceptor

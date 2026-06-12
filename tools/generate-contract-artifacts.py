@@ -39,6 +39,7 @@ CONFORMANCE_PROFILES = [
         "profile_id": "qyl-aot-db",
         "signal_names": [
             "efcore.sqlite",
+            "mongodb.command",
             "sqlclient.command",
         ],
     },

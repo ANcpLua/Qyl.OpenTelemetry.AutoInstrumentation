@@ -467,6 +467,17 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMongoDbDemo
   - tools/verify-real-mongodb-demo.py
+  conformance_signals:
+  - kind: span
+    name: mongodb.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MYSQLCONNECTOR
   signal: traces

@@ -65,6 +65,20 @@
         },
         {
           "kind": "span",
+          "name": "mongodb.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
           "name": "sqlclient.command",
           "required_attributes": [
             "db.system.name",
