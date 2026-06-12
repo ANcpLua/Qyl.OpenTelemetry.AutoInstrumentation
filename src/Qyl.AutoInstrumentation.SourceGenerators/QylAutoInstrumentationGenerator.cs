@@ -343,6 +343,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("            var activity = ");
         descriptor.AppendStartActivityExpression(builder, target);
         builder.AppendLine(";");
+        descriptor.AppendAfterActivityStatement?.Invoke(builder, target);
         builder.AppendLine("            try");
         builder.AppendLine("            {");
 
@@ -471,6 +472,24 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
+    }
+
+    private static void AppendQuartzStartActivity(StringBuilder builder, InterceptorTarget target)
+        => builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity()");
+
+    private static void AppendGraphQlStartActivity(StringBuilder builder, InterceptorTarget target)
+        => builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity()");
+
+    private static void AppendGraphQlExecutionOptionsStatement(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.AppendLine("            if (activity is not null)");
+        builder.AppendLine("            {");
+        builder.Append("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordExecutionOptions(activity, ");
+        AppendGraphQlOperationNameExpression(builder, target);
+        builder.Append(", ");
+        AppendGraphQlDocumentCaptureExpression(builder, target);
+        builder.AppendLine(");");
+        builder.AppendLine("            }");
     }
 
     private static void AppendStackExchangeRedisStartActivity(StringBuilder builder, InterceptorTarget target)
@@ -1100,29 +1119,18 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 AppendAfterExceptionStatement: AppendNServiceBusRecordDurationStatement));
 
     private static void EmitQuartzInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "Quartz_" + target.MethodName, index, target.ReceiverType, "job", target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity();");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                var resultTask = job.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(");");
-        builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync(resultTask, activity);");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(activity, exception);");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "Quartz",
+                "job",
+                AppendQuartzStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(activity, exception);",
+                RuntimeObservesAsync: true,
+                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync"));
 
     private static void AppendKafkaTopicExpression(StringBuilder builder, InterceptorTarget target)
     {
@@ -1162,37 +1170,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);"));
 
     private static void EmitGraphQlInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GraphQl_" + target.MethodName, index, target.ReceiverType, "executer", target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity();");
-        builder.AppendLine("            if (activity is not null)");
-        builder.AppendLine("            {");
-        builder.Append("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordExecutionOptions(activity, ");
-        AppendGraphQlOperationNameExpression(builder, target);
-        builder.Append(", ");
-        AppendGraphQlDocumentCaptureExpression(builder, target);
-        builder.AppendLine(");");
-        builder.AppendLine("            }");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                var resultTask = executer.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(");");
-        builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync(resultTask, activity);");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "GraphQl",
+                "executer",
+                AppendGraphQlStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);",
+                RuntimeObservesAsync: true,
+                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync",
+                AppendAfterActivityStatement: AppendGraphQlExecutionOptionsStatement));
 
     private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, InterceptorTarget target)
     {
@@ -1465,59 +1455,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);"));
 
     private static void EmitEntityFrameworkCoreQueryableInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
+        => EmitTraceInterceptor(
             builder,
-            invocation.Location,
-            target.ReturnType,
-            "EntityFrameworkCoreQueryable_" + target.MethodName,
+            invocation,
             index,
-            target.ReceiverType,
-            "query",
-            target.Parameters,
-            isAsync: true,
-            target.TypeParameterList,
-            target.ConstraintClauses);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.StartActivity(");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
-        {
-            builder.Append("                await global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.");
-            builder.Append(target.MethodName);
-            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-            builder.Append("(query");
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
-            builder.AppendLine(").ConfigureAwait(false);");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
-        }
-        else
-        {
-            builder.Append("                var result = await global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.");
-            builder.Append(target.MethodName);
-            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-            builder.Append("(query");
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
-            builder.AppendLine(").ConfigureAwait(false);");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
-            builder.AppendLine("                return result;");
-        }
-
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+            new TraceInterceptorBodyDescriptor(
+                "EntityFrameworkCoreQueryable",
+                "query",
+                AppendEntityFrameworkCoreStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);"));
 
     private static void EmitAttributeAndSignature(
         StringBuilder builder,
@@ -2897,7 +2844,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             Parameters(symbol),
             true,
             GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol));
+            GetConstraintClauses(symbol),
+            ExtensionContainingType: "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
         return true;
     }
 
@@ -3891,6 +3839,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         bool RuntimeObservesAsync = false,
         string ObserveAsyncMethod = "",
         TraceStatementEmitter? AppendBeforeActivityStatement = null,
+        TraceStatementEmitter? AppendAfterActivityStatement = null,
         TraceStatementEmitter? AppendAfterSuccessStatement = null,
         TraceStatementEmitter? AppendAfterExceptionStatement = null);
 
