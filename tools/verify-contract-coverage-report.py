@@ -39,6 +39,8 @@ def build_report(artifacts: ModuleType, contract: dict[str, Any]) -> dict[str, A
             "qyl_status": str(item["qyl_status"]),
             "call_site_visibility": str(item["call_site_visibility"]),
             "payload_access": str(item["payload_access"]),
+            "evidence_level": str(item["evidence_level"]),
+            "primary_owner": str(item["primary_owner"]),
         }
         for item in items
     ]

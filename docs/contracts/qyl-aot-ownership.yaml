@@ -1,0 +1,723 @@
+schema_id: qyl-aot-ownership
+schema_version: 1.0.0
+source_contract: docs/contracts/otel-dotnet-auto-60.upstream.yaml
+ownership_items:
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_001
+  key: signals.traces.ADONET
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_002
+  key: signals.traces.ASPNET
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
+  call_site_visibility: user_code
+  payload_access: reflection_required
+  evidence_level: none
+  primary_owner: unsupported by qyl NativeAOT substrate
+  evidence:
+  - docs/coverage-matrix.md
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_003
+  key: signals.traces.ASPNETCORE
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: both
+  payload_access: typed_public
+  evidence_level: verified_nativeaot
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+  conformance_signals:
+  - kind: span
+    name: aspnetcore.server
+    required_attributes:
+    - http.request.method
+    - http.response.status_code
+    - http.route
+    - qyl.instrumentation.domain
+    recommended_attributes: []
+    opt_in_attributes: []
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_004
+  key: signals.traces.AZURE
+  lane: framework_initialization
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator framework initialization
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
+  key: signals.traces.ELASTICSEARCH
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
+  key: signals.traces.ELASTICTRANSPORT
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_007
+  key: signals.traces.ENTITYFRAMEWORKCORE
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: both
+  payload_access: typed_public
+  evidence_level: verified_nativeaot
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+  conformance_signals:
+  - kind: span
+    name: efcore.sqlite
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes: []
+    opt_in_attributes:
+    - db.query.text
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_008
+  key: signals.traces.GRAPHQL
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
+  key: signals.traces.GRPCNETCLIENT
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: both
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
+  key: signals.traces.HTTPCLIENT
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: both
+  payload_access: not_applicable
+  evidence_level: verified_nativeaot
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+  conformance_signals:
+  - kind: span
+    name: httpclient.downstream
+    required_attributes:
+    - http.request.method
+    - http.response.status_code
+    - server.address
+    - qyl.instrumentation.domain
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: span
+    name: httpclient.self
+    required_attributes:
+    - http.request.method
+    - http.response.status_code
+    - server.address
+    - server.port
+    - qyl.instrumentation.domain
+    recommended_attributes: []
+    opt_in_attributes: []
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_011
+  key: signals.traces.KAFKA
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
+  key: signals.traces.MASSTRANSIT
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
+  key: signals.traces.MONGODB
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
+  key: signals.traces.MYSQLCONNECTOR
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
+  key: signals.traces.MYSQLDATA
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
+  key: signals.traces.NPGSQL
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
+  key: signals.traces.NSERVICEBUS
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
+  key: signals.traces.ORACLEMDA
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
+  key: signals.traces.RABBITMQ
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
+  key: signals.traces.QUARTZ
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
+  key: signals.traces.SQLCLIENT
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: verified_nativeaot
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+  conformance_signals:
+  - kind: span
+    name: sqlclient.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_022
+  key: signals.traces.SQLITE
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_023
+  key: signals.traces.STACKEXCHANGEREDIS
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_024
+  key: signals.traces.WCFCLIENT
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_025
+  key: signals.traces.WCFCORE
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
+  call_site_visibility: library_internal
+  payload_access: reflection_required
+  evidence_level: none
+  primary_owner: unsupported by qyl NativeAOT substrate
+  evidence:
+  - docs/coverage-matrix.md
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026
+  key: signals.traces.WCFSERVICE
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
+  call_site_visibility: library_internal
+  payload_access: reflection_required
+  evidence_level: none
+  primary_owner: unsupported by qyl NativeAOT substrate
+  evidence:
+  - docs/coverage-matrix.md
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_027
+  key: signals.metrics.ASPNET
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
+  call_site_visibility: user_code
+  payload_access: reflection_required
+  evidence_level: none
+  primary_owner: unsupported by qyl NativeAOT substrate
+  evidence:
+  - docs/coverage-matrix.md
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_028
+  key: signals.metrics.ASPNETCORE
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_029
+  key: signals.metrics.HTTPCLIENT
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: both
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_030
+  key: signals.metrics.NETRUNTIME
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
+  key: signals.metrics.NPGSQL
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
+  key: signals.metrics.NSERVICEBUS
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_033
+  key: signals.metrics.PROCESS
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_034
+  key: signals.metrics.SQLCLIENT
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: compile_binding_only
+  primary_owner: Qyl public telemetry listeners/meters
+  evidence:
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - tools/verify-otlp-collector-fixtures.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_035
+  key: signals.logs.ILOGGER
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_036
+  key: signals.logs.LOG4NET
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_037
+  key: signals.logs.NLOG
+  lane: source_interceptor
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: compile_binding_only
+  primary_owner: QylAutoInstrumentationGenerator
+  evidence:
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - tools/verify-source-interceptor-consumer.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_038
+  key: global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_039
+  key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_040
+  key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_041
+  key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_042
+  key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_043
+  key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
+  key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_045
+  key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
+  key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_047
+  key: instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_048
+  key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_050
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_051
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_052
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_054
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_055
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_056
+  key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_057
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_058
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_059
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_060
+  key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
+  lane: instrumentation_option
+  qyl_status: option_bound
+  call_site_visibility: not_applicable
+  payload_access: not_applicable
+  evidence_level: option_bound
+  primary_owner: QylAutoInstrumentationOptions
+  evidence:
+  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py

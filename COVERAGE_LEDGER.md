@@ -27,7 +27,12 @@ Forbidden product mechanisms:
 
 Source of truth:
 
-- `docs/otel-dotnet-auto-60-contract-items.yaml`
+- `docs/contracts/otel-dotnet-auto-60.upstream.yaml` plus `docs/contracts/qyl-aot-ownership.yaml`
+
+Generated outputs:
+
+- `docs/generated/qyl-aot-contract.resolved.yaml`
+- `docs/generated/qyl-aot-contract.schema.json`
 - `src/Qyl.AutoInstrumentation.SourceGenerators/InstrumentationContract.cs`
 - `docs/coverage-matrix.md`
 
@@ -36,7 +41,7 @@ Current classification:
 | Slice | Count | Binding |
 |---|---:|---|
 | Total contract items | 60 | `InstrumentationContract.TotalCount` |
-| Source-generated signal promises | 33 | Eligible for generator-gated interception or meter registration. |
+| Implemented signal promises | 33 | Implemented by a declared qyl lane; source-interceptor coverage is tracked separately in the generated matrix. |
 | Unsupported NativeAOT parity/dynamic signal promises | 4 | Classic ASP.NET/WCF/dynamic parity items retained with explicit unsupported status. |
 | Global environment controls | 7 | Read by `QylAutoInstrumentationOptions`. |
 | Instrumentation options | 16 | Read by `QylAutoInstrumentationOptions`; raw query/statement values remain behind upstream opt-in flags. |
@@ -82,6 +87,6 @@ Detailed runtime extraction rules live in `docs/RUNTIME_SEMANTICS.md`.
 
 - Full OTLP export normalizer for Gate A.
 - Stable benchmark budget thresholds.
-- One-command contract update/regeneration flow.
+-
 - More source-visible interceptor targets with bounded names and stable attributes.
 - Better consumer diagnostics when package build assets are missing.

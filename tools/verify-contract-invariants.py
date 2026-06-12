@@ -427,6 +427,23 @@ def parse_switch_helper_keys(generator: str, helper_name: str) -> set[str]:
     return set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(0)))
 
 
+def collect_generator_target_contract_keys(generator: str) -> set[str]:
+    target_contract_keys = set(re.findall(
+        r"InterceptorKind\.[A-Za-z0-9]+,\s*\n\s*\"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\"",
+        generator,
+    ))
+    target_contract_keys.update(parse_contract_keys_call_keys(generator))
+
+    if "GetDbTraceContractKey(instrumentationId)" not in generator:
+        fail("DbCommand target must route trace contract keys through GetDbTraceContractKey")
+    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbTraceContractKey"))
+
+    if "GetDbMetricContractKeys(instrumentationId)" not in generator:
+        fail("DbCommand target must route metric contract keys through GetDbMetricContractKeys")
+    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
+    return target_contract_keys
+
+
 def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: set[str]) -> None:
     kinds = parse_interceptor_kinds(generator)
     if not kinds:
@@ -456,20 +473,7 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     if target_missing:
         fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
 
-    target_contract_keys = set(re.findall(
-        r"InterceptorKind\.[A-Za-z0-9]+,\s*\n\s*\"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\"",
-        generator,
-    ))
-    target_contract_keys.update(parse_contract_keys_call_keys(generator))
-
-    if "GetDbTraceContractKey(instrumentationId)" not in generator:
-        fail("DbCommand target must route trace contract keys through GetDbTraceContractKey")
-    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbTraceContractKey"))
-
-    if "GetDbMetricContractKeys(instrumentationId)" not in generator:
-        fail("DbCommand target must route metric contract keys through GetDbMetricContractKeys")
-    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
-
+    target_contract_keys = collect_generator_target_contract_keys(generator)
     missing_contract_keys = implemented_signal_keys - target_contract_keys
     extra_contract_keys = target_contract_keys - implemented_signal_keys
     if missing_contract_keys or extra_contract_keys:
@@ -481,8 +485,13 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
 
 def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     generator = GENERATOR_PATH.read_text()
+    contract_source = CONTRACT_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
     implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
+    source_interceptor_signal_keys = {
+        str(item["key"])
+        for item in artifacts.source_interceptor_signal_items(contract)
+    }
     unsupported_keys = {str(item["key"]) for item in artifacts.unsupported_signal_items(contract)}
     if generator_keys != implemented_signal_keys:
         fail(
@@ -493,6 +502,25 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
 
     if generator_keys & unsupported_keys:
         fail(f"unsupported keys leaked into generator: {sorted(generator_keys & unsupported_keys)}")
+
+    for token in [
+        "SourceGeneratedSignal",
+        "TryGetSourceGeneratedSignal",
+        "SourceGeneratedSignalPromiseCount",
+    ]:
+        if token in contract_source or token in generator:
+            fail(f"contract/generator must not conflate implemented with source-generated: {token}")
+
+    for token in [
+        "ImplementedSignalKeys",
+        "SourceInterceptorSignalKeys",
+        "RuntimePublicTelemetrySignalKeys",
+        "UnsupportedNativeAotSignalKeys",
+        "TryGetSourceInterceptorSignal",
+        "TryGetImplementedSignal",
+    ]:
+        if token not in contract_source:
+            fail(f"InstrumentationContract missing separated API token: {token}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigation from NavigationManager.NavigateTo")
@@ -520,6 +548,10 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         fail("generator must emit InterceptsLocationAttribute through Roslyn GetInterceptsLocationAttributeSyntax")
 
     verify_interceptor_target_coverage(generator, implemented_signal_keys)
+    generator_target_keys = collect_generator_target_contract_keys(generator)
+    missing_source_interceptor_bindings = source_interceptor_signal_keys - generator_target_keys
+    if missing_source_interceptor_bindings:
+        fail(f"source_interceptor contract keys missing generator binding: {sorted(missing_source_interceptor_bindings)}")
 
 
 def main() -> None:

@@ -11,8 +11,10 @@ internal static class QylGeneratedInstrumentationContract
     public const int MetricsSignalSpecificPromiseCount = 8;
     public const int LogsSignalSpecificPromiseCount = 3;
     public const int UniqueInstrumentationIdCount = 31;
+    public const int ImplementedSignalPromiseCount = 33;
+    public const int SourceInterceptorSignalPromiseCount = 22;
+    public const int RuntimePublicTelemetrySignalPromiseCount = 10;
     public const int UnsupportedNativeAotSignalPromiseCount = 4;
-    public const int SourceGeneratedSignalPromiseCount = 33;
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     public const string AspNetCoreComponentsNavigationMetricName = "aspnetcore.components.navigation";
 
@@ -121,7 +123,7 @@ internal static class QylGeneratedInstrumentationContract
         "signals.logs.NLOG",
     };
 
-    public static string[] SourceGeneratedSignalKeys => new[]
+    public static string[] ImplementedSignalKeys => new[]
     {
         "signals.traces.ADONET",
         "signals.traces.ASPNETCORE",
@@ -156,6 +158,46 @@ internal static class QylGeneratedInstrumentationContract
         "signals.logs.ILOGGER",
         "signals.logs.LOG4NET",
         "signals.logs.NLOG",
+    };
+
+    public static string[] SourceInterceptorSignalKeys => new[]
+    {
+        "signals.traces.ADONET",
+        "signals.traces.ELASTICSEARCH",
+        "signals.traces.ELASTICTRANSPORT",
+        "signals.traces.GRAPHQL",
+        "signals.traces.HTTPCLIENT",
+        "signals.traces.KAFKA",
+        "signals.traces.MASSTRANSIT",
+        "signals.traces.MONGODB",
+        "signals.traces.MYSQLCONNECTOR",
+        "signals.traces.MYSQLDATA",
+        "signals.traces.NPGSQL",
+        "signals.traces.NSERVICEBUS",
+        "signals.traces.ORACLEMDA",
+        "signals.traces.RABBITMQ",
+        "signals.traces.QUARTZ",
+        "signals.traces.SQLCLIENT",
+        "signals.traces.SQLITE",
+        "signals.traces.STACKEXCHANGEREDIS",
+        "signals.traces.WCFCLIENT",
+        "signals.logs.ILOGGER",
+        "signals.logs.LOG4NET",
+        "signals.logs.NLOG",
+    };
+
+    public static string[] RuntimePublicTelemetrySignalKeys => new[]
+    {
+        "signals.traces.ASPNETCORE",
+        "signals.traces.ENTITYFRAMEWORKCORE",
+        "signals.traces.GRPCNETCLIENT",
+        "signals.metrics.ASPNETCORE",
+        "signals.metrics.HTTPCLIENT",
+        "signals.metrics.NETRUNTIME",
+        "signals.metrics.NPGSQL",
+        "signals.metrics.NSERVICEBUS",
+        "signals.metrics.PROCESS",
+        "signals.metrics.SQLCLIENT",
     };
 
     public static string[] UnsupportedNativeAotSignalKeys => new[]

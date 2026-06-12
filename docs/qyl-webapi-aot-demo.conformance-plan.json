@@ -22,13 +22,15 @@
           "kind": "span",
           "name": "efcore.sqlite",
           "required_attributes": [
+            "db.system.name",
             "db.operation.name",
             "db.query.summary",
-            "db.system.name",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [],
-          "opt_in_attributes": []
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
         },
         {
           "kind": "span",
@@ -36,8 +38,8 @@
           "required_attributes": [
             "http.request.method",
             "http.response.status_code",
-            "qyl.instrumentation.domain",
-            "server.address"
+            "server.address",
+            "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [],
           "opt_in_attributes": []
@@ -48,9 +50,9 @@
           "required_attributes": [
             "http.request.method",
             "http.response.status_code",
-            "qyl.instrumentation.domain",
             "server.address",
-            "server.port"
+            "server.port",
+            "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [],
           "opt_in_attributes": []
@@ -59,14 +61,17 @@
           "kind": "span",
           "name": "sqlclient.command",
           "required_attributes": [
+            "db.system.name",
             "db.operation.name",
             "db.query.summary",
-            "db.system.name",
-            "error.type",
             "qyl.instrumentation.domain"
           ],
-          "recommended_attributes": [],
-          "opt_in_attributes": []
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
         }
       ]
     }

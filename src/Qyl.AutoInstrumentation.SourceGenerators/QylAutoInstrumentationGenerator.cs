@@ -84,7 +84,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool IsSupportedTarget(InterceptorTarget target)
     {
-        if (InstrumentationContract.TryGetSourceGeneratedSignal(target.ContractKey) is null)
+        if (InstrumentationContract.TryGetImplementedSignal(target.ContractKey) is null)
             return false;
 
         if (target.AdditionalContractKeys is not { Length: > 0 } additionalContractKeys)
@@ -92,7 +92,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         foreach (var contractKey in additionalContractKeys)
         {
-            if (InstrumentationContract.TryGetSourceGeneratedSignal(contractKey) is null)
+            if (InstrumentationContract.TryGetImplementedSignal(contractKey) is null)
                 return false;
         }
 
