@@ -492,6 +492,22 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
     }
 
+    private static void AppendAzureStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedAzure.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
+    private static void AppendWcfStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
     private static void AppendStackExchangeRedisStartActivity(StringBuilder builder, InterceptorTarget target)
     {
         builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedRedis.StartCommandActivity(");
@@ -675,45 +691,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static void EmitAzureClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AzureClient_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, target.IsAsync);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedAzure.StartActivity(");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            builder.Append("                var result = await client.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
-        }
-        else
-        {
-            builder.Append("                var result = client.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
-        }
-
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);");
-        builder.AppendLine("                return result;");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "AzureClient",
+                "client",
+                AppendAzureStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);"));
 
     private static void EmitElasticInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
@@ -789,70 +776,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static void EmitWcfClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "WcfClient_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, target.IsAsync);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.StartActivity(");
-        AppendStringLiteral(builder, target.ReceiverType);
-        builder.Append(", ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
-            {
-                builder.Append("                await client.");
-                builder.Append(target.MethodName);
-                builder.Append('(');
-                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-                builder.AppendLine(").ConfigureAwait(false);");
-                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
-            }
-            else
-            {
-                builder.Append("                var result = await client.");
-                builder.Append(target.MethodName);
-                builder.Append('(');
-                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-                builder.AppendLine(").ConfigureAwait(false);");
-                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
-                builder.AppendLine("                return result;");
-            }
-        }
-        else if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
-        {
-            builder.Append("                client.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
-        }
-        else
-        {
-            builder.Append("                var result = client.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);");
-            builder.AppendLine("                return result;");
-        }
-
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "WcfClient",
+                "client",
+                AppendWcfStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);"));
 
     private static void EmitGrpcNetClientAsyncUnaryInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
