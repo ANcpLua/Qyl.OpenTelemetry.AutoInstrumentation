@@ -885,12 +885,12 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: both
   payload_access: typed_public
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
+  - demos/Qyl.RealHttpClientDemo
+  - tools/verify-real-http-client-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NETRUNTIME
   signal: metrics

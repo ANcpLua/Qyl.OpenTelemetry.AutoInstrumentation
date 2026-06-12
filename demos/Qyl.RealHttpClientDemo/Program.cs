@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -7,6 +9,7 @@ using System.Text.Json.Serialization;
 using Qyl.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
+var capturedMetrics = new List<CapturedMetric>();
 
 using var listener = new ActivityListener
 {
@@ -16,6 +19,22 @@ using var listener = new ActivityListener
 };
 
 ActivitySource.AddActivityListener(listener);
+
+using var meterListener = new MeterListener
+{
+    InstrumentPublished = static (instrument, listener) =>
+    {
+        if (StringComparer.Ordinal.Equals(instrument.Meter.Name, QylMetricMeters.HttpClientMeterName) &&
+            StringComparer.Ordinal.Equals(instrument.Name, QylMetricNames.HttpClientRequestDuration))
+        {
+            listener.EnableMeasurementEvents(instrument);
+        }
+    },
+};
+
+meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+    capturedMetrics.Add(CapturedMetric.From(instrument, measurement, tags)));
+meterListener.Start();
 
 using var httpClient = new HttpClient();
 var server = StartOneShotHttpServer(503);
@@ -36,7 +55,8 @@ catch (HttpRequestException exception)
 
 var report = HttpClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    captured.ToArray(),
+    capturedMetrics.ToArray());
 
 var json = JsonSerializer.Serialize(report, RealHttpClientJsonContext.Default.HttpClientReport);
 Console.WriteLine(json);
@@ -83,22 +103,39 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
-            activity.DisplayName,
-            activity.Kind.ToString(),
-            activity.Status.ToString(),
-            activity.TagObjects.ToDictionary(
-                static tag => tag.Key,
-                static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                activity.DisplayName,
+                activity.Kind.ToString(),
+                activity.Status.ToString(),
+                activity.TagObjects.ToDictionary(
+                    static tag => tag.Key,
+                    static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
                 StringComparer.Ordinal));
+}
+
+internal sealed record CapturedMetric(
+    string MeterName,
+    string Name,
+    double Value,
+    IReadOnlyDictionary<string, string> Tags)
+{
+    public static CapturedMetric From(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
+    {
+        var capturedTags = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var tag in tags)
+            capturedTags[tag.Key] = Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty;
+
+        return new CapturedMetric(instrument.Meter.Name, instrument.Name, value, capturedTags);
+    }
 }
 
 internal sealed record HttpClientReport(
     string RuntimeMode,
     bool Pass,
     string[] Failures,
-    CapturedActivity[] Activities)
+    CapturedActivity[] Activities,
+    CapturedMetric[] Metrics)
 {
-    public static HttpClientReport Create(string runtimeMode, CapturedActivity[] activities)
+    public static HttpClientReport Create(string runtimeMode, CapturedActivity[] activities, CapturedMetric[] metrics)
     {
         var failures = new List<string>();
         var httpClientSpans = activities
@@ -136,12 +173,44 @@ internal sealed record HttpClientReport(
                 failures.Add($"unexpected high-cardinality span name: {span.Name}");
         }
 
-        return new HttpClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities);
+        var httpClientMetrics = metrics
+            .Where(static metric =>
+                StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.HttpClientMeterName) &&
+                StringComparer.Ordinal.Equals(metric.Name, QylMetricNames.HttpClientRequestDuration))
+            .ToArray();
+
+        if (httpClientMetrics.Length != 2)
+            failures.Add($"expected 2 real HttpClient duration metrics, got {httpClientMetrics.Length}");
+
+        var statusMetric = httpClientMetrics.FirstOrDefault(static metric =>
+            metric.Tags.TryGetValue(QylSemanticAttributes.HttpResponseStatusCode, out var statusCode) &&
+            StringComparer.Ordinal.Equals(statusCode, "503"));
+        var failureMetric = httpClientMetrics.FirstOrDefault(static metric =>
+            metric.Tags.TryGetValue(QylSemanticAttributes.ErrorType, out var errorType) &&
+            errorType.Length > 0);
+
+        Require(statusMetric, "503 status metric", failures);
+        Require(failureMetric, "connection failure metric", failures);
+        RequireMetricTag(statusMetric, QylSemanticAttributes.HttpRequestMethod, QylSemanticAttributes.HttpRequestMethodGet, failures);
+
+        foreach (var metric in httpClientMetrics)
+        {
+            if (metric.Value < 0)
+                failures.Add($"expected non-negative HttpClient metric value, got {metric.Value.ToString(CultureInfo.InvariantCulture)}");
+        }
+
+        return new HttpClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities, httpClientMetrics);
     }
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
     {
         if (activity is null)
+            failures.Add($"missing {label}");
+    }
+
+    private static void Require(CapturedMetric? metric, string label, ICollection<string> failures)
+    {
+        if (metric is null)
             failures.Add($"missing {label}");
     }
 
@@ -158,6 +227,21 @@ internal sealed record HttpClientReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequireMetricTag(CapturedMetric? metric, string key, string expected, ICollection<string> failures)
+    {
+        if (metric is null)
+            return;
+
+        if (!metric.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing metric {key}");
+            return;
+        }
+
+        if (!StringComparer.Ordinal.Equals(actual, expected))
+            failures.Add($"expected metric {key}={expected}, got {actual}");
     }
 
     private static void RequireStatus(CapturedActivity? activity, string expected, ICollection<string> failures)

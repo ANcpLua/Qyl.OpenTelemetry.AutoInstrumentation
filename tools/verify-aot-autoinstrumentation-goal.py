@@ -26,6 +26,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("real adonet demo", [sys.executable, "tools/verify-real-adonet-demo.py"]),
     ("real graphql demo", [sys.executable, "tools/verify-real-graphql-demo.py"]),
     ("real grpc client demo", [sys.executable, "tools/verify-real-grpc-client-demo.py"]),
+    ("real http client demo", [sys.executable, "tools/verify-real-http-client-demo.py"]),
     ("real kafka demo", [sys.executable, "tools/verify-real-kafka-demo.py"]),
     ("real log4net demo", [sys.executable, "tools/verify-real-log4net-demo.py"]),
     ("real masstransit demo", [sys.executable, "tools/verify-real-masstransit-demo.py"]),
