@@ -12,8 +12,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
+          - qyl-linux
+          - qyl-macos
 
     steps:
       - uses: actions/checkout@v4
