@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.RealWcfClientDemo</RootNamespace>
+    <AssemblyName>Qyl.RealWcfClientDemo</AssemblyName>
+    <Description>Real zero-code WCF ClientBase source-interceptor proof for qyl.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceModel.Http" Version="10.0.652802" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="10.0.652802" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj"
+                      Condition="'$(PublishAot)' != 'true'"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <Analyzer Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\bin\Release\netstandard2.0\Qyl.AutoInstrumentation.SourceGenerators.dll"
+              Condition="'$(PublishAot)' == 'true'" />
+  </ItemGroup>
+
+  <Import Project="..\..\src\Qyl.AutoInstrumentation\buildTransitive\Qyl.AutoInstrumentation.targets" />
+
+</Project>
