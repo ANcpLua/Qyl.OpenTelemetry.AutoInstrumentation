@@ -23,15 +23,15 @@ public static class QylMetricNames
     public const string ProcessMemoryVirtual = "process.memory.virtual";
 
     /// <summary>Well-known Process Runtime Dotnet Gc Collections Count value used by qyl auto-instrumentation.</summary>
-    public const string ProcessRuntimeDotnetGcCollectionsCount = "process.runtime.dotnet.gc.collections.count";
+    public const string ProcessRuntimeDotnetGcCollectionsCount = "dotnet.gc.collections";
     /// <summary>Well-known Process Runtime Dotnet Gc Heap Size value used by qyl auto-instrumentation.</summary>
-    public const string ProcessRuntimeDotnetGcHeapSize = "process.runtime.dotnet.gc.heap.size";
+    public const string ProcessRuntimeDotnetGcHeapSize = "dotnet.gc.last_collection.heap.size";
     /// <summary>Well-known Process Runtime Dotnet Gc Objects Size value used by qyl auto-instrumentation.</summary>
-    public const string ProcessRuntimeDotnetGcObjectsSize = "process.runtime.dotnet.gc.objects.size";
+    public const string ProcessRuntimeDotnetGcObjectsSize = "dotnet.gc.heap.total_allocated";
     /// <summary>Well-known Process Runtime Dotnet Thread Pool Queue Length value used by qyl auto-instrumentation.</summary>
-    public const string ProcessRuntimeDotnetThreadPoolQueueLength = "process.runtime.dotnet.thread_pool.queue.length";
+    public const string ProcessRuntimeDotnetThreadPoolQueueLength = "dotnet.thread_pool.queue.length";
     /// <summary>Well-known Process Runtime Dotnet Thread Pool Threads Count value used by qyl auto-instrumentation.</summary>
-    public const string ProcessRuntimeDotnetThreadPoolThreadsCount = "process.runtime.dotnet.thread_pool.threads.count";
+    public const string ProcessRuntimeDotnetThreadPoolThreadsCount = "dotnet.thread_pool.thread.count";
 
     /// <summary>Well-known qyl Sem Conv Attribute Checks value used by qyl auto-instrumentation.</summary>
     public const string QylSemConvAttributeChecks = "qyl.semconv.attribute.checks";

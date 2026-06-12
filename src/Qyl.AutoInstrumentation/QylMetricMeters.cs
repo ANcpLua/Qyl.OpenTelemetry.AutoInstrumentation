@@ -18,7 +18,7 @@ public static class QylMetricMeters
     /// <summary>Well-known N Service Bus Meter Name value used by qyl auto-instrumentation.</summary>
     public const string NServiceBusMeterName = "NServiceBus.Core";
     /// <summary>Well-known Net Runtime Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string NetRuntimeMeterName = "OpenTelemetry.Instrumentation.Runtime";
+    public const string NetRuntimeMeterName = "System.Runtime";
     /// <summary>Well-known Process Meter Name value used by qyl auto-instrumentation.</summary>
     public const string ProcessMeterName = "OpenTelemetry.Instrumentation.Process";
 

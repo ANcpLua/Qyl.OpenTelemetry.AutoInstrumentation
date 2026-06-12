@@ -914,12 +914,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: library_internal
   payload_access: typed_public
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
+  - src/Qyl.AutoInstrumentation/QylMetricNames.cs
+  - demos/Qyl.RealNetRuntimeMetricsDemo
+  - tools/verify-real-netruntime-metrics-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NPGSQL
   signal: metrics

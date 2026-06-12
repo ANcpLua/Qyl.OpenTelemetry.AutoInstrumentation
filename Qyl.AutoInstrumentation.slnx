@@ -11,6 +11,7 @@
   <Project Path="demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj" />
   <Project Path="demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj" />
   <Project Path="demos/Qyl.RealNLogDemo/Qyl.RealNLogDemo.csproj" />
+  <Project Path="demos/Qyl.RealNetRuntimeMetricsDemo/Qyl.RealNetRuntimeMetricsDemo.csproj" />
   <Project Path="demos/Qyl.RealNServiceBusDemo/Qyl.RealNServiceBusDemo.csproj" />
   <Project Path="demos/Qyl.RealQuartzDemo/Qyl.RealQuartzDemo.csproj" />
   <Project Path="demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj" />
