@@ -15,6 +15,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealAdoNetDemo
   - tools/verify-real-adonet-demo.py
+  conformance_signals:
+  - kind: span
+    name: adonet.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_002
   key: signals.traces.ASPNET
   lane: unsupported_nativeaot
@@ -299,6 +311,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlConnectorDemo
   - tools/verify-real-mysqlconnector-demo.py
+  conformance_signals:
+  - kind: span
+    name: mysqlconnector.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
   key: signals.traces.MYSQLDATA
   lane: source_interceptor
@@ -312,6 +336,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlDataDemo
   - tools/verify-real-mysqldata-demo.py
+  conformance_signals:
+  - kind: span
+    name: mysqldata.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
   key: signals.traces.NPGSQL
   lane: source_interceptor
@@ -325,6 +361,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNpgsqlDemo
   - tools/verify-real-npgsql-demo.py
+  conformance_signals:
+  - kind: span
+    name: npgsql.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
   key: signals.traces.NSERVICEBUS
   lane: source_interceptor
@@ -351,6 +399,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealOracleMdaDemo
   - tools/verify-real-oraclemda-demo.py
+  conformance_signals:
+  - kind: span
+    name: oraclemda.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
   key: signals.traces.RABBITMQ
   lane: source_interceptor
@@ -434,6 +494,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqliteDemo
   - tools/verify-real-sqlite-demo.py
+  conformance_signals:
+  - kind: span
+    name: sqlite.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_023
   key: signals.traces.STACKEXCHANGEREDIS
   lane: source_interceptor

@@ -44,6 +44,18 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealAdoNetDemo
   - tools/verify-real-adonet-demo.py
+  conformance_signals:
+  - kind: span
+    name: adonet.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ASPNET
   signal: traces
@@ -537,6 +549,18 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlConnectorDemo
   - tools/verify-real-mysqlconnector-demo.py
+  conformance_signals:
+  - kind: span
+    name: mysqlconnector.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MYSQLDATA
   signal: traces
@@ -566,6 +590,18 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlDataDemo
   - tools/verify-real-mysqldata-demo.py
+  conformance_signals:
+  - kind: span
+    name: mysqldata.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.NPGSQL
   signal: traces
@@ -593,6 +629,18 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNpgsqlDemo
   - tools/verify-real-npgsql-demo.py
+  conformance_signals:
+  - kind: span
+    name: npgsql.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.NSERVICEBUS
   signal: traces
@@ -654,6 +702,18 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealOracleMdaDemo
   - tools/verify-real-oraclemda-demo.py
+  conformance_signals:
+  - kind: span
+    name: oraclemda.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.RABBITMQ
   signal: traces
@@ -809,6 +869,18 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqliteDemo
   - tools/verify-real-sqlite-demo.py
+  conformance_signals:
+  - kind: span
+    name: sqlite.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.STACKEXCHANGEREDIS
   signal: traces

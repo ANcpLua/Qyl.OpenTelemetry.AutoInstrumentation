@@ -51,6 +51,22 @@
       "expected_signals": [
         {
           "kind": "span",
+          "name": "adonet.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
           "name": "efcore.sqlite",
           "required_attributes": [
             "db.system.name",
@@ -76,6 +92,86 @@
             "error.type"
           ],
           "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "mysqlconnector.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "mysqldata.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "npgsql.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "oraclemda.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "sqlite.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
         },
         {
           "kind": "span",
