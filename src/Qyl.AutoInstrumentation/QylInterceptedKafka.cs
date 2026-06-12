@@ -40,13 +40,14 @@ public static class QylInterceptedKafka
 
     private static Activity? StartActivity(ActivityKind activityKind, string operationType, string operationName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Kafka))
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.Kafka,
+            QylActivityNames.KafkaMessage,
+            activityKind,
+            QylInstrumentationDomains.MessagingKafka);
+        if (activity is null)
             return null;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.KafkaMessage, activityKind) is not { } activity)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingKafka);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemKafka);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operationName);

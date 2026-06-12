@@ -12,13 +12,14 @@ public static class QylInterceptedGraphQl
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity()
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.GraphQl))
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.GraphQl,
+            QylActivityNames.GraphQlExecute,
+            ActivityKind.Internal,
+            QylInstrumentationDomains.GraphQl);
+        if (activity is null)
             return null;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.GraphQlExecute, ActivityKind.Internal) is not { } activity)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.GraphQl);
         activity.SetTag(QylSemanticAttributes.GraphQlOperationName, "execute");
         return activity;
     }

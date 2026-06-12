@@ -14,14 +14,15 @@ public static class QylInterceptedMongoDb
     {
         ArgumentNullException.ThrowIfNull(operationName);
 
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.MongoDb))
-            return null;
-
         var operation = NormalizeOperation(operationName);
-        if (QylActivitySource.StartActivity(QylActivityNames.MongoDbCommand, ActivityKind.Client) is not { } activity)
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.MongoDb,
+            QylActivityNames.MongoDbCommand,
+            ActivityKind.Client,
+            QylInstrumentationDomains.DbMongoDb);
+        if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbMongoDb);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMongodb);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);

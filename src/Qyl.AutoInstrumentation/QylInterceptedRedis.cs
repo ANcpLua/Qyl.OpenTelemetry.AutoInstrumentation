@@ -12,13 +12,14 @@ public static class QylInterceptedRedis
     /// <summary>Runs the Start Command Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartCommandActivity(string operationName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.StackExchangeRedis))
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.StackExchangeRedis,
+            QylActivityNames.RedisCommand,
+            ActivityKind.Client,
+            QylInstrumentationDomains.DbRedis);
+        if (activity is null)
             return null;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.RedisCommand, ActivityKind.Client) is not { } activity)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbRedis);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);

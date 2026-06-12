@@ -12,17 +12,18 @@ public static class QylInterceptedNServiceBus
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string operationName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.NServiceBus))
-            return null;
-
         var operation = string.Equals(operationName, "Send", StringComparison.Ordinal)
             ? QylSemanticAttributes.MessagingOperationNameSend
             : QylSemanticAttributes.MessagingOperationNamePublish;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.NServiceBusMessage, ActivityKind.Producer) is not { } activity)
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.NServiceBus,
+            QylActivityNames.NServiceBusMessage,
+            ActivityKind.Producer,
+            QylInstrumentationDomains.MessagingNServiceBus);
+        if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingNServiceBus);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);

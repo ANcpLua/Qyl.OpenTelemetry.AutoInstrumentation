@@ -12,22 +12,16 @@ public static class QylInterceptedElastic
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string instrumentationId, string methodName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, instrumentationId))
-            return null;
-
         var operation = NormalizeOperation(methodName);
-        var activityName = string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal)
-            ? "Elastic transport request"
-            : "Elasticsearch request";
-        var activity = QylActivitySource.StartActivity(activityName, ActivityKind.Client);
+        var isElasticTransport = string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal);
+        var activity = QylActivityFactory.StartTraceActivity(
+            instrumentationId,
+            isElasticTransport ? "Elastic transport request" : "Elasticsearch request",
+            ActivityKind.Client,
+            isElasticTransport ? QylInstrumentationDomains.ElasticTransport : QylInstrumentationDomains.DbElasticsearch);
         if (activity is null)
             return null;
 
-        activity.SetTag(
-            QylSemanticAttributes.QylInstrumentationDomain,
-            string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal)
-                ? QylInstrumentationDomains.ElasticTransport
-                : QylInstrumentationDomains.DbElasticsearch);
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemElasticsearch);
         activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);

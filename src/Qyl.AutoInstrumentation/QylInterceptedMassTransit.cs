@@ -12,17 +12,18 @@ public static class QylInterceptedMassTransit
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string operationName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.MassTransit))
-            return null;
-
         var operation = string.Equals(operationName, "Send", StringComparison.Ordinal)
             ? QylSemanticAttributes.MessagingOperationNameSend
             : QylSemanticAttributes.MessagingOperationNamePublish;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.MassTransitMessage, ActivityKind.Producer) is not { } activity)
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.MassTransit,
+            QylActivityNames.MassTransitMessage,
+            ActivityKind.Producer,
+            QylInstrumentationDomains.MessagingMassTransit);
+        if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingMassTransit);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemMassTransit);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);

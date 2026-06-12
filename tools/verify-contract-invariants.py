@@ -450,6 +450,44 @@ def verify_intercepted_runtime_error_policy() -> None:
                 fail(f"intercepted runtime helper must delegate error policy to QylActivityStatus: {path.relative_to(ROOT)} {token}")
 
 
+def verify_intercepted_runtime_activity_start_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityFactory.cs").read_text()
+    for token in [
+        "public static Activity? StartTraceActivity(",
+        "public static Activity? StartLogActivity(",
+        "QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(signal, instrumentationId)",
+        "QylActivitySource.StartActivity(activityName, activityKind)",
+        "activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, instrumentationDomain);",
+    ]:
+        if token not in helper:
+            fail(f"QylActivityFactory must own intercepted activity start policy token: {token}")
+
+    factory_owned_helpers = {
+        "QylInterceptedAzure.cs",
+        "QylInterceptedElastic.cs",
+        "QylInterceptedExternalLogger.cs",
+        "QylInterceptedGraphQl.cs",
+        "QylInterceptedKafka.cs",
+        "QylInterceptedLogger.cs",
+        "QylInterceptedMassTransit.cs",
+        "QylInterceptedMongoDb.cs",
+        "QylInterceptedNServiceBus.cs",
+        "QylInterceptedQuartz.cs",
+        "QylInterceptedRabbitMq.cs",
+        "QylInterceptedRedis.cs",
+        "QylInterceptedWcfClient.cs",
+        "QylInterceptedWcfCore.cs",
+    }
+    for name in sorted(factory_owned_helpers):
+        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        for token in [
+            "QylActivitySource.StartActivity(",
+            "SetTag(QylSemanticAttributes.QylInstrumentationDomain",
+        ]:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
+
+
 def verify_intercepted_runtime_async_observer_policy() -> None:
     helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityObserver.cs").read_text()
     for token in [
@@ -476,6 +514,7 @@ def verify_behavior_semantics_contract() -> None:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
+    verify_intercepted_runtime_activity_start_policy()
     verify_intercepted_runtime_async_observer_policy()
 
     for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:

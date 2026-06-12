@@ -15,14 +15,14 @@ public static class QylInterceptedExternalLogger
         ArgumentNullException.ThrowIfNull(domain);
         ArgumentNullException.ThrowIfNull(methodName);
 
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, instrumentationId))
-            return null;
-
-        var activity = QylActivitySource.StartActivity(GetActivityName(instrumentationId), ActivityKind.Internal);
+        var activity = QylActivityFactory.StartLogActivity(
+            instrumentationId,
+            GetActivityName(instrumentationId),
+            ActivityKind.Internal,
+            domain);
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, domain);
         activity.SetTag(QylSemanticAttributes.LogSeverity, NormalizeSeverity(string.IsNullOrWhiteSpace(severityName) ? methodName : severityName));
         return activity;
     }

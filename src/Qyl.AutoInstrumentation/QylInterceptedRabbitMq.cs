@@ -12,13 +12,14 @@ public static class QylInterceptedRabbitMq
     /// <summary>Runs the Start Publish Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartPublishActivity(string? exchange)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.RabbitMq))
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.RabbitMq,
+            QylActivityNames.RabbitMqPublish,
+            ActivityKind.Producer,
+            QylInstrumentationDomains.MessagingRabbitMq);
+        if (activity is null)
             return null;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.RabbitMqPublish, ActivityKind.Producer) is not { } activity)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.MessagingRabbitMq);
         activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemRabbitMq);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish);

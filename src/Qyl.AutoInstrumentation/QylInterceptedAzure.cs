@@ -12,14 +12,11 @@ public static class QylInterceptedAzure
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string methodName)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Azure))
-            return null;
-
-        if (QylActivitySource.StartActivity(QylActivityNames.AzureSdk, ActivityKind.Client) is not { } activity)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AzureSdk);
-        return activity;
+        return QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.Azure,
+            QylActivityNames.AzureSdk,
+            ActivityKind.Client,
+            QylInstrumentationDomains.AzureSdk);
     }
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>

@@ -12,14 +12,11 @@ public static class QylInterceptedQuartz
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity()
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.Quartz))
-            return null;
-
-        if (QylActivitySource.StartActivity(QylActivityNames.QuartzExecute, ActivityKind.Internal) is not { } activity)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.JobQuartz);
-        return activity;
+        return QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.Quartz,
+            QylActivityNames.QuartzExecute,
+            ActivityKind.Internal,
+            QylInstrumentationDomains.JobQuartz);
     }
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>

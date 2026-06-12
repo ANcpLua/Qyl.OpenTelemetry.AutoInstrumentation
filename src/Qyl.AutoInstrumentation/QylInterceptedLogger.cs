@@ -72,10 +72,14 @@ public static class QylInterceptedLogger
         if (severity is null || !logger.IsEnabled(logLevel))
             return null;
 
-        if (QylActivitySource.StartActivity(QylActivityNames.LoggerLog, ActivityKind.Internal) is not { } activity)
+        var activity = QylActivityFactory.StartLogActivity(
+            QylAutoInstrumentationIds.ILogger,
+            QylActivityNames.LoggerLog,
+            ActivityKind.Internal,
+            QylInstrumentationDomains.LogILogger);
+        if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.LogILogger);
         activity.SetTag(QylSemanticAttributes.LogSeverity, severity);
 
         if (exception is not null)
