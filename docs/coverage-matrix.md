@@ -41,8 +41,8 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 |---|---:|
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 11 |
-| `verified_nativeaot` | 22 |
+| `verified_managed` | 10 |
+| `verified_nativeaot` | 23 |
 
 ## Matrix
 
@@ -76,7 +76,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 26 | `signals.traces.WCFSERVICE` | `unsupported_nativeaot` | `unsupported_nativeaot` | `library_internal` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
 | 27 | `signals.metrics.ASPNET` | `unsupported_nativeaot` | `unsupported_nativeaot` | `user_code` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
 | 28 | `signals.metrics.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
-| 29 | `signals.metrics.HTTPCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_managed` | Qyl public telemetry listeners/meters |
+| 29 | `signals.metrics.HTTPCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 30 | `signals.metrics.NETRUNTIME` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 31 | `signals.metrics.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator + QylDbClientMetrics |
 | 32 | `signals.metrics.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator + QylNServiceBusMetrics |
