@@ -31,8 +31,8 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | `environment_control` | 7 |
 | `framework_initialization` | 1 |
 | `instrumentation_option` | 16 |
-| `runtime_public_telemetry` | 7 |
-| `source_interceptor` | 25 |
+| `runtime_public_telemetry` | 8 |
+| `source_interceptor` | 24 |
 | `unsupported_nativeaot` | 4 |
 
 ## Evidence counts
@@ -57,7 +57,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 7 | `signals.traces.ENTITYFRAMEWORKCORE` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 8 | `signals.traces.GRAPHQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 9 | `signals.traces.GRPCNETCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
-| 10 | `signals.traces.HTTPCLIENT` | `source_interceptor` | `implemented` | `both` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
+| 10 | `signals.traces.HTTPCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 11 | `signals.traces.KAFKA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 12 | `signals.traces.MASSTRANSIT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |

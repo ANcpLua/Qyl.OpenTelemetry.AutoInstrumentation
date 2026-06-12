@@ -27,6 +27,7 @@ def run_published_container(
     image: str,
     container_port: int,
     host_port: int | None = None,
+    platform: str | None = None,
     container_env: dict[str, str] | None = None,
     command: list[str] | None = None,
     timeout_seconds: int = 90,
@@ -42,6 +43,8 @@ def run_published_container(
         "--name",
         name,
     ]
+    if platform is not None:
+        command_line.extend(["--platform", platform])
     for key, value in (container_env or {}).items():
         command_line.extend(["--env", f"{key}={value}"])
     command_line.extend(

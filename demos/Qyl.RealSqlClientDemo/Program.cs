@@ -45,6 +45,7 @@ await using (var connection = new SqlConnection(connectionString))
 
 var report = SqlClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
+    Environment.GetEnvironmentVariable("QYL_SQLCLIENT_EXPECTED_PORT") ?? "11433",
     captured.ToArray());
 
 var json = JsonSerializer.Serialize(report, RealSqlClientJsonContext.Default.SqlClientReport);
@@ -112,7 +113,7 @@ internal sealed record SqlClientReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
-    public static SqlClientReport Create(string runtimeMode, CapturedActivity[] activities)
+    public static SqlClientReport Create(string runtimeMode, string expectedServerPort, CapturedActivity[] activities)
     {
         var failures = new List<string>();
         var sqlSpans = activities
@@ -134,7 +135,7 @@ internal sealed record SqlClientReport(
         RequireTag(successSelect, "db.operation.name", "SELECT", failures);
         RequireTag(successSelect, "db.query.summary", "Text SELECT", failures);
         RequireTag(successSelect, "server.address", "127.0.0.1", failures);
-        RequireTag(successSelect, "server.port", "11433", failures);
+        RequireTag(successSelect, "server.port", expectedServerPort, failures);
         RequireMissingTag(successSelect, "db.query.text", failures);
         RequireTag(errorSelect, "error.type", "208", failures);
         RequireTag(errorSelect, "db.operation.name", "SELECT", failures);

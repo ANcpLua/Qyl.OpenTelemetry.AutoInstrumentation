@@ -415,6 +415,11 @@ def verify_contract_item(item: dict[str, Any]) -> None:
             for token in required_tokens:
                 if token not in evidence:
                     fail(f"source_interceptor item must carry generator and consumer proof for {key}: missing {token}")
+            if not any(
+                entry.startswith("tools/verify-real-") and entry.endswith("-demo.py")
+                for entry in evidence
+            ):
+                fail(f"source_interceptor item must carry real demo verifier evidence: {key}")
         if lane == "runtime_public_telemetry":
             proof_tokens = [
                 "src/Qyl.AutoInstrumentation.DiagnosticListeners",

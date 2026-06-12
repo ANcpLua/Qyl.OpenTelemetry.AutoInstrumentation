@@ -319,15 +319,16 @@ contract_items:
   status: experimental
   index: 10
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
-  lane: source_interceptor
+  lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: both
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - demos/Qyl.RealHttpClientDemo
+  - tools/verify-real-http-client-demo.py
   conformance_signals:
   - kind: span
     name: httpclient.downstream
@@ -712,6 +713,8 @@ contract_items:
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealSqlClientDemo
+  - tools/verify-real-sqlclient-demo.py
   conformance_signals:
   - kind: span
     name: sqlclient.command
@@ -1068,6 +1071,8 @@ contract_items:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - src/Qyl.AutoInstrumentation/QylDbClientMetrics.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealSqlClientDemo
+  - tools/verify-real-sqlclient-demo.py
   - demos/Qyl.RealNpgsqlDemo
   - tools/verify-real-npgsql-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -1188,6 +1193,8 @@ contract_items:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - src/Qyl.AutoInstrumentation/QylDbClientMetrics.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealSqlClientDemo
+  - tools/verify-real-sqlclient-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.ILOGGER
   signal: logs
@@ -1219,6 +1226,8 @@ contract_items:
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealILoggerDemo
+  - tools/verify-real-ilogger-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.LOG4NET
   signal: logs
