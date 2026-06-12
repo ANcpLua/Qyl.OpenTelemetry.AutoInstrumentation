@@ -128,7 +128,7 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: both
   payload_access: typed_public
-  evidence_level: verified_managed
+  evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
   - src/Qyl.AutoInstrumentation.DiagnosticListeners
