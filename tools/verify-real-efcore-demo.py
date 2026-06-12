@@ -10,7 +10,7 @@ from typing import Any
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECT = ROOT / "demos" / "Qyl.RealGrpcClientDemo" / "Qyl.RealGrpcClientDemo.csproj"
+PROJECT = ROOT / "demos" / "Qyl.RealEfCoreDemo" / "Qyl.RealEfCoreDemo.csproj"
 TARGET_FRAMEWORK = "net10.0"
 
 
@@ -28,21 +28,21 @@ def runtime_identifier() -> str:
     if system == "windows":
         return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
 
-    fail(f"unsupported NativeAOT gRPC client gate platform: {platform.system()} {platform.machine()}")
+    fail(f"unsupported NativeAOT EFCore gate platform: {platform.system()} {platform.machine()}")
 
 
 def parse_report(stdout: str) -> dict[str, Any]:
     start = stdout.find("{\n")
     if start < 0:
-        fail(f"gRPC client demo did not emit JSON report\nstdout={stdout}")
+        fail(f"EFCore demo did not emit JSON report\nstdout={stdout}")
 
     try:
         report = json.loads(stdout[start:])
     except json.JSONDecodeError as exc:
-        fail(f"gRPC client demo emitted invalid JSON report: {exc}\nstdout={stdout}")
+        fail(f"EFCore demo emitted invalid JSON report: {exc}\nstdout={stdout}")
 
     if not isinstance(report, dict):
-        fail(f"gRPC client demo report must be a JSON object: {report!r}")
+        fail(f"EFCore demo report must be a JSON object: {report!r}")
     return report
 
 
@@ -55,8 +55,8 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
-    if "expected-failure=Unavailable" not in completed.stdout:
-        fail(f"{name} missing expected gRPC failure token\nstdout={completed.stdout}")
+    if "expected-failure=SqliteException" not in completed.stdout:
+        fail(f"{name} missing expected EFCore failure token\nstdout={completed.stdout}")
 
     report = parse_report(completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
@@ -65,18 +65,8 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
     activities = report.get("Activities")
-    if not isinstance(activities, list):
-        fail(f"{name} report Activities must be an array: {activities!r}")
-
-    grpc_activities = [
-        activity
-        for activity in activities
-        if isinstance(activity, dict)
-        and isinstance(activity.get("Tags"), dict)
-        and activity["Tags"].get("qyl.instrumentation.domain") == "rpc.grpc"
-    ]
-    if len(grpc_activities) != 2:
-        fail(f"{name} expected exactly 2 gRPC client activities, got {grpc_activities!r}")
+    if not isinstance(activities, list) or len(activities) != 3:
+        fail(f"{name} expected exactly 3 EFCore activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -105,6 +95,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
             "-r",
             runtime_identifier(),
             "-p:PublishAot=true",
+            "-p:QylEfCoreUseCompiledModel=true",
             "-p:TreatWarningsAsErrors=false",
             "--self-contained",
             "true",
@@ -116,9 +107,9 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
         ROOT,
         env,
     )
-    executable = output / ("Qyl.RealGrpcClientDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealGrpcClientDemo")
+    executable = output / ("Qyl.RealEfCoreDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealEfCoreDemo")
     if not executable.exists():
-        fail(f"NativeAOT gRPC client executable missing: {executable}")
+        fail(f"NativeAOT EFCore executable missing: {executable}")
 
     return subprocess.run(
         [str(executable)],
@@ -135,9 +126,9 @@ def main() -> None:
     env = clean_env()
     managed = run_managed(env)
     nativeaot = run_nativeaot(env)
-    verify_report("managed gRPC client demo", managed, "dynamic-code-supported")
-    verify_report("NativeAOT gRPC client demo", nativeaot, "nativeaot")
-    print("real-grpc-client-demo-ok")
+    verify_report("managed EFCore demo", managed, "dynamic-code-supported")
+    verify_report("NativeAOT EFCore demo", nativeaot, "nativeaot")
+    print("real-efcore-demo-ok")
 
 
 if __name__ == "__main__":

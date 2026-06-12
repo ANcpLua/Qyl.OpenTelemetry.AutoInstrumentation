@@ -199,6 +199,29 @@ def verify_handoff_real_demo_coverage(artifacts: ModuleType, contract: dict[str,
         fail(f"real demo evidence missing from whole-goal handoff gate: {missing}")
 
 
+def verify_nativeaot_evidence_is_executable(artifacts: ModuleType, contract: dict[str, Any]) -> None:
+    for item in artifacts.implemented_signal_items(contract):
+        if item.get("evidence_level") != "verified_nativeaot":
+            continue
+
+        verifier_paths = [
+            evidence
+            for evidence in item.get("evidence", [])
+            if isinstance(evidence, str)
+            and evidence.startswith("tools/verify")
+            and evidence.endswith(".py")
+        ]
+        native_verifiers: list[str] = []
+        for verifier_path in verifier_paths:
+            verifier = ROOT / verifier_path
+            text = verifier.read_text()
+            if "run_nativeaot" in text and "nativeaot" in text.lower():
+                native_verifiers.append(verifier_path)
+
+        if not native_verifiers:
+            fail(f"verified_nativeaot item has no executable NativeAOT verifier evidence: {item['key']}")
+
+
 def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     items = artifacts.contract_items(contract)
     options = OPTIONS_PATH.read_text()
@@ -704,6 +727,7 @@ def main() -> None:
     verify_contract_artifacts(artifacts, contract)
     verify_managed_evidence_boundaries(artifacts, contract)
     verify_handoff_real_demo_coverage(artifacts, contract)
+    verify_nativeaot_evidence_is_executable(artifacts, contract)
     verify_generator_keys(artifacts, contract)
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()

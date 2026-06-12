@@ -37,6 +37,8 @@ ownership_items:
   - src/Qyl.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
   - tools/verify-otlp-collector-fixtures.py
+  - demos/Qyl.RealAspNetCoreDemo
+  - tools/verify-real-aspnetcore-demo.py
   conformance_signals:
   - kind: span
     name: aspnetcore.server
@@ -98,6 +100,8 @@ ownership_items:
   - src/Qyl.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
   - tools/verify-otlp-collector-fixtures.py
+  - demos/Qyl.RealEfCoreDemo
+  - tools/verify-real-efcore-demo.py
   conformance_signals:
   - kind: span
     name: efcore.sqlite
