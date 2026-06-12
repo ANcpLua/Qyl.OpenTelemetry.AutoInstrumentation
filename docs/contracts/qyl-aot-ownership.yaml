@@ -458,6 +458,22 @@ ownership_items:
   - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreMetricsDemo
   - tools/verify-real-aspnetcore-metrics-demo.py
+  conformance_signals:
+  - kind: metric
+    name: aspnetcore.components.render_diff.duration
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: aspnetcore.components.render_diff.size
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: aspnetcore.components.update_parameters.duration
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_029
   key: signals.metrics.HTTPCLIENT
   lane: runtime_public_telemetry
@@ -470,6 +486,15 @@ ownership_items:
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealHttpClientDemo
   - tools/verify-real-http-client-demo.py
+  conformance_signals:
+  - kind: metric
+    name: http.client.request.duration
+    required_attributes:
+    - http.request.method
+    recommended_attributes:
+    - http.response.status_code
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_030
   key: signals.metrics.NETRUNTIME
   lane: runtime_public_telemetry
@@ -483,6 +508,22 @@ ownership_items:
   - src/Qyl.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
+  conformance_signals:
+  - kind: metric
+    name: dotnet.gc.collections
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.gc.last_collection.heap.size
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.thread_pool.thread.count
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
   key: signals.metrics.NPGSQL
   lane: source_interceptor
@@ -524,6 +565,22 @@ ownership_items:
   - src/Qyl.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
+  conformance_signals:
+  - kind: metric
+    name: dotnet.process.cpu.time
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.process.memory.working_set
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.process.cpu.count
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_034
   key: signals.metrics.SQLCLIENT
   lane: source_interceptor

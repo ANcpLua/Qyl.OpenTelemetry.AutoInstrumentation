@@ -933,6 +933,22 @@ contract_items:
   - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreMetricsDemo
   - tools/verify-real-aspnetcore-metrics-demo.py
+  conformance_signals:
+  - kind: metric
+    name: aspnetcore.components.render_diff.duration
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: aspnetcore.components.render_diff.size
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: aspnetcore.components.update_parameters.duration
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.HTTPCLIENT
   signal: metrics
@@ -966,6 +982,15 @@ contract_items:
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealHttpClientDemo
   - tools/verify-real-http-client-demo.py
+  conformance_signals:
+  - kind: metric
+    name: http.client.request.duration
+    required_attributes:
+    - http.request.method
+    recommended_attributes:
+    - http.response.status_code
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NETRUNTIME
   signal: metrics
@@ -996,6 +1021,22 @@ contract_items:
   - src/Qyl.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
+  conformance_signals:
+  - kind: metric
+    name: dotnet.gc.collections
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.gc.last_collection.heap.size
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.thread_pool.thread.count
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NPGSQL
   signal: metrics
@@ -1091,6 +1132,22 @@ contract_items:
   - src/Qyl.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
+  conformance_signals:
+  - kind: metric
+    name: dotnet.process.cpu.time
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.process.memory.working_set
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
+  - kind: metric
+    name: dotnet.process.cpu.count
+    required_attributes: []
+    recommended_attributes: []
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.SQLCLIENT
   signal: metrics

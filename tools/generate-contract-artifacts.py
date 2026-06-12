@@ -72,6 +72,22 @@ CONFORMANCE_PROFILES = [
             "log4net.log",
         ],
     },
+    {
+        "service_name": "qyl-metrics-aot-demo",
+        "profile_id": "qyl-aot-metrics",
+        "signal_names": [
+            "aspnetcore.components.render_diff.duration",
+            "aspnetcore.components.render_diff.size",
+            "aspnetcore.components.update_parameters.duration",
+            "http.client.request.duration",
+            "dotnet.gc.collections",
+            "dotnet.gc.last_collection.heap.size",
+            "dotnet.thread_pool.thread.count",
+            "dotnet.process.cpu.time",
+            "dotnet.process.memory.working_set",
+            "dotnet.process.cpu.count",
+        ],
+    },
 ]
 README_START = "<!-- qyl-contract-summary:start -->"
 README_END = "<!-- qyl-contract-summary:end -->"
