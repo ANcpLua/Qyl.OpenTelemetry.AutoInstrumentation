@@ -108,8 +108,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("GraphQl", "executer", AppendGraphQlStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync", AppendAfterActivityStatement: AppendGraphQlExecutionOptionsStatement)),
             new InterceptorEmissionDescriptor(InterceptorKind.MongoDbCollection, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("MongoDb", "collection", AppendMongoDbStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync")),
             new InterceptorEmissionDescriptor(InterceptorKind.RabbitMqBasicPublish, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("RabbitMq", "channel", AppendRabbitMqStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);")),
-            new InterceptorEmissionDescriptor(InterceptorKind.ILoggerExtensionLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitLoggerExtensionInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.ILoggerLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitLoggerInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.ILoggerExtensionLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, LoggerBody: new LoggerBodyDescriptor(LoggerInterceptorBodyKind.LoggerExtensionLog, "LoggerExtensions")),
+            new InterceptorEmissionDescriptor(InterceptorKind.ILoggerLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, LoggerBody: new LoggerBodyDescriptor(LoggerInterceptorBodyKind.ILoggerLog, "ILogger_Log")),
             new InterceptorEmissionDescriptor(InterceptorKind.NLogLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog")),
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreDbContext", "dbContext", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
@@ -279,6 +279,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (descriptor.ForwardingBody.IsDefined)
             {
                 EmitForwardingInterceptor(builder, invocation, index, descriptor.ForwardingBody);
+                continue;
+            }
+
+            if (descriptor.LoggerBody.IsDefined)
+            {
+                EmitLoggerInterceptor(builder, invocation, index, descriptor.LoggerBody);
                 continue;
             }
 
@@ -1027,7 +1033,26 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("null");
     }
 
-    private static void EmitLoggerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    private static void EmitLoggerInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        LoggerBodyDescriptor descriptor)
+    {
+        if (descriptor.Kind is LoggerInterceptorBodyKind.ILoggerLog)
+        {
+            EmitDirectLoggerInterceptor(builder, invocation, index, descriptor);
+            return;
+        }
+
+        EmitLoggerExtensionInterceptor(builder, invocation, index, descriptor);
+    }
+
+    private static void EmitDirectLoggerInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        LoggerBodyDescriptor descriptor)
     {
         var attribute = Microsoft.CodeAnalysis.CSharp.CSharpExtensions.GetInterceptsLocationAttributeSyntax(invocation.Location);
         var displayLocation = invocation.Location.GetDisplayLocation();
@@ -1035,7 +1060,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(displayLocation);
         builder.Append("        ");
         builder.AppendLine(attribute);
-        builder.Append("        public static void ILogger_Log_");
+        builder.Append("        public static void ");
+        builder.Append(descriptor.MethodPrefix);
+        builder.Append('_');
         builder.Append(index.ToString(System.Globalization.CultureInfo.InvariantCulture));
         builder.AppendLine("<TState>(");
         builder.AppendLine("            this global::Microsoft.Extensions.Logging.ILogger logger,");
@@ -1048,10 +1075,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
-    private static void EmitLoggerExtensionInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    private static void EmitLoggerExtensionInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        LoggerBodyDescriptor descriptor)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, "void", "LoggerExtensions_" + target.MethodName, index, target.ReceiverType, "logger", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(builder, invocation.Location, "void", descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, "logger", target.Parameters, isAsync: false);
         builder.Append("            => global::Qyl.AutoInstrumentation.QylInterceptedLogger.LogExtension(logger, ");
         AppendLoggerLevelExpression(builder, target);
         builder.Append(", ");
@@ -3576,6 +3607,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         RuntimeMetric,
     }
 
+    private enum LoggerInterceptorBodyKind
+    {
+        None,
+        ILoggerLog,
+        LoggerExtensionLog,
+    }
+
     private readonly record struct InterceptorEmissionDescriptor(
         InterceptorKind Kind,
         InterceptorEmitterFamily Family,
@@ -3586,7 +3624,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorEmitter? Emitter = null,
         TraceInterceptorBodyDescriptor TraceBody = default,
         ForwardingInterceptorBodyDescriptor ForwardingBody = default,
+        LoggerBodyDescriptor LoggerBody = default,
         ExternalLoggerBodyDescriptor ExternalLoggerBody = default);
+
+    private readonly record struct LoggerBodyDescriptor(
+        LoggerInterceptorBodyKind Kind,
+        string MethodPrefix,
+        bool IsDefined = true);
 
     private readonly record struct ExternalLoggerBodyDescriptor(
         string DomainExpression,
