@@ -88,6 +88,11 @@ CONFORMANCE_PROFILES = [
             "dotnet.process.cpu.count",
         ],
     },
+    {
+        "service_name": "qyl-unsupported-nativeaot-demo",
+        "profile_id": "qyl-aot-unsupported-nativeaot",
+        "signal_names": [],
+    },
 ]
 README_START = "<!-- qyl-contract-summary:start -->"
 README_END = "<!-- qyl-contract-summary:end -->"
@@ -461,6 +466,8 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
 
     assigned_names: set[str] = set()
     for profile in CONFORMANCE_PROFILES:
+        if profile["profile_id"] == "qyl-aot-unsupported-nativeaot" and profile["signal_names"]:
+            fail("unsupported NativeAOT conformance profile must expect no signals")
         for name in profile["signal_names"]:
             if name in assigned_names:
                 fail(f"conformance signal assigned to multiple profiles: {name}")
