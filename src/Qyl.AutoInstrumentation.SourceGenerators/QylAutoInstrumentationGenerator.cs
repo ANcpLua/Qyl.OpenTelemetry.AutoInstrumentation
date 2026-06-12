@@ -51,32 +51,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static readonly ImmutableArray<InterceptorMatcherDescriptor> s_matcherDescriptors =
         ImmutableArray.Create(
-            new InterceptorMatcherDescriptor("HttpClient", "global::System.Net.Http.HttpClient", ContractKeys("signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"), InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, TryGetHttpClientInvocation),
-            new InterceptorMatcherDescriptor("HttpWebRequest", "global::System.Net.HttpWebRequest", ContractKeys("signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"), InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, TryGetHttpWebRequestInvocation),
-            new InterceptorMatcherDescriptor("AspNetCoreWebApplicationBuilderBuild", "global::Microsoft.AspNetCore.Builder.WebApplicationBuilder", "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, TryGetAspNetCoreWebApplicationBuilderBuildInvocation),
-            new InterceptorMatcherDescriptor("AspNetCoreRequestDelegate", "global::Microsoft.AspNetCore.Http.RequestDelegate", "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, TryGetAspNetCoreRequestDelegateInvocation),
-            new InterceptorMatcherDescriptor("AspNetCoreEndpointMap", "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions", "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, TryGetAspNetCoreEndpointMapInvocation),
-            new InterceptorMatcherDescriptor("MeterProviderBuilderAddMeter", "global::OpenTelemetry.Metrics.MeterProviderBuilder", ContractKeys("signals.metrics.ASPNETCORE", "signals.metrics.HTTPCLIENT", "signals.metrics.NETRUNTIME", "signals.metrics.NPGSQL", "signals.metrics.NSERVICEBUS", "signals.metrics.PROCESS", "signals.metrics.SQLCLIENT"), InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, TryGetMeterProviderBuilderAddMeterInvocation),
-            new InterceptorMatcherDescriptor("AzureClient", "Azure.*Client", "signals.traces.AZURE", InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, TryGetAzureClientInvocation),
-            new InterceptorMatcherDescriptor("Elastic", "Elastic.Clients.Elasticsearch.*Client|Elastic.Transport.ITransport", ContractKeys("signals.traces.ELASTICSEARCH", "signals.traces.ELASTICTRANSPORT"), InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, TryGetElasticInvocation),
-            new InterceptorMatcherDescriptor("WcfClient", "global::System.ServiceModel.ClientBase<TChannel>", "signals.traces.WCFCLIENT", InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, TryGetWcfClientInvocation),
-            new InterceptorMatcherDescriptor("GrpcNetClientUnary", "global::Grpc.Core.ClientBase<T>", "signals.traces.GRPCNETCLIENT", InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, TryGetGrpcNetClientAsyncUnaryInvocation),
-            new InterceptorMatcherDescriptor("GrpcNetClientStreaming", "global::Grpc.Core.ClientBase<T>", "signals.traces.GRPCNETCLIENT", InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, TryGetGrpcNetClientStreamingInvocation),
-            new InterceptorMatcherDescriptor("Kafka", "Confluent.Kafka.IProducer<TKey,TValue>|Confluent.Kafka.IConsumer<TKey,TValue>", "signals.traces.KAFKA", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, TryGetKafkaInvocation),
-            new InterceptorMatcherDescriptor("MassTransit", "MassTransit.IPublishEndpoint|MassTransit.ISendEndpoint|MassTransit.ISendEndpointProvider", "signals.traces.MASSTRANSIT", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, TryGetMassTransitInvocation),
-            new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IEndpointInstance|NServiceBus.IPipelineContext", ContractKeys("signals.traces.NSERVICEBUS", "signals.metrics.NSERVICEBUS"), InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, TryGetNServiceBusInvocation),
-            new InterceptorMatcherDescriptor("Quartz", "Quartz.IJob", "signals.traces.QUARTZ", InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, TryGetQuartzInvocation),
-            new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabase", "signals.traces.STACKEXCHANGEREDIS", InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, TryGetStackExchangeRedisInvocation),
-            new InterceptorMatcherDescriptor("GraphQL", "GraphQL.IDocumentExecuter", "signals.traces.GRAPHQL", InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, TryGetGraphQlInvocation),
-            new InterceptorMatcherDescriptor("MongoDb", "MongoDB.Driver.IMongoCollection<TDocument>", "signals.traces.MONGODB", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetMongoDbInvocation),
-            new InterceptorMatcherDescriptor("RabbitMq", "RabbitMQ.Client.IModel|RabbitMQ.Client.IChannel", "signals.traces.RABBITMQ", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, TryGetRabbitMqInvocation),
-            new InterceptorMatcherDescriptor("LoggerExtensions", "global::Microsoft.Extensions.Logging.LoggerExtensions", "signals.logs.ILOGGER", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLoggerExtensionInvocation),
-            new InterceptorMatcherDescriptor("ILogger", "global::Microsoft.Extensions.Logging.ILogger", "signals.logs.ILOGGER", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLoggerInvocation),
-            new InterceptorMatcherDescriptor("NLog", "NLog.Logger", "signals.logs.NLOG", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetNLogInvocation),
-            new InterceptorMatcherDescriptor("Log4Net", "log4net.ILog|log4net.Core.ILogger", "signals.logs.LOG4NET", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLog4NetInvocation),
-            new InterceptorMatcherDescriptor("EntityFrameworkCoreDbContext", "global::Microsoft.EntityFrameworkCore.DbContext", "signals.traces.ENTITYFRAMEWORKCORE", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetEntityFrameworkCoreDbContextInvocation),
-            new InterceptorMatcherDescriptor("EntityFrameworkCoreQueryable", "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions", "signals.traces.ENTITYFRAMEWORKCORE", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncValue, TryGetEntityFrameworkCoreQueryableInvocation),
-            new InterceptorMatcherDescriptor("DbCommand", "global::System.Data.Common.DbCommand", ContractKeys("signals.traces.ADONET", "signals.traces.MYSQLCONNECTOR", "signals.traces.MYSQLDATA", "signals.traces.NPGSQL", "signals.traces.ORACLEMDA", "signals.traces.SQLCLIENT", "signals.traces.SQLITE", "signals.metrics.NPGSQL", "signals.metrics.SQLCLIENT"), InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetDbCommandInvocation));
+            new InterceptorMatcherDescriptor("HttpClient", "global::System.Net.Http.HttpClient", InterceptorKind.HttpClient, ContractKeys("signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"), InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, TryGetHttpClientInvocation),
+            new InterceptorMatcherDescriptor("HttpWebRequest", "global::System.Net.HttpWebRequest", InterceptorKind.HttpWebRequest, ContractKeys("signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"), InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, TryGetHttpWebRequestInvocation),
+            new InterceptorMatcherDescriptor("AspNetCoreWebApplicationBuilderBuild", "global::Microsoft.AspNetCore.Builder.WebApplicationBuilder", InterceptorKind.AspNetCoreWebApplicationBuilderBuild, "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, TryGetAspNetCoreWebApplicationBuilderBuildInvocation),
+            new InterceptorMatcherDescriptor("AspNetCoreRequestDelegate", "global::Microsoft.AspNetCore.Http.RequestDelegate", InterceptorKind.AspNetCoreRequestDelegate, "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, TryGetAspNetCoreRequestDelegateInvocation),
+            new InterceptorMatcherDescriptor("AspNetCoreEndpointMap", "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions", InterceptorKind.AspNetCoreEndpointMap, "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, TryGetAspNetCoreEndpointMapInvocation),
+            new InterceptorMatcherDescriptor("MeterProviderBuilderAddMeter", "global::OpenTelemetry.Metrics.MeterProviderBuilder", InterceptorKind.MeterProviderBuilderAddMeter, ContractKeys("signals.metrics.ASPNETCORE", "signals.metrics.HTTPCLIENT", "signals.metrics.NETRUNTIME", "signals.metrics.NPGSQL", "signals.metrics.NSERVICEBUS", "signals.metrics.PROCESS", "signals.metrics.SQLCLIENT"), InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, TryGetMeterProviderBuilderAddMeterInvocation),
+            new InterceptorMatcherDescriptor("AzureClient", "Azure.*Client", InterceptorKind.AzureClient, "signals.traces.AZURE", InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, TryGetAzureClientInvocation),
+            new InterceptorMatcherDescriptor("Elastic", "Elastic.Clients.Elasticsearch.*Client|Elastic.Transport.ITransport", InterceptorKinds(InterceptorKind.ElasticsearchClient, InterceptorKind.ElasticTransport), ContractKeys("signals.traces.ELASTICSEARCH", "signals.traces.ELASTICTRANSPORT"), InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, TryGetElasticInvocation),
+            new InterceptorMatcherDescriptor("WcfClient", "global::System.ServiceModel.ClientBase<TChannel>", InterceptorKind.WcfClient, "signals.traces.WCFCLIENT", InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, TryGetWcfClientInvocation),
+            new InterceptorMatcherDescriptor("GrpcNetClientUnary", "global::Grpc.Core.ClientBase<T>", InterceptorKind.GrpcNetClientAsyncUnaryCall, "signals.traces.GRPCNETCLIENT", InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, TryGetGrpcNetClientAsyncUnaryInvocation),
+            new InterceptorMatcherDescriptor("GrpcNetClientStreaming", "global::Grpc.Core.ClientBase<T>", InterceptorKinds(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall), "signals.traces.GRPCNETCLIENT", InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, TryGetGrpcNetClientStreamingInvocation),
+            new InterceptorMatcherDescriptor("Kafka", "Confluent.Kafka.IProducer<TKey,TValue>|Confluent.Kafka.IConsumer<TKey,TValue>", InterceptorKinds(InterceptorKind.KafkaProducer, InterceptorKind.KafkaConsumer), "signals.traces.KAFKA", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, TryGetKafkaInvocation),
+            new InterceptorMatcherDescriptor("MassTransit", "MassTransit.IPublishEndpoint|MassTransit.ISendEndpoint|MassTransit.ISendEndpointProvider", InterceptorKind.MassTransitMessageOperation, "signals.traces.MASSTRANSIT", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, TryGetMassTransitInvocation),
+            new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IEndpointInstance|NServiceBus.IPipelineContext", InterceptorKind.NServiceBusMessageOperation, ContractKeys("signals.traces.NSERVICEBUS", "signals.metrics.NSERVICEBUS"), InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, TryGetNServiceBusInvocation),
+            new InterceptorMatcherDescriptor("Quartz", "Quartz.IJob", InterceptorKind.QuartzJobExecute, "signals.traces.QUARTZ", InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, TryGetQuartzInvocation),
+            new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabase", InterceptorKind.StackExchangeRedisCommandAsync, "signals.traces.STACKEXCHANGEREDIS", InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, TryGetStackExchangeRedisInvocation),
+            new InterceptorMatcherDescriptor("GraphQL", "GraphQL.IDocumentExecuter", InterceptorKind.GraphQlDocumentExecuter, "signals.traces.GRAPHQL", InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, TryGetGraphQlInvocation),
+            new InterceptorMatcherDescriptor("MongoDb", "MongoDB.Driver.IMongoCollection<TDocument>", InterceptorKind.MongoDbCollection, "signals.traces.MONGODB", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetMongoDbInvocation),
+            new InterceptorMatcherDescriptor("RabbitMq", "RabbitMQ.Client.IModel|RabbitMQ.Client.IChannel", InterceptorKind.RabbitMqBasicPublish, "signals.traces.RABBITMQ", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, TryGetRabbitMqInvocation),
+            new InterceptorMatcherDescriptor("LoggerExtensions", "global::Microsoft.Extensions.Logging.LoggerExtensions", InterceptorKind.ILoggerExtensionLog, "signals.logs.ILOGGER", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLoggerExtensionInvocation),
+            new InterceptorMatcherDescriptor("ILogger", "global::Microsoft.Extensions.Logging.ILogger", InterceptorKind.ILoggerLog, "signals.logs.ILOGGER", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLoggerInvocation),
+            new InterceptorMatcherDescriptor("NLog", "NLog.Logger", InterceptorKind.NLogLogger, "signals.logs.NLOG", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetNLogInvocation),
+            new InterceptorMatcherDescriptor("Log4Net", "log4net.ILog|log4net.Core.ILogger", InterceptorKind.Log4NetLogger, "signals.logs.LOG4NET", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLog4NetInvocation),
+            new InterceptorMatcherDescriptor("EntityFrameworkCoreDbContext", "global::Microsoft.EntityFrameworkCore.DbContext", InterceptorKind.EntityFrameworkCoreDbContext, "signals.traces.ENTITYFRAMEWORKCORE", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetEntityFrameworkCoreDbContextInvocation),
+            new InterceptorMatcherDescriptor("EntityFrameworkCoreQueryable", "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions", InterceptorKind.EntityFrameworkCoreQueryable, "signals.traces.ENTITYFRAMEWORKCORE", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncValue, TryGetEntityFrameworkCoreQueryableInvocation),
+            new InterceptorMatcherDescriptor("DbCommand", "global::System.Data.Common.DbCommand", InterceptorKind.DbCommand, ContractKeys("signals.traces.ADONET", "signals.traces.MYSQLCONNECTOR", "signals.traces.MYSQLDATA", "signals.traces.NPGSQL", "signals.traces.ORACLEMDA", "signals.traces.SQLCLIENT", "signals.traces.SQLITE", "signals.metrics.NPGSQL", "signals.metrics.SQLCLIENT"), InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetDbCommandInvocation));
 
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         ImmutableArray.Create(
@@ -212,6 +212,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static void EnsureTargetDeclaredByMatcher(InterceptorMatcherDescriptor descriptor, InterceptorTarget target)
     {
+        EnsureKindDeclaredByMatcher(descriptor, target.Kind);
         EnsureContractDeclaredByMatcher(descriptor, target.ContractKey, target.Kind);
 
         if (target.AdditionalContractKeys is not { Length: > 0 } additionalContractKeys)
@@ -219,6 +220,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         foreach (var contractKey in additionalContractKeys)
             EnsureContractDeclaredByMatcher(descriptor, contractKey, target.Kind);
+    }
+
+    private static void EnsureKindDeclaredByMatcher(InterceptorMatcherDescriptor descriptor, InterceptorKind kind)
+    {
+        if ((descriptor.TargetKindMask & GetInterceptorKindMask(kind)) is not 0)
+            return;
+
+        throw new InvalidOperationException(
+            "Matcher descriptor '" + descriptor.Name + "' produced undeclared interceptor kind '" + kind + "'.");
     }
 
     private static void EnsureContractDeclaredByMatcher(
@@ -2997,6 +3007,24 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static EquatableArray<string> ContractKeys(params string[] contractKeys)
         => contractKeys.ToEquatableArray();
 
+    private static ulong InterceptorKinds(params InterceptorKind[] kinds)
+    {
+        var mask = 0UL;
+        foreach (var kind in kinds)
+            mask |= GetInterceptorKindMask(kind);
+
+        return mask;
+    }
+
+    private static ulong GetInterceptorKindMask(InterceptorKind kind)
+    {
+        var ordinal = (int)kind;
+        if ((uint)ordinal >= 64)
+            throw new InvalidOperationException("InterceptorKind ordinal is outside the descriptor bitmask range: " + kind);
+
+        return 1UL << ordinal;
+    }
+
     private static bool TryGetSendShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
         parameters = default;
@@ -4024,17 +4052,43 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         public InterceptorMatcherDescriptor(
             string name,
             string receiverTypePattern,
+            InterceptorKind targetKind,
             string contractKey,
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
             SymbolInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
         {
         }
 
         public InterceptorMatcherDescriptor(
             string name,
             string receiverTypePattern,
+            InterceptorKind targetKind,
+            EquatableArray<string> contractKeys,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            SymbolInterceptorMatcher matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), contractKeys, family, methodShape, matcher)
+        {
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            ulong targetKindMask,
+            string contractKey,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            SymbolInterceptorMatcher matcher)
+            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+        {
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            ulong targetKindMask,
             EquatableArray<string> contractKeys,
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
@@ -4042,6 +4096,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         {
             Name = name;
             ReceiverTypePattern = receiverTypePattern;
+            TargetKindMask = targetKindMask is 0
+                ? throw new InvalidOperationException("Matcher descriptor '" + name + "' must declare at least one interceptor kind.")
+                : targetKindMask;
             ContractKeys = contractKeys;
             Family = family;
             MethodShape = methodShape;
@@ -4052,17 +4109,43 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         public InterceptorMatcherDescriptor(
             string name,
             string receiverTypePattern,
+            InterceptorKind targetKind,
             string contractKey,
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
             ReceiverInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
         {
         }
 
         public InterceptorMatcherDescriptor(
             string name,
             string receiverTypePattern,
+            InterceptorKind targetKind,
+            EquatableArray<string> contractKeys,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            ReceiverInterceptorMatcher matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), contractKeys, family, methodShape, matcher)
+        {
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            ulong targetKindMask,
+            string contractKey,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            ReceiverInterceptorMatcher matcher)
+            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+        {
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            ulong targetKindMask,
             EquatableArray<string> contractKeys,
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
@@ -4070,6 +4153,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         {
             Name = name;
             ReceiverTypePattern = receiverTypePattern;
+            TargetKindMask = targetKindMask is 0
+                ? throw new InvalidOperationException("Matcher descriptor '" + name + "' must declare at least one interceptor kind.")
+                : targetKindMask;
             ContractKeys = contractKeys;
             Family = family;
             MethodShape = methodShape;
@@ -4080,6 +4166,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         public string Name { get; }
 
         public string ReceiverTypePattern { get; }
+
+        public ulong TargetKindMask { get; }
 
         public EquatableArray<string> ContractKeys { get; }
 

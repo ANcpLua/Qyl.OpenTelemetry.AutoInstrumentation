@@ -1118,6 +1118,30 @@ def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
     return matcher_keys
 
 
+def parse_matcher_descriptor_kinds(generator: str) -> set[str]:
+    try:
+        descriptor_block = generator.split("s_matcherDescriptors =", 1)[1].split("s_emissionDescriptors =", 1)[0]
+    except IndexError:
+        fail("s_matcherDescriptors block missing from generator")
+
+    descriptor_lines = [
+        line.strip()
+        for line in descriptor_block.splitlines()
+        if "new InterceptorMatcherDescriptor(" in line
+    ]
+    if not descriptor_lines:
+        fail("s_matcherDescriptors must declare source-visible matcher descriptors")
+
+    matcher_kinds: set[str] = set()
+    for line in descriptor_lines:
+        declared_kinds = set(re.findall(r"InterceptorKind\.([A-Za-z0-9]+)", line))
+        if not declared_kinds:
+            fail(f"matcher descriptor must declare target InterceptorKind values: {line}")
+        matcher_kinds.update(declared_kinds)
+
+    return matcher_kinds
+
+
 def parse_contract_keys_call_keys(generator: str) -> set[str]:
     keys: set[str] = set()
     for match in re.finditer(r"ContractKeys\((.*?)\)", generator, re.DOTALL):
@@ -1371,6 +1395,16 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail("matcher dispatch must invoke descriptor.TryMatch")
     if re.search(r"if\s*\(\s*TryGet[A-Za-z0-9]+Invocation\(", matcher_dispatch_block) is not None:
         fail("matcher dispatch must not reintroduce hand-coded TryGet*Invocation sequencing")
+    for token in [
+        "EnsureTargetDeclaredByMatcher(descriptor, target);",
+        "EnsureKindDeclaredByMatcher(descriptor, target.Kind);",
+        "public ulong TargetKindMask { get; }",
+        "GetInterceptorKindMask(kind)",
+        "Matcher descriptor '",
+        "produced undeclared interceptor kind",
+    ]:
+        if token not in generator:
+            fail(f"matcher dispatch must validate descriptor-declared InterceptorKind values: {token}")
 
     descriptor_kinds = parse_emission_descriptor_kinds(generator)
     descriptor_missing = kinds - descriptor_kinds
@@ -1379,6 +1413,15 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail(
             "InterceptorKind descriptor mismatch: "
             f"missing={sorted(descriptor_missing)} extra={sorted(descriptor_extra)}"
+        )
+
+    matcher_kinds = parse_matcher_descriptor_kinds(generator)
+    matcher_missing = descriptor_kinds - matcher_kinds
+    matcher_extra = matcher_kinds - descriptor_kinds
+    if matcher_missing or matcher_extra:
+        fail(
+            "InterceptorKind matcher descriptor mismatch: "
+            f"missing={sorted(matcher_missing)} extra={sorted(matcher_extra)}"
         )
 
     target_missing = {
