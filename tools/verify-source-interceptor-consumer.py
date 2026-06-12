@@ -599,7 +599,8 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "HttpClient_PostAsync_",
         "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.PostAsync(",
         "DbCommand_ExecuteScalar_",
-        "global::Qyl.AutoInstrumentation.QylDbClientMetrics.GetTimestamp()",
+        "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.GetTimestamp()",
+        "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordDuration(",
         "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(",
     ]:
         if token not in text:

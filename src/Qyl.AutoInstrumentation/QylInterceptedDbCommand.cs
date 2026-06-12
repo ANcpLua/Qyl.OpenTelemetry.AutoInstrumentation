@@ -47,13 +47,21 @@ public static class QylInterceptedDbCommand
     {
     }
 
+    /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
+    public static long GetTimestamp()
+        => QylDurationMetrics.GetDbClientStartTimestamp();
+
+    /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
+    public static void RecordDuration(long startTimestamp, string instrumentationId)
+        => QylDurationMetrics.RecordDbClientDuration(startTimestamp, instrumentationId);
+
     /// <summary>Observes an asynchronous database command and records qyl success, exception, and duration telemetry.</summary>
     public static Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(task);
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
-        if (activity is null && !QylDbClientMetrics.IsRecordingEnabled(instrumentationId))
+        if (activity is null && !QylDurationMetrics.IsDbClientRecordingEnabled(instrumentationId))
             return task;
 
         return ObserveSlowAsync(task, activity, metricStart, instrumentationId);
@@ -65,13 +73,13 @@ public static class QylInterceptedDbCommand
         {
             var result = await task.ConfigureAwait(false);
             RecordSuccess(activity);
-            QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
+            QylDurationMetrics.RecordDbClientDuration(metricStart, instrumentationId);
             return result;
         }
         catch (Exception exception)
         {
             RecordException(activity, exception);
-            QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
+            QylDurationMetrics.RecordDbClientDuration(metricStart, instrumentationId);
             throw;
         }
         finally

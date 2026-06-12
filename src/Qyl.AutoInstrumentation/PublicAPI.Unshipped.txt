@@ -5,3 +5,7 @@ const Qyl.AutoInstrumentation.QylMetricNames.AspNetCoreComponentsRenderDiffSize 
 const Qyl.AutoInstrumentation.QylMetricNames.AspNetCoreComponentsUpdateParametersDuration = "aspnetcore.components.update_parameters.duration" -> string!
 static Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
 static Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
+static Qyl.AutoInstrumentation.QylInterceptedDbCommand.GetTimestamp() -> long
+static Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
+static Qyl.AutoInstrumentation.QylInterceptedNServiceBus.GetTimestamp() -> long
+static Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void

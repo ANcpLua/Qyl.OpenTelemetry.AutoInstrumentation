@@ -488,6 +488,50 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
                 fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
 
 
+def verify_intercepted_runtime_duration_metric_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylDurationMetrics.cs").read_text()
+    for token in [
+        "QylHttpClientMetrics.RecordRequestDuration(startTimeUtc, method, statusCode);",
+        "QylHttpClientMetrics.RecordRequestDurationUnchecked(startTimeUtc, method, statusCode);",
+        "QylDbClientMetrics.GetTimestamp();",
+        "QylDbClientMetrics.RecordDuration(startTimestamp, instrumentationId);",
+        "QylNServiceBusMetrics.GetTimestamp();",
+        "QylNServiceBusMetrics.RecordDuration(startTimestamp, operationName);",
+    ]:
+        if token not in helper:
+            fail(f"QylDurationMetrics must own duration metric token: {token}")
+
+    generator = GENERATOR_PATH.read_text()
+    for token in [
+        "QylDbClientMetrics.GetTimestamp",
+        "QylDbClientMetrics.RecordDuration",
+        "QylNServiceBusMetrics.GetTimestamp",
+        "QylNServiceBusMetrics.RecordDuration",
+    ]:
+        if token in generator:
+            fail(f"source generator must delegate duration metrics through QylIntercepted runtime helpers: {token}")
+
+    duration_owned_helpers = {
+        "QylInterceptedDbCommand.cs",
+        "QylInterceptedHttpClient.cs",
+        "QylInterceptedHttpWebRequest.cs",
+        "QylInterceptedNServiceBus.cs",
+    }
+    forbidden_tokens = [
+        "QylHttpClientMetrics.RecordRequestDuration",
+        "QylDbClientMetrics.GetTimestamp",
+        "QylDbClientMetrics.RecordDuration",
+        "QylDbClientMetrics.IsRecordingEnabled",
+        "QylNServiceBusMetrics.GetTimestamp",
+        "QylNServiceBusMetrics.RecordDuration",
+    ]
+    for name in sorted(duration_owned_helpers):
+        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        for token in forbidden_tokens:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate duration metrics to QylDurationMetrics: src/Qyl.AutoInstrumentation/{name} {token}")
+
+
 def verify_intercepted_runtime_semantic_tag_policy() -> None:
     helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityTags.cs").read_text()
     for token in [
@@ -567,6 +611,7 @@ def verify_behavior_semantics_contract() -> None:
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
     verify_intercepted_runtime_activity_start_policy()
+    verify_intercepted_runtime_duration_metric_policy()
     verify_intercepted_runtime_semantic_tag_policy()
     verify_intercepted_runtime_async_observer_policy()
 

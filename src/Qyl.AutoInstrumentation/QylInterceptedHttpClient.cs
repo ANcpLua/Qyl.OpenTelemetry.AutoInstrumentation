@@ -581,7 +581,7 @@ public static class QylInterceptedHttpClient
         string? rawRequestUri)
     {
         method = QylHttpMethod.Normalize(method);
-        var startTimeUtc = metricsEnabled ? TimeProvider.System.GetUtcNow().UtcDateTime : default;
+        var startTimeUtc = QylDurationMetrics.GetHttpClientStartTimeUtc(metricsEnabled);
         Activity? activity = null;
 
         if (traceEnabled)
@@ -708,7 +708,7 @@ public static class QylInterceptedHttpClient
         if (!observation.RecordMetrics)
             return;
 
-        QylHttpClientMetrics.RecordRequestDurationUnchecked(
+        QylDurationMetrics.RecordHttpClientDurationUnchecked(
             observation.StartTimeUtc,
             observation.Method,
             statusCode);

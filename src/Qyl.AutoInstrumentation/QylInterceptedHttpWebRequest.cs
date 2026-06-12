@@ -12,7 +12,7 @@ public static class QylInterceptedHttpWebRequest
 
     /// <summary>Runs the Get Start Time Utc runtime helper used by source-generated qyl interceptors.</summary>
     public static DateTime GetStartTimeUtc()
-        => QylHttpClientMetrics.IsRecordingEnabled ? TimeProvider.System.GetUtcNow().UtcDateTime : default;
+        => QylDurationMetrics.GetHttpClientStartTimeUtc();
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(HttpWebRequest request, string methodName)
@@ -92,7 +92,7 @@ public static class QylInterceptedHttpWebRequest
         if (startTimeUtc == default)
             return;
 
-        QylHttpClientMetrics.RecordRequestDuration(
+        QylDurationMetrics.RecordHttpClientDuration(
             startTimeUtc,
             method,
             statusCode);

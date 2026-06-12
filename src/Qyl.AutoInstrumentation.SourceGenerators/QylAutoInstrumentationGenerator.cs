@@ -109,7 +109,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreDbContext", "dbContext", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreQueryable, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreQueryable", "query", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
-            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, DbCommandBody: new DbCommandBodyDescriptor("DbCommand", "command", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand", "global::Qyl.AutoInstrumentation.QylDbClientMetrics")));
+            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, DbCommandBody: new DbCommandBodyDescriptor("DbCommand", "command", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand")));
 
     /// <summary>
     /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
@@ -559,7 +559,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static void AppendNServiceBusMetricStartStatement(StringBuilder builder, InterceptorTarget target)
-        => builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.GetTimestamp();");
+        => builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.GetTimestamp();");
 
     private static void AppendNServiceBusStartActivity(StringBuilder builder, InterceptorTarget target)
     {
@@ -570,7 +570,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static void AppendNServiceBusRecordDurationStatement(StringBuilder builder, InterceptorTarget target)
     {
-        builder.Append("                global::Qyl.AutoInstrumentation.QylNServiceBusMetrics.RecordDuration(metricStart, ");
+        builder.Append("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordDuration(metricStart, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
     }
