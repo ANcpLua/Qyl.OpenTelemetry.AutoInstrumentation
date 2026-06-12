@@ -31,6 +31,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptedInvocation invocation,
         int index);
 
+    private delegate void TraceActivityExpressionEmitter(
+        StringBuilder builder,
+        InterceptorTarget target);
+
     private delegate bool SymbolInterceptorMatcher(
         IMethodSymbol symbol,
         out InterceptorTarget target);
@@ -308,6 +312,129 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            {");
         builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("            }");
+    }
+
+    private static void EmitTraceInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        TraceInterceptorBodyDescriptor descriptor)
+    {
+        var target = invocation.Target;
+        var signatureIsAsync = target.IsAsync && !descriptor.RuntimeObservesAsync;
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            descriptor.MethodPrefix + "_" + target.MethodName,
+            index,
+            target.ReceiverType,
+            descriptor.ReceiverName,
+            target.Parameters,
+            signatureIsAsync,
+            target.TypeParameterList,
+            target.ConstraintClauses);
+        builder.AppendLine("        {");
+        builder.Append("            var activity = ");
+        descriptor.AppendStartActivityExpression(builder, target);
+        builder.AppendLine(";");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+
+        EmitTraceInvocation(builder, target, descriptor);
+
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.Append("                ");
+        builder.AppendLine(descriptor.RecordExceptionStatement);
+        if (descriptor.RuntimeObservesAsync)
+            builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        if (!descriptor.RuntimeObservesAsync)
+            EmitActivityDisposeFinally(builder);
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitTraceInvocation(
+        StringBuilder builder,
+        InterceptorTarget target,
+        TraceInterceptorBodyDescriptor descriptor)
+    {
+        if (target.IsAsync && descriptor.RuntimeObservesAsync)
+        {
+            builder.Append("                var resultTask = ");
+            AppendInvocationCall(builder, target, descriptor.ReceiverName);
+            builder.AppendLine(";");
+            builder.Append("                return ");
+            builder.Append(descriptor.ObserveAsyncMethod);
+            builder.AppendLine("(resultTask, activity);");
+            return;
+        }
+
+        if (target.IsAsync)
+        {
+            if (IsTaskLikeReturnWithoutResult(target.ReturnType))
+            {
+                builder.Append("                await ");
+                AppendInvocationCall(builder, target, descriptor.ReceiverName);
+                builder.AppendLine(".ConfigureAwait(false);");
+                builder.Append("                ");
+                builder.AppendLine(descriptor.RecordSuccessStatement);
+                return;
+            }
+
+            builder.Append("                var result = await ");
+            AppendInvocationCall(builder, target, descriptor.ReceiverName);
+            builder.AppendLine(".ConfigureAwait(false);");
+            builder.Append("                ");
+            builder.AppendLine(descriptor.RecordSuccessStatement);
+            builder.AppendLine("                return result;");
+            return;
+        }
+
+        if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
+        {
+            builder.Append("                ");
+            AppendInvocationCall(builder, target, descriptor.ReceiverName);
+            builder.AppendLine(";");
+            builder.Append("                ");
+            builder.AppendLine(descriptor.RecordSuccessStatement);
+            return;
+        }
+
+        builder.Append("                var result = ");
+        AppendInvocationCall(builder, target, descriptor.ReceiverName);
+        builder.AppendLine(";");
+        builder.Append("                ");
+        builder.AppendLine(descriptor.RecordSuccessStatement);
+        builder.AppendLine("                return result;");
+    }
+
+    private static bool IsTaskLikeReturnWithoutResult(string returnType)
+        => returnType is "global::System.Threading.Tasks.Task" or
+            "global::System.Threading.Tasks.ValueTask";
+
+    private static void AppendKafkaProducerStartActivity(StringBuilder builder, InterceptorTarget target)
+        => builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity()");
+
+    private static void AppendKafkaConsumerStartActivity(StringBuilder builder, InterceptorTarget target)
+        => builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartConsumerActivity()");
+
+    private static void AppendMongoDbStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
+    private static void AppendRabbitMqStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.StartPublishActivity(");
+        AppendRabbitMqExchangeExpression(builder, target);
+        builder.Append(')');
     }
 
     private static void EmitHttpClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
@@ -872,70 +999,28 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static void EmitKafkaProducerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaProducer_" + target.MethodName, index, target.ReceiverType, "producer", target.Parameters, target.IsAsync);
-        builder.AppendLine("        {");
-        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity();");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            builder.Append("                var result = await producer.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);");
-            builder.AppendLine("                return result;");
-        }
-        else
-        {
-            builder.Append("                producer.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);");
-        }
-
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "KafkaProducer",
+                "producer",
+                AppendKafkaProducerStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);"));
 
     private static void EmitKafkaConsumerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "KafkaConsumer_" + target.MethodName, index, target.ReceiverType, "consumer", target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        builder.AppendLine("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedKafka.StartConsumerActivity();");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                var result = consumer.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(");");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity);");
-        builder.AppendLine("                return result;");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "KafkaConsumer",
+                "consumer",
+                AppendKafkaConsumerStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);"));
 
     private static void EmitMassTransitInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
@@ -1158,117 +1243,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
+        => EmitTraceInterceptor(
             builder,
-            invocation.Location,
-            target.ReturnType,
-            "MongoDb_" + target.MethodName,
+            invocation,
             index,
-            target.ReceiverType,
-            "collection",
-            target.Parameters,
-            isAsync: false,
-            typeParameterList: target.TypeParameterList,
-            constraintClauses: target.ConstraintClauses);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
-        {
-            builder.Append("                var resultTask = ");
-            AppendInvocationCall(builder, target, "collection");
-            builder.AppendLine(";");
-            builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(resultTask, activity);");
-        }
-        else if (target.IsAsync)
-        {
-            builder.Append("                var resultTask = ");
-            AppendInvocationCall(builder, target, "collection");
-            builder.AppendLine(";");
-            builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(resultTask, activity);");
-        }
-        else if (string.Equals(target.ReturnType, "void", StringComparison.Ordinal))
-        {
-            builder.Append("                ");
-            AppendInvocationCall(builder, target, "collection");
-            builder.AppendLine(";");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
-        }
-        else
-        {
-            builder.Append("                var result = ");
-            AppendInvocationCall(builder, target, "collection");
-            builder.AppendLine(";");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);");
-            builder.AppendLine("                return result;");
-        }
-
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);");
-        if (target.IsAsync)
-            builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        if (!target.IsAsync)
-            EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+            new TraceInterceptorBodyDescriptor(
+                "MongoDb",
+                "collection",
+                AppendMongoDbStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);",
+                RuntimeObservesAsync: true,
+                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync"));
 
     private static void EmitRabbitMqInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
+        => EmitTraceInterceptor(
             builder,
-            invocation.Location,
-            target.ReturnType,
-            "RabbitMq_" + target.MethodName,
+            invocation,
             index,
-            target.ReceiverType,
-            "channel",
-            target.Parameters,
-            target.IsAsync,
-            target.TypeParameterList,
-            target.ConstraintClauses);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.StartPublishActivity(");
-        AppendRabbitMqExchangeExpression(builder, target);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            builder.Append("                await ");
-            AppendInvocationCall(builder, target, "channel");
-            builder.AppendLine(".ConfigureAwait(false);");
-        }
-        else
-        {
-            builder.Append("                ");
-            AppendInvocationCall(builder, target, "channel");
-            builder.AppendLine(";");
-        }
-
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+            new TraceInterceptorBodyDescriptor(
+                "RabbitMq",
+                "channel",
+                AppendRabbitMqStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);"));
 
     private static void AppendRabbitMqExchangeExpression(StringBuilder builder, InterceptorTarget target)
     {
@@ -3930,6 +3928,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorErrorPolicy ErrorPolicy,
         InterceptorDurationPolicy DurationPolicy,
         InterceptorEmitter Emitter);
+
+    private readonly record struct TraceInterceptorBodyDescriptor(
+        string MethodPrefix,
+        string ReceiverName,
+        TraceActivityExpressionEmitter AppendStartActivityExpression,
+        string RecordSuccessStatement,
+        string RecordExceptionStatement,
+        bool RuntimeObservesAsync = false,
+        string ObserveAsyncMethod = "");
 
     private readonly record struct InterceptorMatcherDescriptor
     {
