@@ -39,10 +39,9 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 1 |
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 21 |
+| `verified_managed` | 22 |
 | `verified_nativeaot` | 11 |
 
 ## Matrix
@@ -66,7 +65,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 15 | `signals.traces.MYSQLDATA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 17 | `signals.traces.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
-| 18 | `signals.traces.ORACLEMDA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 18 | `signals.traces.ORACLEMDA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 19 | `signals.traces.RABBITMQ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 20 | `signals.traces.QUARTZ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 21 | `signals.traces.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |

@@ -20,6 +20,7 @@
   <Project Path="demos/Qyl.RealNetRuntimeMetricsDemo/Qyl.RealNetRuntimeMetricsDemo.csproj" />
   <Project Path="demos/Qyl.RealNpgsqlDemo/Qyl.RealNpgsqlDemo.csproj" />
   <Project Path="demos/Qyl.RealNServiceBusDemo/Qyl.RealNServiceBusDemo.csproj" />
+  <Project Path="demos/Qyl.RealOracleMdaDemo/Qyl.RealOracleMdaDemo.csproj" />
   <Project Path="demos/Qyl.RealQuartzDemo/Qyl.RealQuartzDemo.csproj" />
   <Project Path="demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj" />
   <Project Path="demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj" />

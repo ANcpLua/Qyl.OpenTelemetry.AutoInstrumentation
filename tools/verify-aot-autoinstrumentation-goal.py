@@ -41,6 +41,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("real npgsql demo", [sys.executable, "tools/verify-real-npgsql-demo.py"]),
     ("real nlog demo", [sys.executable, "tools/verify-real-nlog-demo.py"]),
     ("real nservicebus demo", [sys.executable, "tools/verify-real-nservicebus-demo.py"]),
+    ("real oraclemda demo", [sys.executable, "tools/verify-real-oraclemda-demo.py"]),
     ("real quartz demo", [sys.executable, "tools/verify-real-quartz-demo.py"]),
     ("real rabbitmq demo", [sys.executable, "tools/verify-real-rabbitmq-demo.py"]),
     ("real redis demo", [sys.executable, "tools/verify-real-redis-demo.py"]),
