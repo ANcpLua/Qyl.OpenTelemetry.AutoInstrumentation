@@ -2,6 +2,7 @@
   <Project Path="demos/Qyl.LiveInstrumentationDemo/Qyl.LiveInstrumentationDemo.csproj" />
   <Project Path="demos/Qyl.RealAspNetCoreDemo/Qyl.RealAspNetCoreDemo.csproj" />
   <Project Path="demos/Qyl.RealEfCoreDemo/Qyl.RealEfCoreDemo.csproj" />
+  <Project Path="demos/Qyl.RealGraphQlDemo/Qyl.RealGraphQlDemo.csproj" />
   <Project Path="demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj" />
   <Project Path="demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj" />
   <Project Path="demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj" />
