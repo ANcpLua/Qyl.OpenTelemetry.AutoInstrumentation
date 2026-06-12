@@ -22,13 +22,14 @@ ActivitySource.AddActivityListener(listener);
 var memoryAppender = new MemoryAppender { Name = "memory" };
 memoryAppender.ActivateOptions();
 
-var hierarchy = (Hierarchy)LogManager.GetRepository();
+var repositoryAssembly = typeof(RealLog4NetJsonContext).Assembly;
+var hierarchy = (Hierarchy)LogManager.GetRepository(repositoryAssembly);
 hierarchy.Root.RemoveAllAppenders();
 hierarchy.Root.Level = Level.Info;
 hierarchy.Root.AddAppender(memoryAppender);
 hierarchy.Configured = true;
 
-ILog logger = LogManager.GetLogger("qyl.log4net");
+ILog logger = LogManager.GetLogger(repositoryAssembly, "qyl.log4net");
 logger.Debug("qyl disabled debug");
 logger.Info("qyl information");
 logger.Error("qyl error");
