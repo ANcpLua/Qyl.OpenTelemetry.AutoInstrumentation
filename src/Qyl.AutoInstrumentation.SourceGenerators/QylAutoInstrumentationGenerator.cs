@@ -97,7 +97,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.KafkaProducer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("KafkaProducer", "producer", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedKafka", "StartProducerActivity", "RecordSuccess", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.KafkaConsumer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("KafkaConsumer", "consumer", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedKafka", "StartConsumerActivity", "RecordConsumeSuccess", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.MassTransitMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("MassTransit", "endpoint", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedMassTransit", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
-            new InterceptorEmissionDescriptor(InterceptorKind.NServiceBusMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, TraceBody: new TraceInterceptorBodyDescriptor("NServiceBus", "endpoint", AppendBeforeActivityStatement: AppendNServiceBusMetricStartStatement, AppendAfterSuccessStatement: AppendNServiceBusRecordDurationStatement, AppendAfterExceptionStatement: AppendNServiceBusRecordDurationStatement, RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
+            new InterceptorEmissionDescriptor(InterceptorKind.NServiceBusMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, TraceBody: new TraceInterceptorBodyDescriptor("NServiceBus", "endpoint", DurationMetric: new TraceDurationMetricDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus", "GetTimestamp", "RecordDuration", TraceDurationMetricArgumentKind.TargetMethodName), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.QuartzJobExecute, InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Quartz", "job", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedQuartz", "StartActivity", "RecordSuccess", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.StackExchangeRedisCommandAsync, InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("StackExchangeRedis", "database", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedRedis", "StartCommandActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.RedisOperationName))),
             new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("GraphQl", "executer", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync", AppendAfterActivityStatement: AppendGraphQlExecutionOptionsStatement, RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedGraphQl", "StartActivity", "RecordSuccess", "RecordException"))),
@@ -454,11 +454,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (descriptor.ErrorPolicy is not InterceptorErrorPolicy.Exception)
                 throw new InvalidOperationException("Trace body descriptor must use exception error policy: " + descriptor.Kind);
             if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
-                (descriptor.TraceBody.AppendBeforeActivityStatement is null ||
-                 descriptor.TraceBody.AppendAfterSuccessStatement is null ||
-                 descriptor.TraceBody.AppendAfterExceptionStatement is null))
+                !descriptor.TraceBody.DurationMetric.IsDefined)
             {
-                throw new InvalidOperationException("Trace runtime metric descriptor must provide duration statements: " + descriptor.Kind);
+                throw new InvalidOperationException("Trace runtime metric descriptor must provide a duration metric descriptor: " + descriptor.Kind);
             }
 
             return;
@@ -653,6 +651,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             target.TypeParameterList,
             target.ConstraintClauses);
         builder.AppendLine("        {");
+        if (descriptor.DurationMetric.IsDefined)
+            descriptor.DurationMetric.AppendMetricStartStatement(builder);
         descriptor.AppendBeforeActivityStatement?.Invoke(builder, target);
         builder.Append("            var activity = ");
         descriptor.AppendStartActivity(builder, target);
@@ -668,6 +668,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            {");
         builder.Append("                ");
         builder.AppendLine(descriptor.GetRecordExceptionStatement());
+        if (descriptor.DurationMetric.IsDefined)
+            descriptor.DurationMetric.AppendRecordDurationStatement(builder, target);
         descriptor.AppendAfterExceptionStatement?.Invoke(builder, target);
         if (runtimeObservesAsync)
             builder.AppendLine("                activity?.Dispose();");
@@ -751,6 +753,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         builder.Append("                ");
         builder.AppendLine(descriptor.GetRecordSuccessStatement());
+        if (descriptor.DurationMetric.IsDefined)
+            descriptor.DurationMetric.AppendRecordDurationStatement(builder, target);
         descriptor.AppendAfterSuccessStatement?.Invoke(builder, target);
     }
 
@@ -789,16 +793,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             default:
                 throw new InvalidOperationException("Unknown trace start activity argument kind: " + argumentKind);
         }
-    }
-
-    private static void AppendNServiceBusMetricStartStatement(StringBuilder builder, InterceptorTarget target)
-        => builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.GetTimestamp();");
-
-    private static void AppendNServiceBusRecordDurationStatement(StringBuilder builder, InterceptorTarget target)
-    {
-        builder.Append("                global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordDuration(metricStart, ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
     }
 
     private static void AppendGraphQlExecutionOptionsStatement(StringBuilder builder, InterceptorTarget target)
@@ -3901,6 +3895,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         RabbitMqExchange,
     }
 
+    private enum TraceDurationMetricArgumentKind
+    {
+        None,
+        TargetMethodName,
+    }
+
     private enum GrpcClientCallShape
     {
         None,
@@ -3997,6 +3997,49 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             => HelperType + "." + RecordExceptionMethod + "(activity, exception);";
     }
 
+    private readonly record struct TraceDurationMetricDescriptor(
+        string HelperType,
+        string GetTimestampMethod,
+        string RecordDurationMethod,
+        TraceDurationMetricArgumentKind RecordDurationArguments = TraceDurationMetricArgumentKind.None,
+        bool IsDefined = true)
+    {
+        public void AppendMetricStartStatement(StringBuilder builder)
+        {
+            builder.Append("            var metricStart = ");
+            builder.Append(HelperType);
+            builder.Append('.');
+            builder.Append(GetTimestampMethod);
+            builder.AppendLine("();");
+        }
+
+        public void AppendRecordDurationStatement(StringBuilder builder, InterceptorTarget target)
+        {
+            builder.Append("                ");
+            builder.Append(HelperType);
+            builder.Append('.');
+            builder.Append(RecordDurationMethod);
+            builder.Append("(metricStart");
+            AppendRecordDurationArguments(builder, target);
+            builder.AppendLine(");");
+        }
+
+        private void AppendRecordDurationArguments(StringBuilder builder, InterceptorTarget target)
+        {
+            switch (RecordDurationArguments)
+            {
+                case TraceDurationMetricArgumentKind.None:
+                    return;
+                case TraceDurationMetricArgumentKind.TargetMethodName:
+                    builder.Append(", ");
+                    QylAutoInstrumentationGenerator.AppendStringLiteral(builder, target.MethodName);
+                    return;
+                default:
+                    throw new InvalidOperationException("Unknown trace duration metric argument kind: " + RecordDurationArguments);
+            }
+        }
+    }
+
     private readonly record struct TraceInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
@@ -4012,7 +4055,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceStringProvider? MethodPrefixProvider = null,
         TraceBoolProvider? RuntimeObservesAsyncWhen = null,
         bool IsDefined = true,
-        TraceRuntimeHelperDescriptor RuntimeHelper = default)
+        TraceRuntimeHelperDescriptor RuntimeHelper = default,
+        TraceDurationMetricDescriptor DurationMetric = default)
     {
         public void AppendStartActivity(StringBuilder builder, InterceptorTarget target)
         {

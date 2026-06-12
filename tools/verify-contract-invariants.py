@@ -1259,7 +1259,7 @@ def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
         "ValidateEmissionDescriptorPolicy(descriptor);",
         "Runtime metric duration policy requires trace+metric ownership",
         "Trace+metric ownership requires runtime metric duration policy",
-        "Trace runtime metric descriptor must provide duration statements",
+        "Trace runtime metric descriptor must provide a duration metric descriptor",
         "Unsupported interceptor emission policy shape",
     ]:
         if token not in generator:
@@ -1314,13 +1314,8 @@ def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
                     for line in generator.splitlines()
                     if f"InterceptorKind.{kind}" in line and "new InterceptorEmissionDescriptor(" in line
                 )
-                for token in [
-                    "AppendBeforeActivityStatement:",
-                    "AppendAfterSuccessStatement:",
-                    "AppendAfterExceptionStatement:",
-                ]:
-                    if token not in descriptor_line:
-                        fail(f"TraceBody RuntimeMetric descriptor missing duration hook {token}: {kind}")
+                if "DurationMetric:" not in descriptor_line:
+                    fail(f"TraceBody RuntimeMetric descriptor missing DurationMetric descriptor: {kind}")
 
         if body == "ForwardingBody":
             if method_shape not in {"AsyncValue", "AsyncTask", "BuilderInitialization", "EndpointRegistration"}:
@@ -1492,18 +1487,31 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "InterceptorDurationPolicy",
         "TraceRuntimeHelperDescriptor",
         "TraceStartActivityArgumentKind",
+        "TraceDurationMetricDescriptor",
+        "TraceDurationMetricArgumentKind",
         "new TraceRuntimeHelperDescriptor",
+        "new TraceDurationMetricDescriptor",
         "TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName",
         "TraceStartActivityArgumentKind.ReceiverTypeAndTargetMethodName",
         "TraceStartActivityArgumentKind.RedisOperationName",
         "TraceStartActivityArgumentKind.TargetMethodName",
         "TraceStartActivityArgumentKind.RabbitMqExchange",
+        "TraceDurationMetricArgumentKind.TargetMethodName",
+        "descriptor.DurationMetric.AppendMetricStartStatement(builder)",
+        "descriptor.DurationMetric.AppendRecordDurationStatement(builder, target)",
     ]:
         if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
             fail(f"contract/generator missing separated descriptor API token: {token}")
 
     for method_name in re.findall(r"\n    private static void (Append[A-Za-z0-9]+StartActivity)\(", generator):
         fail(f"generator must model trace start activity calls with TraceRuntimeHelperDescriptor, not private emitter method: {method_name}")
+
+    for method_name in [
+        "AppendNServiceBusMetricStartStatement",
+        "AppendNServiceBusRecordDurationStatement",
+    ]:
+        if method_name in generator:
+            fail(f"generator must model trace duration metrics with TraceDurationMetricDescriptor, not private emitter method: {method_name}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigate from NavigationManager.NavigateTo")
