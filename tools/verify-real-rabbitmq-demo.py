@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from verify_container_helpers import run_published_container
-from verify_helpers import clean_env, run_checked
+from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealRabbitMqDemo" / "Qyl.RealRabbitMqDemo.csproj"
@@ -64,7 +64,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = PROJECT.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Qyl.RealRabbitMqDemo.dll"
+    assembly = artifacts_bin_assembly(PROJECT)
     return subprocess.run(
         ["dotnet", str(assembly)],
         cwd=PROJECT.parent,

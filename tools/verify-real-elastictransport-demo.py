@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from verify_helpers import clean_env, run_checked
+from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealElasticTransportDemo" / "Qyl.RealElasticTransportDemo.csproj"
@@ -72,7 +72,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = PROJECT.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Qyl.RealElasticTransportDemo.dll"
+    assembly = artifacts_bin_assembly(PROJECT)
     return subprocess.run(
         ["dotnet", str(assembly)],
         cwd=PROJECT.parent,
@@ -86,7 +86,7 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     run_checked(["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    output = PROJECT.parent / "bin" / "Release" / "nativeaot"
+    output = artifacts_publish_dir(PROJECT, "nativeaot")
     run_checked(
         [
             "dotnet",

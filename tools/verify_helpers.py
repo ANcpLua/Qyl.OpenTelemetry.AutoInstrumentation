@@ -36,6 +36,15 @@ def read_version() -> str:
     return text[start + len(prefix) : end].strip()
 
 
+def artifacts_bin_assembly(project: Path, assembly_name: str | None = None, configuration: str = "Release") -> Path:
+    name = assembly_name or project.stem
+    return ROOT / "artifacts" / "bin" / project.stem / configuration.lower() / f"{name}.dll"
+
+
+def artifacts_publish_dir(project: Path, name: str, configuration: str = "Release") -> Path:
+    return ROOT / "artifacts" / "publish" / project.stem / configuration.lower() / name
+
+
 def run_checked(command: list[str], cwd: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     completed = subprocess.run(
         command,
