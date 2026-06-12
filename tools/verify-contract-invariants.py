@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 CONTRACT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
 GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
+GENERATED_INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.g.cs"
 OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
 IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
@@ -133,6 +134,14 @@ def load_artifacts() -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def read_generator_sources() -> str:
+    sources = [GENERATOR_PATH.read_text()]
+    if GENERATED_INTERCEPTOR_CATALOG_PATH.exists():
+        sources.append(GENERATED_INTERCEPTOR_CATALOG_PATH.read_text())
+
+    return "\n".join(sources)
 
 
 def parse_instrumentation_id_constants() -> dict[str, str]:
@@ -388,7 +397,7 @@ def verify_semconv_attribute_contract() -> None:
 
 def verify_metric_contract() -> None:
     contract = CONTRACT_PATH.read_text()
-    generator = GENERATOR_PATH.read_text()
+    generator = read_generator_sources()
     meters = METRIC_METERS_PATH.read_text()
     names = METRIC_NAMES_PATH.read_text()
     metric_implementation_text = "\n".join([generator, meters, names])
@@ -1078,7 +1087,7 @@ def verify_intercepted_runtime_duration_metric_policy() -> None:
         if token not in helper:
             fail(f"QylDurationMetrics must own duration metric token: {token}")
 
-    generator = GENERATOR_PATH.read_text()
+    generator = read_generator_sources()
     for token in [
         "QylDbClientMetrics.GetTimestamp",
         "QylDbClientMetrics.RecordDuration",
@@ -1184,7 +1193,7 @@ def verify_intercepted_runtime_async_observer_policy() -> None:
 
 
 def verify_behavior_semantics_contract() -> None:
-    generator = GENERATOR_PATH.read_text()
+    generator = read_generator_sources()
     if "global::Qyl.AutoInstrumentation.QylIntercepted" not in generator:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
     verify_interceptor_emitter_runtime_delegation(generator)
@@ -1350,12 +1359,10 @@ def parse_emission_descriptor_policies(generator: str) -> dict[str, tuple[str, s
 
 
 def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
-    try:
-        descriptor_block = generator.split("s_matcherDescriptors =", 1)[1].split("s_emissionDescriptors =", 1)[0]
-    except IndexError:
-        fail("s_matcherDescriptors block missing from generator")
+    matcher_keys = set()
+    for block in extract_parenthesized_blocks(generator, "new InterceptorMatcherDescriptor"):
+        matcher_keys.update(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', block))
 
-    matcher_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', descriptor_block))
     if not matcher_keys:
         fail("s_matcherDescriptors must describe source-visible matcher contract keys")
 
@@ -1363,14 +1370,9 @@ def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
 
 
 def parse_matcher_descriptor_kinds(generator: str) -> set[str]:
-    try:
-        descriptor_block = generator.split("s_matcherDescriptors =", 1)[1].split("s_emissionDescriptors =", 1)[0]
-    except IndexError:
-        fail("s_matcherDescriptors block missing from generator")
-
     descriptor_lines = [
         line.strip()
-        for line in descriptor_block.splitlines()
+        for line in generator.splitlines()
         if "new InterceptorMatcherDescriptor(" in line
     ]
     if not descriptor_lines:
@@ -1711,7 +1713,7 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
 
 
 def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> None:
-    generator = GENERATOR_PATH.read_text()
+    generator = read_generator_sources()
     contract_source = CONTRACT_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
     implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
