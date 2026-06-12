@@ -14,17 +14,7 @@ public static class QylInterceptedEntityFrameworkCore
     {
         ArgumentNullException.ThrowIfNull(operationName);
 
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.EntityFrameworkCore))
-            return null;
-
-        var activity = QylActivitySource.StartActivity(QylActivityNames.DbCommand(operationName), ActivityKind.Client);
-        if (activity is null)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbEfCore);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);
-        return activity;
+        return QylDbActivityPolicy.StartEntityFrameworkCoreActivity(operationName);
     }
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>

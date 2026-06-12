@@ -26,6 +26,15 @@ internal static class QylActivityTags
         activity.SetTag(QylSemanticAttributes.DbQuerySummary, querySummary);
     }
 
+    public static void SetDbOperation(
+        Activity activity,
+        string operationName,
+        string querySummary)
+    {
+        activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
+        activity.SetTag(QylSemanticAttributes.DbQuerySummary, querySummary);
+    }
+
     public static void SetRpc(
         Activity activity,
         string system,

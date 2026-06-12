@@ -6,6 +6,20 @@ namespace Qyl.AutoInstrumentation.Internal;
 
 internal static class QylDbActivityPolicy
 {
+    public static Activity? StartEntityFrameworkCoreActivity(string operationName)
+    {
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.EntityFrameworkCore,
+            QylActivityNames.DbCommand(operationName),
+            ActivityKind.Client,
+            QylInstrumentationDomains.DbEfCore);
+        if (activity is null)
+            return null;
+
+        QylActivityTags.SetDbOperation(activity, operationName, operationName);
+        return activity;
+    }
+
     public static Activity? StartDbCommandActivity(DbCommand command, string instrumentationId, string operationName)
     {
         var operation = NormalizeOperation(operationName, command);

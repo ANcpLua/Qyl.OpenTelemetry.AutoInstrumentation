@@ -470,6 +470,7 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
         "QylInterceptedKafka.cs",
         "QylInterceptedLogger.cs",
         "QylInterceptedMassTransit.cs",
+        "QylInterceptedEntityFrameworkCore.cs",
         "QylInterceptedMongoDb.cs",
         "QylInterceptedNServiceBus.cs",
         "QylInterceptedQuartz.cs",
@@ -495,6 +496,10 @@ def verify_intercepted_runtime_db_activity_policy() -> None:
         "QylActivityNames.DbCommand(operation)",
         "QylInstrumentationDomains.DbClient",
         "QylActivityTags.SetDb(",
+        "QylActivityTags.SetDbOperation(",
+        "QylAutoInstrumentationIds.EntityFrameworkCore",
+        "QylInstrumentationDomains.DbEfCore",
+        "StartEntityFrameworkCoreActivity",
         "activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);",
         "QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);",
         "command.CommandType is CommandType.StoredProcedure",
@@ -506,21 +511,30 @@ def verify_intercepted_runtime_db_activity_policy() -> None:
         if token not in helper:
             fail(f"QylDbActivityPolicy must own DbCommand activity token: {token}")
 
-    db_command = (ROOT / "src" / "Qyl.AutoInstrumentation" / "QylInterceptedDbCommand.cs").read_text()
-    for token in [
+    db_activity_policy_owned_helpers = {
+        "QylInterceptedDbCommand.cs",
+        "QylInterceptedEntityFrameworkCore.cs",
+    }
+    forbidden_tokens = [
         "QylActivitySource.StartActivity(",
         "QylActivityNames.DbCommand(",
         "QylInstrumentationDomains.DbClient",
+        "QylInstrumentationDomains.DbEfCore",
         "SetTag(QylSemanticAttributes.DbNamespace",
+        "SetTag(QylSemanticAttributes.DbOperationName",
+        "SetTag(QylSemanticAttributes.DbQuerySummary",
         "CommandType.StoredProcedure",
         "FirstToken(",
         "IsKnownDbOperation(",
         "GetDbSystemName(",
         "NormalizeOperation(",
         "GetQuerySummary(",
-    ]:
-        if token in db_command:
-            fail(f"QylInterceptedDbCommand must delegate DB activity policy to QylDbActivityPolicy: {token}")
+    ]
+    for name in sorted(db_activity_policy_owned_helpers):
+        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        for token in forbidden_tokens:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate DB activity policy to QylDbActivityPolicy: src/Qyl.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_http_activity_policy() -> None:
@@ -678,6 +692,7 @@ def verify_intercepted_runtime_semantic_tag_policy() -> None:
         "QylInterceptedKafka.cs",
         "QylInterceptedLogger.cs",
         "QylInterceptedMassTransit.cs",
+        "QylInterceptedEntityFrameworkCore.cs",
         "QylInterceptedMongoDb.cs",
         "QylInterceptedNServiceBus.cs",
         "QylInterceptedRabbitMq.cs",
