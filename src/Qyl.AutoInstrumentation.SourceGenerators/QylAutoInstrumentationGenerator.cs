@@ -99,21 +99,21 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncServerStreamingInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncClientStreamingInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncDuplexStreamingInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.KafkaProducer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitKafkaProducerInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.KafkaConsumer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitKafkaConsumerInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.MassTransitMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitMassTransitInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.NServiceBusMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, EmitNServiceBusInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.QuartzJobExecute, InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitQuartzInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.StackExchangeRedisCommandAsync, InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitStackExchangeRedisInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitGraphQlInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.MongoDbCollection, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitMongoDbInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.RabbitMqBasicPublish, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitRabbitMqInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.KafkaProducer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("KafkaProducer", "producer", AppendKafkaProducerStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);")),
+            new InterceptorEmissionDescriptor(InterceptorKind.KafkaConsumer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("KafkaConsumer", "consumer", AppendKafkaConsumerStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);")),
+            new InterceptorEmissionDescriptor(InterceptorKind.MassTransitMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("MassTransit", "endpoint", AppendMassTransitStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);")),
+            new InterceptorEmissionDescriptor(InterceptorKind.NServiceBusMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, TraceBody: new TraceInterceptorBodyDescriptor("NServiceBus", "endpoint", AppendNServiceBusStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);", AppendBeforeActivityStatement: AppendNServiceBusMetricStartStatement, AppendAfterSuccessStatement: AppendNServiceBusRecordDurationStatement, AppendAfterExceptionStatement: AppendNServiceBusRecordDurationStatement)),
+            new InterceptorEmissionDescriptor(InterceptorKind.QuartzJobExecute, InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Quartz", "job", AppendQuartzStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(activity, exception);", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync")),
+            new InterceptorEmissionDescriptor(InterceptorKind.StackExchangeRedisCommandAsync, InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("StackExchangeRedis", "database", AppendStackExchangeRedisStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("GraphQl", "executer", AppendGraphQlStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync", AppendAfterActivityStatement: AppendGraphQlExecutionOptionsStatement)),
+            new InterceptorEmissionDescriptor(InterceptorKind.MongoDbCollection, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("MongoDb", "collection", AppendMongoDbStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync")),
+            new InterceptorEmissionDescriptor(InterceptorKind.RabbitMqBasicPublish, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("RabbitMq", "channel", AppendRabbitMqStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.ILoggerExtensionLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitLoggerExtensionInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.ILoggerLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitLoggerInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.NLogLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, static (builder, invocation, index) => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog")),
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, static (builder, invocation, index) => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")),
-            new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitEntityFrameworkCoreDbContextInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreQueryable, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitEntityFrameworkCoreQueryableInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreDbContext", "dbContext", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
+            new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreQueryable, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreQueryable", "query", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, EmitDbCommandInterceptor));
 
     /// <summary>
@@ -951,71 +951,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("    }");
     }
 
-    private static void EmitKafkaProducerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "KafkaProducer",
-                "producer",
-                AppendKafkaProducerStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);"));
-
-    private static void EmitKafkaConsumerInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "KafkaConsumer",
-                "consumer",
-                AppendKafkaConsumerStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);"));
-
-    private static void EmitMassTransitInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "MassTransit",
-                "endpoint",
-                AppendMassTransitStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);"));
-
-    private static void EmitNServiceBusInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "NServiceBus",
-                "endpoint",
-                AppendNServiceBusStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(activity, exception);",
-                AppendBeforeActivityStatement: AppendNServiceBusMetricStartStatement,
-                AppendAfterSuccessStatement: AppendNServiceBusRecordDurationStatement,
-                AppendAfterExceptionStatement: AppendNServiceBusRecordDurationStatement));
-
-    private static void EmitQuartzInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "Quartz",
-                "job",
-                AppendQuartzStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(activity, exception);",
-                RuntimeObservesAsync: true,
-                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync"));
-
     private static void AppendKafkaTopicExpression(StringBuilder builder, InterceptorTarget target)
     {
         if (target.Parameters.Length is 0)
@@ -1040,33 +975,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         builder.Append("null");
     }
-
-    private static void EmitStackExchangeRedisInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "StackExchangeRedis",
-                "database",
-                AppendStackExchangeRedisStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);"));
-
-    private static void EmitGraphQlInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "GraphQl",
-                "executer",
-                AppendGraphQlStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(activity, exception);",
-                RuntimeObservesAsync: true,
-                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync",
-                AppendAfterActivityStatement: AppendGraphQlExecutionOptionsStatement));
 
     private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, InterceptorTarget target)
     {
@@ -1097,32 +1005,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         builder.Append("null");
     }
-
-    private static void EmitMongoDbInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "MongoDb",
-                "collection",
-                AppendMongoDbStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(activity, exception);",
-                RuntimeObservesAsync: true,
-                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync"));
-
-    private static void EmitRabbitMqInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "RabbitMq",
-                "channel",
-                AppendRabbitMqStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(activity, exception);"));
 
     private static void AppendRabbitMqExchangeExpression(StringBuilder builder, InterceptorTarget target)
     {
@@ -1325,30 +1207,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             "object[]" => "global::System.Object[]",
             _ => typeName,
         };
-
-    private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "EntityFrameworkCoreDbContext",
-                "dbContext",
-                AppendEntityFrameworkCoreStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);"));
-
-    private static void EmitEntityFrameworkCoreQueryableInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "EntityFrameworkCoreQueryable",
-                "query",
-                AppendEntityFrameworkCoreStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);"));
 
     private static void EmitAttributeAndSignature(
         StringBuilder builder,
