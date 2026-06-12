@@ -215,7 +215,12 @@ def verify_nativeaot_evidence_is_executable(artifacts: ModuleType, contract: dic
         for verifier_path in verifier_paths:
             verifier = ROOT / verifier_path
             text = verifier.read_text()
-            if "run_nativeaot" in text and "nativeaot" in text.lower():
+            if (
+                "run_nativeaot" in text
+                and "nativeaot" in text.lower()
+                and '"nativeaot"' in text
+                and "verify_report(" in text
+            ):
                 native_verifiers.append(verifier_path)
 
         if not native_verifiers:
