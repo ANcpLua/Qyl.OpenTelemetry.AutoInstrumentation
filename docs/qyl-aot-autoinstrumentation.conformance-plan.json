@@ -4,7 +4,7 @@
   "services": [
     {
       "service_name": "qyl-webapi-aot-demo",
-      "profile_id": "qyl-aot-autoinstrumentation",
+      "profile_id": "qyl-aot-webapi",
       "expected_signals": [
         {
           "kind": "span",
@@ -17,20 +17,6 @@
           ],
           "recommended_attributes": [],
           "opt_in_attributes": []
-        },
-        {
-          "kind": "span",
-          "name": "efcore.sqlite",
-          "required_attributes": [
-            "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [],
-          "opt_in_attributes": [
-            "db.query.text"
-          ]
         },
         {
           "kind": "span",
@@ -56,6 +42,26 @@
           ],
           "recommended_attributes": [],
           "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-db-aot-demo",
+      "profile_id": "qyl-aot-db",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "efcore.sqlite",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
         },
         {
           "kind": "span",

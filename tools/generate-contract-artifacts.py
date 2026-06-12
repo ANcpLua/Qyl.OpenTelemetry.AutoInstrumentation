@@ -20,12 +20,29 @@ OWNERSHIP_PATH = ROOT / "docs" / "contracts" / "qyl-aot-ownership.yaml"
 RESOLVED_CONTRACT_PATH = ROOT / "docs" / "generated" / "qyl-aot-contract.resolved.yaml"
 SCHEMA_PATH = ROOT / "docs" / "generated" / "qyl-aot-contract.schema.json"
 COVERAGE_MATRIX_PATH = ROOT / "docs" / "coverage-matrix.md"
-CONFORMANCE_PLAN_PATH = ROOT / "docs" / "qyl-webapi-aot-demo.conformance-plan.json"
+CONFORMANCE_PLAN_PATH = ROOT / "docs" / "qyl-aot-autoinstrumentation.conformance-plan.json"
 README_PATH = ROOT / "README.md"
 CONTRACT_CS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
 
-SERVICE_NAME = "qyl-webapi-aot-demo"
-PROFILE_ID = "qyl-aot-autoinstrumentation"
+CONFORMANCE_PROFILES = [
+    {
+        "service_name": "qyl-webapi-aot-demo",
+        "profile_id": "qyl-aot-webapi",
+        "signal_names": [
+            "aspnetcore.server",
+            "httpclient.downstream",
+            "httpclient.self",
+        ],
+    },
+    {
+        "service_name": "qyl-db-aot-demo",
+        "profile_id": "qyl-aot-db",
+        "signal_names": [
+            "efcore.sqlite",
+            "sqlclient.command",
+        ],
+    },
+]
 README_START = "<!-- qyl-contract-summary:start -->"
 README_END = "<!-- qyl-contract-summary:end -->"
 
@@ -393,6 +410,21 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
                     fail(f"duplicate {attr_field} entries for conformance signal {name}")
             if "error.type" in signal["required_attributes"]:
                 fail(f"error.type must not be required in conformance signal {name}")
+
+    assigned_names: set[str] = set()
+    for profile in CONFORMANCE_PROFILES:
+        for name in profile["signal_names"]:
+            if name in assigned_names:
+                fail(f"conformance signal assigned to multiple profiles: {name}")
+            assigned_names.add(name)
+
+    missing_profile = names - assigned_names
+    stale_profile = assigned_names - names
+    if missing_profile or stale_profile:
+        fail(
+            "conformance signal/profile mismatch: "
+            f"missing_profile={sorted(missing_profile)} stale_profile={sorted(stale_profile)}"
+        )
 
     sql = next((signal for signal in conformance_signals_for_plan(contract) if signal["name"] == "sqlclient.command"), None)
     if sql is None:
@@ -973,29 +1005,38 @@ def escape_md(value: str) -> str:
 
 
 def render_conformance_plan(contract: dict[str, Any]) -> str:
-    expected_signals = []
-    for signal in conformance_signals_for_plan(contract):
-        expected_signals.append(
-            {
-                "kind": str(signal["kind"]),
-                "name": str(signal["name"]),
-                "required_attributes": list(signal["required_attributes"]),
-                "recommended_attributes": list(signal["recommended_attributes"]),
-                "opt_in_attributes": list(signal["opt_in_attributes"]),
-            }
-        )
+    signals_by_name = {
+        str(signal["name"]): signal
+        for signal in conformance_signals_for_plan(contract)
+    }
 
     plan = {
         "schema_version": "1",
         "graph_schema_version": "1",
-        "services": [
+        "services": [],
+    }
+    for profile in CONFORMANCE_PROFILES:
+        expected_signals = []
+        for name in profile["signal_names"]:
+            signal = signals_by_name[name]
+            expected_signals.append(
+                {
+                    "kind": str(signal["kind"]),
+                    "name": str(signal["name"]),
+                    "required_attributes": list(signal["required_attributes"]),
+                    "recommended_attributes": list(signal["recommended_attributes"]),
+                    "opt_in_attributes": list(signal["opt_in_attributes"]),
+                }
+            )
+
+        plan["services"].append(
             {
-                "service_name": SERVICE_NAME,
-                "profile_id": PROFILE_ID,
+                "service_name": str(profile["service_name"]),
+                "profile_id": str(profile["profile_id"]),
                 "expected_signals": expected_signals,
             }
-        ],
-    }
+        )
+
     return json.dumps(plan, indent=2, sort_keys=False) + "\n"
 
 
