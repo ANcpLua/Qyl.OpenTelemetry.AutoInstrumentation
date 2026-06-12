@@ -437,6 +437,27 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append(')');
     }
 
+    private static void AppendMassTransitStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
+    private static void AppendStackExchangeRedisStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedRedis.StartCommandActivity(");
+        AppendStringLiteral(builder, GetRedisOperationName(target.MethodName));
+        builder.Append(')');
+    }
+
+    private static void AppendEntityFrameworkCoreStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.StartActivity(");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
     private static void EmitHttpClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
@@ -1023,40 +1044,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);"));
 
     private static void EmitMassTransitInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
+        => EmitTraceInterceptor(
             builder,
-            invocation.Location,
-            target.ReturnType,
-            "MassTransit_" + target.MethodName,
+            invocation,
             index,
-            target.ReceiverType,
-            "endpoint",
-            target.Parameters,
-            isAsync: true,
-            typeParameterList: target.TypeParameterList,
-            constraintClauses: target.ConstraintClauses);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.StartActivity(");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                await ");
-        AppendInvocationCall(builder, target, "endpoint");
-        builder.AppendLine(".ConfigureAwait(false);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+            new TraceInterceptorBodyDescriptor(
+                "MassTransit",
+                "endpoint",
+                AppendMassTransitStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);"));
 
     private static void EmitNServiceBusInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
@@ -1152,32 +1149,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static void EmitStackExchangeRedisInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "StackExchangeRedis_" + target.MethodName, index, target.ReceiverType, "database", target.Parameters, isAsync: true);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedRedis.StartCommandActivity(");
-        AppendStringLiteral(builder, GetRedisOperationName(target.MethodName));
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                var result = await database.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(").ConfigureAwait(false);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordSuccess(activity);");
-        builder.AppendLine("                return result;");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "StackExchangeRedis",
+                "database",
+                AppendStackExchangeRedisStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(activity, exception);"));
 
     private static void EmitGraphQlInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
@@ -1471,45 +1452,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         };
 
     private static void EmitEntityFrameworkCoreDbContextInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "EntityFrameworkCoreDbContext_" + target.MethodName, index, target.ReceiverType, "dbContext", target.Parameters, target.IsAsync);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.StartActivity(");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            builder.Append("                var result = await dbContext.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
-        }
-        else
-        {
-            builder.Append("                var result = dbContext.");
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
-        }
-
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);");
-        builder.AppendLine("                return result;");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+        => EmitTraceInterceptor(
+            builder,
+            invocation,
+            index,
+            new TraceInterceptorBodyDescriptor(
+                "EntityFrameworkCoreDbContext",
+                "dbContext",
+                AppendEntityFrameworkCoreStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);"));
 
     private static void EmitEntityFrameworkCoreQueryableInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
