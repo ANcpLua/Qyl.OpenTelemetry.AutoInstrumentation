@@ -40,6 +40,12 @@ branches, stashes, staged files, or unrelated untracked files behind.
   baselines next to each packaged project (`python3 tools/verify-public-api-baseline.py`).
 - CI runs `tools/smoketest.sh` on every push/PR (ubuntu + macos), plus the OTLP collector
   fixture and WebAPI AOT demo workflows under `.github/workflows/`.
+- **Remote CI is currently unavailable**: the repo is private and the GitHub Actions minute
+  quota is exhausted, so workflow runs fail at job setup with zero steps and no logs. Do not
+  plan or claim anything that depends on GitHub Actions executing (CI gates, release workflows,
+  trusted publishing); validate locally via the table below and push with `[skip ci]`.
+  The repo must stay private until a deliberate history overhaul clears it for publication —
+  never flip visibility to fix CI.
 
 ## Mechanism flow (big picture)
 
