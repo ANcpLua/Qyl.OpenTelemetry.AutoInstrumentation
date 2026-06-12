@@ -107,7 +107,17 @@ def main() -> None:
         metavar="NAME[,NAME...]",
         help="Skip the named verifier command(s). Names are shown in the gate headers.",
     )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="Print available verifier command names and exit.",
+    )
     args = parser.parse_args()
+
+    if args.list:
+        for name, _ in COMMANDS:
+            print(name)
+        return
 
     commands = select_commands(parse_names(args.only), parse_names(args.skip))
     env = dict(os.environ)
