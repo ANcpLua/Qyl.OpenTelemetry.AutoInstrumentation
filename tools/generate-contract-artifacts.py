@@ -42,6 +42,36 @@ CONFORMANCE_PROFILES = [
             "sqlclient.command",
         ],
     },
+    {
+        "service_name": "qyl-grpc-aot-demo",
+        "profile_id": "qyl-aot-grpc",
+        "signal_names": [
+            "grpc.client",
+        ],
+    },
+    {
+        "service_name": "qyl-messaging-aot-demo",
+        "profile_id": "qyl-aot-messaging",
+        "signal_names": [
+            "kafka.message",
+            "masstransit.message",
+            "rabbitmq.publish",
+        ],
+    },
+    {
+        "service_name": "qyl-cache-aot-demo",
+        "profile_id": "qyl-aot-cache",
+        "signal_names": [
+            "redis.command",
+        ],
+    },
+    {
+        "service_name": "qyl-logging-aot-demo",
+        "profile_id": "qyl-aot-logging",
+        "signal_names": [
+            "log4net.log",
+        ],
+    },
 ]
 README_START = "<!-- qyl-contract-summary:start -->"
 README_END = "<!-- qyl-contract-summary:end -->"

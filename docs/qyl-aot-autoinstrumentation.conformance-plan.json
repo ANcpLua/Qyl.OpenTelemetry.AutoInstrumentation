@@ -80,6 +80,113 @@
           ]
         }
       ]
+    },
+    {
+      "service_name": "qyl-grpc-aot-demo",
+      "profile_id": "qyl-aot-grpc",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "grpc.client",
+          "required_attributes": [
+            "rpc.system",
+            "rpc.service",
+            "rpc.method",
+            "rpc.grpc.status_code",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-messaging-aot-demo",
+      "profile_id": "qyl-aot-messaging",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "kafka.message",
+          "required_attributes": [
+            "messaging.system",
+            "messaging.operation.type",
+            "messaging.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "masstransit.message",
+          "required_attributes": [
+            "messaging.system",
+            "messaging.operation.type",
+            "messaging.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "rabbitmq.publish",
+          "required_attributes": [
+            "messaging.system",
+            "messaging.operation.type",
+            "messaging.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-cache-aot-demo",
+      "profile_id": "qyl-aot-cache",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "redis.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-logging-aot-demo",
+      "profile_id": "qyl-aot-logging",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "log4net.log",
+          "required_attributes": [
+            "log.severity",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        }
+      ]
     }
   ]
 }

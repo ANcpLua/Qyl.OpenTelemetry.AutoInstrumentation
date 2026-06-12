@@ -134,6 +134,18 @@ ownership_items:
   - src/Qyl.AutoInstrumentation.DiagnosticListeners
   - demos/Qyl.RealGrpcClientDemo
   - tools/verify-real-grpc-client-demo.py
+  conformance_signals:
+  - kind: span
+    name: grpc.client
+    required_attributes:
+    - rpc.system
+    - rpc.service
+    - rpc.method
+    - rpc.grpc.status_code
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
   key: signals.traces.HTTPCLIENT
   lane: source_interceptor
@@ -178,6 +190,17 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealKafkaDemo
   - tools/verify-real-kafka-demo.py
+  conformance_signals:
+  - kind: span
+    name: kafka.message
+    required_attributes:
+    - messaging.system
+    - messaging.operation.type
+    - messaging.operation.name
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   key: signals.traces.MASSTRANSIT
   lane: source_interceptor
@@ -191,6 +214,17 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMassTransitDemo
   - tools/verify-real-masstransit-demo.py
+  conformance_signals:
+  - kind: span
+    name: masstransit.message
+    required_attributes:
+    - messaging.system
+    - messaging.operation.type
+    - messaging.operation.name
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
   key: signals.traces.MONGODB
   lane: source_interceptor
@@ -282,6 +316,17 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealRabbitMqDemo
   - tools/verify-real-rabbitmq-demo.py
+  conformance_signals:
+  - kind: span
+    name: rabbitmq.publish
+    required_attributes:
+    - messaging.system
+    - messaging.operation.type
+    - messaging.operation.name
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ
   lane: source_interceptor
@@ -344,6 +389,18 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealRedisDemo
   - tools/verify-real-redis-demo.py
+  conformance_signals:
+  - kind: span
+    name: redis.command
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_024
   key: signals.traces.WCFCLIENT
   lane: source_interceptor
@@ -503,6 +560,14 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealLog4NetDemo
   - tools/verify-real-log4net-demo.py
+  conformance_signals:
+  - kind: span
+    name: log4net.log
+    required_attributes:
+    - log.severity
+    - qyl.instrumentation.domain
+    recommended_attributes: []
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_037
   key: signals.logs.NLOG
   lane: source_interceptor
