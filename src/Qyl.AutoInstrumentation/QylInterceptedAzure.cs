@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -29,7 +30,6 @@ public static class QylInterceptedAzure
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
-        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordException(activity, exception);
     }
 }

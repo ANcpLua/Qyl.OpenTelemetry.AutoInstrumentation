@@ -130,8 +130,7 @@ public static class QylInterceptedAspNetCore
 
     private static void RecordException(Activity? activity, Exception exception)
     {
-        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordException(activity, exception);
     }
 
     private static void RecordResponse(Activity? activity, HttpContext context)
@@ -146,8 +145,7 @@ public static class QylInterceptedAspNetCore
             context.Response.Headers);
         if (context.Response.StatusCode >= 500)
         {
-            activity.SetTag(QylSemanticAttributes.ErrorType, context.Response.StatusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            activity.SetStatus(ActivityStatusCode.Error);
+            QylActivityStatus.RecordError(activity, context.Response.StatusCode);
         }
     }
 

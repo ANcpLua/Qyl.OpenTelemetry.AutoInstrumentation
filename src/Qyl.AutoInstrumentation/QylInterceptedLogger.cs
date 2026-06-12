@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Qyl.AutoInstrumentation.Internal;
 
 namespace Qyl.AutoInstrumentation;
 
@@ -98,7 +99,6 @@ public static class QylInterceptedLogger
 
     private static void RecordException(Activity? activity, Exception exception)
     {
-        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordException(activity, exception);
     }
 }

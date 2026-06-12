@@ -19,6 +19,7 @@ SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerator
 RUNTIME_SEMANTICS_PATH = ROOT / "docs" / "RUNTIME_SEMANTICS.md"
 HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
+ACTIVITY_STATUS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityStatus.cs"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
 RUNTIME_EMISSION_ROOTS = [
@@ -429,11 +430,32 @@ def find_catch_blocks(text: str) -> list[str]:
             fail("unterminated catch block")
 
 
+def verify_intercepted_runtime_error_policy() -> None:
+    helper = ACTIVITY_STATUS_PATH.read_text()
+    for token in [
+        "activity.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);",
+        "activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(CultureInfo.InvariantCulture));",
+        "activity.SetStatus(ActivityStatusCode.Error);",
+    ]:
+        if token not in helper:
+            fail(f"QylActivityStatus must own intercepted runtime error policy token: {token}")
+
+    for path in sorted((ROOT / "src" / "Qyl.AutoInstrumentation").glob("QylIntercepted*.cs")):
+        text = path.read_text()
+        for token in [
+            "SetTag(QylSemanticAttributes.ErrorType",
+            "SetStatus(ActivityStatusCode.Error)",
+        ]:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate error policy to QylActivityStatus: {path.relative_to(ROOT)} {token}")
+
+
 def verify_behavior_semantics_contract() -> None:
     generator = GENERATOR_PATH.read_text()
     if "global::Qyl.AutoInstrumentation.QylIntercepted" not in generator:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
     verify_interceptor_emitter_runtime_delegation(generator)
+    verify_intercepted_runtime_error_policy()
 
     for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:
         if token in generator:

@@ -12,8 +12,8 @@ internal static class QylGeneratedInstrumentationContract
     public const int LogsSignalSpecificPromiseCount = 3;
     public const int UniqueInstrumentationIdCount = 31;
     public const int ImplementedSignalPromiseCount = 33;
-    public const int SourceInterceptorSignalPromiseCount = 25;
-    public const int RuntimePublicTelemetrySignalPromiseCount = 7;
+    public const int SourceInterceptorSignalPromiseCount = 24;
+    public const int RuntimePublicTelemetrySignalPromiseCount = 8;
     public const int UnsupportedNativeAotSignalPromiseCount = 4;
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
@@ -168,7 +168,6 @@ internal static class QylGeneratedInstrumentationContract
         "signals.traces.ELASTICSEARCH",
         "signals.traces.ELASTICTRANSPORT",
         "signals.traces.GRAPHQL",
-        "signals.traces.HTTPCLIENT",
         "signals.traces.KAFKA",
         "signals.traces.MASSTRANSIT",
         "signals.traces.MONGODB",
@@ -196,6 +195,7 @@ internal static class QylGeneratedInstrumentationContract
         "signals.traces.ASPNETCORE",
         "signals.traces.ENTITYFRAMEWORKCORE",
         "signals.traces.GRPCNETCLIENT",
+        "signals.traces.HTTPCLIENT",
         "signals.metrics.ASPNETCORE",
         "signals.metrics.HTTPCLIENT",
         "signals.metrics.NETRUNTIME",

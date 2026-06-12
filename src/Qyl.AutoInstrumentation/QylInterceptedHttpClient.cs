@@ -681,8 +681,7 @@ public static class QylInterceptedHttpClient
         }
 
         var activity = observation.Activity;
-        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordException(activity, exception);
         RecordDuration(observation, null);
     }
 
@@ -701,8 +700,7 @@ public static class QylInterceptedHttpClient
 
     private static void RecordHttpStatusError(Activity activity, int statusCode)
     {
-        activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(CultureInfo.InvariantCulture));
-        activity.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordError(activity, statusCode);
     }
 
     private static void RecordDuration(HttpClientObservation observation, int? statusCode)

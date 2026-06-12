@@ -64,8 +64,7 @@ public static class QylInterceptedHttpWebRequest
         if (exception is WebException { Response: HttpWebResponse response })
             statusCode = RecordResponse(activity, response, markErrorForStatus: false);
 
-        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordException(activity, exception);
         RecordDuration(startTimeUtc, method, statusCode);
     }
 
@@ -81,8 +80,7 @@ public static class QylInterceptedHttpWebRequest
                 response.Headers);
             if (markErrorForStatus && statusCode >= 400)
             {
-                activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                activity.SetStatus(ActivityStatusCode.Error);
+                QylActivityStatus.RecordError(activity, statusCode);
             }
         }
 

@@ -82,8 +82,7 @@ public static class QylInterceptedGrpcNetClient
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
-        activity?.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        QylActivityStatus.RecordException(activity, exception);
     }
 
     /// <summary>Runs the Record Streaming Complete runtime helper used by source-generated qyl interceptors.</summary>
