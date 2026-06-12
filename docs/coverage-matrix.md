@@ -39,10 +39,10 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 24 |
+| `compile_binding_only` | 23 |
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 4 |
+| `verified_managed` | 5 |
 | `verified_nativeaot` | 5 |
 
 ## Matrix
@@ -84,7 +84,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 34 | `signals.metrics.SQLCLIENT` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 35 | `signals.logs.ILOGGER` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
-| 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 37 | `signals.logs.NLOG` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 38 | `global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 39 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |

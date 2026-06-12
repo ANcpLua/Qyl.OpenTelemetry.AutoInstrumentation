@@ -165,7 +165,7 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 | 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` |
 | 34 | `signals.metrics.SQLCLIENT` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` |
 | 35 | `signals.logs.ILOGGER` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
-| 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` |
+| 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 37 | `signals.logs.NLOG` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 38 | `global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` |
 | 39 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` |

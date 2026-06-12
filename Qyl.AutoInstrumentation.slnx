@@ -6,6 +6,7 @@
   <Project Path="demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj" />
   <Project Path="demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj" />
   <Project Path="demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj" />
+  <Project Path="demos/Qyl.RealLog4NetDemo/Qyl.RealLog4NetDemo.csproj" />
   <Project Path="demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj" />
   <Project Path="demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj" />
   <Project Path="demos/Qyl.RealNLogDemo/Qyl.RealNLogDemo.csproj" />
