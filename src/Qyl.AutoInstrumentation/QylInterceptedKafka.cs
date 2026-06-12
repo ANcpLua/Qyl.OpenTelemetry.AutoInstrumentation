@@ -10,17 +10,11 @@ public static class QylInterceptedKafka
 {
     /// <summary>Runs the Start Producer Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartProducerActivity()
-        => StartActivity(
-            ActivityKind.Producer,
-            QylSemanticAttributes.MessagingOperationTypeSend,
-            QylSemanticAttributes.MessagingOperationNamePublish);
+        => QylMessagingActivityPolicy.StartKafkaProducerActivity();
 
     /// <summary>Runs the Start Consumer Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartConsumerActivity()
-        => StartActivity(
-            ActivityKind.Consumer,
-            QylSemanticAttributes.MessagingOperationTypeReceive,
-            QylSemanticAttributes.MessagingOperationTypeReceive);
+        => QylMessagingActivityPolicy.StartKafkaConsumerActivity();
 
     /// <summary>Runs the Record Consume Success runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordConsumeSuccess(Activity? activity)
@@ -38,22 +32,5 @@ public static class QylInterceptedKafka
         QylActivityStatus.RecordException(activity, exception);
     }
 
-    private static Activity? StartActivity(ActivityKind activityKind, string operationType, string operationName)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.Kafka,
-            QylActivityNames.KafkaMessage,
-            activityKind,
-            QylInstrumentationDomains.MessagingKafka);
-        if (activity is null)
-            return null;
 
-        QylActivityTags.SetMessaging(
-            activity,
-            QylSemanticAttributes.MessagingSystemKafka,
-            operationType,
-            operationName);
-
-        return activity;
-    }
 }

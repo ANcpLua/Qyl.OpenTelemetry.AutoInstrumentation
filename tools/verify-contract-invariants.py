@@ -489,6 +489,51 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
                 fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
 
 
+def verify_intercepted_runtime_messaging_activity_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylMessagingActivityPolicy.cs").read_text()
+    for token in [
+        "QylActivityFactory.StartTraceActivity(",
+        "QylActivityTags.SetMessaging(activity, messagingSystem, operationType, operationName);",
+        "QylAutoInstrumentationIds.Kafka",
+        "QylAutoInstrumentationIds.MassTransit",
+        "QylAutoInstrumentationIds.NServiceBus",
+        "QylAutoInstrumentationIds.RabbitMq",
+        "ActivityKind.Consumer",
+        "ActivityKind.Producer",
+        "QylSemanticAttributes.MessagingOperationTypeReceive",
+        "QylSemanticAttributes.MessagingOperationTypeSend",
+        "NormalizeSendPublishOperation",
+    ]:
+        if token not in helper:
+            fail(f"QylMessagingActivityPolicy must own messaging activity token: {token}")
+
+    messaging_policy_owned_helpers = {
+        "QylInterceptedKafka.cs",
+        "QylInterceptedMassTransit.cs",
+        "QylInterceptedNServiceBus.cs",
+        "QylInterceptedRabbitMq.cs",
+    }
+    forbidden_tokens = [
+        "QylActivityFactory.StartTraceActivity(",
+        "QylActivityTags.SetMessaging(",
+        "ActivityKind.Consumer",
+        "ActivityKind.Producer",
+        "MessagingSystemKafka",
+        "MessagingSystemMassTransit",
+        "MessagingSystemNServiceBus",
+        "MessagingSystemRabbitMq",
+        "MessagingOperationTypeSend",
+        "MessagingOperationTypeReceive",
+        "MessagingOperationNamePublish",
+        "MessagingOperationNameSend",
+    ]
+    for name in sorted(messaging_policy_owned_helpers):
+        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        for token in forbidden_tokens:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate messaging activity policy to QylMessagingActivityPolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+
+
 def verify_intercepted_runtime_db_activity_policy() -> None:
     helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylDbActivityPolicy.cs").read_text()
     for token in [
@@ -747,6 +792,7 @@ def verify_behavior_semantics_contract() -> None:
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
     verify_intercepted_runtime_activity_start_policy()
+    verify_intercepted_runtime_messaging_activity_policy()
     verify_intercepted_runtime_db_activity_policy()
     verify_intercepted_runtime_http_activity_policy()
     verify_intercepted_runtime_sensitive_capture_policy()

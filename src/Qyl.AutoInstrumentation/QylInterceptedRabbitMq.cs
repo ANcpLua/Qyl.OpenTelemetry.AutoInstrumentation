@@ -11,23 +11,7 @@ public static class QylInterceptedRabbitMq
 
     /// <summary>Runs the Start Publish Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartPublishActivity(string? exchange)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.RabbitMq,
-            QylActivityNames.RabbitMqPublish,
-            ActivityKind.Producer,
-            QylInstrumentationDomains.MessagingRabbitMq);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetMessaging(
-            activity,
-            QylSemanticAttributes.MessagingSystemRabbitMq,
-            QylSemanticAttributes.MessagingOperationTypeSend,
-            QylSemanticAttributes.MessagingOperationNamePublish);
-
-        return activity;
-    }
+        => QylMessagingActivityPolicy.StartRabbitMqPublishActivity(exchange);
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordSuccess(Activity? activity)

@@ -11,26 +11,7 @@ public static class QylInterceptedNServiceBus
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string operationName)
-    {
-        var operation = string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? QylSemanticAttributes.MessagingOperationNameSend
-            : QylSemanticAttributes.MessagingOperationNamePublish;
-
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.NServiceBus,
-            QylActivityNames.NServiceBusMessage,
-            ActivityKind.Producer,
-            QylInstrumentationDomains.MessagingNServiceBus);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetMessaging(
-            activity,
-            QylSemanticAttributes.MessagingSystemNServiceBus,
-            QylSemanticAttributes.MessagingOperationTypeSend,
-            operation);
-        return activity;
-    }
+        => QylMessagingActivityPolicy.StartNServiceBusActivity(operationName);
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordSuccess(Activity? activity)
