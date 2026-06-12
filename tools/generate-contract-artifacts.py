@@ -420,6 +420,8 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
             fail(f"conformance_signals must be an array: {item['key']}")
         if conformance_signals and item.get("qyl_status") != "implemented":
             fail(f"conformance signal declared for non-implemented item: {item['key']}")
+        if conformance_signals and item.get("evidence_level") != "verified_nativeaot":
+            fail(f"conformance signal declared for non-NativeAOT evidence item: {item['key']}")
         for signal in conformance_signals:
             if not isinstance(signal, dict):
                 fail(f"conformance signal must be an object: {item['key']}")
