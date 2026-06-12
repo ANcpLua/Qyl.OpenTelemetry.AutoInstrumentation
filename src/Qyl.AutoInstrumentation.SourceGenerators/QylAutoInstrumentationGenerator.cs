@@ -95,10 +95,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
             new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("WcfClient", "client", AppendWcfStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);")),
-            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncUnaryInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncServerStreamingInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncClientStreamingInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncDuplexStreamingInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, GrpcClientBody: new GrpcClientBodyDescriptor(GrpcClientCallShape.Unary, "GrpcNetClientAsyncUnary", "client", "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, GrpcClientBody: new GrpcClientBodyDescriptor(GrpcClientCallShape.ServerStreaming, "GrpcNetClientAsyncServerStreaming", "client", "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, GrpcClientBody: new GrpcClientBodyDescriptor(GrpcClientCallShape.ClientStreaming, "GrpcNetClientAsyncClientStreaming", "client", "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, GrpcClientBody: new GrpcClientBodyDescriptor(GrpcClientCallShape.DuplexStreaming, "GrpcNetClientAsyncDuplexStreaming", "client", "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient")),
             new InterceptorEmissionDescriptor(InterceptorKind.KafkaProducer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("KafkaProducer", "producer", AppendKafkaProducerStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.KafkaConsumer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("KafkaConsumer", "consumer", AppendKafkaConsumerStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.MassTransitMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("MassTransit", "endpoint", AppendMassTransitStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(activity, exception);")),
@@ -291,6 +291,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (descriptor.DbCommandBody.IsDefined)
             {
                 EmitDbCommandInterceptor(builder, invocation, index, descriptor.DbCommandBody);
+                continue;
+            }
+
+            if (descriptor.GrpcClientBody.IsDefined)
+            {
+                EmitGrpcNetClientInterceptor(builder, invocation, index, descriptor.GrpcClientBody);
                 continue;
             }
 
@@ -821,12 +827,74 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
-    private static void EmitGrpcNetClientAsyncUnaryInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    private static void EmitGrpcNetClientInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        GrpcClientBodyDescriptor descriptor)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncUnary_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName, target.Parameters, isAsync: false);
         builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.StartActivity(");
+        EmitGrpcCallPreamble(builder, target, descriptor);
+        builder.Append("                return new ");
+        builder.Append(target.ReturnType);
+        builder.AppendLine("(");
+        EmitGrpcConstructorArguments(builder, descriptor);
+        EmitGrpcDisposeAction(builder, descriptor);
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.Append("                ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".RecordException(activity, exception);");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitGrpcConstructorArguments(StringBuilder builder, GrpcClientBodyDescriptor descriptor)
+    {
+        switch (descriptor.Shape)
+        {
+            case GrpcClientCallShape.Unary:
+                builder.Append("                    ");
+                builder.Append(descriptor.HelperType);
+                builder.AppendLine(".ObserveUnaryResponseAsync(call.ResponseAsync, call.ResponseHeadersAsync, activity),");
+                break;
+
+            case GrpcClientCallShape.ServerStreaming:
+                builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity, call.ResponseHeadersAsync),");
+                break;
+
+            case GrpcClientCallShape.ClientStreaming:
+                builder.AppendLine("                    call.RequestStream,");
+                builder.Append("                    ");
+                builder.Append(descriptor.HelperType);
+                builder.AppendLine(".ObserveUnaryResponseAsync(call.ResponseAsync, call.ResponseHeadersAsync, activity),");
+                break;
+
+            case GrpcClientCallShape.DuplexStreaming:
+                builder.AppendLine("                    call.RequestStream,");
+                builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity, call.ResponseHeadersAsync),");
+                break;
+
+            default:
+                throw new InvalidOperationException("Unknown gRPC client call shape: " + descriptor.Shape);
+        }
+
+        builder.AppendLine("                    observedResponseHeaders,");
+        builder.AppendLine("                    call.GetStatus,");
+        builder.AppendLine("                    call.GetTrailers,");
+    }
+
+    private static void EmitGrpcCallPreamble(StringBuilder builder, InterceptorTarget target, GrpcClientBodyDescriptor descriptor)
+    {
+        builder.Append("            var activity = ");
+        builder.Append(descriptor.HelperType);
+        builder.Append(".StartActivity(");
         AppendStringLiteral(builder, target.ReceiverType);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
@@ -835,128 +903,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(");");
         builder.AppendLine("            try");
         builder.AppendLine("            {");
-        builder.Append("                var call = client.");
+        builder.Append("                var call = ");
+        builder.Append(descriptor.ReceiverName);
+        builder.Append('.');
         builder.Append(target.MethodName);
         builder.Append('(');
         AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
         builder.AppendLine(");");
-        builder.AppendLine("                var observedResponseHeaders = global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity);");
-        builder.Append("                return new ");
-        builder.Append(target.ReturnType);
-        builder.AppendLine("(");
-        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync(call.ResponseAsync, call.ResponseHeadersAsync, activity),");
-        builder.AppendLine("                    observedResponseHeaders,");
-        builder.AppendLine("                    call.GetStatus,");
-        builder.AppendLine("                    call.GetTrailers,");
-        EmitGrpcDisposeAction(builder);
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("        }");
-        builder.AppendLine();
+        builder.Append("                var observedResponseHeaders = ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity);");
     }
 
-    private static void EmitGrpcNetClientAsyncServerStreamingInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncServerStreaming_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        EmitGrpcCallPreamble(builder, target);
-        builder.Append("                return new ");
-        builder.Append(target.ReturnType);
-        builder.AppendLine("(");
-        builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity, call.ResponseHeadersAsync),");
-        builder.AppendLine("                    observedResponseHeaders,");
-        builder.AppendLine("                    call.GetStatus,");
-        builder.AppendLine("                    call.GetTrailers,");
-        EmitGrpcDisposeAction(builder);
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
-    private static void EmitGrpcNetClientAsyncClientStreamingInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncClientStreaming_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        EmitGrpcCallPreamble(builder, target);
-        builder.Append("                return new ");
-        builder.Append(target.ReturnType);
-        builder.AppendLine("(");
-        builder.AppendLine("                    call.RequestStream,");
-        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync(call.ResponseAsync, call.ResponseHeadersAsync, activity),");
-        builder.AppendLine("                    observedResponseHeaders,");
-        builder.AppendLine("                    call.GetStatus,");
-        builder.AppendLine("                    call.GetTrailers,");
-        EmitGrpcDisposeAction(builder);
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
-    private static void EmitGrpcNetClientAsyncDuplexStreamingInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "GrpcNetClientAsyncDuplexStreaming_" + target.MethodName, index, target.ReceiverType, "client", target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        EmitGrpcCallPreamble(builder, target);
-        builder.Append("                return new ");
-        builder.Append(target.ReturnType);
-        builder.AppendLine("(");
-        builder.AppendLine("                    call.RequestStream,");
-        builder.AppendLine("                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity, call.ResponseHeadersAsync),");
-        builder.AppendLine("                    observedResponseHeaders,");
-        builder.AppendLine("                    call.GetStatus,");
-        builder.AppendLine("                    call.GetTrailers,");
-        EmitGrpcDisposeAction(builder);
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(activity, exception);");
-        builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
-    private static void EmitGrpcCallPreamble(StringBuilder builder, InterceptorTarget target)
-    {
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.StartActivity(");
-        AppendStringLiteral(builder, target.ReceiverType);
-        builder.Append(", ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.Append(", ");
-        AppendGrpcMetadataExpression(builder, target);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                var call = client.");
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-        builder.AppendLine(");");
-        builder.AppendLine("                var observedResponseHeaders = global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity);");
-    }
-
-    private static void EmitGrpcDisposeAction(StringBuilder builder)
+    private static void EmitGrpcDisposeAction(StringBuilder builder, GrpcClientBodyDescriptor descriptor)
     {
         builder.AppendLine("                    () =>");
         builder.AppendLine("                    {");
@@ -966,7 +925,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                        }");
         builder.AppendLine("                        finally");
         builder.AppendLine("                        {");
-        builder.AppendLine("                            global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(activity);");
+        builder.Append("                            ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".Dispose(activity);");
         builder.AppendLine("                        }");
         builder.AppendLine("                    });");
     }
@@ -3682,6 +3643,15 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         LoggerExtensionLog,
     }
 
+    private enum GrpcClientCallShape
+    {
+        None,
+        Unary,
+        ServerStreaming,
+        ClientStreaming,
+        DuplexStreaming,
+    }
+
     private readonly record struct InterceptorEmissionDescriptor(
         InterceptorKind Kind,
         InterceptorEmitterFamily Family,
@@ -3694,9 +3664,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         ForwardingInterceptorBodyDescriptor ForwardingBody = default,
         HttpWebRequestBodyDescriptor HttpWebRequestBody = default,
         DbCommandBodyDescriptor DbCommandBody = default,
+        GrpcClientBodyDescriptor GrpcClientBody = default,
         MeterProviderBuilderBodyDescriptor MeterProviderBuilderBody = default,
         LoggerBodyDescriptor LoggerBody = default,
         ExternalLoggerBodyDescriptor ExternalLoggerBody = default);
+
+    private readonly record struct GrpcClientBodyDescriptor(
+        GrpcClientCallShape Shape,
+        string MethodPrefix,
+        string ReceiverName,
+        string HelperType,
+        bool IsDefined = true);
 
     private readonly record struct DbCommandBodyDescriptor(
         string MethodPrefix,
