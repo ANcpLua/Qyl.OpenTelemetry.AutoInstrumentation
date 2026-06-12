@@ -386,8 +386,9 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
 
     descriptor_delegation_tokens = [
         "descriptor.HelperType",
-        "descriptor.RecordSuccessStatement",
-        "descriptor.RecordExceptionStatement",
+        "descriptor.AppendStartActivity(builder, target)",
+        "descriptor.GetRecordSuccessStatement()",
+        "descriptor.GetRecordExceptionStatement()",
         "descriptor.ObserveAsyncMethod",
         "EmitDirectLoggerInterceptor(",
         "EmitLoggerExtensionInterceptor(",
@@ -1115,6 +1116,11 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "InterceptorSignalOwnership",
         "InterceptorErrorPolicy",
         "InterceptorDurationPolicy",
+        "TraceRuntimeHelperDescriptor",
+        "TraceStartActivityArgumentKind",
+        "new TraceRuntimeHelperDescriptor",
+        "TraceStartActivityArgumentKind.TargetMethodName",
+        "TraceStartActivityArgumentKind.RabbitMqExchange",
     ]:
         if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
             fail(f"contract/generator missing separated descriptor API token: {token}")
