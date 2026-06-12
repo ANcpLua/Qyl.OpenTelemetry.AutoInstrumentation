@@ -446,6 +446,50 @@ def verify_runtime_public_telemetry_status_policy() -> None:
                 fail(f"{name} must not write runtime-public telemetry error status directly: {token}")
 
 
+def verify_runtime_public_telemetry_payload_access_policy() -> None:
+    payload_readers = {
+        "src/Qyl.AutoInstrumentation.DiagnosticListeners/DiagnosticPayloadReader.cs": [
+            "payload is IReadOnlyDictionary<string, object?> readOnlyDictionary",
+            "payload is IEnumerable<KeyValuePair<string, object?>> keyValuePairs",
+            "Activity.Current?.GetTagItem(key)",
+        ],
+        "src/Qyl.AutoInstrumentation.DiagnosticListeners/AspNetCore/AspNetCorePayloadReader.cs": [
+            "payload as HttpContext",
+            "endpoint is RouteEndpoint routeEndpoint",
+        ],
+        "src/Qyl.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCorePayloadReader.cs": [
+            "payload is not CommandEventData commandEvent",
+            "payload is CommandErrorEventData errorEvent",
+        ],
+        "src/Qyl.AutoInstrumentation.SqlClient/SqlClientPayloadReader.cs": [
+            "payload is IEnumerable<KeyValuePair<string, object>> entries",
+            "entry.Value is T matched",
+            "TryGetPayloadValue<SqlCommand>(payload, CommandKey, out var sqlCommand)",
+            "TryGetPayloadValue<Exception>(payload, ExceptionKey, out var exception)",
+        ],
+    }
+    forbidden_tokens = [
+        "System.Reflection",
+        "GetProperty(",
+        "GetProperties(",
+        "GetField(",
+        "GetFields(",
+        "PropertyInfo",
+        "FieldInfo",
+        "dynamic ",
+        "Activator.CreateInstance",
+        "MakeGeneric",
+    ]
+    for relative_path, required_tokens in payload_readers.items():
+        text = (ROOT / relative_path).read_text()
+        for token in required_tokens:
+            if token not in text:
+                fail(f"runtime-public telemetry payload reader must preserve typed/public access token: {relative_path} {token}")
+        for token in forbidden_tokens:
+            if token in text:
+                fail(f"runtime-public telemetry payload reader must not use reflection/dynamic access: {relative_path} {token}")
+
+
 def parse_interceptor_emitter_blocks(generator: str) -> dict[str, str]:
     blocks: dict[str, str] = {}
     for match in re.finditer(r"\n    private static void (Emit[A-Za-z0-9]+Interceptor)\(", generator):
@@ -1695,6 +1739,7 @@ def main() -> None:
     verify_semconv_attribute_contract()
     verify_metric_contract()
     verify_runtime_public_telemetry_status_policy()
+    verify_runtime_public_telemetry_payload_access_policy()
     verify_behavior_semantics_contract()
     verify_productive_mechanism_contract()
     print("contract-invariants-ok")
