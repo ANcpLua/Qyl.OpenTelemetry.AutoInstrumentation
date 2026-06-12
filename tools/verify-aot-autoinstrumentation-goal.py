@@ -26,6 +26,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("real adonet demo", [sys.executable, "tools/verify-real-adonet-demo.py"]),
     ("real graphql demo", [sys.executable, "tools/verify-real-graphql-demo.py"]),
     ("real log4net demo", [sys.executable, "tools/verify-real-log4net-demo.py"]),
+    ("real mongodb demo", [sys.executable, "tools/verify-real-mongodb-demo.py"]),
     ("real nlog demo", [sys.executable, "tools/verify-real-nlog-demo.py"]),
     ("real nservicebus demo", [sys.executable, "tools/verify-real-nservicebus-demo.py"]),
     ("real quartz demo", [sys.executable, "tools/verify-real-quartz-demo.py"]),

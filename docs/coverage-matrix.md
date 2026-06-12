@@ -39,10 +39,10 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 18 |
+| `compile_binding_only` | 17 |
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 10 |
+| `verified_managed` | 11 |
 | `verified_nativeaot` | 5 |
 
 ## Matrix
@@ -61,7 +61,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 10 | `signals.traces.HTTPCLIENT` | `source_interceptor` | `implemented` | `both` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 11 | `signals.traces.KAFKA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 12 | `signals.traces.MASSTRANSIT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
-| 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 14 | `signals.traces.MYSQLCONNECTOR` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 15 | `signals.traces.MYSQLDATA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
