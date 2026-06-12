@@ -8,13 +8,11 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_managed
+  evidence_level: compile_binding_only
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealGraphQlDemo
-  - tools/verify-real-graphql-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_002
   key: signals.traces.ASPNET
   lane: unsupported_nativeaot
@@ -64,11 +62,13 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealGraphQlDemo
+  - tools/verify-real-graphql-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
   key: signals.traces.ELASTICTRANSPORT
   lane: source_interceptor
@@ -109,11 +109,13 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealGraphQlDemo
+  - tools/verify-real-graphql-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
   key: signals.traces.GRPCNETCLIENT
   lane: runtime_public_telemetry
@@ -467,11 +469,13 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealNLogDemo
+  - tools/verify-real-nlog-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_038
   key: global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   lane: environment_control

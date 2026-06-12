@@ -39,24 +39,24 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 26 |
+| `compile_binding_only` | 24 |
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 2 |
+| `verified_managed` | 4 |
 | `verified_nativeaot` | 5 |
 
 ## Matrix
 
 | # | Key | Lane | qyl status | Call-site visibility | Payload access | Evidence | Owner |
 |---:|---|---|---|---|---|---|---|
-| 1 | `signals.traces.ADONET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 1 | `signals.traces.ADONET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 2 | `signals.traces.ASPNET` | `unsupported_nativeaot` | `unsupported_nativeaot` | `user_code` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
 | 3 | `signals.traces.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 4 | `signals.traces.AZURE` | `framework_initialization` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator framework initialization |
-| 5 | `signals.traces.ELASTICSEARCH` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 5 | `signals.traces.ELASTICSEARCH` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 6 | `signals.traces.ELASTICTRANSPORT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 7 | `signals.traces.ENTITYFRAMEWORKCORE` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
-| 8 | `signals.traces.GRAPHQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 8 | `signals.traces.GRAPHQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 9 | `signals.traces.GRPCNETCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 10 | `signals.traces.HTTPCLIENT` | `source_interceptor` | `implemented` | `both` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 11 | `signals.traces.KAFKA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
@@ -85,7 +85,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 34 | `signals.metrics.SQLCLIENT` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 35 | `signals.logs.ILOGGER` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
-| 37 | `signals.logs.NLOG` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 37 | `signals.logs.NLOG` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 38 | `global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 39 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 40 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED` | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |

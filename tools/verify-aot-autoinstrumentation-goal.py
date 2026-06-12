@@ -24,6 +24,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
     ("real graphql demo", [sys.executable, "tools/verify-real-graphql-demo.py"]),
+    ("real nlog demo", [sys.executable, "tools/verify-real-nlog-demo.py"]),
     ("real quartz demo", [sys.executable, "tools/verify-real-quartz-demo.py"]),
     ("smoketest", ["bash", "tools/smoketest.sh"]),
     ("webapi aot demo", [sys.executable, "tools/verify-webapi-aot-demo.py"]),
