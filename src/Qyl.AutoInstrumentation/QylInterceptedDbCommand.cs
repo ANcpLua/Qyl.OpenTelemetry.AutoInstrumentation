@@ -1,4 +1,3 @@
-using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
 using Qyl.AutoInstrumentation.Internal;
@@ -18,27 +17,7 @@ public static class QylInterceptedDbCommand
         ArgumentNullException.ThrowIfNull(instrumentationId);
         ArgumentNullException.ThrowIfNull(operationName);
 
-        var options = QylAutoInstrumentationOptions.Current;
-        if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, instrumentationId))
-            return null;
-
-        var operation = NormalizeOperation(operationName, command);
-        var activity = QylActivitySource.StartActivity(QylActivityNames.DbCommand(operation), ActivityKind.Client);
-        if (activity is null)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbClient);
-        activity.SetTag(QylSemanticAttributes.DbSystemName, GetDbSystemName(instrumentationId));
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, GetQuerySummary(command, operation));
-
-        var databaseName = command.Connection?.Database;
-        if (!string.IsNullOrWhiteSpace(databaseName))
-            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
-
-        QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);
-
-        return activity;
+        return QylDbActivityPolicy.StartDbCommandActivity(command, instrumentationId, operationName);
     }
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
@@ -93,58 +72,5 @@ public static class QylInterceptedDbCommand
         QylActivityStatus.RecordException(activity, exception);
     }
 
-    private static string GetQuerySummary(DbCommand command, string operation)
-    {
-        return operation;
-    }
 
-    private static string NormalizeOperation(string operationName, DbCommand command)
-    {
-        if (command.CommandType is CommandType.StoredProcedure)
-            return "CALL";
-
-        var text = command.CommandText;
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            var token = FirstToken(text);
-            if (IsKnownDbOperation(token))
-                return token;
-        }
-
-        return operationName switch
-        {
-            "ExecuteNonQuery" or "ExecuteNonQueryAsync" => "EXECUTE",
-            "ExecuteScalar" or "ExecuteScalarAsync" => "EXECUTE",
-            "ExecuteReader" or "ExecuteReaderAsync" => "SELECT",
-            _ => "EXECUTE",
-        };
-    }
-
-    private static string FirstToken(string text)
-    {
-        var index = 0;
-        while (index < text.Length && char.IsWhiteSpace(text[index]))
-            index++;
-
-        var start = index;
-        while (index < text.Length && char.IsLetter(text[index]))
-            index++;
-
-        return index == start ? string.Empty : text[start..index].ToUpperInvariant();
-    }
-
-    private static bool IsKnownDbOperation(string token)
-        => token is "SELECT" or "INSERT" or "UPDATE" or "DELETE" or "MERGE" or "CALL" or "CREATE" or "ALTER" or "DROP" or "TRUNCATE" or "EXEC" or "EXECUTE";
-
-    private static string GetDbSystemName(string instrumentationId)
-        => instrumentationId switch
-        {
-            QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
-            QylAutoInstrumentationIds.Sqlite => QylSemanticAttributes.DbSystemSqlite,
-            QylAutoInstrumentationIds.Npgsql => QylSemanticAttributes.DbSystemPostgresql,
-            QylAutoInstrumentationIds.MySqlConnector => QylSemanticAttributes.DbSystemMysql,
-            QylAutoInstrumentationIds.MySqlData => QylSemanticAttributes.DbSystemMysql,
-            QylAutoInstrumentationIds.OracleMda => QylSemanticAttributes.DbSystemOracleDb,
-            _ => QylSemanticAttributes.DbSystemOtherSql,
-        };
 }

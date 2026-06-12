@@ -488,6 +488,41 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
                 fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
 
 
+def verify_intercepted_runtime_db_activity_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylDbActivityPolicy.cs").read_text()
+    for token in [
+        "QylActivityFactory.StartTraceActivity(",
+        "QylActivityNames.DbCommand(operation)",
+        "QylInstrumentationDomains.DbClient",
+        "QylActivityTags.SetDb(",
+        "activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);",
+        "QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);",
+        "command.CommandType is CommandType.StoredProcedure",
+        "FirstToken(text)",
+        "IsKnownDbOperation(token)",
+        "QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer",
+        "QylAutoInstrumentationIds.Npgsql => QylSemanticAttributes.DbSystemPostgresql",
+    ]:
+        if token not in helper:
+            fail(f"QylDbActivityPolicy must own DbCommand activity token: {token}")
+
+    db_command = (ROOT / "src" / "Qyl.AutoInstrumentation" / "QylInterceptedDbCommand.cs").read_text()
+    for token in [
+        "QylActivitySource.StartActivity(",
+        "QylActivityNames.DbCommand(",
+        "QylInstrumentationDomains.DbClient",
+        "SetTag(QylSemanticAttributes.DbNamespace",
+        "CommandType.StoredProcedure",
+        "FirstToken(",
+        "IsKnownDbOperation(",
+        "GetDbSystemName(",
+        "NormalizeOperation(",
+        "GetQuerySummary(",
+    ]:
+        if token in db_command:
+            fail(f"QylInterceptedDbCommand must delegate DB activity policy to QylDbActivityPolicy: {token}")
+
+
 def verify_intercepted_runtime_http_activity_policy() -> None:
     helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylHttpActivityPolicy.cs").read_text()
     for token in [
@@ -697,6 +732,7 @@ def verify_behavior_semantics_contract() -> None:
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
     verify_intercepted_runtime_activity_start_policy()
+    verify_intercepted_runtime_db_activity_policy()
     verify_intercepted_runtime_http_activity_policy()
     verify_intercepted_runtime_sensitive_capture_policy()
     verify_intercepted_runtime_duration_metric_policy()
