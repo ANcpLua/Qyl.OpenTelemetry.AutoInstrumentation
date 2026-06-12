@@ -3,21 +3,36 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import subprocess
 from pathlib import Path
 from typing import Any
 
 from verify_container_helpers import run_published_container
-from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
+from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealMassTransitDemo" / "Qyl.RealMassTransitDemo.csproj"
+GENERATOR_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Qyl.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
 RABBITMQ_IMAGE = os.environ.get("QYL_RABBITMQ_IMAGE", "rabbitmq:4.1-alpine")
 
 
 def fail(message: str) -> None:
     raise SystemExit(message)
+
+
+def runtime_identifier() -> str:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    if system == "darwin":
+        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
+    if system == "linux":
+        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
+    if system == "windows":
+        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
+
+    fail(f"unsupported NativeAOT MassTransit gate platform: {platform.system()} {platform.machine()}")
 
 
 def parse_report(stdout: str) -> dict[str, Any]:
@@ -77,6 +92,45 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     )
 
 
+def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    run_checked(["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
+    output = artifacts_publish_dir(PROJECT, "nativeaot")
+    run_checked(
+        [
+            "dotnet",
+            "publish",
+            str(PROJECT),
+            "-c",
+            "Release",
+            "-r",
+            runtime_identifier(),
+            "-p:PublishAot=true",
+            "-p:TreatWarningsAsErrors=false",
+            "--self-contained",
+            "true",
+            "-o",
+            str(output),
+            "-v",
+            "quiet",
+        ],
+        ROOT,
+        env,
+    )
+    executable = output / ("Qyl.RealMassTransitDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealMassTransitDemo")
+    if not executable.exists():
+        fail(f"NativeAOT MassTransit executable missing: {executable}")
+
+    return subprocess.run(
+        [str(executable)],
+        cwd=output,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
 def main() -> None:
     env = clean_env()
     with run_published_container(
@@ -89,8 +143,10 @@ def main() -> None:
     ) as rabbitmq:
         env["QYL_RABBITMQ_URI"] = f"amqp://guest:guest@{rabbitmq.host}:{rabbitmq.port}/"
         managed = run_managed(env)
+        nativeaot = run_nativeaot(env)
 
     verify_report("managed MassTransit demo", managed, "dynamic-code-supported")
+    verify_report("NativeAOT MassTransit demo", nativeaot, "nativeaot")
     print("real-masstransit-demo-ok")
 
 
