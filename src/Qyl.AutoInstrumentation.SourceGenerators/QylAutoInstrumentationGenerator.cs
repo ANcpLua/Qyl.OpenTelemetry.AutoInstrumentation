@@ -462,6 +462,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static void EmitElasticInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
+        var hasByRefParameters = HasByRefParameters(target.Parameters);
         EmitAttributeAndSignature(
             builder,
             invocation.Location,
@@ -471,7 +472,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             target.ReceiverType,
             "client",
             target.Parameters,
-            target.IsAsync,
+            target.IsAsync && !hasByRefParameters,
             target.TypeParameterList,
             target.ConstraintClauses);
         builder.AppendLine("        {");
@@ -485,36 +486,34 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (target.IsAsync)
         {
-            if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
+            if (hasByRefParameters)
             {
-                builder.Append("                await client.");
-                builder.Append(target.MethodName);
-                AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-                builder.Append('(');
-                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-                builder.AppendLine(").ConfigureAwait(false);");
+                builder.Append("                var resultTask = ");
+                AppendInvocationCall(builder, target, "client");
+                builder.AppendLine(";");
+                builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync(resultTask, activity);");
+            }
+            else if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
+            {
+                builder.Append("                await ");
+                AppendInvocationCall(builder, target, "client");
+                builder.AppendLine(".ConfigureAwait(false);");
                 builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
             }
             else
             {
-                builder.Append("                var result = await client.");
-                builder.Append(target.MethodName);
-                AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-                builder.Append('(');
-                AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-                builder.AppendLine(").ConfigureAwait(false);");
+                builder.Append("                var result = await ");
+                AppendInvocationCall(builder, target, "client");
+                builder.AppendLine(".ConfigureAwait(false);");
                 builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
                 builder.AppendLine("                return result;");
             }
         }
         else
         {
-            builder.Append("                var result = client.");
-            builder.Append(target.MethodName);
-            AppendGenericTypeArgumentList(builder, target.TypeParameterList);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
+            builder.Append("                var result = ");
+            AppendInvocationCall(builder, target, "client");
+            builder.AppendLine(";");
             builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
             builder.AppendLine("                return result;");
         }
@@ -523,9 +522,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);");
+        if (target.IsAsync && hasByRefParameters)
+            builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
+        if (!target.IsAsync || !hasByRefParameters)
+            EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
@@ -1568,6 +1570,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (parameter.IsParams)
                 builder.Append("params ");
 
+            if (parameter.RefKind is RefKind.In)
+                builder.Append("in ");
+
             builder.Append(parameter.TypeName);
             builder.Append(' ');
             builder.Append(parameter.Name);
@@ -1586,8 +1591,22 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (i > 0 || includeLeadingComma)
                 builder.Append(", ");
 
+            if (parameters[i].RefKind is RefKind.In)
+                builder.Append("in ");
+
             builder.Append(parameters[i].Name);
         }
+    }
+
+    private static bool HasByRefParameters(EquatableArray<ParameterSpec> parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (parameter.RefKind is not RefKind.None)
+                return true;
+        }
+
+        return false;
     }
 
     private static void AppendInvocationCall(StringBuilder builder, InterceptorTarget target, string receiverName)
@@ -1984,7 +2003,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             symbol.MethodKind is not MethodKind.Ordinary ||
             symbol.ReturnsVoid ||
             symbol.DeclaredAccessibility is not Accessibility.Public ||
-            !CanEmitByValueParameters(symbol) ||
+            !CanEmitByValueOrInParameters(symbol) ||
             !IsElasticsearchClientType(symbol.ContainingType) ||
             !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
         {
@@ -2008,12 +2027,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static bool TryGetElasticTransportInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsOrImplementsType(receiverType, "Elastic.Transport", "ITransport") &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsOrImplementsType(receiverType, "Elastic.Transport", "ITransport")))
+        {
+            return false;
+        }
+
         if (!IsSupportedElasticTransportMethod(symbol.Name) ||
             symbol.IsStatic ||
-            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.MethodKind is not MethodKind.Ordinary and not MethodKind.ReducedExtension ||
             symbol.ReturnsVoid ||
-            !CanEmitByValueParameters(symbol) ||
-            !IsOrImplementsType(symbol.ContainingType, "Elastic.Transport", "ITransport") ||
+            !CanEmitByValueOrInParameters(symbol) ||
             !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
         {
             return false;
@@ -2023,13 +2049,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             InterceptorKind.ElasticTransport,
             "signals.traces.ELASTICTRANSPORT",
             "ELASTICTRANSPORT",
-            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(receiverType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
             Parameters(symbol),
             isAsync,
             GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol));
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
         return true;
     }
 
@@ -2072,7 +2099,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             symbol.MethodKind is not MethodKind.Ordinary ||
             symbol.IsGenericMethod ||
             IsWcfInfrastructureMethod(symbol.Name) ||
-            !CanEmitByValueParameters(symbol) ||
+            !CanEmitByValueOrInParameters(symbol) ||
             !InheritsFromConstructedGeneric(symbol.ContainingType, "global::System.ServiceModel.ClientBase<TChannel>") ||
             IsSystemServiceModelType(symbol.ContainingType))
         {
@@ -2842,7 +2869,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         if (original is null ||
             !IsType(original.ContainingType, "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions") ||
             !IsSupportedEntityFrameworkCoreQueryableMethod(symbol.Name) ||
-            !CanEmitByValueParameters(symbol) ||
+            !CanEmitByValueOrInParameters(symbol) ||
             original.Parameters.Length is 0 ||
             !TryGetEntityFrameworkCoreQueryableReturn(symbol.ReturnType))
         {
@@ -3249,7 +3276,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         foreach (var parameter in symbol.Parameters)
         {
-            if (parameter.RefKind is not RefKind.None)
+            if (parameter.RefKind is not RefKind.None and not RefKind.In)
                 return false;
         }
 
@@ -3349,11 +3376,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             ? string.Empty
             : CleanTypeName(symbol.ReducedFrom.ContainingType);
 
-    private static bool CanEmitByValueParameters(IMethodSymbol symbol)
+    private static bool CanEmitByValueOrInParameters(IMethodSymbol symbol)
     {
         foreach (var parameter in symbol.Parameters)
         {
-            if (parameter.RefKind is not RefKind.None)
+            if (parameter.RefKind is not RefKind.None and not RefKind.In)
                 return false;
         }
 
@@ -3513,7 +3540,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 CleanTypeName(symbol.Parameters[i].Type, symbol),
                 "p" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 GetDefaultValueExpression(symbol.Parameters[i]),
-                symbol.Parameters[i].IsParams));
+                symbol.Parameters[i].IsParams,
+                symbol.Parameters[i].RefKind));
 
         return builder.ToImmutable().AsEquatableArray();
     }
@@ -3927,7 +3955,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
     }
 
-    private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false);
+    private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false, RefKind RefKind = RefKind.None);
 
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,

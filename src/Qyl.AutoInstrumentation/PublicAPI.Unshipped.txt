@@ -1,1 +1,3 @@
 #nullable enable
+static Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
+static Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
