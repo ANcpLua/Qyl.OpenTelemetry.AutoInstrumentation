@@ -160,6 +160,11 @@ CALL_SITE_VISIBILITIES = {"user_code", "library_internal", "both", "not_applicab
 PAYLOAD_ACCESS_VALUES = {"typed_public", "reflection_required", "not_applicable"}
 EVIDENCE_LEVELS = {"none", "verified_nativeaot", "verified_managed", "compile_binding_only", "option_bound"}
 CONFORMANCE_KINDS = {"span", "metric", "log"}
+MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
+    "signals.traces.NSERVICEBUS",
+    "signals.traces.WCFCLIENT",
+    "signals.metrics.NSERVICEBUS",
+}
 
 COMMON_ITEM_PROPERTIES = {
     "kind",
@@ -385,6 +390,7 @@ def verify_contract_model(contract: dict[str, Any]) -> None:
             fail(f"duplicate contract key: {key}")
         seen_keys.add(key)
 
+    verify_managed_nativeaot_boundary_semantics(contract)
     verify_conformance_signal_semantics(contract)
 
 
@@ -489,6 +495,21 @@ def verify_contract_item(item: dict[str, Any]) -> None:
         fail(f"control_bound item must use environment_control lane: {key}")
     if status == "option_bound" and lane != "instrumentation_option":
         fail(f"option_bound item must use instrumentation_option lane: {key}")
+
+
+def verify_managed_nativeaot_boundary_semantics(contract: dict[str, Any]) -> None:
+    managed_keys = {
+        str(item["key"])
+        for item in signal_items(contract)
+        if item.get("qyl_status") == "implemented"
+        and item.get("evidence_level") == "verified_managed"
+    }
+    if managed_keys != MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS:
+        fail(
+            "verified_managed implemented signals must be an explicit NativeAOT boundary set: "
+            f"missing_boundary={sorted(managed_keys - MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS)} "
+            f"stale_boundary={sorted(MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS - managed_keys)}"
+        )
 
 
 def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
