@@ -982,6 +982,47 @@ def parse_emission_descriptor_ownership(generator: str) -> dict[str, str]:
     return ownership_by_kind
 
 
+def parse_emission_descriptor_policies(generator: str) -> dict[str, tuple[str, str, str, str]]:
+    policies_by_kind: dict[str, tuple[str, str, str, str]] = {}
+    for line in generator.splitlines():
+        if "new InterceptorEmissionDescriptor(" not in line:
+            continue
+
+        match = re.search(
+            r"InterceptorKind\.([A-Za-z0-9]+).*?"
+            r"InterceptorSignalOwnership\.([A-Za-z0-9]+),\s*"
+            r"InterceptorErrorPolicy\.([A-Za-z0-9]+),\s*"
+            r"InterceptorDurationPolicy\.([A-Za-z0-9]+)",
+            line,
+        )
+        if match is None:
+            fail(f"emission descriptor missing signal/error/duration policies: {line.strip()}")
+
+        body_tokens = [
+            "TraceBody",
+            "ForwardingBody",
+            "HttpWebRequestBody",
+            "DbCommandBody",
+            "GrpcClientBody",
+            "MeterProviderBuilderBody",
+            "LoggerBody",
+            "ExternalLoggerBody",
+        ]
+        body_matches = [token for token in body_tokens if re.search(rf"\b{token}:", line)]
+        if len(body_matches) != 1:
+            fail(f"emission descriptor must declare exactly one typed body descriptor: {line.strip()}")
+
+        kind = match.group(1)
+        if kind in policies_by_kind:
+            fail(f"duplicate emission descriptor policy for InterceptorKind.{kind}")
+        policies_by_kind[kind] = (match.group(2), match.group(3), match.group(4), body_matches[0])
+
+    if not policies_by_kind:
+        fail("s_emissionDescriptors must declare signal/error/duration policies")
+
+    return policies_by_kind
+
+
 def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
     try:
         descriptor_block = generator.split("s_matcherDescriptors =", 1)[1].split("s_emissionDescriptors =", 1)[0]
@@ -1103,6 +1144,78 @@ def verify_interceptor_signal_ownership(generator: str, kinds: set[str]) -> None
             )
 
 
+def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
+    for token in [
+        "ValidateEmissionDescriptorPolicy(descriptor);",
+        "Runtime metric duration policy requires trace+metric ownership",
+        "Trace+metric ownership requires runtime metric duration policy",
+        "Trace runtime metric descriptor must provide duration statements",
+        "Unsupported interceptor emission policy shape",
+    ]:
+        if token not in generator:
+            fail(f"generator must validate descriptor signal/error/duration policy token: {token}")
+
+    policies_by_kind = parse_emission_descriptor_policies(generator)
+    missing_policies = kinds - set(policies_by_kind)
+    if missing_policies:
+        fail(f"InterceptorKind values missing signal/error/duration policies: {sorted(missing_policies)}")
+
+    for kind, (ownership, error_policy, duration_policy, body) in sorted(policies_by_kind.items()):
+        if duration_policy == "RuntimeMetric" and ownership != "TraceAndMetric":
+            fail(f"RuntimeMetric duration policy requires TraceAndMetric ownership: {kind}")
+        if ownership == "TraceAndMetric" and duration_policy != "RuntimeMetric":
+            fail(f"TraceAndMetric ownership requires RuntimeMetric duration policy: {kind}")
+
+        expected: tuple[str, str, str] | None = None
+        if body == "HttpWebRequestBody":
+            expected = ("TraceAndMetric", "HttpStatusAndException", "RuntimeMetric")
+        elif body == "DbCommandBody":
+            expected = ("TraceAndMetric", "Exception", "RuntimeMetric")
+        elif body == "GrpcClientBody":
+            expected = ("Trace", "GrpcStatusAndException", "None")
+        elif body == "MeterProviderBuilderBody":
+            expected = ("Metric", "None", "None")
+        elif body == "LoggerBody":
+            expected = ("Log", "RuntimeDelegate", "None")
+        elif body == "ExternalLoggerBody":
+            expected = ("Log", "Exception", "None")
+
+        if expected is not None and (ownership, error_policy, duration_policy) != expected:
+            fail(
+                f"InterceptorKind.{kind} {body} policy mismatch: "
+                f"actual={(ownership, error_policy, duration_policy)} expected={expected}"
+            )
+
+        if body == "TraceBody":
+            if ownership not in {"Trace", "TraceAndMetric"}:
+                fail(f"TraceBody descriptor must own traces: {kind}")
+            if error_policy != "Exception":
+                fail(f"TraceBody descriptor must use Exception policy: {kind}")
+            if duration_policy == "RuntimeMetric" and f"InterceptorKind.{kind}" in generator:
+                descriptor_line = next(
+                    line
+                    for line in generator.splitlines()
+                    if f"InterceptorKind.{kind}" in line and "new InterceptorEmissionDescriptor(" in line
+                )
+                for token in [
+                    "AppendBeforeActivityStatement:",
+                    "AppendAfterSuccessStatement:",
+                    "AppendAfterExceptionStatement:",
+                ]:
+                    if token not in descriptor_line:
+                        fail(f"TraceBody RuntimeMetric descriptor missing duration hook {token}: {kind}")
+
+        if body == "ForwardingBody":
+            if ownership == "TraceAndMetric":
+                if (error_policy, duration_policy) != ("HttpStatusAndException", "RuntimeMetric"):
+                    fail(f"TraceAndMetric ForwardingBody must use HTTP status and runtime metric policy: {kind}")
+            elif ownership == "Trace":
+                if error_policy not in {"Exception", "RuntimeDelegate"} or duration_policy != "None":
+                    fail(f"Trace ForwardingBody must delegate exception/runtime policy without duration: {kind}")
+            else:
+                fail(f"ForwardingBody descriptor has unsupported ownership: {kind} {ownership}")
+
+
 def collect_generator_target_contract_keys(generator: str) -> set[str]:
     target_contract_keys = set(re.findall(
         r"InterceptorKind\.[A-Za-z0-9]+,\s*\n\s*\"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\"",
@@ -1182,6 +1295,7 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
 
     verify_interceptor_signal_ownership(generator, kinds)
+    verify_interceptor_policy_shapes(generator, kinds)
 
     target_contract_keys = collect_generator_target_contract_keys(generator)
     matcher_contract_keys = parse_matcher_descriptor_contract_keys(generator)

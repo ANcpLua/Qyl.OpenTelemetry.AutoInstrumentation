@@ -333,6 +333,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 continue;
 
             EnsureEmissionDescriptorMatchesMatcher(target, descriptor);
+            ValidateEmissionDescriptorPolicy(descriptor);
             return descriptor;
         }
 
@@ -356,6 +357,135 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         {
             throw new InvalidOperationException(
                 "Matcher descriptor '" + target.MatcherName + "' and emission descriptor '" + descriptor.Kind + "' disagree on method shape.");
+        }
+    }
+
+    private static void ValidateEmissionDescriptorPolicy(InterceptorEmissionDescriptor descriptor)
+    {
+        if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
+            descriptor.SignalOwnership is not InterceptorSignalOwnership.TraceAndMetric)
+        {
+            throw new InvalidOperationException("Runtime metric duration policy requires trace+metric ownership: " + descriptor.Kind);
+        }
+
+        if (descriptor.SignalOwnership is InterceptorSignalOwnership.TraceAndMetric &&
+            descriptor.DurationPolicy is not InterceptorDurationPolicy.RuntimeMetric)
+        {
+            throw new InvalidOperationException("Trace+metric ownership requires runtime metric duration policy: " + descriptor.Kind);
+        }
+
+        if (descriptor.HttpWebRequestBody.IsDefined)
+        {
+            ValidatePolicy(
+                descriptor,
+                InterceptorSignalOwnership.TraceAndMetric,
+                InterceptorErrorPolicy.HttpStatusAndException,
+                InterceptorDurationPolicy.RuntimeMetric);
+            return;
+        }
+
+        if (descriptor.DbCommandBody.IsDefined)
+        {
+            ValidatePolicy(
+                descriptor,
+                InterceptorSignalOwnership.TraceAndMetric,
+                InterceptorErrorPolicy.Exception,
+                InterceptorDurationPolicy.RuntimeMetric);
+            return;
+        }
+
+        if (descriptor.GrpcClientBody.IsDefined)
+        {
+            ValidatePolicy(
+                descriptor,
+                InterceptorSignalOwnership.Trace,
+                InterceptorErrorPolicy.GrpcStatusAndException,
+                InterceptorDurationPolicy.None);
+            return;
+        }
+
+        if (descriptor.MeterProviderBuilderBody.IsDefined)
+        {
+            ValidatePolicy(
+                descriptor,
+                InterceptorSignalOwnership.Metric,
+                InterceptorErrorPolicy.None,
+                InterceptorDurationPolicy.None);
+            return;
+        }
+
+        if (descriptor.LoggerBody.IsDefined)
+        {
+            ValidatePolicy(
+                descriptor,
+                InterceptorSignalOwnership.Log,
+                InterceptorErrorPolicy.RuntimeDelegate,
+                InterceptorDurationPolicy.None);
+            return;
+        }
+
+        if (descriptor.ExternalLoggerBody.IsDefined)
+        {
+            ValidatePolicy(
+                descriptor,
+                InterceptorSignalOwnership.Log,
+                InterceptorErrorPolicy.Exception,
+                InterceptorDurationPolicy.None);
+            return;
+        }
+
+        if (descriptor.TraceBody.IsDefined)
+        {
+            if (descriptor.SignalOwnership is not (InterceptorSignalOwnership.Trace or InterceptorSignalOwnership.TraceAndMetric))
+                throw new InvalidOperationException("Trace body descriptor must own traces: " + descriptor.Kind);
+            if (descriptor.ErrorPolicy is not InterceptorErrorPolicy.Exception)
+                throw new InvalidOperationException("Trace body descriptor must use exception error policy: " + descriptor.Kind);
+            if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
+                (descriptor.TraceBody.AppendBeforeActivityStatement is null ||
+                 descriptor.TraceBody.AppendAfterSuccessStatement is null ||
+                 descriptor.TraceBody.AppendAfterExceptionStatement is null))
+            {
+                throw new InvalidOperationException("Trace runtime metric descriptor must provide duration statements: " + descriptor.Kind);
+            }
+
+            return;
+        }
+
+        if (descriptor.ForwardingBody.IsDefined)
+        {
+            if (descriptor.SignalOwnership is InterceptorSignalOwnership.TraceAndMetric)
+            {
+                ValidatePolicy(
+                    descriptor,
+                    InterceptorSignalOwnership.TraceAndMetric,
+                    InterceptorErrorPolicy.HttpStatusAndException,
+                    InterceptorDurationPolicy.RuntimeMetric);
+                return;
+            }
+
+            if (descriptor.SignalOwnership is InterceptorSignalOwnership.Trace &&
+                descriptor.ErrorPolicy is InterceptorErrorPolicy.Exception or InterceptorErrorPolicy.RuntimeDelegate &&
+                descriptor.DurationPolicy is InterceptorDurationPolicy.None)
+            {
+                return;
+            }
+        }
+
+        throw new InvalidOperationException("Unsupported interceptor emission policy shape: " + descriptor.Kind);
+    }
+
+    private static void ValidatePolicy(
+        InterceptorEmissionDescriptor descriptor,
+        InterceptorSignalOwnership signalOwnership,
+        InterceptorErrorPolicy errorPolicy,
+        InterceptorDurationPolicy durationPolicy)
+    {
+        if (descriptor.SignalOwnership != signalOwnership ||
+            descriptor.ErrorPolicy != errorPolicy ||
+            descriptor.DurationPolicy != durationPolicy)
+        {
+            throw new InvalidOperationException(
+                "Interceptor emission descriptor policy mismatch: " + descriptor.Kind);
         }
     }
 
