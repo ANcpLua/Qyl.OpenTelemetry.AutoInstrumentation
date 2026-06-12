@@ -261,6 +261,10 @@ def verify_handoff_real_demo_coverage(artifacts: ModuleType, contract: dict[str,
     missing = sorted(path for path in evidence_real_demo_verifiers if path not in handoff_gate)
     if missing:
         fail(f"real demo evidence missing from whole-goal handoff gate: {missing}")
+    handoff_real_demo_verifiers = set(re.findall(r'"(tools/verify-real-[^"]+-demo\.py)"', handoff_gate))
+    unclaimed = sorted(path for path in handoff_real_demo_verifiers if path not in evidence_real_demo_verifiers)
+    if unclaimed:
+        fail(f"whole-goal handoff real demo verifier is not claimed by contract evidence: {unclaimed}")
 
 
 def verify_nativeaot_evidence_is_executable(artifacts: ModuleType, contract: dict[str, Any]) -> None:
