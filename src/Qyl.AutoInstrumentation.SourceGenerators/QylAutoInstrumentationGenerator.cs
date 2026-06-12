@@ -85,11 +85,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         ImmutableArray.Create(
-            new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, EmitHttpClientInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, ForwardingBody: new ForwardingInterceptorBodyDescriptor("HttpClient", "client", "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient", ReceiverTypeOverride: "global::System.Net.Http.HttpClient")),
             new InterceptorEmissionDescriptor(InterceptorKind.HttpWebRequest, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, EmitHttpWebRequestInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreWebApplicationBuilderBuild, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitAspNetCoreWebApplicationBuilderBuildInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitAspNetCoreRequestDelegateInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitAspNetCoreEndpointMapInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreWebApplicationBuilderBuild, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreWebApplicationBuilder", "builder", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "Build")),
+            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreRequestDelegate", "requestDelegate", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "InvokeAsync")),
+            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreEndpointMap", "endpoints", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore")),
             new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, InterceptorSignalOwnership.Metric, InterceptorErrorPolicy.None, InterceptorDurationPolicy.None, EmitMeterProviderBuilderAddMeterInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("AzureClient", "client", AppendAzureStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
@@ -276,6 +276,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 continue;
             }
 
+            if (descriptor.ForwardingBody.IsDefined)
+            {
+                EmitForwardingInterceptor(builder, invocation, index, descriptor.ForwardingBody);
+                continue;
+            }
+
             if (descriptor.Emitter is { } emitter)
             {
                 emitter(builder, invocation, index);
@@ -334,6 +340,43 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            {");
         builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("            }");
+    }
+
+    private static void EmitForwardingInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        ForwardingInterceptorBodyDescriptor descriptor)
+    {
+        var target = invocation.Target;
+        var receiverType = string.IsNullOrEmpty(descriptor.ReceiverTypeOverride)
+            ? target.ReceiverType
+            : descriptor.ReceiverTypeOverride;
+        var helperMethodName = string.IsNullOrEmpty(descriptor.HelperMethodName)
+            ? target.MethodName
+            : descriptor.HelperMethodName;
+
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            descriptor.MethodPrefix + "_" + target.MethodName,
+            index,
+            receiverType,
+            descriptor.ReceiverName,
+            target.Parameters,
+            isAsync: false,
+            target.TypeParameterList,
+            target.ConstraintClauses);
+        builder.Append("            => ");
+        builder.Append(descriptor.HelperType);
+        builder.Append('.');
+        builder.Append(helperMethodName);
+        builder.Append('(');
+        builder.Append(descriptor.ReceiverName);
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
+        builder.AppendLine(");");
+        builder.AppendLine();
     }
 
     private static void EmitTraceInterceptor(
@@ -570,18 +613,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append(')');
     }
 
-    private static void EmitHttpClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "HttpClient_" + target.MethodName, index, "global::System.Net.Http.HttpClient", "client", target.Parameters, isAsync: false);
-        builder.Append("            => global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.");
-        builder.Append(target.MethodName);
-        builder.Append("(client");
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
-        builder.AppendLine(");");
-        builder.AppendLine();
-    }
-
     private static void EmitHttpWebRequestInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
         var target = invocation.Target;
@@ -680,34 +711,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             EmitActivityDisposeFinally(builder);
         }
         builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
-    private static void EmitAspNetCoreRequestDelegateInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreRequestDelegate_" + target.MethodName, index, target.ReceiverType, "requestDelegate", target.Parameters, isAsync: false);
-        builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.InvokeAsync(requestDelegate, p0);");
-        builder.AppendLine();
-    }
-
-    private static void EmitAspNetCoreWebApplicationBuilderBuildInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreWebApplicationBuilder_" + target.MethodName, index, target.ReceiverType, "builder", target.Parameters, isAsync: false);
-        builder.AppendLine("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.Build(builder);");
-        builder.AppendLine();
-    }
-
-    private static void EmitAspNetCoreEndpointMapInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "AspNetCoreEndpointMap_" + target.MethodName, index, target.ReceiverType, "endpoints", target.Parameters, isAsync: false);
-        builder.Append("            => global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore.");
-        builder.Append(target.MethodName);
-        builder.Append("(endpoints");
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
-        builder.AppendLine(");");
         builder.AppendLine();
     }
 
@@ -3571,7 +3574,16 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorErrorPolicy ErrorPolicy,
         InterceptorDurationPolicy DurationPolicy,
         InterceptorEmitter? Emitter = null,
-        TraceInterceptorBodyDescriptor TraceBody = default);
+        TraceInterceptorBodyDescriptor TraceBody = default,
+        ForwardingInterceptorBodyDescriptor ForwardingBody = default);
+
+    private readonly record struct ForwardingInterceptorBodyDescriptor(
+        string MethodPrefix,
+        string ReceiverName,
+        string HelperType,
+        string HelperMethodName = "",
+        string ReceiverTypeOverride = "",
+        bool IsDefined = true);
 
     private readonly record struct TraceInterceptorBodyDescriptor(
         string MethodPrefix,
