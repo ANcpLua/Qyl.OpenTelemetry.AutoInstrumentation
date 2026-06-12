@@ -164,6 +164,19 @@ def verify_contract_artifacts(artifacts: ModuleType, contract: dict[str, Any]) -
     artifacts.verify_generated_files(contract)
 
 
+def verify_compile_binding_only_truth_gate() -> None:
+    artifacts_source = ARTIFACTS_PATH.read_text()
+    for token in [
+        'evidence_level != "compile_binding_only"',
+        "compile_binding_only item must not claim runtime verification evidence",
+        '"tools/verify-source-interceptor-consumer.py"',
+        '"tools/verify-nativeaot-consumer.py"',
+        '"tools/verify-webapi-aot-demo.py"',
+    ]:
+        if token not in artifacts_source:
+            fail(f"contract generator must preserve compile_binding_only truth gate token: {token}")
+
+
 def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     managed_keys = {
         str(item["key"])
@@ -1167,6 +1180,7 @@ def main() -> None:
     artifacts = load_artifacts()
     contract = artifacts.load_contract()
     verify_contract_artifacts(artifacts, contract)
+    verify_compile_binding_only_truth_gate()
     verify_managed_evidence_boundaries(artifacts, contract)
     verify_handoff_real_demo_coverage(artifacts, contract)
     verify_nativeaot_evidence_is_executable(artifacts, contract)

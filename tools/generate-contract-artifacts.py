@@ -415,11 +415,27 @@ def verify_contract_item(item: dict[str, Any]) -> None:
             for token in required_tokens:
                 if token not in evidence:
                     fail(f"source_interceptor item must carry generator and consumer proof for {key}: missing {token}")
-            if not any(
+            if evidence_level != "compile_binding_only" and not any(
                 entry.startswith("tools/verify-real-") and entry.endswith("-demo.py")
                 for entry in evidence
             ):
                 fail(f"source_interceptor item must carry real demo verifier evidence: {key}")
+        if evidence_level == "compile_binding_only":
+            runtime_evidence = [
+                entry
+                for entry in evidence
+                if (
+                    entry.startswith("tools/verify-real-")
+                    or entry
+                    in {
+                        "tools/smoketest.sh",
+                        "tools/verify-nativeaot-consumer.py",
+                        "tools/verify-webapi-aot-demo.py",
+                    }
+                )
+            ]
+            if runtime_evidence:
+                fail(f"compile_binding_only item must not claim runtime verification evidence for {key}: {runtime_evidence}")
         if lane == "runtime_public_telemetry":
             proof_tokens = [
                 "src/Qyl.AutoInstrumentation.DiagnosticListeners",
