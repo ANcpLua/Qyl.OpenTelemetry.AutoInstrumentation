@@ -157,13 +157,11 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_managed
+  evidence_level: compile_binding_only
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealGraphQlDemo
-  - tools/verify-real-graphql-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ELASTICTRANSPORT
   signal: traces
@@ -577,11 +575,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealRabbitMqDemo
+  - tools/verify-real-rabbitmq-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.QUARTZ
   signal: traces
