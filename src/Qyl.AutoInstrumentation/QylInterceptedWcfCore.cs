@@ -11,22 +11,7 @@ public static class QylInterceptedWcfCore
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string serviceName, string contractName, string operationName)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.WcfCore,
-            QylActivityNames.CoreWcfServer,
-            ActivityKind.Server,
-            QylInstrumentationDomains.RpcWcfCore);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetRpc(
-            activity,
-            QylSemanticAttributes.RpcSystemDotNetWcf,
-            string.IsNullOrEmpty(contractName) ? serviceName : contractName,
-            operationName);
-        return activity;
-    }
+        => QylRpcActivityPolicy.StartWcfCoreActivity(serviceName, contractName, operationName);
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordSuccess(Activity? activity)

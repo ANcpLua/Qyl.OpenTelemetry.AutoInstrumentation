@@ -12,28 +12,7 @@ public static class QylInterceptedGrpcNetClient
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string clientTypeName, string methodName, Metadata? requestMetadata)
-    {
-        ArgumentNullException.ThrowIfNull(clientTypeName);
-        ArgumentNullException.ThrowIfNull(methodName);
-
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.GrpcNetClient))
-            return null;
-
-        var service = GetServiceName(clientTypeName);
-        var activity = QylActivitySource.StartActivity(QylActivityNames.GrpcClient(service, methodName), ActivityKind.Client);
-        if (activity is null)
-            return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
-        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
-        activity.SetTag(QylSemanticAttributes.RpcService, service);
-        activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
-        QylCaptureHelpers.SetMetadataHeaders(
-            activity,
-            QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadataMap,
-            requestMetadata);
-        return activity;
-    }
+        => QylRpcActivityPolicy.StartGrpcClientActivity(clientTypeName, methodName, requestMetadata);
 
     /// <summary>Observes an asynchronous gRPC unary response and records qyl success, exception, and response metadata telemetry.</summary>
     public static async Task<TResponse> ObserveUnaryResponseAsync<TResponse>(
@@ -48,7 +27,7 @@ public static class QylInterceptedGrpcNetClient
         {
             var response = await responseTask.ConfigureAwait(false);
             CaptureCompletedResponseHeaders(responseHeadersTask, activity);
-            activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, QylSemanticAttributes.RpcGrpcStatusCodeOk);
+            QylRpcActivityPolicy.SetGrpcOkStatus(activity);
             return response;
         }
         catch (Exception exception)
@@ -91,7 +70,7 @@ public static class QylInterceptedGrpcNetClient
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, QylSemanticAttributes.RpcGrpcStatusCodeOk);
+        QylRpcActivityPolicy.SetGrpcOkStatus(activity);
         activity.Dispose();
     }
 
@@ -100,15 +79,5 @@ public static class QylInterceptedGrpcNetClient
         => activity?.Dispose();
 
     private static void SetResponseMetadata(Activity? activity, Metadata? metadata)
-        => QylCaptureHelpers.SetMetadataHeaders(
-            activity,
-            QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadataMap,
-            metadata);
-
-    private static string GetServiceName(string clientTypeName)
-    {
-        var lastDot = clientTypeName.LastIndexOf(".", StringComparison.Ordinal);
-        var service = lastDot < 0 ? clientTypeName : clientTypeName[(lastDot + 1)..];
-        return service.EndsWith("Client", StringComparison.Ordinal) ? service[..^6] : service;
-    }
+        => QylRpcActivityPolicy.SetGrpcResponseMetadata(activity, metadata);
 }
