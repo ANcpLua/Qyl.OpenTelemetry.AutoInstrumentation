@@ -24,7 +24,11 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 
 PROGRAM = r'''
+using System.Collections;
+using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
@@ -39,6 +43,22 @@ using var activityListener = new ActivityListener
 };
 
 ActivitySource.AddActivityListener(activityListener);
+
+var dbMetrics = new List<CapturedDbMetric>();
+using var meterListener = new MeterListener
+{
+    InstrumentPublished = static (instrument, listener) =>
+    {
+        if (instrument.Meter.Name == QylMetricMeters.DatabaseMeterName)
+            listener.EnableMeasurementEvents(instrument);
+    },
+};
+meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+{
+    if (instrument.Name == QylMetricNames.DbClientOperationDuration)
+        dbMetrics.Add(CapturedDbMetric.From(instrument, tags));
+});
+meterListener.Start();
 
 var concreteLogger = new CapturingLogger();
 ILogger logger = concreteLogger;
@@ -148,6 +168,54 @@ if (postActivity is not null)
     Console.WriteLine("http.request.header.x-qyl-content=" + capturedContentHeader);
 }
 
+using var sqlCommand = new Microsoft.Data.SqlClient.QylProbeSqlCommand("SELECT 1");
+Console.WriteLine("db.scalar=" + Convert.ToString(sqlCommand.ExecuteScalar(), System.Globalization.CultureInfo.InvariantCulture));
+
+try
+{
+    using var failingSqlCommand = new Microsoft.Data.SqlClient.QylProbeSqlCommand("SELECT FAIL");
+    _ = failingSqlCommand.ExecuteScalar();
+}
+catch (InvalidOperationException exception)
+{
+    Console.WriteLine("db.exception.type=" + exception.GetType().Name);
+}
+
+var dbActivity = captured.FirstOrDefault(static activity =>
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.DbSystemName &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            QylSemanticAttributes.DbSystemMicrosoftSqlServer,
+            StringComparison.Ordinal)) &&
+    activity.Status == ActivityStatusCode.Unset);
+
+if (dbActivity is not null)
+    Console.WriteLine("db.activity.status=" + dbActivity.Status);
+
+var dbErrorActivity = captured.FirstOrDefault(static activity =>
+    activity.TagObjects.Any(static tag =>
+        tag.Key == QylSemanticAttributes.DbSystemName &&
+        string.Equals(
+            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
+            QylSemanticAttributes.DbSystemMicrosoftSqlServer,
+            StringComparison.Ordinal)) &&
+    activity.Status == ActivityStatusCode.Error);
+
+if (dbErrorActivity is not null)
+    Console.WriteLine("db.error.status=" + dbErrorActivity.Status);
+
+var sqlClientMetric = dbMetrics.FirstOrDefault(static metric =>
+    metric.Tags.TryGetValue(QylSemanticAttributes.DbSystemName, out var system) &&
+    string.Equals(system, QylSemanticAttributes.DbSystemMicrosoftSqlServer, StringComparison.Ordinal));
+
+Console.WriteLine("db.metric.count=" + dbMetrics.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+if (sqlClientMetric is not null)
+{
+    sqlClientMetric.Tags.TryGetValue(QylSemanticAttributes.DbSystemName, out var dbSystem);
+    Console.WriteLine("db.metric.system=" + dbSystem);
+}
+
 ILogger throwingLogger = new ThrowingLogger();
 try
 {
@@ -172,6 +240,22 @@ static string FormatTagValue(object? value)
     => value is string[] values
         ? string.Join(",", values)
         : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
+internal sealed record CapturedDbMetric(
+    string Name,
+    IReadOnlyDictionary<string, string> Tags)
+{
+    public static CapturedDbMetric From(Instrument instrument, ReadOnlySpan<KeyValuePair<string, object?>> tags)
+    {
+        var capturedTags = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var tag in tags)
+        {
+            capturedTags[tag.Key] = Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        }
+
+        return new CapturedDbMetric(instrument.Name, capturedTags);
+    }
+}
 
 internal sealed class CapturingLogger : ILogger
 {
@@ -219,6 +303,190 @@ internal sealed class ThrowingLogger : ILogger
         Func<TState, Exception?, string> formatter)
         => throw new InvalidOperationException("logger-failure");
 }
+
+namespace Microsoft.Data.SqlClient
+{
+    internal sealed class QylProbeSqlCommand(string commandText) : DbCommand
+    {
+        private readonly QylProbeSqlParameterCollection _parameters = new();
+        private DbConnection? _connection = new QylProbeSqlConnection();
+
+        public override string CommandText { get; set; } = commandText;
+
+        public override int CommandTimeout { get; set; }
+
+        public override CommandType CommandType { get; set; } = CommandType.Text;
+
+        public override bool DesignTimeVisible { get; set; }
+
+        public override UpdateRowSource UpdatedRowSource { get; set; }
+
+        protected override DbConnection? DbConnection
+        {
+            get => _connection;
+            set => _connection = value;
+        }
+
+        protected override DbParameterCollection DbParameterCollection => _parameters;
+
+        protected override DbTransaction? DbTransaction { get; set; }
+
+        public override void Cancel()
+        {
+        }
+
+        public override int ExecuteNonQuery()
+            => 1;
+
+        public override object? ExecuteScalar()
+            => CommandText.Contains("FAIL", StringComparison.Ordinal)
+                ? throw new InvalidOperationException("qyl-sqlclient-error")
+                : 1;
+
+        public override void Prepare()
+        {
+        }
+
+        protected override DbParameter CreateDbParameter()
+            => new QylProbeSqlParameter();
+
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
+            => throw new NotSupportedException();
+    }
+
+    internal sealed class QylProbeSqlConnection : DbConnection
+    {
+        private ConnectionState _state = ConnectionState.Open;
+
+        public override string ConnectionString { get; set; } = "Server=qyl-source-sqlclient;Database=qyl-source";
+
+        public override string Database => "qyl-source";
+
+        public override string DataSource => "qyl-source-sqlclient";
+
+        public override string ServerVersion => "1.0";
+
+        public override ConnectionState State => _state;
+
+        public override void ChangeDatabase(string databaseName)
+        {
+        }
+
+        public override void Close()
+            => _state = ConnectionState.Closed;
+
+        public override void Open()
+            => _state = ConnectionState.Open;
+
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
+            => throw new NotSupportedException();
+
+        protected override DbCommand CreateDbCommand()
+            => new QylProbeSqlCommand("SELECT 1");
+    }
+
+    internal sealed class QylProbeSqlParameter : DbParameter
+    {
+        public override DbType DbType { get; set; }
+
+        public override ParameterDirection Direction { get; set; } = ParameterDirection.Input;
+
+        public override bool IsNullable { get; set; }
+
+        public override string ParameterName { get; set; } = string.Empty;
+
+        public override string SourceColumn { get; set; } = string.Empty;
+
+        public override object? Value { get; set; }
+
+        public override bool SourceColumnNullMapping { get; set; }
+
+        public override int Size { get; set; }
+
+        public override void ResetDbType()
+        {
+        }
+    }
+
+    internal sealed class QylProbeSqlParameterCollection : DbParameterCollection
+    {
+        private readonly List<DbParameter> _parameters = [];
+
+        public override int Count => _parameters.Count;
+
+        public override object SyncRoot => ((ICollection)_parameters).SyncRoot;
+
+        public override int Add(object value)
+        {
+            _parameters.Add((DbParameter)value);
+            return _parameters.Count - 1;
+        }
+
+        public override void AddRange(Array values)
+        {
+            foreach (var value in values)
+                Add(value!);
+        }
+
+        public override void Clear()
+            => _parameters.Clear();
+
+        public override bool Contains(object value)
+            => value is DbParameter parameter && _parameters.Contains(parameter);
+
+        public override bool Contains(string value)
+            => IndexOf(value) >= 0;
+
+        public override void CopyTo(Array array, int index)
+            => _parameters.ToArray().CopyTo(array, index);
+
+        public override IEnumerator GetEnumerator()
+            => _parameters.GetEnumerator();
+
+        public override int IndexOf(object value)
+            => value is DbParameter parameter ? _parameters.IndexOf(parameter) : -1;
+
+        public override int IndexOf(string parameterName)
+            => _parameters.FindIndex(parameter => string.Equals(parameter.ParameterName, parameterName, StringComparison.Ordinal));
+
+        public override void Insert(int index, object value)
+            => _parameters.Insert(index, (DbParameter)value);
+
+        public override void Remove(object value)
+        {
+            if (value is DbParameter parameter)
+                _parameters.Remove(parameter);
+        }
+
+        public override void RemoveAt(int index)
+            => _parameters.RemoveAt(index);
+
+        public override void RemoveAt(string parameterName)
+        {
+            var index = IndexOf(parameterName);
+            if (index >= 0)
+                RemoveAt(index);
+        }
+
+        protected override DbParameter GetParameter(int index)
+            => _parameters[index];
+
+        protected override DbParameter GetParameter(string parameterName)
+            => _parameters[IndexOf(parameterName)];
+
+        protected override void SetParameter(int index, DbParameter value)
+            => _parameters[index] = value;
+
+        protected override void SetParameter(string parameterName, DbParameter value)
+        {
+            var index = IndexOf(parameterName);
+            if (index >= 0)
+                _parameters[index] = value;
+            else
+                _parameters.Add(value);
+        }
+    }
+}
 '''
 
 
@@ -236,9 +504,15 @@ http.request.header.x-qyl-source=default-header
 http.response.status_code=500
 error.type=500
 http.request.header.x-qyl-content=content-header
+db.scalar=1
+db.exception.type=InvalidOperationException
+db.activity.status=Unset
+db.error.status=Error
+db.metric.count=2
+db.metric.system=microsoft.sql_server
 throwing.type=InvalidOperationException
 throwing.message=logger-failure
-activity.count.after.throw=4
+activity.count.after.throw=6
 """
 
 
@@ -324,6 +598,9 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync(",
         "HttpClient_PostAsync_",
         "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.PostAsync(",
+        "DbCommand_ExecuteScalar_",
+        "global::Qyl.AutoInstrumentation.QylDbClientMetrics.GetTimestamp()",
+        "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")
