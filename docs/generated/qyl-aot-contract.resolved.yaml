@@ -2,12 +2,19 @@
 # Regenerate with tools/generate-contract-artifacts.py --write.
 schema_id: qyl-aot-autoinstrumentation-resolved-contract
 schema_version: 1.0.0
-generated_at: '2026-06-04'
+generated_at: '2026-06-13'
 source:
   title: Available instrumentations
-  source_kind: uploaded_markdown
+  source_kind: official_github_markdown
   content_basis: OpenTelemetry .NET Automatic Instrumentation supported libraries
-  citation_marker: fileciteturn1file0
+  primary_repository: open-telemetry/opentelemetry-dotnet-instrumentation
+  primary_commit: 611b815a62a66b5ece634337328757444fb9c2e9
+  primary_path: docs/config.md
+  primary_url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md
+  legacy_60_item_repository: open-telemetry/opentelemetry.io
+  legacy_60_item_commit: db8337edbbac824aebbb330acea18a7042b38806
+  legacy_60_item_path: content/en/docs/zero-code/dotnet/instrumentations.md
+  legacy_60_item_url: https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md
 generated_from:
   upstream_contract: docs/contracts/otel-dotnet-auto-60.upstream.yaml
   qyl_ownership: docs/contracts/qyl-aot-ownership.yaml
@@ -20,7 +27,7 @@ contract_items:
   environment_toggle_origin: derived_from_global_signal_specific_pattern
   libraries:
   - name: ADO.NET
-  supported_versions: System.Data.Common >=4.0.0 && <11.0.0; System.Data for .NET Framework >=2.0.0 && <5.0.0; netstandard
+  supported_versions: System.Data.Common >=4.0.0 && <12.0.0; System.Data for .NET Framework >=2.0.0 && <5.0.0; netstandard
     >=2.0.0 && <3.0.0
   instrumentation_types:
   - bytecode
@@ -33,6 +40,9 @@ contract_items:
   - Does not cover libraries covered by SQLCLIENT, NPGSQL, MYSQLDATA, MYSQLCONNECTOR, ORACLEMDA, or SQLITE.
   index: 1
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_001
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L144-L180
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -77,6 +87,9 @@ contract_items:
   - Only integrated pipeline mode is supported.
   index: 2
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_002
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L145-L184
   lane: unsupported_nativeaot
   qyl_status: unsupported_nativeaot
   call_site_visibility: user_code
@@ -102,6 +115,9 @@ contract_items:
   - .NET Framework
   index: 3
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_003
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L146
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: both
@@ -140,6 +156,9 @@ contract_items:
   status: experimental
   index: 4
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_004
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L147-L186
   lane: framework_initialization
   qyl_status: implemented
   call_site_visibility: user_code
@@ -177,6 +196,9 @@ contract_items:
   - Version >=8.10.0 is supported by ELASTICTRANSPORT instrumentation.
   index: 5
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L148-L189
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -215,6 +237,9 @@ contract_items:
   status: experimental
   index: 6
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L149
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -255,6 +280,9 @@ contract_items:
   - .NET Framework
   index: 7
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_007
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L150-L195
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: both
@@ -296,6 +324,9 @@ contract_items:
   - .NET Framework
   index: 8
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_008
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L151
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -333,6 +364,9 @@ contract_items:
   status: experimental
   index: 9
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L152
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: both
@@ -375,6 +409,9 @@ contract_items:
   status: experimental
   index: 10
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L153
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: both
@@ -423,6 +460,9 @@ contract_items:
   - Confluent.Kafka is supported from version >=1.8.2 on ARM64 for Windows and Linux, and >=1.9.2 on macOS.
   index: 11
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_011
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L154-L198
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -463,6 +503,9 @@ contract_items:
   - .NET Framework
   index: 12
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L155
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -508,6 +551,9 @@ contract_items:
   - MongoDB.Driver needs bytecode instrumentation only for versions <3.7.0. Versions >=3.7.0 use only source instrumentation.
   index: 13
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L156-L201
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -546,6 +592,9 @@ contract_items:
   status: experimental
   index: 14
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L157
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -587,6 +636,9 @@ contract_items:
   - .NET Framework
   index: 15
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L158
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -626,6 +678,9 @@ contract_items:
   status: experimental
   index: 16
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L159-L195
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -666,6 +721,9 @@ contract_items:
   status: experimental
   index: 17
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L160
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -699,6 +757,9 @@ contract_items:
   - ARM64
   index: 18
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L161
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -741,6 +802,9 @@ contract_items:
   - RabbitMQ.Client needs bytecode instrumentation only for 5.* and 6.* versions. Versions >=7.0.0 use only source instrumentation.
   index: 19
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L162-L204
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -781,6 +845,9 @@ contract_items:
   - .NET Framework 4.7.1 and older
   index: 20
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L163
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -827,6 +894,9 @@ contract_items:
   - System.Data.SqlClient is supported from version 4.8.5.
   index: 21
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L164-L210
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -859,13 +929,16 @@ contract_items:
   libraries:
   - name: Microsoft.Data.Sqlite
     url: https://www.nuget.org/packages/Microsoft.Data.Sqlite
-  supported_versions: '>=8.0.0 && <11.0.0'
+  supported_versions: '>=8.0.0 && <12.0.0'
   instrumentation_types:
   - bytecode
   instrumentation_type_operator: single
   status: experimental
   index: 22
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_022
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L165
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -898,7 +971,7 @@ contract_items:
   libraries:
   - name: StackExchange.Redis
     url: https://www.nuget.org/packages/StackExchange.Redis
-  supported_versions: '>=2.6.122 && <3.0.0'
+  supported_versions: '>=2.6.122 && <4.0.0 on .NET; >=2.6.122 && <3.0.0 on .NET Framework'
   instrumentation_types:
   - source
   - bytecode
@@ -906,6 +979,9 @@ contract_items:
   status: experimental
   index: 23
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_023
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L166-L213
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -945,6 +1021,9 @@ contract_items:
   status: experimental
   index: 24
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_024
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L167
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -974,6 +1053,9 @@ contract_items:
   - .NET Framework
   index: 25
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_025
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L168
   lane: unsupported_nativeaot
   qyl_status: unsupported_nativeaot
   call_site_visibility: library_internal
@@ -1000,6 +1082,9 @@ contract_items:
   - .NET
   index: 26
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L169
   lane: unsupported_nativeaot
   qyl_status: unsupported_nativeaot
   call_site_visibility: library_internal
@@ -1024,13 +1109,16 @@ contract_items:
   status: experimental
   documentation:
     name: ASP.NET metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNet-1.15.0/src/OpenTelemetry.Instrumentation.AspNet/README.md#list-of-metrics-produced
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNet-1.15.2/src/OpenTelemetry.Instrumentation.AspNet/README.md#list-of-metrics-produced
   not_supported_on:
   - .NET
   notes:
   - ASP.NET metrics are generated only if the AspNet trace instrumentation is also enabled.
   index: 27
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_027
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L223
   lane: unsupported_nativeaot
   qyl_status: unsupported_nativeaot
   call_site_visibility: user_code
@@ -1054,11 +1142,14 @@ contract_items:
   status: experimental
   documentation:
     name: ASP.NET Core metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNetCore-1.15.0/src/OpenTelemetry.Instrumentation.AspNetCore/README.md#list-of-metrics-produced
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNetCore-1.15.2/src/OpenTelemetry.Instrumentation.AspNetCore/README.md#list-of-metrics-produced
   not_supported_on:
   - .NET Framework
   index: 28
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_028
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L224
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: library_internal
@@ -1107,9 +1198,12 @@ contract_items:
   status: experimental
   documentation:
     name: HttpClient metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Http-1.15.0/src/OpenTelemetry.Instrumentation.Http/README.md#list-of-metrics-produced
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Http-1.15.1/src/OpenTelemetry.Instrumentation.Http/README.md#list-of-metrics-produced
   index: 29
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_029
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L225
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: both
@@ -1145,9 +1239,12 @@ contract_items:
   status: experimental
   documentation:
     name: Runtime metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.15.0/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.15.1/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
   index: 30
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_030
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L226
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: library_internal
@@ -1196,6 +1293,9 @@ contract_items:
   - .NET Framework
   index: 31
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L227
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -1237,6 +1337,9 @@ contract_items:
     url: https://docs.particular.net/samples/open-telemetry/prometheus-grafana/#reporting-metric-values
   index: 32
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L228
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -1265,9 +1368,12 @@ contract_items:
   status: experimental
   documentation:
     name: Process metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Process-1.15.0-beta.1/src/OpenTelemetry.Instrumentation.Process/README.md#metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Process-1.15.1-beta.1/src/OpenTelemetry.Instrumentation.Process/README.md#metrics
   index: 33
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_033
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L229
   lane: runtime_public_telemetry
   qyl_status: implemented
   call_site_visibility: library_internal
@@ -1318,13 +1424,16 @@ contract_items:
   status: experimental
   documentation:
     name: SqlClient metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/releases/tag/Instrumentation.SqlClient-1.15.0-rc.1
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/releases/tag/Instrumentation.SqlClient-1.15.2
   notes:
   - System.Data.SqlClient is deprecated.
   - Microsoft.Data.SqlClient v3.* is not supported on .NET Framework due to an OpenTelemetry .NET issue.
   - System.Data.SqlClient is supported from version 4.8.5.
   index: 34
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_034
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L230-L236
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -1353,7 +1462,7 @@ contract_items:
   libraries:
   - name: Microsoft.Extensions.Logging
     url: https://www.nuget.org/packages/Microsoft.Extensions.Logging
-  supported_versions: '>=8.0.0'
+  supported_versions: '>=8.0.0 && <12.0.0'
   instrumentation_types:
   - bytecode
   - source
@@ -1366,6 +1475,9 @@ contract_items:
     ASPNETCORE_HOSTINGSTARTUPASSEMBLIES=OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper.
   index: 35
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_035
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -1404,6 +1516,9 @@ contract_items:
   - Instrumentation provides both trace context injection and logs bridge.
   index: 36
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_036
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L245-L254
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -1441,6 +1556,9 @@ contract_items:
   - Instrumentation provides both trace context injection and logs bridge.
   index: 37
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_037
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L246-L257
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -1469,6 +1587,9 @@ contract_items:
   status: experimental
   index: 38
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_038
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L128
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1491,6 +1612,9 @@ contract_items:
   - OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   index: 39
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_039
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L129
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1518,6 +1642,9 @@ contract_items:
   - OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
   index: 40
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_040
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L130
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1540,6 +1667,9 @@ contract_items:
   - OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   index: 41
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_041
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L131
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1567,6 +1697,9 @@ contract_items:
   - OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
   index: 42
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_042
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L132
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1589,6 +1722,9 @@ contract_items:
   - OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   index: 43
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_043
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L133
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1616,6 +1752,9 @@ contract_items:
   - OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
   index: 44
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L134
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
@@ -1639,8 +1778,15 @@ contract_items:
   - db.statement
   notes:
   - May expose sensitive information.
+  - Removed from current upstream config; current upstream changelog says EFCore and SqlClient SET_DBSTATEMENT_FOR_TEXT support
+    was dropped because statements are sanitized and enabled by default.
   index: 45
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_045
+  upstream_sources:
+  - label: 60-item source row
+    url: https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L156
+  - label: current removal note
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L414-L418
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1666,6 +1812,9 @@ contract_items:
   - May expose sensitive information.
   index: 46
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L263
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1691,6 +1840,9 @@ contract_items:
   - May expose sensitive information.
   index: 47
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_047
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L264
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1716,8 +1868,15 @@ contract_items:
   - .NET Framework for System.Data.SqlClient
   notes:
   - May expose sensitive information.
+  - Removed from current upstream config; current upstream changelog says EFCore and SqlClient SET_DBSTATEMENT_FOR_TEXT support
+    was dropped because statements are sanitized and enabled by default.
   index: 48
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_048
+  upstream_sources:
+  - label: 60-item source row
+    url: https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L159
+  - label: current removal note
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L416-L418
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1741,6 +1900,9 @@ contract_items:
   - http.request.header
   index: 49
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L265
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1766,6 +1928,9 @@ contract_items:
   - IIS Classic mode
   index: 50
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_050
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L266
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1789,6 +1954,9 @@ contract_items:
   - http.request.header
   index: 51
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_051
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L267
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1812,6 +1980,9 @@ contract_items:
   - http.response.header
   index: 52
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_052
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L268
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1835,6 +2006,9 @@ contract_items:
   - grpc.request.metadata
   index: 53
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L269
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1858,6 +2032,9 @@ contract_items:
   - grpc.response.metadata
   index: 54
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_054
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L270
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1881,6 +2058,9 @@ contract_items:
   - http.request.header
   index: 55
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_055
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L271
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1904,6 +2084,9 @@ contract_items:
   - http.response.header
   index: 56
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_056
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L272
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1926,6 +2109,9 @@ contract_items:
   - url.query
   index: 57
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_057
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L273
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1948,6 +2134,9 @@ contract_items:
   - url.full
   index: 58
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_058
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L274
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1970,6 +2159,9 @@ contract_items:
   - url.query
   index: 59
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_059
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L275
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable
@@ -1999,6 +2191,9 @@ contract_items:
   - May impact other parts of the application if they depend on SqlEventSource behavior.
   index: 60
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_060
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L276-L284
   lane: instrumentation_option
   qyl_status: option_bound
   call_site_visibility: not_applicable

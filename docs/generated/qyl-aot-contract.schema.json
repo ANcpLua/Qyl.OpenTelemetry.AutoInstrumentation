@@ -87,6 +87,13 @@
         "type": "string",
         "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"
       },
+      "upstream_sources": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/$defs/upstream_source"
+        }
+      },
       "lane": {
         "enum": [
           "environment_control",
@@ -156,6 +163,7 @@
         "status",
         "index",
         "contract_item_id",
+        "upstream_sources",
         "lane",
         "qyl_status",
         "call_site_visibility",
@@ -294,6 +302,13 @@
         },
         "supported_versions": {
           "type": "string"
+        },
+        "upstream_sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/upstream_source"
+          }
         }
       },
       "allOf": [
@@ -360,6 +375,7 @@
         "status",
         "index",
         "contract_item_id",
+        "upstream_sources",
         "lane",
         "qyl_status",
         "call_site_visibility",
@@ -477,6 +493,13 @@
         },
         "status": {
           "type": "string"
+        },
+        "upstream_sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/upstream_source"
+          }
         }
       },
       "allOf": [
@@ -543,6 +566,7 @@
         "status",
         "index",
         "contract_item_id",
+        "upstream_sources",
         "lane",
         "qyl_status",
         "call_site_visibility",
@@ -672,6 +696,13 @@
             "logs"
           ]
         },
+        "upstream_sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/upstream_source"
+          }
+        },
         "value_format": {
           "type": "string"
         },
@@ -772,6 +803,24 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "upstream_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "url"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https?://"
         }
       }
     }

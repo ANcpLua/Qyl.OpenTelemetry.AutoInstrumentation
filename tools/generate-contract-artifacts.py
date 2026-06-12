@@ -214,6 +214,7 @@ COMMON_ITEM_PROPERTIES = {
     "status",
     "index",
     "contract_item_id",
+    "upstream_sources",
     "lane",
     "qyl_status",
     "call_site_visibility",
@@ -463,6 +464,7 @@ def verify_contract_item(item: dict[str, Any]) -> None:
     payload = str(item.get("payload_access", ""))
     evidence_level = str(item.get("evidence_level", ""))
     evidence = item.get("evidence")
+    upstream_sources = item.get("upstream_sources")
 
     if lane not in LANES:
         fail(f"invalid lane for {key}: {lane}")
@@ -476,6 +478,21 @@ def verify_contract_item(item: dict[str, Any]) -> None:
         fail(f"invalid evidence_level for {key}: {evidence_level}")
     if not isinstance(evidence, list) or any(not isinstance(entry, str) for entry in evidence):
         fail(f"evidence must be a string array for {key}")
+    if not isinstance(upstream_sources, list) or not upstream_sources:
+        fail(f"upstream_sources must be a non-empty array for {key}")
+    for source in upstream_sources:
+        if not isinstance(source, dict):
+            fail(f"upstream source must be an object for {key}: {source!r}")
+        if set(source) != {"label", "url"}:
+            fail(f"upstream source must contain only label and url for {key}: {source!r}")
+        label = str(source.get("label", ""))
+        url = str(source.get("url", ""))
+        if not label:
+            fail(f"upstream source label must be non-empty for {key}")
+        if not (url.startswith("https://") or url.startswith("http://")):
+            fail(f"upstream source url must be HTTP(S) for {key}: {url}")
+        if "filecite" in url or "turn" in url:
+            fail(f"upstream source url must be reusable outside a chat session for {key}: {url}")
 
     if visibility == "library_internal" and lane == "source_interceptor":
         fail(f"library_internal item cannot use source_interceptor lane: {key}")
@@ -687,6 +704,7 @@ def render_schema() -> str:
         "status",
         "index",
         "contract_item_id",
+        "upstream_sources",
         "lane",
         "qyl_status",
         "call_site_visibility",
@@ -747,6 +765,15 @@ def render_schema() -> str:
                     "opt_in_attributes": string_array_schema(),
                 },
             },
+            "upstream_source": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["label", "url"],
+                "properties": {
+                    "label": {"type": "string", "minLength": 1},
+                    "url": {"type": "string", "pattern": "^https?://"},
+                },
+            },
         },
         "allOf": [
             {
@@ -765,6 +792,7 @@ def common_schema_properties() -> dict[str, Any]:
         "status": {"type": "string"},
         "index": {"type": "integer", "minimum": 1, "maximum": 60},
         "contract_item_id": {"type": "string", "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"},
+        "upstream_sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/upstream_source"}},
         "lane": {"enum": sorted(LANES)},
         "qyl_status": {"enum": sorted(STATUSES)},
         "call_site_visibility": {"enum": sorted(CALL_SITE_VISIBILITIES)},
@@ -792,6 +820,7 @@ def item_schema(kind: str, required: list[str], allowed_properties: set[str]) ->
             "not_supported_on": string_array_schema(),
             "notes": string_array_schema(),
             "documentation": {"type": "object"},
+            "upstream_sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/upstream_source"}},
             "environment_variable": {"type": "string"},
             "scope": {"type": "string"},
             "description": {"type": "string"},
@@ -1262,6 +1291,7 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
         "",
         "This matrix is generated from `docs/generated/qyl-aot-contract.resolved.yaml`.",
         "The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.yaml`; qyl ownership and evidence live in `docs/contracts/qyl-aot-ownership.yaml`.",
+        "Every row carries a clickable upstream source anchored to the official OpenTelemetry documentation source.",
         "",
         "## Counts",
         "",
@@ -1290,13 +1320,13 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
             "",
             "## Matrix",
             "",
-            "| # | Key | Lane | qyl status | Call-site visibility | Payload access | Evidence | Owner |",
-            "|---:|---|---|---|---|---|---|---|",
+            "| # | Key | Upstream source | Lane | qyl status | Call-site visibility | Payload access | Evidence | Owner |",
+            "|---:|---|---|---|---|---|---|---|---|",
         ]
     )
     for item in contract_items(contract):
         lines.append(
-            f"| {int(item['index'])} | `{item['key']}` | `{item['lane']}` | `{item['qyl_status']}` | "
+            f"| {int(item['index'])} | `{item['key']}` | {format_upstream_sources(item)} | `{item['lane']}` | `{item['qyl_status']}` | "
             f"`{item['call_site_visibility']}` | `{item['payload_access']}` | `{item['evidence_level']}` | {escape_md(str(item['primary_owner']))} |"
         )
     lines.append("")
@@ -1305,6 +1335,21 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
 
 def escape_md(value: str) -> str:
     return value.replace("|", "\\|")
+
+
+def format_upstream_sources(item: dict[str, Any]) -> str:
+    sources = item.get("upstream_sources", [])
+    if not isinstance(sources, list):
+        return ""
+    links: list[str] = []
+    for source in sources:
+        if not isinstance(source, dict):
+            continue
+        label = escape_md(str(source.get("label", "")))
+        url = str(source.get("url", ""))
+        if label and url:
+            links.append(f"[{label}]({url})")
+    return "<br>".join(links)
 
 
 def render_conformance_plan(contract: dict[str, Any]) -> str:
@@ -1372,16 +1417,16 @@ def render_readme_block(contract: dict[str, Any]) -> str:
         "",
         "| Contract layer | Path | Role |",
         "|---|---|---|",
-        "| Upstream contract | `docs/contracts/otel-dotnet-auto-60.upstream.yaml` | Raw 60-item OpenTelemetry .NET auto-instrumentation contract. |",
+        "| Upstream contract | `docs/contracts/otel-dotnet-auto-60.upstream.yaml` | Raw 60-item OpenTelemetry .NET auto-instrumentation contract with per-item source anchors. |",
         "| qyl ownership overlay | `docs/contracts/qyl-aot-ownership.yaml` | qyl lane, status, call-site visibility, payload access, evidence, and conformance semantics. |",
         "| Resolved generated contract | `docs/generated/qyl-aot-contract.resolved.yaml` | Joined model used to generate schema, C# contract data, matrix, and conformance plan. |",
         "",
-        "| # | Key | Lane | qyl status | Visibility | Payload | Evidence |",
-        "|---:|---|---|---|---|---|---|",
+        "| # | Key | Upstream source | Lane | qyl status | Visibility | Payload | Evidence |",
+        "|---:|---|---|---|---|---|---|---|",
     ]
     for item in contract_items(contract):
         lines.append(
-            f"| {int(item['index'])} | `{item['key']}` | `{item['lane']}` | `{item['qyl_status']}` | "
+            f"| {int(item['index'])} | `{item['key']}` | {format_upstream_sources(item)} | `{item['lane']}` | `{item['qyl_status']}` | "
             f"`{item['call_site_visibility']}` | `{item['payload_access']}` | `{item['evidence_level']}` |"
         )
     lines.extend(["", README_END, ""])
