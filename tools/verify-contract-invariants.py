@@ -193,6 +193,40 @@ def verify_compile_binding_only_truth_gate(artifacts: ModuleType, contract: dict
         )
 
 
+def verify_conformance_profile_gate(artifacts: ModuleType) -> None:
+    artifacts_source = ARTIFACTS_PATH.read_text()
+    for token in [
+        "REQUIRED_CONFORMANCE_PROFILE_IDS",
+        "conformance plan must preserve multi-profile fixture coverage",
+        "conformance profile must expect at least one signal",
+        "unsupported NativeAOT conformance profile must expect no signals",
+        "duplicate conformance profile_id",
+        "duplicate conformance service_name",
+    ]:
+        if token not in artifacts_source:
+            fail(f"contract generator must preserve conformance profile gate token: {token}")
+
+    required_profile_ids = set(getattr(artifacts, "REQUIRED_CONFORMANCE_PROFILE_IDS"))
+    profiles = list(getattr(artifacts, "CONFORMANCE_PROFILES"))
+    profile_ids = {str(profile["profile_id"]) for profile in profiles}
+    if profile_ids != required_profile_ids:
+        fail(
+            "conformance profiles must match required fixture profile ids: "
+            f"missing={sorted(required_profile_ids - profile_ids)} "
+            f"stale={sorted(profile_ids - required_profile_ids)}"
+        )
+    if len(profile_ids) < 8:
+        fail("conformance plan must not collapse back to a narrow single-demo profile set")
+    for profile in profiles:
+        profile_id = str(profile["profile_id"])
+        signal_names = list(profile["signal_names"])
+        if profile_id == "qyl-aot-unsupported-nativeaot":
+            if signal_names:
+                fail("unsupported NativeAOT conformance profile must remain empty")
+        elif not signal_names:
+            fail(f"conformance profile must remain non-empty: {profile_id}")
+
+
 def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     managed_keys = {
         str(item["key"])
@@ -1604,6 +1638,7 @@ def main() -> None:
     contract = artifacts.load_contract()
     verify_contract_artifacts(artifacts, contract)
     verify_compile_binding_only_truth_gate(artifacts, contract)
+    verify_conformance_profile_gate(artifacts)
     verify_managed_evidence_boundaries(artifacts, contract)
     verify_handoff_real_demo_coverage(artifacts, contract)
     verify_nativeaot_evidence_is_executable(artifacts, contract)

@@ -133,6 +133,20 @@ CONFORMANCE_PROFILES = [
         "signal_names": [],
     },
 ]
+REQUIRED_CONFORMANCE_PROFILE_IDS = {
+    "qyl-aot-azure",
+    "qyl-aot-cache",
+    "qyl-aot-db",
+    "qyl-aot-graphql",
+    "qyl-aot-grpc",
+    "qyl-aot-logging",
+    "qyl-aot-messaging",
+    "qyl-aot-metrics",
+    "qyl-aot-scheduler",
+    "qyl-aot-search",
+    "qyl-aot-unsupported-nativeaot",
+    "qyl-aot-webapi",
+}
 README_START = "<!-- qyl-contract-summary:start -->"
 README_END = "<!-- qyl-contract-summary:end -->"
 
@@ -565,13 +579,32 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
             signals_by_name[name] = signature
 
     assigned_names: set[str] = set()
+    profile_ids: set[str] = set()
+    service_names: set[str] = set()
     for profile in CONFORMANCE_PROFILES:
-        if profile["profile_id"] == "qyl-aot-unsupported-nativeaot" and profile["signal_names"]:
+        profile_id = str(profile["profile_id"])
+        service_name = str(profile["service_name"])
+        if profile_id in profile_ids:
+            fail(f"duplicate conformance profile_id: {profile_id}")
+        if service_name in service_names:
+            fail(f"duplicate conformance service_name: {service_name}")
+        profile_ids.add(profile_id)
+        service_names.add(service_name)
+        if profile_id == "qyl-aot-unsupported-nativeaot" and profile["signal_names"]:
             fail("unsupported NativeAOT conformance profile must expect no signals")
+        if profile_id != "qyl-aot-unsupported-nativeaot" and not profile["signal_names"]:
+            fail(f"conformance profile must expect at least one signal: {profile_id}")
         for name in profile["signal_names"]:
             if name in assigned_names:
                 fail(f"conformance signal assigned to multiple profiles: {name}")
             assigned_names.add(name)
+
+    if profile_ids != REQUIRED_CONFORMANCE_PROFILE_IDS:
+        fail(
+            "conformance plan must preserve multi-profile fixture coverage: "
+            f"missing={sorted(REQUIRED_CONFORMANCE_PROFILE_IDS - profile_ids)} "
+            f"stale={sorted(profile_ids - REQUIRED_CONFORMANCE_PROFILE_IDS)}"
+        )
 
     names = set(signals_by_name)
     missing_profile = names - assigned_names
