@@ -159,10 +159,10 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 | 27 | `signals.metrics.ASPNET` | `unsupported_nativeaot` | `unsupported_nativeaot` | `user_code` | `reflection_required` | `none` |
 | 28 | `signals.metrics.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` |
 | 29 | `signals.metrics.HTTPCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_managed` |
-| 30 | `signals.metrics.NETRUNTIME` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` |
+| 30 | `signals.metrics.NETRUNTIME` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` |
 | 31 | `signals.metrics.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 32 | `signals.metrics.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
-| 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` |
+| 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` |
 | 34 | `signals.metrics.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 35 | `signals.logs.ILOGGER` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
