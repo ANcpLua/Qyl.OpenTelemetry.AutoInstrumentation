@@ -1119,11 +1119,17 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceRuntimeHelperDescriptor",
         "TraceStartActivityArgumentKind",
         "new TraceRuntimeHelperDescriptor",
+        "TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName",
+        "TraceStartActivityArgumentKind.ReceiverTypeAndTargetMethodName",
+        "TraceStartActivityArgumentKind.RedisOperationName",
         "TraceStartActivityArgumentKind.TargetMethodName",
         "TraceStartActivityArgumentKind.RabbitMqExchange",
     ]:
         if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
             fail(f"contract/generator missing separated descriptor API token: {token}")
+
+    for method_name in re.findall(r"\n    private static void (Append[A-Za-z0-9]+StartActivity)\(", generator):
+        fail(f"generator must model trace start activity calls with TraceRuntimeHelperDescriptor, not private emitter method: {method_name}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigate from NavigationManager.NavigateTo")
