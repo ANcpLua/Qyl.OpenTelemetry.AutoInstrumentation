@@ -982,14 +982,15 @@ def parse_emission_descriptor_ownership(generator: str) -> dict[str, str]:
     return ownership_by_kind
 
 
-def parse_emission_descriptor_policies(generator: str) -> dict[str, tuple[str, str, str, str]]:
-    policies_by_kind: dict[str, tuple[str, str, str, str]] = {}
+def parse_emission_descriptor_policies(generator: str) -> dict[str, tuple[str, str, str, str, str]]:
+    policies_by_kind: dict[str, tuple[str, str, str, str, str]] = {}
     for line in generator.splitlines():
         if "new InterceptorEmissionDescriptor(" not in line:
             continue
 
         match = re.search(
             r"InterceptorKind\.([A-Za-z0-9]+).*?"
+            r"InterceptorMethodShape\.([A-Za-z0-9]+),\s*"
             r"InterceptorSignalOwnership\.([A-Za-z0-9]+),\s*"
             r"InterceptorErrorPolicy\.([A-Za-z0-9]+),\s*"
             r"InterceptorDurationPolicy\.([A-Za-z0-9]+)",
@@ -1015,7 +1016,7 @@ def parse_emission_descriptor_policies(generator: str) -> dict[str, tuple[str, s
         kind = match.group(1)
         if kind in policies_by_kind:
             fail(f"duplicate emission descriptor policy for InterceptorKind.{kind}")
-        policies_by_kind[kind] = (match.group(2), match.group(3), match.group(4), body_matches[0])
+        policies_by_kind[kind] = (match.group(2), match.group(3), match.group(4), match.group(5), body_matches[0])
 
     if not policies_by_kind:
         fail("s_emissionDescriptors must declare signal/error/duration policies")
@@ -1146,6 +1147,10 @@ def verify_interceptor_signal_ownership(generator: str, kinds: set[str]) -> None
 
 def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
     for token in [
+        "ValidateMethodShape(descriptor);",
+        "Interceptor emission descriptor method shape mismatch",
+        "Trace body descriptor has unsupported method shape",
+        "Forwarding body descriptor has unsupported method shape",
         "ValidateEmissionDescriptorPolicy(descriptor);",
         "Runtime metric duration policy requires trace+metric ownership",
         "Trace+metric ownership requires runtime metric duration policy",
@@ -1160,33 +1165,40 @@ def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
     if missing_policies:
         fail(f"InterceptorKind values missing signal/error/duration policies: {sorted(missing_policies)}")
 
-    for kind, (ownership, error_policy, duration_policy, body) in sorted(policies_by_kind.items()):
+    for kind, (method_shape, ownership, error_policy, duration_policy, body) in sorted(policies_by_kind.items()):
         if duration_policy == "RuntimeMetric" and ownership != "TraceAndMetric":
             fail(f"RuntimeMetric duration policy requires TraceAndMetric ownership: {kind}")
         if ownership == "TraceAndMetric" and duration_policy != "RuntimeMetric":
             fail(f"TraceAndMetric ownership requires RuntimeMetric duration policy: {kind}")
 
-        expected: tuple[str, str, str] | None = None
+        expected: tuple[str, str, str, str] | None = None
         if body == "HttpWebRequestBody":
-            expected = ("TraceAndMetric", "HttpStatusAndException", "RuntimeMetric")
+            expected = ("AsyncOrSyncValue", "TraceAndMetric", "HttpStatusAndException", "RuntimeMetric")
         elif body == "DbCommandBody":
-            expected = ("TraceAndMetric", "Exception", "RuntimeMetric")
+            expected = ("AsyncOrSyncValue", "TraceAndMetric", "Exception", "RuntimeMetric")
         elif body == "GrpcClientBody":
-            expected = ("Trace", "GrpcStatusAndException", "None")
+            expected = (
+                "GrpcUnary" if "GrpcNetClientAsyncUnaryCall" == kind else "GrpcStreaming",
+                "Trace",
+                "GrpcStatusAndException",
+                "None",
+            )
         elif body == "MeterProviderBuilderBody":
-            expected = ("Metric", "None", "None")
+            expected = ("BuilderRegistration", "Metric", "None", "None")
         elif body == "LoggerBody":
-            expected = ("Log", "RuntimeDelegate", "None")
+            expected = ("Void", "Log", "RuntimeDelegate", "None")
         elif body == "ExternalLoggerBody":
-            expected = ("Log", "Exception", "None")
+            expected = ("Void", "Log", "Exception", "None")
 
-        if expected is not None and (ownership, error_policy, duration_policy) != expected:
+        if expected is not None and (method_shape, ownership, error_policy, duration_policy) != expected:
             fail(
                 f"InterceptorKind.{kind} {body} policy mismatch: "
-                f"actual={(ownership, error_policy, duration_policy)} expected={expected}"
+                f"actual={(method_shape, ownership, error_policy, duration_policy)} expected={expected}"
             )
 
         if body == "TraceBody":
+            if method_shape not in {"AsyncOrSyncValue", "AsyncOrSyncVoid", "AsyncTask", "AsyncValue"}:
+                fail(f"TraceBody descriptor has unsupported method shape: {kind} {method_shape}")
             if ownership not in {"Trace", "TraceAndMetric"}:
                 fail(f"TraceBody descriptor must own traces: {kind}")
             if error_policy != "Exception":
@@ -1206,6 +1218,8 @@ def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
                         fail(f"TraceBody RuntimeMetric descriptor missing duration hook {token}: {kind}")
 
         if body == "ForwardingBody":
+            if method_shape not in {"AsyncValue", "AsyncTask", "BuilderInitialization", "EndpointRegistration"}:
+                fail(f"ForwardingBody descriptor has unsupported method shape: {kind} {method_shape}")
             if ownership == "TraceAndMetric":
                 if (error_policy, duration_policy) != ("HttpStatusAndException", "RuntimeMetric"):
                     fail(f"TraceAndMetric ForwardingBody must use HTTP status and runtime metric policy: {kind}")

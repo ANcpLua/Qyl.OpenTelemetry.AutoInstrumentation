@@ -362,6 +362,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static void ValidateEmissionDescriptorPolicy(InterceptorEmissionDescriptor descriptor)
     {
+        ValidateMethodShape(descriptor);
+
         if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
             descriptor.SignalOwnership is not InterceptorSignalOwnership.TraceAndMetric)
         {
@@ -472,6 +474,90 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         throw new InvalidOperationException("Unsupported interceptor emission policy shape: " + descriptor.Kind);
+    }
+
+    private static void ValidateMethodShape(InterceptorEmissionDescriptor descriptor)
+    {
+        if (descriptor.HttpWebRequestBody.IsDefined)
+        {
+            ValidateMethodShape(descriptor, InterceptorMethodShape.AsyncOrSyncValue);
+            return;
+        }
+
+        if (descriptor.DbCommandBody.IsDefined)
+        {
+            ValidateMethodShape(descriptor, InterceptorMethodShape.AsyncOrSyncValue);
+            return;
+        }
+
+        if (descriptor.GrpcClientBody.IsDefined)
+        {
+            if (descriptor.GrpcClientBody.Shape is GrpcClientCallShape.Unary)
+            {
+                ValidateMethodShape(descriptor, InterceptorMethodShape.GrpcUnary);
+                return;
+            }
+
+            if (descriptor.GrpcClientBody.Shape is GrpcClientCallShape.ServerStreaming or
+                GrpcClientCallShape.ClientStreaming or
+                GrpcClientCallShape.DuplexStreaming)
+            {
+                ValidateMethodShape(descriptor, InterceptorMethodShape.GrpcStreaming);
+                return;
+            }
+
+            throw new InvalidOperationException("gRPC client body descriptor has no call shape: " + descriptor.Kind);
+        }
+
+        if (descriptor.MeterProviderBuilderBody.IsDefined)
+        {
+            ValidateMethodShape(descriptor, InterceptorMethodShape.BuilderRegistration);
+            return;
+        }
+
+        if (descriptor.LoggerBody.IsDefined || descriptor.ExternalLoggerBody.IsDefined)
+        {
+            ValidateMethodShape(descriptor, InterceptorMethodShape.Void);
+            return;
+        }
+
+        if (descriptor.TraceBody.IsDefined)
+        {
+            if (descriptor.MethodShape is not (
+                    InterceptorMethodShape.AsyncOrSyncValue or
+                    InterceptorMethodShape.AsyncOrSyncVoid or
+                    InterceptorMethodShape.AsyncTask or
+                    InterceptorMethodShape.AsyncValue))
+            {
+                throw new InvalidOperationException("Trace body descriptor has unsupported method shape: " + descriptor.Kind);
+            }
+
+            return;
+        }
+
+        if (descriptor.ForwardingBody.IsDefined)
+        {
+            if (descriptor.MethodShape is not (
+                    InterceptorMethodShape.AsyncValue or
+                    InterceptorMethodShape.AsyncTask or
+                    InterceptorMethodShape.BuilderInitialization or
+                    InterceptorMethodShape.EndpointRegistration))
+            {
+                throw new InvalidOperationException("Forwarding body descriptor has unsupported method shape: " + descriptor.Kind);
+            }
+
+            return;
+        }
+
+        throw new InvalidOperationException("Interceptor emission descriptor has no typed body descriptor: " + descriptor.Kind);
+    }
+
+    private static void ValidateMethodShape(
+        InterceptorEmissionDescriptor descriptor,
+        InterceptorMethodShape methodShape)
+    {
+        if (descriptor.MethodShape != methodShape)
+            throw new InvalidOperationException("Interceptor emission descriptor method shape mismatch: " + descriptor.Kind);
     }
 
     private static void ValidatePolicy(
