@@ -491,6 +491,92 @@ def verify_runtime_public_telemetry_payload_access_policy() -> None:
                 fail(f"runtime-public telemetry payload reader must not use reflection/dynamic access: {relative_path} {token}")
 
 
+def verify_sensitive_attribute_emission_policy() -> None:
+    policy_path = ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
+    policy = policy_path.read_text()
+    for token in [
+        "public static void SetAspNetCoreUrlQuery(Activity activity, string query)",
+        "public static void SetHttpClientUrlFull(Activity activity, string url)",
+        "public static void SetDbQueryText(Activity activity, DbCommand command, string instrumentationId)",
+        "public static void SetGraphQlDocument(Activity activity, string? document)",
+        "QylAutoInstrumentationOptions.Current.AspNetCoreUrlQueryRedactionDisabled",
+        "QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled",
+        "QylCaptureHelpers.RedactQueryValues(query)",
+        "QylCaptureHelpers.FormatUrlFull(",
+        "QylAutoInstrumentationOptions.Current.GraphQlSetDocument",
+        "activity.SetTag(QylSemanticAttributes.DbQueryText, command.CommandText);",
+        "activity.SetTag(QylSemanticAttributes.GraphQlDocument, document);",
+    ]:
+        if token not in policy:
+            fail(f"QylSensitiveCapturePolicy must own sensitive raw attribute token: {token}")
+
+    http_semantics_path = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Semantics" / "HttpSemantics.cs"
+    http_semantics = http_semantics_path.read_text()
+    for token in [
+        "public static void SetUrlTags(Activity? activity, string? url, string? serverAddress, int? serverPort)",
+        "SemanticTagWriter.Set(",
+        "SemanticAttributes.UrlFull",
+        "QylCaptureHelpers.FormatUrlFull(",
+        "QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled",
+    ]:
+        if token not in http_semantics:
+            fail(f"HttpSemantics must own runtime-public url.full redaction token: {token}")
+
+    allowed_raw_settag_paths = {
+        "src/Qyl.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
+    }
+    allowed_url_format_paths = {
+        "src/Qyl.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
+        "src/Qyl.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
+        "src/Qyl.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
+    }
+    allowed_db_query_text_paths = {
+        "src/Qyl.AutoInstrumentation.DiagnosticListeners/EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
+        "src/Qyl.AutoInstrumentation.DiagnosticListeners/SqlClient/SqlClientDiagnosticListener.cs",
+        "src/Qyl.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
+        "src/Qyl.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
+    }
+
+    for root in RUNTIME_EMISSION_ROOTS:
+        for path in root.rglob("*.cs"):
+            relative_path = path.relative_to(ROOT).as_posix()
+            text = path.read_text()
+
+            for token in [
+                "SetTag(QylSemanticAttributes.UrlQuery",
+                "SetTag(QylSemanticAttributes.UrlFull",
+                "SetTag(QylSemanticAttributes.DbQueryText",
+                "SetTag(QylSemanticAttributes.GraphQlDocument",
+            ]:
+                if token in text and relative_path not in allowed_raw_settag_paths:
+                    fail(f"sensitive raw attribute writes must go through QylSensitiveCapturePolicy: {relative_path} {token}")
+
+            for token in [
+                "SemanticTagWriter.Set(activity, SemanticAttributes.UrlFull",
+                "SemanticTagWriter.Set(activity, SemanticAttributes.UrlQuery",
+                "SemanticTagWriter.Set(activity, SemanticAttributes.GraphQlDocument",
+            ]:
+                if token in text and relative_path != "src/Qyl.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs":
+                    fail(f"runtime-public sensitive writes must go through the owning semantics helper: {relative_path} {token}")
+
+            if "QylCaptureHelpers.FormatUrlFull(" in text and relative_path not in allowed_url_format_paths:
+                fail(f"url.full formatting must stay centralized behind sensitive capture policy/HttpSemantics: {relative_path}")
+
+            if "QylCaptureHelpers.RedactQueryValues(" in text and relative_path not in allowed_url_format_paths:
+                fail(f"url query redaction must stay centralized behind sensitive capture policy/helpers: {relative_path}")
+
+            if "SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText" not in text:
+                continue
+
+            if relative_path not in allowed_db_query_text_paths:
+                fail(f"db.query.text writes must be owned by typed DB listener paths: {relative_path}")
+
+            for match in re.finditer(r"SemanticTagWriter\.Set\(activity,\s*SemanticAttributes\.DbQueryText", text):
+                guard_window = text[max(0, match.start() - 260):match.start()]
+                if "if (DatabaseSemantics.ShouldWriteQueryText(" not in guard_window:
+                    fail(f"db.query.text write must be guarded by DatabaseSemantics.ShouldWriteQueryText: {relative_path}")
+
+
 def verify_bounded_activity_name_policy() -> None:
     names = ACTIVITY_NAMES_PATH.read_text()
     for token in [
@@ -1776,6 +1862,7 @@ def main() -> None:
     verify_metric_contract()
     verify_runtime_public_telemetry_status_policy()
     verify_runtime_public_telemetry_payload_access_policy()
+    verify_sensitive_attribute_emission_policy()
     verify_bounded_activity_name_policy()
     verify_behavior_semantics_contract()
     verify_productive_mechanism_contract()
