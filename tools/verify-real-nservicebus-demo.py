@@ -58,6 +58,9 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     activities = report.get("Activities")
     if not isinstance(activities, list) or len(activities) != 3:
         fail(f"{name} expected exactly 3 NServiceBus activities, got {activities!r}")
+    metrics = report.get("Metrics")
+    if not isinstance(metrics, list) or len(metrics) != 3:
+        fail(f"{name} expected exactly 3 NServiceBus duration measurements, got {metrics!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

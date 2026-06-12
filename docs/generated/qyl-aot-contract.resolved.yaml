@@ -961,16 +961,18 @@ contract_items:
     url: https://docs.particular.net/samples/open-telemetry/prometheus-grafana/#reporting-metric-values
   index: 32
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
-  lane: runtime_public_telemetry
+  lane: source_interceptor
   qyl_status: implemented
-  call_site_visibility: library_internal
-  payload_access: typed_public
-  evidence_level: compile_binding_only
-  primary_owner: Qyl public telemetry listeners/meters
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: verified_managed
+  primary_owner: QylAutoInstrumentationGenerator + QylNServiceBusMetrics
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.AutoInstrumentation/QylNServiceBusMetrics.cs
+  - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealNServiceBusDemo
+  - tools/verify-real-nservicebus-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.PROCESS
   signal: metrics
