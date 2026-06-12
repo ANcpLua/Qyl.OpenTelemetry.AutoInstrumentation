@@ -22,6 +22,7 @@ RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstr
 ACTIVITY_STATUS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityStatus.cs"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
+DIAGNOSTIC_SEMANTICS_ROOT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Semantics"
 RUNTIME_EMISSION_ROOTS = [
     ROOT / "src" / "Qyl.AutoInstrumentation",
     ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
@@ -420,6 +421,29 @@ def verify_metric_contract() -> None:
     ]:
         if token in metric_implementation_text:
             fail(f"productive code must not use an obsolete or call-site-invented ASP.NET Core metric proof: {token}")
+
+
+def verify_runtime_public_telemetry_status_policy() -> None:
+    helper = (DIAGNOSTIC_SEMANTICS_ROOT / "ErrorStatusSemantics.cs").read_text()
+    for token in [
+        "ResolveHttpErrorType(ActivityKind kind, int? statusCode, string? errorType)",
+        "ResolveGrpcErrorType(int? statusCode, string? errorType)",
+        "SemanticTagWriter.Set(activity, SemanticAttributes.ErrorType, errorType);",
+        "activity?.SetStatus(ActivityStatusCode.Error);",
+    ]:
+        if token not in helper:
+            fail(f"ErrorStatusSemantics must own runtime-public telemetry status token: {token}")
+
+    for name in ["HttpSemantics.cs", "RpcSemantics.cs"]:
+        text = (DIAGNOSTIC_SEMANTICS_ROOT / name).read_text()
+        if "ErrorStatusSemantics.SetError(" not in text:
+            fail(f"{name} must delegate error status writes to ErrorStatusSemantics")
+        for token in [
+            "SemanticTagWriter.Set(activity, SemanticAttributes.ErrorType",
+            "SetStatus(ActivityStatusCode.Error)",
+        ]:
+            if token in text:
+                fail(f"{name} must not write runtime-public telemetry error status directly: {token}")
 
 
 def parse_interceptor_emitter_blocks(generator: str) -> dict[str, str]:
@@ -1670,6 +1694,7 @@ def main() -> None:
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
     verify_metric_contract()
+    verify_runtime_public_telemetry_status_policy()
     verify_behavior_semantics_contract()
     verify_productive_mechanism_contract()
     print("contract-invariants-ok")

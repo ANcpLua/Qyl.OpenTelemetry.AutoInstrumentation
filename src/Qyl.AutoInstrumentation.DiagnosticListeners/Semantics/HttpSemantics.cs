@@ -1,6 +1,4 @@
 using System.Diagnostics;
-using System.Globalization;
-
 namespace Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 internal static class HttpSemantics
@@ -60,35 +58,11 @@ internal static class HttpSemantics
     public static void SetStatus(Activity? activity, ActivityKind kind, int? statusCode, string? errorType)
     {
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpResponseStatusCode, statusCode);
-
-        var resolvedErrorType = ResolveErrorType(kind, statusCode, errorType);
-        if (resolvedErrorType is null)
-            return;
-
-        SemanticTagWriter.Set(activity, SemanticAttributes.ErrorType, resolvedErrorType);
-        activity?.SetStatus(ActivityStatusCode.Error);
+        ErrorStatusSemantics.SetError(
+            activity,
+            ErrorStatusSemantics.ResolveHttpErrorType(kind, statusCode, errorType));
     }
 
     private static int? GetPort(Uri? uri)
         => uri is null || uri.IsDefaultPort ? null : uri.Port;
-
-    private static string? ResolveErrorType(ActivityKind kind, int? statusCode, string? errorType)
-    {
-        if (!string.IsNullOrWhiteSpace(errorType))
-            return errorType;
-
-        if (statusCode is null)
-            return null;
-
-        var isError = kind switch
-        {
-            ActivityKind.Client => statusCode.Value >= 400,
-            ActivityKind.Server => statusCode.Value >= 500,
-            _ => statusCode.Value >= 500,
-        };
-
-        return isError
-            ? statusCode.Value.ToString(CultureInfo.InvariantCulture)
-            : null;
-    }
 }
