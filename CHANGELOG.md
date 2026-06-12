@@ -99,8 +99,8 @@ auto-instrumentation product state after the history rewrite.
 
 ### Highest-value product work
 
-- Finish a full OTLP export normalizer so Gate A validates real exported telemetry end-to-end, not
-  only OTLP-shaped committed fixtures.
+- Finish a full OTLP export normalizer so the verified-OTLP gate validates real exported telemetry
+  end-to-end, not only OTLP-shaped committed fixtures.
 - Turn BenchmarkDotNet evidence into stable allocation/latency budgets once CI runner noise is
   characterized.
 - Add an update command for the 60-item contract manifest that regenerates the coverage matrix,

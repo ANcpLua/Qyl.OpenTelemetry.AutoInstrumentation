@@ -16,7 +16,7 @@ FIXTURE_PROJECT = (
     / "Qyl.AutoInstrumentation.SourceGenerators.Snapshots.Fixture.csproj"
 )
 FIXTURE_DIR = FIXTURE_PROJECT.parent
-GENERATED_ROOT = FIXTURE_DIR / "obj" / "generated"
+GENERATED_ROOT = ROOT / "artifacts" / "obj" / FIXTURE_PROJECT.stem / "generated"
 VERIFIED_ROOT = FIXTURE_DIR.parent / "verified"
 
 EXPECTED_FILES = {

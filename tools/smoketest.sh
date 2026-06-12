@@ -8,7 +8,7 @@ PACKAGES="$WORK/packages"
 NUGET_ORG="https://api.nuget.org/v3/index.json"
 VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -n 1)"
 VERIFIED="$ROOT/tools/Qyl.AutoInstrumentation.SmokeTest/verified/stdout.txt"
-GENERATOR_DLL="$ROOT/src/Qyl.AutoInstrumentation.SourceGenerators/bin/Release/netstandard2.0/Qyl.AutoInstrumentation.SourceGenerators.dll"
+GENERATOR_DLL="$ROOT/artifacts/bin/Qyl.AutoInstrumentation.SourceGenerators/release/Qyl.AutoInstrumentation.SourceGenerators.dll"
 
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64|Darwin-aarch64) RID="osx-arm64" ;;

@@ -42,7 +42,7 @@
     <None Include="buildTransitive\Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
           Pack="true"
           PackagePath="buildTransitive\" />
-    <None Include="..\Qyl.AutoInstrumentation.SourceGenerators\bin\$(Configuration)\netstandard2.0\Qyl.AutoInstrumentation.SourceGenerators.dll"
+    <None Include="$(ArtifactsPath)\bin\Qyl.AutoInstrumentation.SourceGenerators\$(Configuration.ToLowerInvariant())\Qyl.AutoInstrumentation.SourceGenerators.dll"
           Pack="true"
           PackagePath="analyzers/dotnet/cs/"
           Visible="false" />

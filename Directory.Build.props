@@ -12,6 +12,12 @@
   -->
 
   <PropertyGroup>
+    <!-- Centralized build output (.NET 8+ artifacts layout): everything lands under
+         artifacts/<bin|obj|publish|package>/<project>/<pivot> at the repo root instead of
+         per-project bin/ and obj/ folders. Must live here — setting it in a csproj is
+         NETSDK1199. Tools that consume build output resolve paths from this layout. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+
     <!-- Language / nullability / usings: pinned at repo root so individual csprojs stay small. -->
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>

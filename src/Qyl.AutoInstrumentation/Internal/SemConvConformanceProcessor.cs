@@ -3,17 +3,16 @@ using System.Diagnostics;
 namespace Qyl.AutoInstrumentation.Internal;
 
 /// <summary>
-/// Conformance check: every emitted attribute key MUST exist in the qyl semconv registry. Preserved
-/// from substrate-era M3 — the API is the same (an <see cref="ActivityListener"/> sees every span
-/// stop and increments <see cref="QylSelfTelemetry.AttributeChecks"/> with a verdict), but the
-/// registry lookup is now a build-time FrozenSet rather than reflection over assemblies, so the
-/// processor is AOT/trim-clean.
+/// Conformance check: every emitted attribute key MUST exist in the qyl semconv registry. An
+/// <see cref="ActivityListener"/> sees every span stop and increments
+/// <see cref="QylSelfTelemetry.AttributeChecks"/> with a verdict; the registry lookup is a
+/// build-time FrozenSet, so the processor is AOT/trim-clean.
 ///
-/// <para>Safety invariants — unchanged from M3:</para>
+/// <para>Safety invariants:</para>
 /// <list type="bullet">
 ///   <item>Never throws into the app (errors swallowed).</item>
-///   <item>Never writes to stdout/stderr (would violate Gate B no-behavior-change).</item>
-///   <item>Never mutates the activity (would violate Gate A verified-OTLP).</item>
+///   <item>Never writes to stdout/stderr (instrumented apps must keep byte-identical output).</item>
+///   <item>Never mutates the activity (exported OTLP must keep matching the verified fixtures).</item>
 /// </list>
 /// </summary>
 internal static class SemConvConformanceProcessor

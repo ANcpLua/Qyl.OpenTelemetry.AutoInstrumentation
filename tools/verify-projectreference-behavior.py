@@ -11,7 +11,7 @@ from verify_helpers import clean_env, run_checked
 ROOT = Path(__file__).resolve().parents[1]
 CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 GENERATOR_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Qyl.AutoInstrumentation.SourceGenerators.csproj"
-GENERATOR_DLL = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "bin" / "Release" / "netstandard2.0" / "Qyl.AutoInstrumentation.SourceGenerators.dll"
+GENERATOR_DLL = ROOT / "artifacts" / "bin" / "Qyl.AutoInstrumentation.SourceGenerators" / "release" / "Qyl.AutoInstrumentation.SourceGenerators.dll"
 CORE_TARGETS = ROOT / "src" / "Qyl.AutoInstrumentation" / "buildTransitive" / "Qyl.AutoInstrumentation.targets"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
