@@ -91,10 +91,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitAspNetCoreRequestDelegateInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitAspNetCoreEndpointMapInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, InterceptorSignalOwnership.Metric, InterceptorErrorPolicy.None, InterceptorDurationPolicy.None, EmitMeterProviderBuilderAddMeterInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitAzureClientInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitElasticInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitElasticInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitWcfClientInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("AzureClient", "client", AppendAzureStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);")),
+            new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
+            new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", AppendElasticStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);", ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", MethodPrefixProvider: GetElasticMethodPrefix, RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync)),
+            new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("WcfClient", "client", AppendWcfStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncUnaryInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncServerStreamingInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncClientStreamingInterceptor),
@@ -270,7 +270,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         {
             var invocation = invocations[index];
             var descriptor = GetEmissionDescriptor(invocation.Target);
-            descriptor.Emitter(builder, invocation, index);
+            if (descriptor.TraceBody.IsDefined)
+            {
+                EmitTraceInterceptor(builder, invocation, index, descriptor.TraceBody);
+                continue;
+            }
+
+            if (descriptor.Emitter is { } emitter)
+            {
+                emitter(builder, invocation, index);
+                continue;
+            }
+
+            throw new InvalidOperationException("Interceptor emission descriptor has neither trace body nor emitter: " + descriptor.Kind);
         }
 
         builder.AppendLine("    }");
@@ -725,45 +737,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("        }");
         builder.AppendLine();
     }
-
-    private static void EmitAzureClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "AzureClient",
-                "client",
-                AppendAzureStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);"));
-
-    private static void EmitElasticInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "Elastic",
-                "client",
-                AppendElasticStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);",
-                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync",
-                MethodPrefixProvider: GetElasticMethodPrefix,
-                RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync));
-
-    private static void EmitWcfClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-        => EmitTraceInterceptor(
-            builder,
-            invocation,
-            index,
-            new TraceInterceptorBodyDescriptor(
-                "WcfClient",
-                "client",
-                AppendWcfStartActivity,
-                "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(activity);",
-                "global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(activity, exception);"));
 
     private static void EmitGrpcNetClientAsyncUnaryInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
     {
@@ -3739,7 +3712,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorSignalOwnership SignalOwnership,
         InterceptorErrorPolicy ErrorPolicy,
         InterceptorDurationPolicy DurationPolicy,
-        InterceptorEmitter Emitter);
+        InterceptorEmitter? Emitter = null,
+        TraceInterceptorBodyDescriptor TraceBody = default);
 
     private readonly record struct TraceInterceptorBodyDescriptor(
         string MethodPrefix,
@@ -3754,7 +3728,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceStatementEmitter? AppendAfterSuccessStatement = null,
         TraceStatementEmitter? AppendAfterExceptionStatement = null,
         TraceStringProvider? MethodPrefixProvider = null,
-        TraceBoolProvider? RuntimeObservesAsyncWhen = null);
+        TraceBoolProvider? RuntimeObservesAsyncWhen = null,
+        bool IsDefined = true);
 
     private readonly record struct InterceptorMatcherDescriptor
     {
