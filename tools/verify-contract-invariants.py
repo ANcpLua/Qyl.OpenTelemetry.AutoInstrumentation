@@ -164,9 +164,11 @@ def verify_contract_artifacts(artifacts: ModuleType, contract: dict[str, Any]) -
     artifacts.verify_generated_files(contract)
 
 
-def verify_compile_binding_only_truth_gate() -> None:
+def verify_compile_binding_only_truth_gate(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     artifacts_source = ARTIFACTS_PATH.read_text()
     for token in [
+        "IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST",
+        "implemented compile_binding_only signals require an explicit allowlist entry",
         'evidence_level != "compile_binding_only"',
         "compile_binding_only item must not claim runtime verification evidence",
         '"tools/verify-source-interceptor-consumer.py"',
@@ -175,6 +177,20 @@ def verify_compile_binding_only_truth_gate() -> None:
     ]:
         if token not in artifacts_source:
             fail(f"contract generator must preserve compile_binding_only truth gate token: {token}")
+
+    allowlist = set(getattr(artifacts, "IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST"))
+    unexpected_compile_binding = sorted(
+        str(item["key"])
+        for item in contract["contract_items"]
+        if item.get("qyl_status") == "implemented"
+        and item.get("evidence_level") == "compile_binding_only"
+        and str(item["key"]) not in allowlist
+    )
+    if unexpected_compile_binding:
+        fail(
+            "implemented compile_binding_only signals must be explicit allowlist entries: "
+            f"{unexpected_compile_binding}"
+        )
 
 
 def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str, Any]) -> None:
@@ -1587,7 +1603,7 @@ def main() -> None:
     artifacts = load_artifacts()
     contract = artifacts.load_contract()
     verify_contract_artifacts(artifacts, contract)
-    verify_compile_binding_only_truth_gate()
+    verify_compile_binding_only_truth_gate(artifacts, contract)
     verify_managed_evidence_boundaries(artifacts, contract)
     verify_handoff_real_demo_coverage(artifacts, contract)
     verify_nativeaot_evidence_is_executable(artifacts, contract)

@@ -165,6 +165,7 @@ MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
     "signals.traces.WCFCLIENT",
     "signals.metrics.NSERVICEBUS",
 }
+IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST: set[str] = set()
 
 COMMON_ITEM_PROPERTIES = {
     "kind",
@@ -466,6 +467,11 @@ def verify_contract_item(item: dict[str, Any]) -> None:
             ):
                 fail(f"source_interceptor item must carry real demo verifier evidence: {key}")
         if evidence_level == "compile_binding_only":
+            if key not in IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST:
+                fail(
+                    "implemented compile_binding_only signals require an explicit allowlist entry: "
+                    f"{key}"
+                )
             runtime_evidence = [
                 entry
                 for entry in evidence
