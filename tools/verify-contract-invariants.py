@@ -237,17 +237,24 @@ def verify_metric_contract() -> None:
 
     for token in [
         'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";',
-        'public const string AspNetCoreComponentsNavigationMetricName = "aspnetcore.components.navigation";',
+        'public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";',
+        'public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";',
+        'public const string AspNetCoreComponentsNavigateMetricName = "aspnetcore.components.navigate";',
     ]:
         if token not in contract:
             fail(f"InstrumentationContract must pin the .NET 10 ASP.NET Core components metric proof: {token}")
 
     if 'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";' not in meters:
         fail("QylMetricMeters must register the .NET 10 ASP.NET Core components meter")
-    if "names.Add(AspNetCoreComponentsMeterName);" not in meters:
-        fail("QylMetricMeters must add the ASP.NET Core components meter when ASPNETCORE metrics are enabled")
-    if 'public const string AspNetCoreComponentsNavigation = "aspnetcore.components.navigation";' not in names:
-        fail("QylMetricNames must pin the .NET 10 ASP.NET Core components navigation metric")
+    for token in [
+        "names.Add(AspNetCoreComponentsMeterName);",
+        "names.Add(AspNetCoreComponentsLifecycleMeterName);",
+        "names.Add(AspNetCoreComponentsServerCircuitsMeterName);",
+    ]:
+        if token not in meters:
+            fail(f"QylMetricMeters must add the .NET 10 ASP.NET Core components meter when ASPNETCORE metrics are enabled: {token}")
+    if 'public const string AspNetCoreComponentsNavigate = "aspnetcore.components.navigate";' not in names:
+        fail("QylMetricNames must pin the .NET 10 ASP.NET Core components navigate metric")
 
     for token in [
         "Microsoft.AspNetCore.Hosting",
@@ -580,7 +587,7 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
             fail(f"contract/generator missing separated descriptor API token: {token}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
-        fail("generator must not synthesize aspnetcore.components.navigation from NavigationManager.NavigateTo")
+        fail("generator must not synthesize aspnetcore.components.navigate from NavigationManager.NavigateTo")
 
     if "http.server.request.duration" in generator or "Microsoft.AspNetCore.Hosting" in generator:
         fail("generator must not use the old ASP.NET Core Hosting meter metric proof")

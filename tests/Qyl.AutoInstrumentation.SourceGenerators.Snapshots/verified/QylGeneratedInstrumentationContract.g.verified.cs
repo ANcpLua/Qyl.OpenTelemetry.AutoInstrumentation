@@ -16,7 +16,9 @@ internal static class QylGeneratedInstrumentationContract
     public const int RuntimePublicTelemetrySignalPromiseCount = 7;
     public const int UnsupportedNativeAotSignalPromiseCount = 4;
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
-    public const string AspNetCoreComponentsNavigationMetricName = "aspnetcore.components.navigation";
+    public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
+    public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
+    public const string AspNetCoreComponentsNavigateMetricName = "aspnetcore.components.navigate";
 
     public static string[] ItemIds => new[]
     {

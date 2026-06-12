@@ -2,6 +2,7 @@
   <Project Path="demos/Qyl.LiveInstrumentationDemo/Qyl.LiveInstrumentationDemo.csproj" />
   <Project Path="demos/Qyl.RealAdoNetDemo/Qyl.RealAdoNetDemo.csproj" />
   <Project Path="demos/Qyl.RealAspNetCoreDemo/Qyl.RealAspNetCoreDemo.csproj" />
+  <Project Path="demos/Qyl.RealAspNetCoreMetricsDemo/Qyl.RealAspNetCoreMetricsDemo.csproj" />
   <Project Path="demos/Qyl.RealAzureDemo/Qyl.RealAzureDemo.csproj" />
   <Project Path="demos/Qyl.RealEfCoreDemo/Qyl.RealEfCoreDemo.csproj" />
   <Project Path="demos/Qyl.RealElasticsearchDemo/Qyl.RealElasticsearchDemo.csproj" />

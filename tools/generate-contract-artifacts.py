@@ -704,7 +704,9 @@ def render_contract_cs(contract: dict[str, Any]) -> str:
         f"    public const int UnsupportedNativeAotSignalPromiseCount = {len(unsupported_keys)};",
         "",
         "    public const string AspNetCoreComponentsMeterName = \"Microsoft.AspNetCore.Components\";",
-        "    public const string AspNetCoreComponentsNavigationMetricName = \"aspnetcore.components.navigation\";",
+        "    public const string AspNetCoreComponentsLifecycleMeterName = \"Microsoft.AspNetCore.Components.Lifecycle\";",
+        "    public const string AspNetCoreComponentsServerCircuitsMeterName = \"Microsoft.AspNetCore.Components.Server.Circuits\";",
+        "    public const string AspNetCoreComponentsNavigateMetricName = \"aspnetcore.components.navigate\";",
         "",
     ]
     lines.extend(render_csharp_string_array("ImplementedSignalKeys", implemented_keys, readonly=True))
@@ -744,7 +746,9 @@ def render_contract_cs(contract: dict[str, Any]) -> str:
         "        builder.AppendLine($\"    public const int RuntimePublicTelemetrySignalPromiseCount = {RuntimePublicTelemetrySignalPromiseCount};\");",
         "        builder.AppendLine($\"    public const int UnsupportedNativeAotSignalPromiseCount = {UnsupportedNativeAotSignalPromiseCount};\");",
         "        builder.AppendLine(\"    public const string AspNetCoreComponentsMeterName = \\\"Microsoft.AspNetCore.Components\\\";\");",
-        "        builder.AppendLine(\"    public const string AspNetCoreComponentsNavigationMetricName = \\\"aspnetcore.components.navigation\\\";\");",
+        "        builder.AppendLine(\"    public const string AspNetCoreComponentsLifecycleMeterName = \\\"Microsoft.AspNetCore.Components.Lifecycle\\\";\");",
+        "        builder.AppendLine(\"    public const string AspNetCoreComponentsServerCircuitsMeterName = \\\"Microsoft.AspNetCore.Components.Server.Circuits\\\";\");",
+        "        builder.AppendLine(\"    public const string AspNetCoreComponentsNavigateMetricName = \\\"aspnetcore.components.navigate\\\";\");",
         "        builder.AppendLine();",
         "        EmitStringArray(builder, \"ItemIds\", Items.Select(static item => item.Key));",
         "        EmitStringArray(builder, \"SignalKeys\", Items.Where(static item => item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise).Select(static item => item.Key));",

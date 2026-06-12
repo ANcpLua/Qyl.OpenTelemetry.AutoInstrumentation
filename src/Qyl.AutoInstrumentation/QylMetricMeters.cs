@@ -9,6 +9,10 @@ public static class QylMetricMeters
 {
     /// <summary>Well-known ASP.NET Core Components Meter Name value used by qyl auto-instrumentation.</summary>
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
+    /// <summary>Well-known ASP.NET Core Components Lifecycle Meter Name value used by qyl auto-instrumentation.</summary>
+    public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
+    /// <summary>Well-known ASP.NET Core Components Server Circuits Meter Name value used by qyl auto-instrumentation.</summary>
+    public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
     /// <summary>Well-known HTTP Client Meter Name value used by qyl auto-instrumentation.</summary>
     public const string HttpClientMeterName = "System.Net.Http";
     /// <summary>Well-known Database Meter Name value used by qyl auto-instrumentation.</summary>
@@ -26,10 +30,14 @@ public static class QylMetricMeters
     public static string[] GetEnabledMeterNames()
     {
         var options = QylAutoInstrumentationOptions.Current;
-        var names = new List<string>(8);
+        var names = new List<string>(10);
 
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.AspNetCore))
+        {
             names.Add(AspNetCoreComponentsMeterName);
+            names.Add(AspNetCoreComponentsLifecycleMeterName);
+            names.Add(AspNetCoreComponentsServerCircuitsMeterName);
+        }
 
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
             names.Add(HttpClientMeterName);

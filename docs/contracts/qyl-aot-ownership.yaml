@@ -389,12 +389,14 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: library_internal
   payload_access: typed_public
-  evidence_level: compile_binding_only
+  evidence_level: verified_managed
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
   - src/Qyl.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
   - tools/verify-otlp-collector-fixtures.py
+  - demos/Qyl.RealAspNetCoreMetricsDemo
+  - tools/verify-real-aspnetcore-metrics-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_029
   key: signals.metrics.HTTPCLIENT
   lane: runtime_public_telemetry
