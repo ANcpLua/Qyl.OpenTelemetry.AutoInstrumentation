@@ -130,7 +130,7 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 
 | # | Key | Lane | qyl status | Visibility | Payload | Evidence |
 |---:|---|---|---|---|---|---|
-| 1 | `signals.traces.ADONET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
+| 1 | `signals.traces.ADONET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 2 | `signals.traces.ASPNET` | `unsupported_nativeaot` | `unsupported_nativeaot` | `user_code` | `reflection_required` | `none` |
 | 3 | `signals.traces.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` |
 | 4 | `signals.traces.AZURE` | `framework_initialization` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
