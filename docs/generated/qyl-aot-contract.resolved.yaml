@@ -168,6 +168,17 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealElasticsearchDemo
   - tools/verify-real-elasticsearch-demo.py
+  conformance_signals:
+  - kind: span
+    name: elasticsearch.request
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ELASTICTRANSPORT
   signal: traces
@@ -195,6 +206,17 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealElasticTransportDemo
   - tools/verify-real-elastictransport-demo.py
+  conformance_signals:
+  - kind: span
+    name: elastictransport.request
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ENTITYFRAMEWORKCORE
   signal: traces
@@ -265,6 +287,16 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealGraphQlDemo
   - tools/verify-real-graphql-demo.py
+  conformance_signals:
+  - kind: span
+    name: graphql.execute
+    required_attributes:
+    - graphql.operation.name
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - graphql.document
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.GRPCNETCLIENT
   signal: traces
@@ -692,6 +724,14 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
+  conformance_signals:
+  - kind: span
+    name: quartz.execute
+    required_attributes:
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.SQLCLIENT
   signal: traces

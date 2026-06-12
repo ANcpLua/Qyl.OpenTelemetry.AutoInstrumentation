@@ -75,6 +75,17 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealElasticsearchDemo
   - tools/verify-real-elasticsearch-demo.py
+  conformance_signals:
+  - kind: span
+    name: elasticsearch.request
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
   key: signals.traces.ELASTICTRANSPORT
   lane: source_interceptor
@@ -88,6 +99,17 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealElasticTransportDemo
   - tools/verify-real-elastictransport-demo.py
+  conformance_signals:
+  - kind: span
+    name: elastictransport.request
+    required_attributes:
+    - db.system.name
+    - db.operation.name
+    - db.query.summary
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_007
   key: signals.traces.ENTITYFRAMEWORKCORE
   lane: runtime_public_telemetry
@@ -126,6 +148,16 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealGraphQlDemo
   - tools/verify-real-graphql-demo.py
+  conformance_signals:
+  - kind: span
+    name: graphql.execute
+    required_attributes:
+    - graphql.operation.name
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes:
+    - graphql.document
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
   key: signals.traces.GRPCNETCLIENT
   lane: runtime_public_telemetry
@@ -356,6 +388,14 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
+  conformance_signals:
+  - kind: span
+    name: quartz.execute
+    required_attributes:
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
   key: signals.traces.SQLCLIENT
   lane: source_interceptor

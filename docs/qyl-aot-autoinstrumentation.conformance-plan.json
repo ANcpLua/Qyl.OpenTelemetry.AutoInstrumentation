@@ -117,6 +117,60 @@
       ]
     },
     {
+      "service_name": "qyl-search-aot-demo",
+      "profile_id": "qyl-aot-search",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "elasticsearch.request",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "elastictransport.request",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-graphql-aot-demo",
+      "profile_id": "qyl-aot-graphql",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "graphql.execute",
+          "required_attributes": [
+            "graphql.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "graphql.document"
+          ]
+        }
+      ]
+    },
+    {
       "service_name": "qyl-messaging-aot-demo",
       "profile_id": "qyl-aot-messaging",
       "expected_signals": [
@@ -183,6 +237,23 @@
           "opt_in_attributes": [
             "db.query.text"
           ]
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-scheduler-aot-demo",
+      "profile_id": "qyl-aot-scheduler",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "quartz.execute",
+          "required_attributes": [
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
         }
       ]
     },

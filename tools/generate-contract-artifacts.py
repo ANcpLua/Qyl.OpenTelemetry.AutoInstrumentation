@@ -51,6 +51,21 @@ CONFORMANCE_PROFILES = [
         ],
     },
     {
+        "service_name": "qyl-search-aot-demo",
+        "profile_id": "qyl-aot-search",
+        "signal_names": [
+            "elasticsearch.request",
+            "elastictransport.request",
+        ],
+    },
+    {
+        "service_name": "qyl-graphql-aot-demo",
+        "profile_id": "qyl-aot-graphql",
+        "signal_names": [
+            "graphql.execute",
+        ],
+    },
+    {
         "service_name": "qyl-messaging-aot-demo",
         "profile_id": "qyl-aot-messaging",
         "signal_names": [
@@ -64,6 +79,13 @@ CONFORMANCE_PROFILES = [
         "profile_id": "qyl-aot-cache",
         "signal_names": [
             "redis.command",
+        ],
+    },
+    {
+        "service_name": "qyl-scheduler-aot-demo",
+        "profile_id": "qyl-aot-scheduler",
+        "signal_names": [
+            "quartz.execute",
         ],
     },
     {
