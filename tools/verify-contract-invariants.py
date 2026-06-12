@@ -1462,6 +1462,10 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     if re.search(r"if\s*\(\s*TryGet[A-Za-z0-9]+Invocation\(", matcher_dispatch_block) is not None:
         fail("matcher dispatch must not reintroduce hand-coded TryGet*Invocation sequencing")
     for token in [
+        "ValidateDescriptorCatalog();",
+        "Matcher descriptor catalog declares a duplicate interceptor kind",
+        "Emission descriptor catalog declares a duplicate interceptor kind",
+        "Matcher and emission descriptor catalogs must declare the same interceptor kind set",
         "EnsureTargetDeclaredByMatcher(descriptor, target);",
         "EnsureKindDeclaredByMatcher(descriptor, target.Kind);",
         "public ulong TargetKindMask { get; }",

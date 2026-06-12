@@ -103,6 +103,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     /// <param name="context">Roslyn initialization context supplied by the compiler host.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        ValidateDescriptorCatalog();
+
         context.RegisterPostInitializationOutput(static output =>
         {
             output.AddSource(
@@ -335,6 +337,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         throw new InvalidOperationException("Unsupported interceptor kind: " + target.Kind);
+    }
+
+    private static void ValidateDescriptorCatalog()
+    {
+        var matcherKindMask = 0UL;
+        foreach (var descriptor in s_matcherDescriptors)
+        {
+            if ((matcherKindMask & descriptor.TargetKindMask) is not 0)
+                throw new InvalidOperationException("Matcher descriptor catalog declares a duplicate interceptor kind: " + descriptor.Name);
+
+            matcherKindMask |= descriptor.TargetKindMask;
+        }
+
+        var emissionKindMask = 0UL;
+        foreach (var descriptor in s_emissionDescriptors)
+        {
+            var kindMask = GetInterceptorKindMask(descriptor.Kind);
+            if ((emissionKindMask & kindMask) is not 0)
+                throw new InvalidOperationException("Emission descriptor catalog declares a duplicate interceptor kind: " + descriptor.Kind);
+
+            emissionKindMask |= kindMask;
+            ValidateEmissionDescriptorPolicy(descriptor);
+        }
+
+        if (matcherKindMask != emissionKindMask)
+            throw new InvalidOperationException("Matcher and emission descriptor catalogs must declare the same interceptor kind set.");
     }
 
     private static void EnsureEmissionDescriptorMatchesMatcher(
