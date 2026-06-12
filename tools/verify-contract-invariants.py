@@ -963,6 +963,25 @@ def parse_emission_descriptor_kinds(generator: str) -> set[str]:
     return descriptor_kinds
 
 
+def parse_emission_descriptor_ownership(generator: str) -> dict[str, str]:
+    ownership_by_kind: dict[str, str] = {}
+    for match in re.finditer(
+        r"new\s+InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+).*?InterceptorSignalOwnership\.([A-Za-z0-9]+)",
+        generator,
+        re.DOTALL,
+    ):
+        kind = match.group(1)
+        ownership = match.group(2)
+        if kind in ownership_by_kind:
+            fail(f"duplicate emission descriptor ownership for InterceptorKind.{kind}")
+        ownership_by_kind[kind] = ownership
+
+    if not ownership_by_kind:
+        fail("s_emissionDescriptors must declare signal ownership")
+
+    return ownership_by_kind
+
+
 def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
     try:
         descriptor_block = generator.split("s_matcherDescriptors =", 1)[1].split("s_emissionDescriptors =", 1)[0]
@@ -994,6 +1013,94 @@ def parse_switch_helper_keys(generator: str, helper_name: str) -> set[str]:
         fail(f"{helper_name} helper missing from generator")
 
     return set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(0)))
+
+
+def extract_parenthesized_blocks(text: str, token: str) -> list[str]:
+    blocks: list[str] = []
+    position = 0
+    while True:
+        token_index = text.find(token, position)
+        if token_index < 0:
+            return blocks
+
+        open_index = text.find("(", token_index + len(token))
+        if open_index < 0:
+            return blocks
+
+        depth = 0
+        for index in range(open_index, len(text)):
+            char = text[index]
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    blocks.append(text[open_index + 1:index])
+                    position = index + 1
+                    break
+        else:
+            fail(f"unterminated parenthesized block after {token}")
+
+
+def collect_generator_target_contract_keys_by_kind(generator: str) -> dict[str, set[str]]:
+    keys_by_kind: dict[str, set[str]] = {}
+    for block in [
+        *extract_parenthesized_blocks(generator, "new InterceptorTarget"),
+        *extract_parenthesized_blocks(generator, "=> new"),
+    ]:
+        kind_match = re.search(r"InterceptorKind\.([A-Za-z0-9]+)", block)
+        if kind_match is None:
+            continue
+
+        kind = kind_match.group(1)
+        keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', block))
+        if "GetDbTraceContractKey(instrumentationId)" in block:
+            keys.update(parse_switch_helper_keys(generator, "GetDbTraceContractKey"))
+        if "GetDbMetricContractKeys(instrumentationId)" in block:
+            keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
+        if keys:
+            keys_by_kind.setdefault(kind, set()).update(keys)
+
+    for method_match in re.finditer(
+        r"private static bool [^{]+\{(?P<body>.*?target\s*=\s*new\s+InterceptorTarget\(\s*kind\s*,\s*\"(?P<key>signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\".*?return true;)",
+        generator,
+        re.DOTALL,
+    ):
+        key = method_match.group("key")
+        for kind in re.findall(r"kind\s*=\s*InterceptorKind\.([A-Za-z0-9]+)", method_match.group("body")):
+            keys_by_kind.setdefault(kind, set()).add(key)
+
+    return keys_by_kind
+
+
+def verify_interceptor_signal_ownership(generator: str, kinds: set[str]) -> None:
+    ownership_by_kind = parse_emission_descriptor_ownership(generator)
+    target_keys_by_kind = collect_generator_target_contract_keys_by_kind(generator)
+    missing_ownership = kinds - set(ownership_by_kind)
+    if missing_ownership:
+        fail(f"InterceptorKind values missing signal ownership descriptors: {sorted(missing_ownership)}")
+
+    missing_target_keys = set(ownership_by_kind) - set(target_keys_by_kind)
+    if missing_target_keys:
+        fail(f"InterceptorKind values missing target contract keys for ownership verification: {sorted(missing_target_keys)}")
+
+    for kind, ownership in sorted(ownership_by_kind.items()):
+        keys = target_keys_by_kind.get(kind, set())
+        has_trace = any(key.startswith("signals.traces.") for key in keys)
+        has_metric = any(key.startswith("signals.metrics.") for key in keys)
+        has_log = any(key.startswith("signals.logs.") for key in keys)
+        allowed = {
+            "TraceAndMetric" if has_trace and has_metric and not has_log else "",
+            "Trace" if has_trace and not has_metric and not has_log else "",
+            "Metric" if has_metric and not has_trace and not has_log else "",
+            "Log" if has_log and not has_trace and not has_metric else "",
+        }
+        allowed.discard("")
+        if ownership not in allowed:
+            fail(
+                f"InterceptorKind.{kind} ownership {ownership} does not match target contract keys "
+                f"{sorted(keys)}; expected one of {sorted(allowed)}"
+            )
 
 
 def collect_generator_target_contract_keys(generator: str) -> set[str]:
@@ -1073,6 +1180,8 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     }
     if target_missing:
         fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
+
+    verify_interceptor_signal_ownership(generator, kinds)
 
     target_contract_keys = collect_generator_target_contract_keys(generator)
     matcher_contract_keys = parse_matcher_descriptor_contract_keys(generator)
