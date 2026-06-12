@@ -26,11 +26,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-    private delegate void InterceptorEmitter(
-        StringBuilder builder,
-        InterceptedInvocation invocation,
-        int index);
-
     private delegate void TraceActivityExpressionEmitter(
         StringBuilder builder,
         InterceptorTarget target);
@@ -318,13 +313,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 continue;
             }
 
-            if (descriptor.Emitter is { } emitter)
-            {
-                emitter(builder, invocation, index);
-                continue;
-            }
-
-            throw new InvalidOperationException("Interceptor emission descriptor has neither trace body nor emitter: " + descriptor.Kind);
+            throw new InvalidOperationException("Interceptor emission descriptor has no body: " + descriptor.Kind);
         }
 
         builder.AppendLine("    }");
@@ -3659,7 +3648,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorSignalOwnership SignalOwnership,
         InterceptorErrorPolicy ErrorPolicy,
         InterceptorDurationPolicy DurationPolicy,
-        InterceptorEmitter? Emitter = null,
         TraceInterceptorBodyDescriptor TraceBody = default,
         ForwardingInterceptorBodyDescriptor ForwardingBody = default,
         HttpWebRequestBodyDescriptor HttpWebRequestBody = default,

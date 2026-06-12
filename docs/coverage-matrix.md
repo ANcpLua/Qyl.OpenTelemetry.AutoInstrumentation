@@ -41,8 +41,8 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 |---|---:|
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 22 |
-| `verified_nativeaot` | 11 |
+| `verified_managed` | 21 |
+| `verified_nativeaot` | 12 |
 
 ## Matrix
 
@@ -60,7 +60,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 10 | `signals.traces.HTTPCLIENT` | `source_interceptor` | `implemented` | `both` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 11 | `signals.traces.KAFKA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 12 | `signals.traces.MASSTRANSIT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
-| 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 14 | `signals.traces.MYSQLCONNECTOR` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 15 | `signals.traces.MYSQLDATA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |

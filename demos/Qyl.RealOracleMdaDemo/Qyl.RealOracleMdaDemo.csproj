@@ -19,7 +19,7 @@
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
-    <Analyzer Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\bin\Release\netstandard2.0\Qyl.AutoInstrumentation.SourceGenerators.dll"
+    <Analyzer Include="..\..\artifacts\bin\Qyl.AutoInstrumentation.SourceGenerators\release\Qyl.AutoInstrumentation.SourceGenerators.dll"
               Condition="'$(PublishAot)' == 'true'" />
   </ItemGroup>
 

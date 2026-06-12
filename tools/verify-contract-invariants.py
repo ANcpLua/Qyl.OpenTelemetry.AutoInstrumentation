@@ -295,13 +295,21 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
     if not emitter_blocks:
         fail("generator has no Emit*Interceptor methods")
 
+    descriptor_delegation_tokens = [
+        "descriptor.HelperType",
+        "descriptor.RecordSuccessStatement",
+        "descriptor.RecordExceptionStatement",
+        "descriptor.ObserveAsyncMethod",
+        "EmitDirectLoggerInterceptor(",
+        "EmitLoggerExtensionInterceptor(",
+    ]
     for name, body in sorted(emitter_blocks.items()):
         if name == "EmitMeterProviderBuilderAddMeterInterceptor":
-            if REQUIRED_METER_PROVIDER_DELEGATION_TOKEN not in body:
+            if REQUIRED_METER_PROVIDER_DELEGATION_TOKEN not in body and "descriptor.EnabledMeterNamesExpression" not in body:
                 fail(f"{name} must delegate meter registration to QylMetricMeters")
             continue
 
-        if REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN not in body:
+        if REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN not in body and not any(token in body for token in descriptor_delegation_tokens):
             fail(f"{name} must delegate intercepted behavior to Qyl runtime instrumentation")
 
 
@@ -490,10 +498,22 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     except IndexError:
         fail("EmitInterceptors dispatch block missing")
 
-    if "GetEmissionDescriptor(invocation.Target.Kind)" not in dispatch_block:
+    if "GetEmissionDescriptor(invocation.Target)" not in dispatch_block:
         fail("emitter dispatch must use the descriptor table")
-    if "descriptor.Emitter(builder, invocation, index);" not in dispatch_block:
-        fail("emitter dispatch must invoke the descriptor emitter")
+    if "private delegate void InterceptorEmitter" in generator or "InterceptorEmitter? Emitter" in generator or "descriptor.Emitter" in dispatch_block:
+        fail("emitter dispatch must not use generic emitter delegates")
+    for token in [
+        "descriptor.TraceBody.IsDefined",
+        "descriptor.ForwardingBody.IsDefined",
+        "descriptor.HttpWebRequestBody.IsDefined",
+        "descriptor.DbCommandBody.IsDefined",
+        "descriptor.GrpcClientBody.IsDefined",
+        "descriptor.MeterProviderBuilderBody.IsDefined",
+        "descriptor.LoggerBody.IsDefined",
+        "descriptor.ExternalLoggerBody.IsDefined",
+    ]:
+        if token not in dispatch_block:
+            fail(f"emitter dispatch missing typed body descriptor: {token}")
 
     try:
         matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(

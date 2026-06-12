@@ -142,7 +142,7 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 | 10 | `signals.traces.HTTPCLIENT` | `source_interceptor` | `implemented` | `both` | `not_applicable` | `verified_nativeaot` |
 | 11 | `signals.traces.KAFKA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 12 | `signals.traces.MASSTRANSIT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
-| 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
+| 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 14 | `signals.traces.MYSQLCONNECTOR` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 15 | `signals.traces.MYSQLDATA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
