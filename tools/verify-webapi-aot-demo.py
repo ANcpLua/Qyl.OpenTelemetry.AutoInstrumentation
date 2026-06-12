@@ -19,7 +19,7 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-GOLDEN_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "golden" / "report.json"
+VERIFIED_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 TARGET_FRAMEWORK = "net10.0"
 
@@ -177,31 +177,31 @@ def run_executable(executable: Path, env: dict[str, str]) -> subprocess.Complete
     )
 
 
-def verify_or_update_golden(stdout: str, update: bool) -> None:
+def verify_or_update_verified(stdout: str, update: bool) -> None:
     parsed = json.loads(stdout)
     canonical = json.dumps(parsed, indent=2, sort_keys=True) + "\n"
     if update:
-        GOLDEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-        GOLDEN_PATH.write_text(canonical, encoding="utf-8")
+        VERIFIED_PATH.parent.mkdir(parents=True, exist_ok=True)
+        VERIFIED_PATH.write_text(canonical, encoding="utf-8")
         return
 
-    if not GOLDEN_PATH.exists():
-        fail(f"missing web API AOT golden: {GOLDEN_PATH}")
+    if not VERIFIED_PATH.exists():
+        fail(f"missing web API AOT verified: {VERIFIED_PATH}")
 
-    expected = GOLDEN_PATH.read_text(encoding="utf-8")
+    expected = VERIFIED_PATH.read_text(encoding="utf-8")
     if canonical != expected:
-        received = GOLDEN_PATH.with_suffix(".received.json")
+        received = VERIFIED_PATH.with_suffix(".received.json")
         received.write_text(canonical, encoding="utf-8")
         fail(
-            "web API AOT golden mismatch\n"
-            f"expected={GOLDEN_PATH}\n"
+            "web API AOT verified mismatch\n"
+            f"expected={VERIFIED_PATH}\n"
             f"received={received}"
         )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publish and run the NativeAOT web API instrumentation demo.")
-    parser.add_argument("--update-golden", action="store_true", help="Update the committed canonical output.")
+    parser.add_argument("--update-verified", action="store_true", help="Update the committed canonical output.")
     args = parser.parse_args()
 
     env = clean_env()
@@ -225,7 +225,7 @@ def main() -> None:
     if completed.stderr:
         fail(f"NativeAOT web API demo wrote stderr:\n{completed.stderr}")
 
-    verify_or_update_golden(completed.stdout, args.update_golden)
+    verify_or_update_verified(completed.stdout, args.update_verified)
     print("webapi-aot-demo-ok qyl_warnings=0")
 
 

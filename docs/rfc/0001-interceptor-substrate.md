@@ -112,7 +112,7 @@ The upstream contribution is not "rewrite the CLR profiler in qyl." The contribu
 separate AOT-native substrate that can coexist with profiler-based instrumentation:
 
 - A shared vocabulary for source-visible interceptor descriptors.
-- Golden generated-code fixtures for `[InterceptsLocation]` output.
+- Verified generated-code fixtures for `[InterceptsLocation]` output.
 - AOT smoke consumers for library integrations that are reachable from source-level call
   sites.
 - A clear split between compile-time interception and runtime diagnostic listener

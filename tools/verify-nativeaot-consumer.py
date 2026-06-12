@@ -58,7 +58,7 @@ foreach (var tag in activity.TagObjects.OrderBy(static tag => tag.Key, StringCom
 return 0;
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Synthetic offline producer for the NativeAOT golden gate; qyl runtime only consumes DiagnosticSource.")]
+    Justification = "Synthetic offline producer for the NativeAOT verified gate; qyl runtime only consumes DiagnosticSource.")]
 static void EmitSyntheticHttpClientEvent()
 {
     using var diagnosticListener = new DiagnosticListener("HttpHandlerDiagnosticListener");
@@ -82,7 +82,7 @@ static void EmitSyntheticHttpClientEvent()
 '''
 
 
-EXPECTED_GOLDEN = """name=GET
+EXPECTED_VERIFIED = """name=GET
 kind=Client
 error.type=503
 http.request.method=GET
@@ -196,7 +196,7 @@ def run_executable(executable: Path, env: dict[str, str]) -> subprocess.Complete
 def main() -> None:
     env = clean_env()
     version = read_version()
-    with tempfile.TemporaryDirectory(prefix="qyl-nativeaot-golden-") as temp:
+    with tempfile.TemporaryDirectory(prefix="qyl-nativeaot-verified-") as temp:
         root = Path(temp)
         feed = root / "feed"
         packages = root / "packages"
@@ -213,13 +213,13 @@ def main() -> None:
         )
     if completed.stderr:
         fail(f"NativeAOT consumer wrote stderr:\n{completed.stderr}")
-    if completed.stdout != EXPECTED_GOLDEN:
+    if completed.stdout != EXPECTED_VERIFIED:
         fail(
-            "NativeAOT golden mismatch\n"
-            f"EXPECTED\n{EXPECTED_GOLDEN}\nACTUAL\n{completed.stdout}"
+            "NativeAOT verified mismatch\n"
+            f"EXPECTED\n{EXPECTED_VERIFIED}\nACTUAL\n{completed.stdout}"
         )
 
-    print("nativeaot-consumer-golden-ok")
+    print("nativeaot-consumer-ok")
 
 
 if __name__ == "__main__":

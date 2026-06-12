@@ -22,7 +22,7 @@
 - Demo assertions and the WebApiAotDemo report filter now use the current semconv registry
   keys `db.system.name` / `rpc.system.name` that the runtime actually emits; the stale
   `db.system` / `rpc.system` keys had kept the EFCore and gRPC demos red and silently dropped
-  `db.system.name` from the WebApiAotDemo golden.
+  `db.system.name` from the WebApiAotDemo verified.
 
 ### Real consumer demos
 
@@ -82,7 +82,7 @@ auto-instrumentation product state after the history rewrite.
 ### Behavioral verification gates
 
 - Added package-layout, ProjectReference, public API, XML-doc, environment-option, conformance,
-  source-generator snapshot, source-interceptor, smoke, WebAPI AOT, OTLP golden, OTLP collector,
+  source-generator snapshot, source-interceptor, smoke, WebAPI AOT, OTLP verified, OTLP collector,
   consumer behavior, and NativeAOT consumer gates.
 - Added CI workflows for smoke, WebAPI AOT, and OTLP collector fixtures.
 - Added BenchmarkDotNet hot-path measurements as evidence, not as shipped runtime surface.

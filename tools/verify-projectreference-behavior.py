@@ -87,7 +87,7 @@ internal sealed class CapturingLogger : ILogger
 '''
 
 
-EXPECTED_GOLDEN = """logger.calls=1
+EXPECTED_VERIFIED = """logger.calls=1
 logger.last=Information:42:projectreference-log
 activity.count=1
 activity.name=ILogger log
@@ -156,9 +156,9 @@ def write_project(directory: Path, packages: Path) -> Path:
     return project_path
 
 
-def verify_golden(label: str, stdout: str) -> None:
-    if stdout != EXPECTED_GOLDEN:
-        fail(f"{label} output mismatch\nexpected:\n{EXPECTED_GOLDEN}\nactual:\n{stdout}")
+def verify_verified(label: str, stdout: str) -> None:
+    if stdout != EXPECTED_VERIFIED:
+        fail(f"{label} output mismatch\nexpected:\n{EXPECTED_VERIFIED}\nactual:\n{stdout}")
 
 
 def verify_generated_interceptor_source(directory: Path) -> None:
@@ -183,7 +183,7 @@ def verify_managed(project: Path, directory: Path, env: dict[str, str]) -> None:
 
     app_dll = directory / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
     completed = run_checked(["dotnet", str(app_dll)], directory, env)
-    verify_golden("managed ProjectReference consumer", completed.stdout)
+    verify_verified("managed ProjectReference consumer", completed.stdout)
 
 
 def verify_nativeaot(project: Path, directory: Path, env: dict[str, str]) -> None:
@@ -209,7 +209,7 @@ def verify_nativeaot(project: Path, directory: Path, env: dict[str, str]) -> Non
 
     native_app = directory / "bin" / "Release" / TARGET_FRAMEWORK / rid / "publish" / native_executable_name()
     completed = run_checked([str(native_app)], directory, env)
-    verify_golden("NativeAOT ProjectReference consumer", completed.stdout)
+    verify_verified("NativeAOT ProjectReference consumer", completed.stdout)
 
 
 def main() -> None:

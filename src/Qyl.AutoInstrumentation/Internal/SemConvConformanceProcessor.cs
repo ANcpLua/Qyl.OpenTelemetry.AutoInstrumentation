@@ -13,7 +13,7 @@ namespace Qyl.AutoInstrumentation.Internal;
 /// <list type="bullet">
 ///   <item>Never throws into the app (errors swallowed).</item>
 ///   <item>Never writes to stdout/stderr (would violate Gate B no-behavior-change).</item>
-///   <item>Never mutates the activity (would violate Gate A golden-OTLP).</item>
+///   <item>Never mutates the activity (would violate Gate A verified-OTLP).</item>
 /// </list>
 /// </summary>
 internal static class SemConvConformanceProcessor

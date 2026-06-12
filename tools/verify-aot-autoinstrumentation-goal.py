@@ -25,10 +25,10 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
     ("smoketest", ["bash", "tools/smoketest.sh"]),
     ("webapi aot demo", [sys.executable, "tools/verify-webapi-aot-demo.py"]),
-    ("otlp golden fixtures", [sys.executable, "tools/verify-otlp-golden-fixtures.py"]),
+    ("otlp verified fixtures", [sys.executable, "tools/verify-otlp-fixtures.py"]),
     ("otlp collector fixtures", [sys.executable, "tools/verify-otlp-collector-fixtures.py"]),
     ("consumer behavior", [sys.executable, "tools/verify-consumer-behavior.py"]),
-    ("nativeaot consumer golden", [sys.executable, "tools/verify-nativeaot-consumer-golden.py"]),
+    ("nativeaot consumer verified", [sys.executable, "tools/verify-nativeaot-consumer.py"]),
     ("diff whitespace", ["git", "diff", "--check"]),
 ]
 

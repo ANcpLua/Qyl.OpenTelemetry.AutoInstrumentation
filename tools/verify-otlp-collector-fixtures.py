@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORK = Path("/tmp/qyl-otlp-collector-fixtures")
 FEED = WORK / "feed"
 APP = WORK / "collector-consumer"
-GOLDEN = ROOT / "tools/Qyl.AutoInstrumentation.OtlpCollectorFixtures/golden/httpclient-traces.collector.json"
+VERIFIED = ROOT / "tools/Qyl.AutoInstrumentation.OtlpCollectorFixtures/verified/httpclient-traces.collector.json"
 EXPORTER_VERSION = "1.15.3"
 
 REQUIRED_STRINGS = (
@@ -82,7 +82,7 @@ class CollectorHandler(BaseHTTPRequestHandler):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--update-golden", action="store_true")
+    parser.add_argument("--update-verified", action="store_true")
     args = parser.parse_args()
 
     clean_workdir()
@@ -102,13 +102,13 @@ def main() -> None:
         server.server_close()
         thread.join(timeout=5)
 
-    if args.update_golden:
-        GOLDEN.parent.mkdir(parents=True, exist_ok=True)
-        GOLDEN.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
-        print(f"updated {GOLDEN.relative_to(ROOT)}")
+    if args.update_verified:
+        VERIFIED.parent.mkdir(parents=True, exist_ok=True)
+        VERIFIED.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+        print(f"updated {VERIFIED.relative_to(ROOT)}")
         return
 
-    expected = json.loads(GOLDEN.read_text())
+    expected = json.loads(VERIFIED.read_text())
     if report != expected:
         print("OTLP collector fixture mismatch", file=sys.stderr)
         print("expected:", json.dumps(expected, indent=2, sort_keys=True), file=sys.stderr)

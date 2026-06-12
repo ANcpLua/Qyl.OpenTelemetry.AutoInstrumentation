@@ -29,7 +29,7 @@
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsPreviewNamespaces>
 
-    <!-- Deterministic + reproducible builds — golden-OTLP gates need byte-stable artifacts. -->
+    <!-- Deterministic + reproducible builds — verified-OTLP gates need byte-stable artifacts. -->
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 

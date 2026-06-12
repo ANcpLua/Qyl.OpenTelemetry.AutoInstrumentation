@@ -26,5 +26,5 @@ it when the project direction changes.
 
 - Do not reintroduce profiler/startup-hook/IL-rewrite/reflection dispatch paths.
 - Do not merge EFCore or SqlClient dependencies into generic Hosting.
-- Do not hand-edit generated EF compiled models, snapshots, golden fixtures, or coverage matrix.
+- Do not hand-edit generated EF compiled models, snapshots, verified fixtures, or coverage matrix.
 - Do not claim release/tag state without checking the tag target after history rewrites.

@@ -127,8 +127,8 @@ Important focused gates:
 python3 tools/verify-package-layout.py
 python3 tools/verify-projectreference-behavior.py
 python3 tools/verify-source-interceptor-consumer.py
-python3 tools/verify-nativeaot-consumer-golden.py
-python3 tools/verify-otlp-golden-fixtures.py
+python3 tools/verify-nativeaot-consumer.py
+python3 tools/verify-otlp-fixtures.py
 python3 tools/verify-otlp-collector-fixtures.py
 python3 tools/verify-webapi-aot-demo.py
 bash tools/smoketest.sh

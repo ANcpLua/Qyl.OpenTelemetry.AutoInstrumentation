@@ -7,7 +7,7 @@ FEED="$WORK/feed"
 PACKAGES="$WORK/packages"
 NUGET_ORG="https://api.nuget.org/v3/index.json"
 VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -n 1)"
-GOLDEN="$ROOT/tools/Qyl.AutoInstrumentation.SmokeTest/golden/stdout.txt"
+VERIFIED="$ROOT/tools/Qyl.AutoInstrumentation.SmokeTest/verified/stdout.txt"
 GENERATOR_DLL="$ROOT/src/Qyl.AutoInstrumentation.SourceGenerators/bin/Release/netstandard2.0/Qyl.AutoInstrumentation.SourceGenerators.dll"
 
 case "$(uname -s)-$(uname -m)" in
@@ -222,7 +222,7 @@ run_managed_consumer() {
   dotnet build "$dir/Consumer.csproj" -c Release -v quiet
   assert_generated_interceptor "$dir"
   dotnet "$dir/bin/Release/net10.0/Consumer.dll" > "$managed_out"
-  diff -u "$GOLDEN" "$managed_out"
+  diff -u "$VERIFIED" "$managed_out"
 }
 
 publish_nativeaot_consumer() {
@@ -246,7 +246,7 @@ run_nativeaot_consumer() {
   local native_out="$2"
 
   "$dir/bin/Release/net10.0/$RID/publish/Consumer" > "$native_out"
-  diff -u "$GOLDEN" "$native_out"
+  diff -u "$VERIFIED" "$native_out"
 }
 
 run_consumer() {

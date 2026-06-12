@@ -222,7 +222,7 @@ internal sealed class ThrowingLogger : ILogger
 '''
 
 
-EXPECTED_GOLDEN = """logger.calls=1
+EXPECTED_VERIFIED = """logger.calls=1
 logger.last=Warning:7:source-generated-log
 activity.count=1
 activity.name=ILogger log
@@ -396,10 +396,10 @@ def verify_completed(name: str, completed: subprocess.CompletedProcess[str]) -> 
         )
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
-    if completed.stdout != EXPECTED_GOLDEN:
+    if completed.stdout != EXPECTED_VERIFIED:
         fail(
-            f"{name} golden mismatch\n"
-            f"EXPECTED\n{EXPECTED_GOLDEN}\nACTUAL\n{completed.stdout}"
+            f"{name} verified mismatch\n"
+            f"EXPECTED\n{EXPECTED_VERIFIED}\nACTUAL\n{completed.stdout}"
         )
 
 

@@ -102,7 +102,7 @@ Generated/evidence surfaces include:
 
 - EFCore compiled models under `demos/Qyl.RealEfCoreDemo/CompiledModels`,
 - source-generator verified snapshots,
-- OTLP/golden fixture files,
+- OTLP/verified fixture files,
 - generated coverage matrix,
 - package build/buildTransitive generated assets.
 
@@ -128,7 +128,7 @@ Use the narrowest verifier that covers the changed surface:
 | Source generator snapshots | `python3 tools/verify-generator-snapshots.py` |
 | Source interceptor behavior | `python3 tools/verify-source-interceptor-consumer.py` |
 | NativeAOT smoke | `bash tools/smoketest.sh` |
-| OTLP fixtures | `python3 tools/verify-otlp-golden-fixtures.py` and `python3 tools/verify-otlp-collector-fixtures.py` |
+| OTLP fixtures | `python3 tools/verify-otlp-fixtures.py` and `python3 tools/verify-otlp-collector-fixtures.py` |
 | Whole repo handoff | `python3 tools/verify-aot-autoinstrumentation-goal.py` |
 
 For release/handoff work, run the whole repo handoff gate.

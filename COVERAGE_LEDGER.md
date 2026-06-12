@@ -54,10 +54,10 @@ Current classification:
 | Smoke consumers | `tools/smoketest.sh` packs local packages, creates PackageReference and ProjectReference consumers, and verifies output. |
 | AOT warning gate | Smoke publishing fails on supported-consumer IL/trim/AOT warnings. |
 | WebAPI AOT demo | `tools/verify-webapi-aot-demo.py` publishes and runs the NativeAOT web API proof. |
-| OTLP-shaped fixture | `tools/verify-otlp-golden-fixtures.py` validates normalized offline activity output. |
+| OTLP-shaped fixture | `tools/verify-otlp-fixtures.py` validates normalized offline activity output. |
 | Collector fixture | `tools/verify-otlp-collector-fixtures.py` validates collector-backed telemetry fixture output. |
 | Consumer behavior | `tools/verify-consumer-behavior.py` checks baseline-vs-instrumented output equivalence. |
-| NativeAOT consumer golden | `tools/verify-nativeaot-consumer-golden.py` checks a normalized NativeAOT qyl HTTP client activity golden. |
+| NativeAOT consumer verified | `tools/verify-nativeaot-consumer.py` checks a normalized NativeAOT qyl HTTP client activity verified. |
 
 The broad handoff command is:
 

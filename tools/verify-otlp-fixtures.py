@@ -9,8 +9,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS_PATH = ROOT / "Directory.Build.props"
-WEBAPI_REPORT_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "golden" / "report.json"
-OTLP_GOLDEN_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.OtlpGoldenFixtures" / "golden" / "webapi-aot-traces.otlp.json"
+WEBAPI_REPORT_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
+OTLP_VERIFIED_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.OtlpFixtures" / "verified" / "webapi-aot-traces.otlp.json"
 
 EXPECTED_SIGNALS = [
     "aspnetcore.server",
@@ -75,14 +75,14 @@ def trace_id(index: int) -> str:
 
 def render_otlp(report: dict[str, Any], version: str) -> dict[str, Any]:
     if report.get("RuntimeMode") != "nativeaot":
-        fail("web API golden must be from NativeAOT runtime")
+        fail("web API verified must be from NativeAOT runtime")
 
     if report.get("Pass") is not True:
-        fail("web API golden report is not passing")
+        fail("web API verified report is not passing")
 
     signals = report.get("Signals")
     if not isinstance(signals, list):
-        fail("web API golden report is missing Signals[]")
+        fail("web API verified report is missing Signals[]")
 
     actual_signals = sorted(str(signal.get("Signal")) for signal in signals)
     if actual_signals != EXPECTED_SIGNALS:
@@ -142,36 +142,36 @@ def canonical_json(value: dict[str, Any]) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Verify canonical OTLP-shaped golden fixtures.")
-    parser.add_argument("--update-golden", action="store_true", help="Update committed OTLP-shaped fixtures.")
+    parser = argparse.ArgumentParser(description="Verify canonical OTLP-shaped verified fixtures.")
+    parser.add_argument("--update-verified", action="store_true", help="Update committed OTLP-shaped fixtures.")
     args = parser.parse_args()
 
     if not WEBAPI_REPORT_PATH.exists():
-        fail(f"missing web API golden report: {WEBAPI_REPORT_PATH}")
+        fail(f"missing web API verified report: {WEBAPI_REPORT_PATH}")
 
     report = json.loads(WEBAPI_REPORT_PATH.read_text(encoding="utf-8"))
     rendered = canonical_json(render_otlp(report, read_version()))
 
-    if args.update_golden:
-        OTLP_GOLDEN_PATH.parent.mkdir(parents=True, exist_ok=True)
-        OTLP_GOLDEN_PATH.write_text(rendered, encoding="utf-8")
-        print("otlp-golden-fixtures-updated")
+    if args.update_verified:
+        OTLP_VERIFIED_PATH.parent.mkdir(parents=True, exist_ok=True)
+        OTLP_VERIFIED_PATH.write_text(rendered, encoding="utf-8")
+        print("otlp-fixtures-updated")
         return
 
-    if not OTLP_GOLDEN_PATH.exists():
-        fail(f"missing OTLP-shaped golden fixture: {OTLP_GOLDEN_PATH}")
+    if not OTLP_VERIFIED_PATH.exists():
+        fail(f"missing OTLP-shaped verified fixture: {OTLP_VERIFIED_PATH}")
 
-    expected = OTLP_GOLDEN_PATH.read_text(encoding="utf-8")
+    expected = OTLP_VERIFIED_PATH.read_text(encoding="utf-8")
     if expected != rendered:
-        received = OTLP_GOLDEN_PATH.with_suffix(".received.json")
+        received = OTLP_VERIFIED_PATH.with_suffix(".received.json")
         received.write_text(rendered, encoding="utf-8")
         fail(
-            "OTLP-shaped golden fixture mismatch\n"
-            f"expected={OTLP_GOLDEN_PATH}\n"
+            "OTLP-shaped verified fixture mismatch\n"
+            f"expected={OTLP_VERIFIED_PATH}\n"
             f"received={received}"
         )
 
-    print("otlp-golden-fixtures-ok")
+    print("otlp-fixtures-ok")
 
 
 if __name__ == "__main__":
