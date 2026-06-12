@@ -85,8 +85,7 @@ Detailed runtime extraction rules live in `docs/RUNTIME_SEMANTICS.md`.
 
 ## Open work
 
-- Full OTLP export normalizer for Gate A.
+- Full OTLP export normalizer for the verified-OTLP gate.
 - Stable benchmark budget thresholds.
--
 - More source-visible interceptor targets with bounded names and stable attributes.
 - Better consumer diagnostics when package build assets are missing.
