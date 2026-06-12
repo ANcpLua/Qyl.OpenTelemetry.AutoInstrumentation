@@ -31,6 +31,39 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptedInvocation invocation,
         int index);
 
+    private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
+        ImmutableArray.Create(
+            new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, EmitHttpClientInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.HttpWebRequest, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, EmitHttpWebRequestInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreWebApplicationBuilderBuild, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitAspNetCoreWebApplicationBuilderBuildInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitAspNetCoreRequestDelegateInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitAspNetCoreEndpointMapInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, InterceptorSignalOwnership.Metric, InterceptorErrorPolicy.None, InterceptorDurationPolicy.None, EmitMeterProviderBuilderAddMeterInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitAzureClientInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitElasticInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitElasticInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.SyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitWcfClientInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncUnaryInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncServerStreamingInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncClientStreamingInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncDuplexStreamingInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.KafkaProducer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitKafkaProducerInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.KafkaConsumer, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitKafkaConsumerInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.MassTransitMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitMassTransitInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.NServiceBusMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, EmitNServiceBusInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.QuartzJobExecute, InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitQuartzInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.StackExchangeRedisCommandAsync, InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitStackExchangeRedisInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitGraphQlInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.MongoDbCollection, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitMongoDbInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.RabbitMqBasicPublish, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitRabbitMqInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.ILoggerExtensionLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitLoggerExtensionInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.ILoggerLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, EmitLoggerInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.NLogLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, static (builder, invocation, index) => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog")),
+            new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, static (builder, invocation, index) => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")),
+            new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitEntityFrameworkCoreDbContextInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreQueryable, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitEntityFrameworkCoreQueryableInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, EmitDbCommandInterceptor));
+
     /// <summary>
     /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
     /// </summary>
@@ -219,44 +252,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         for (var index = 0; index < invocations.Length; index++)
         {
             var invocation = invocations[index];
-            InterceptorEmitter emitter = invocation.Target.Kind switch
-            {
-                InterceptorKind.HttpClient => EmitHttpClientInterceptor,
-                InterceptorKind.HttpWebRequest => EmitHttpWebRequestInterceptor,
-                InterceptorKind.AspNetCoreWebApplicationBuilderBuild => EmitAspNetCoreWebApplicationBuilderBuildInterceptor,
-                InterceptorKind.AspNetCoreRequestDelegate => EmitAspNetCoreRequestDelegateInterceptor,
-                InterceptorKind.AspNetCoreEndpointMap => EmitAspNetCoreEndpointMapInterceptor,
-                InterceptorKind.MeterProviderBuilderAddMeter => EmitMeterProviderBuilderAddMeterInterceptor,
-                InterceptorKind.AzureClient => EmitAzureClientInterceptor,
-                InterceptorKind.ElasticsearchClient => EmitElasticInterceptor,
-                InterceptorKind.ElasticTransport => EmitElasticInterceptor,
-                InterceptorKind.WcfClient => EmitWcfClientInterceptor,
-                InterceptorKind.GrpcNetClientAsyncUnaryCall => EmitGrpcNetClientAsyncUnaryInterceptor,
-                InterceptorKind.GrpcNetClientAsyncServerStreamingCall => EmitGrpcNetClientAsyncServerStreamingInterceptor,
-                InterceptorKind.GrpcNetClientAsyncClientStreamingCall => EmitGrpcNetClientAsyncClientStreamingInterceptor,
-                InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall => EmitGrpcNetClientAsyncDuplexStreamingInterceptor,
-                InterceptorKind.KafkaProducer => EmitKafkaProducerInterceptor,
-                InterceptorKind.KafkaConsumer => EmitKafkaConsumerInterceptor,
-                InterceptorKind.MassTransitMessageOperation => EmitMassTransitInterceptor,
-                InterceptorKind.NServiceBusMessageOperation => EmitNServiceBusInterceptor,
-                InterceptorKind.QuartzJobExecute => EmitQuartzInterceptor,
-                InterceptorKind.StackExchangeRedisCommandAsync => EmitStackExchangeRedisInterceptor,
-                InterceptorKind.GraphQlDocumentExecuter => EmitGraphQlInterceptor,
-                InterceptorKind.MongoDbCollection => EmitMongoDbInterceptor,
-                InterceptorKind.RabbitMqBasicPublish => EmitRabbitMqInterceptor,
-                InterceptorKind.ILoggerExtensionLog => EmitLoggerExtensionInterceptor,
-                InterceptorKind.ILoggerLog => EmitLoggerInterceptor,
-                InterceptorKind.NLogLogger => static (builder, invocation, index)
-                    => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogNLog"),
-                InterceptorKind.Log4NetLogger => static (builder, invocation, index)
-                    => EmitExternalLoggerInterceptor(builder, invocation, index, "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net"),
-                InterceptorKind.EntityFrameworkCoreDbContext => EmitEntityFrameworkCoreDbContextInterceptor,
-                InterceptorKind.EntityFrameworkCoreQueryable => EmitEntityFrameworkCoreQueryableInterceptor,
-                InterceptorKind.DbCommand => EmitDbCommandInterceptor,
-                _ => throw new InvalidOperationException("Unsupported interceptor kind: " + invocation.Target.Kind),
-            };
-
-            emitter(builder, invocation, index);
+            var descriptor = GetEmissionDescriptor(invocation.Target.Kind);
+            descriptor.Emitter(builder, invocation, index);
         }
 
         builder.AppendLine("    }");
@@ -266,6 +263,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("}");
 
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+    }
+
+    private static InterceptorEmissionDescriptor GetEmissionDescriptor(InterceptorKind kind)
+    {
+        foreach (var descriptor in s_emissionDescriptors)
+        {
+            if (descriptor.Kind == kind)
+                return descriptor;
+        }
+
+        throw new InvalidOperationException("Unsupported interceptor kind: " + kind);
     }
 
     private static void EmitActivityDisposeFinally(StringBuilder builder)
@@ -3804,6 +3812,70 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         EntityFrameworkCoreQueryable,
         DbCommand,
     }
+
+    private enum InterceptorEmitterFamily
+    {
+        AspNetCore,
+        Azure,
+        Cache,
+        Database,
+        GraphQl,
+        Grpc,
+        HttpClient,
+        Logging,
+        Messaging,
+        Meter,
+        Scheduler,
+        Search,
+        Wcf,
+    }
+
+    private enum InterceptorMethodShape
+    {
+        AsyncOrSyncValue,
+        AsyncOrSyncVoid,
+        AsyncTask,
+        AsyncValue,
+        BuilderInitialization,
+        BuilderRegistration,
+        EndpointRegistration,
+        GrpcStreaming,
+        GrpcUnary,
+        SyncValue,
+        Void,
+    }
+
+    private enum InterceptorSignalOwnership
+    {
+        Trace,
+        Metric,
+        Log,
+        TraceAndMetric,
+    }
+
+    private enum InterceptorErrorPolicy
+    {
+        None,
+        Exception,
+        GrpcStatusAndException,
+        HttpStatusAndException,
+        RuntimeDelegate,
+    }
+
+    private enum InterceptorDurationPolicy
+    {
+        None,
+        RuntimeMetric,
+    }
+
+    private readonly record struct InterceptorEmissionDescriptor(
+        InterceptorKind Kind,
+        InterceptorEmitterFamily Family,
+        InterceptorMethodShape MethodShape,
+        InterceptorSignalOwnership SignalOwnership,
+        InterceptorErrorPolicy ErrorPolicy,
+        InterceptorDurationPolicy DurationPolicy,
+        InterceptorEmitter Emitter);
 
     private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false);
 

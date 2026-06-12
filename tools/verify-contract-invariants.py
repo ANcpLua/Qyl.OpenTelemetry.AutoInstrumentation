@@ -407,6 +407,20 @@ def parse_interceptor_kinds(generator: str) -> set[str]:
     }
 
 
+def parse_emission_descriptor_kinds(generator: str) -> set[str]:
+    descriptor_kinds = {
+        match.group(1)
+        for match in re.finditer(
+            r"new\s+InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+)",
+            generator,
+        )
+    }
+    if not descriptor_kinds:
+        fail("s_emissionDescriptors must describe every InterceptorKind")
+
+    return descriptor_kinds
+
+
 def parse_contract_keys_call_keys(generator: str) -> set[str]:
     keys: set[str] = set()
     for match in re.finditer(r"ContractKeys\((.*?)\)", generator, re.DOTALL):
@@ -456,14 +470,19 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     except IndexError:
         fail("EmitInterceptors dispatch block missing")
 
-    dispatch_missing = {
-        kind
-        for kind in kinds
-        if f"InterceptorKind.{kind}" not in dispatch_block and
-        not (kind == "DbCommand" and "EmitDbCommandInterceptor(builder, invocation, index);" in dispatch_block)
-    }
-    if dispatch_missing:
-        fail(f"InterceptorKind values missing from emitter dispatch: {sorted(dispatch_missing)}")
+    if "GetEmissionDescriptor(invocation.Target.Kind)" not in dispatch_block:
+        fail("emitter dispatch must use the descriptor table")
+    if "descriptor.Emitter(builder, invocation, index);" not in dispatch_block:
+        fail("emitter dispatch must invoke the descriptor emitter")
+
+    descriptor_kinds = parse_emission_descriptor_kinds(generator)
+    descriptor_missing = kinds - descriptor_kinds
+    descriptor_extra = descriptor_kinds - kinds
+    if descriptor_missing or descriptor_extra:
+        fail(
+            "InterceptorKind descriptor mismatch: "
+            f"missing={sorted(descriptor_missing)} extra={sorted(descriptor_extra)}"
+        )
 
     target_missing = {
         kind
@@ -518,9 +537,14 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "UnsupportedNativeAotSignalKeys",
         "TryGetSourceInterceptorSignal",
         "TryGetImplementedSignal",
+        "InterceptorEmissionDescriptor",
+        "InterceptorMethodShape",
+        "InterceptorSignalOwnership",
+        "InterceptorErrorPolicy",
+        "InterceptorDurationPolicy",
     ]:
-        if token not in contract_source:
-            fail(f"InstrumentationContract missing separated API token: {token}")
+        if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
+            fail(f"contract/generator missing separated descriptor API token: {token}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigation from NavigationManager.NavigateTo")
