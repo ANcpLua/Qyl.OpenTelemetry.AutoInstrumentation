@@ -96,16 +96,16 @@ internal static class QylRuntimeProcessMetrics
             QylMetricNames.ProcessMemoryUsage,
             static () => Environment.WorkingSet,
             "By");
-        private static readonly ObservableGauge<long> MemoryVirtual = Meter.CreateObservableGauge(
-            QylMetricNames.ProcessMemoryVirtual,
-            ObserveVirtualMemory,
-            "By");
+        private static readonly ObservableGauge<int> CpuCount = Meter.CreateObservableGauge(
+            QylMetricNames.ProcessCpuCount,
+            static () => Environment.ProcessorCount,
+            "{cpu}");
 
         public static void Initialize()
         {
             _ = CpuTime;
             _ = MemoryUsage;
-            _ = MemoryVirtual;
+            _ = CpuCount;
         }
 
         private static Measurement<double>[] ObserveCpuTime()
@@ -116,12 +116,6 @@ internal static class QylRuntimeProcessMetrics
             CpuTimeMeasurements[1] = new Measurement<double>(process.PrivilegedProcessorTime.TotalSeconds, SystemCpuModeTags);
 
             return CpuTimeMeasurements;
-        }
-
-        private static long ObserveVirtualMemory()
-        {
-            using var process = Process.GetCurrentProcess();
-            return process.VirtualMemorySize64;
         }
     }
 }

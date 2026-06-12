@@ -86,6 +86,9 @@ internal sealed record NetRuntimeMetricsReport(
         RequireMetric(runtimeMetrics, QylMetricNames.ProcessRuntimeDotnetGcCollectionsCount, failures);
         RequireMetric(runtimeMetrics, QylMetricNames.ProcessRuntimeDotnetGcHeapSize, failures);
         RequireMetric(runtimeMetrics, QylMetricNames.ProcessRuntimeDotnetThreadPoolThreadsCount, failures);
+        RequireMetric(runtimeMetrics, QylMetricNames.ProcessCpuTime, failures);
+        RequireMetric(runtimeMetrics, QylMetricNames.ProcessMemoryUsage, failures);
+        RequireMetric(runtimeMetrics, QylMetricNames.ProcessCpuCount, failures);
 
         foreach (var metric in runtimeMetrics.Where(static metric => metric.PointCount <= 0))
             failures.Add($"expected at least one metric point for {metric.Name}, got {metric.PointCount.ToString(CultureInfo.InvariantCulture)}");

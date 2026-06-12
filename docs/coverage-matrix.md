@@ -39,10 +39,10 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 12 |
+| `compile_binding_only` | 11 |
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 16 |
+| `verified_managed` | 17 |
 | `verified_nativeaot` | 5 |
 
 ## Matrix
@@ -81,7 +81,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 30 | `signals.metrics.NETRUNTIME` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` | Qyl public telemetry listeners/meters |
 | 31 | `signals.metrics.NPGSQL` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 32 | `signals.metrics.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator + QylNServiceBusMetrics |
-| 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
+| 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` | Qyl public telemetry listeners/meters |
 | 34 | `signals.metrics.SQLCLIENT` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 35 | `signals.logs.ILOGGER` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 36 | `signals.logs.LOG4NET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |

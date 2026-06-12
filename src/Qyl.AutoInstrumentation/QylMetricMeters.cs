@@ -20,7 +20,7 @@ public static class QylMetricMeters
     /// <summary>Well-known Net Runtime Meter Name value used by qyl auto-instrumentation.</summary>
     public const string NetRuntimeMeterName = "System.Runtime";
     /// <summary>Well-known Process Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string ProcessMeterName = "OpenTelemetry.Instrumentation.Process";
+    public const string ProcessMeterName = "System.Runtime";
 
     /// <summary>Runs the Get Enabled Meter Names runtime helper used by source-generated qyl interceptors.</summary>
     public static string[] GetEnabledMeterNames()
@@ -53,7 +53,8 @@ public static class QylMetricMeters
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NetRuntime))
             names.Add(NetRuntimeMeterName);
 
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Process))
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Process)
+            && !names.Contains(ProcessMeterName, StringComparer.Ordinal))
             names.Add(ProcessMeterName);
 
         return names.ToArray();

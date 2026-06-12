@@ -16,11 +16,11 @@ public static class QylMetricNames
     public const string NServiceBusMessagingOperationDuration = "nservicebus.messaging.operation.duration";
 
     /// <summary>Well-known Process Cpu Time value used by qyl auto-instrumentation.</summary>
-    public const string ProcessCpuTime = "process.cpu.time";
+    public const string ProcessCpuTime = "dotnet.process.cpu.time";
     /// <summary>Well-known Process Memory Usage value used by qyl auto-instrumentation.</summary>
-    public const string ProcessMemoryUsage = "process.memory.usage";
-    /// <summary>Well-known Process Memory Virtual value used by qyl auto-instrumentation.</summary>
-    public const string ProcessMemoryVirtual = "process.memory.virtual";
+    public const string ProcessMemoryUsage = "dotnet.process.memory.working_set";
+    /// <summary>Well-known Process Cpu Count value used by qyl auto-instrumentation.</summary>
+    public const string ProcessCpuCount = "dotnet.process.cpu.count";
 
     /// <summary>Well-known Process Runtime Dotnet Gc Collections Count value used by qyl auto-instrumentation.</summary>
     public const string ProcessRuntimeDotnetGcCollectionsCount = "dotnet.gc.collections";

@@ -48,8 +48,8 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
     metrics = report.get("Metrics")
-    if not isinstance(metrics, list) or len(metrics) < 3:
-        fail(f"{name} expected at least 3 .NET runtime metrics, got {metrics!r}")
+    if not isinstance(metrics, list) or len(metrics) < 6:
+        fail(f"{name} expected at least 6 .NET runtime/process metrics, got {metrics!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
