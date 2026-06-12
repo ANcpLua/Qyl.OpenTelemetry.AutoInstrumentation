@@ -213,6 +213,23 @@
       ]
     },
     {
+      "service_name": "qyl-azure-aot-demo",
+      "profile_id": "qyl-aot-azure",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "azure.sdk",
+          "required_attributes": [
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
       "service_name": "qyl-search-aot-demo",
       "profile_id": "qyl-aot-search",
       "expected_signals": [
@@ -359,7 +376,29 @@
       "expected_signals": [
         {
           "kind": "span",
+          "name": "ilogger.log",
+          "required_attributes": [
+            "log.severity",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
           "name": "log4net.log",
+          "required_attributes": [
+            "log.severity",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "nlog.log",
           "required_attributes": [
             "log.severity",
             "qyl.instrumentation.domain"

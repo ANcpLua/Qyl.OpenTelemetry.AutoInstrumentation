@@ -151,6 +151,14 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealAzureDemo
   - tools/verify-real-azure-demo.py
+  conformance_signals:
+  - kind: span
+    name: azure.sdk
+    required_attributes:
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ELASTICSEARCH
   signal: traces
@@ -1369,6 +1377,15 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealILoggerDemo
   - tools/verify-real-ilogger-demo.py
+  conformance_signals:
+  - kind: span
+    name: ilogger.log
+    required_attributes:
+    - log.severity
+    - qyl.instrumentation.domain
+    recommended_attributes:
+    - error.type
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.LOG4NET
   signal: logs
@@ -1435,6 +1452,14 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNLogDemo
   - tools/verify-real-nlog-demo.py
+  conformance_signals:
+  - kind: span
+    name: nlog.log
+    required_attributes:
+    - log.severity
+    - qyl.instrumentation.domain
+    recommended_attributes: []
+    opt_in_attributes: []
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED

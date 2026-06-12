@@ -57,6 +57,13 @@ CONFORMANCE_PROFILES = [
         ],
     },
     {
+        "service_name": "qyl-azure-aot-demo",
+        "profile_id": "qyl-aot-azure",
+        "signal_names": [
+            "azure.sdk",
+        ],
+    },
+    {
         "service_name": "qyl-search-aot-demo",
         "profile_id": "qyl-aot-search",
         "signal_names": [
@@ -98,7 +105,9 @@ CONFORMANCE_PROFILES = [
         "service_name": "qyl-logging-aot-demo",
         "profile_id": "qyl-aot-logging",
         "signal_names": [
+            "ilogger.log",
             "log4net.log",
+            "nlog.log",
         ],
     },
     {
