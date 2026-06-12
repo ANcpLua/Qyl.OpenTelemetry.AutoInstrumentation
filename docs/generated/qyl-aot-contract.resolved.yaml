@@ -1202,6 +1202,13 @@ contract_items:
   - tools/verify-real-sqlclient-demo.py
   - demos/Qyl.RealNpgsqlDemo
   - tools/verify-real-npgsql-demo.py
+  conformance_signals:
+  - kind: metric
+    name: db.client.operation.duration
+    required_attributes:
+    - db.system.name
+    recommended_attributes: []
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NSERVICEBUS
   signal: metrics
@@ -1322,6 +1329,13 @@ contract_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqlClientDemo
   - tools/verify-real-sqlclient-demo.py
+  conformance_signals:
+  - kind: metric
+    name: db.client.operation.duration
+    required_attributes:
+    - db.system.name
+    recommended_attributes: []
+    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.ILOGGER
   signal: logs

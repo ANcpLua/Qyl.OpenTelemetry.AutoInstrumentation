@@ -670,6 +670,13 @@ ownership_items:
   - tools/verify-real-sqlclient-demo.py
   - demos/Qyl.RealNpgsqlDemo
   - tools/verify-real-npgsql-demo.py
+  conformance_signals:
+  - kind: metric
+    name: db.client.operation.duration
+    required_attributes:
+    - db.system.name
+    recommended_attributes: []
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
   key: signals.metrics.NSERVICEBUS
   lane: source_interceptor
@@ -727,6 +734,13 @@ ownership_items:
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqlClientDemo
   - tools/verify-real-sqlclient-demo.py
+  conformance_signals:
+  - kind: metric
+    name: db.client.operation.duration
+    required_attributes:
+    - db.system.name
+    recommended_attributes: []
+    opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_035
   key: signals.logs.ILOGGER
   lane: source_interceptor

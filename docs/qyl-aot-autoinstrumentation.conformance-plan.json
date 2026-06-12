@@ -408,6 +408,15 @@
         },
         {
           "kind": "metric",
+          "name": "db.client.operation.duration",
+          "required_attributes": [
+            "db.system.name"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
           "name": "dotnet.gc.collections",
           "required_attributes": [],
           "recommended_attributes": [],

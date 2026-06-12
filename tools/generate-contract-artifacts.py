@@ -109,6 +109,7 @@ CONFORMANCE_PROFILES = [
             "aspnetcore.components.render_diff.size",
             "aspnetcore.components.update_parameters.duration",
             "http.client.request.duration",
+            "db.client.operation.duration",
             "dotnet.gc.collections",
             "dotnet.gc.last_collection.heap.size",
             "dotnet.thread_pool.thread.count",
@@ -482,7 +483,7 @@ def verify_contract_item(item: dict[str, Any]) -> None:
 
 
 def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
-    names: set[str] = set()
+    signals_by_name: dict[str, tuple[str, tuple[str, ...], tuple[str, ...], tuple[str, ...]]] = {}
     for item in signal_items(contract):
         conformance_signals = item.get("conformance_signals", [])
         if conformance_signals is None:
@@ -502,9 +503,6 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
             name = str(signal["name"])
             if kind not in CONFORMANCE_KINDS:
                 fail(f"invalid conformance signal kind for {name}: {kind}")
-            if name in names:
-                fail(f"duplicate conformance signal name: {name}")
-            names.add(name)
             for attr_field in ["required_attributes", "recommended_attributes", "opt_in_attributes"]:
                 attrs = signal[attr_field]
                 if not isinstance(attrs, list) or any(not isinstance(attr, str) for attr in attrs):
@@ -513,6 +511,16 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
                     fail(f"duplicate {attr_field} entries for conformance signal {name}")
             if "error.type" in signal["required_attributes"]:
                 fail(f"error.type must not be required in conformance signal {name}")
+            signature = (
+                kind,
+                tuple(str(attr) for attr in signal["required_attributes"]),
+                tuple(str(attr) for attr in signal["recommended_attributes"]),
+                tuple(str(attr) for attr in signal["opt_in_attributes"]),
+            )
+            previous_signature = signals_by_name.get(name)
+            if previous_signature is not None and previous_signature != signature:
+                fail(f"conformance signal name has conflicting declarations: {name}")
+            signals_by_name[name] = signature
 
     assigned_names: set[str] = set()
     for profile in CONFORMANCE_PROFILES:
@@ -523,6 +531,7 @@ def verify_conformance_signal_semantics(contract: dict[str, Any]) -> None:
                 fail(f"conformance signal assigned to multiple profiles: {name}")
             assigned_names.add(name)
 
+    names = set(signals_by_name)
     missing_profile = names - assigned_names
     stale_profile = assigned_names - names
     if missing_profile or stale_profile:
