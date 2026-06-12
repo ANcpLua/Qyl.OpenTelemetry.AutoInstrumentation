@@ -32,13 +32,9 @@ serialization.Options(new System.Text.Json.JsonSerializerOptions
     TypeInfoResolver = ProbeMessageJsonContext.Default,
 });
 
-// NativeAOT has no assembly scanning; register the handler explicitly instead.
-configuration.AssemblyScanner().Disable = true;
-configuration.AddHandler<ProbeCommandHandler>();
-
 var hostBuilder = Host.CreateApplicationBuilder(args);
 hostBuilder.Logging.ClearProviders();
-hostBuilder.Services.AddNServiceBusEndpoint(configuration);
+hostBuilder.UseNServiceBus(configuration);
 
 using (var host = hostBuilder.Build())
 {

@@ -10,18 +10,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
-    <PackageReference Include="NServiceBus" Version="10.2.5" />
+    <PackageReference Include="NServiceBus" Version="9.2.11" />
+    <PackageReference Include="NServiceBus.Extensions.Hosting" Version="3.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
-    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj"
-                      Condition="'$(PublishAot)' != 'true'"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false"
-                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
-    <Analyzer Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\bin\Release\netstandard2.0\Qyl.AutoInstrumentation.SourceGenerators.dll"
-              Condition="'$(PublishAot)' == 'true'" />
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj" Condition="'$(PublishAot)' != 'true'" OutputItemType="Analyzer" ReferenceOutputAssembly="false" GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <Analyzer Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\bin\Release\netstandard2.0\Qyl.AutoInstrumentation.SourceGenerators.dll" Condition="'$(PublishAot)' == 'true'" />
   </ItemGroup>
 
   <Import Project="..\..\src\Qyl.AutoInstrumentation\buildTransitive\Qyl.AutoInstrumentation.targets" />
