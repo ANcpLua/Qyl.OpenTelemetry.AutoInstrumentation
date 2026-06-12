@@ -33,11 +33,7 @@ public static class QylInterceptedGraphQl
         if (!string.IsNullOrWhiteSpace(operationName))
             QylActivityTags.SetGraphQlOperationName(activity, operationName);
 
-        if (QylAutoInstrumentationOptions.Current.GraphQlSetDocument &&
-            !string.IsNullOrWhiteSpace(document))
-        {
-            activity.SetTag(QylSemanticAttributes.GraphQlDocument, document);
-        }
+        QylSensitiveCapturePolicy.SetGraphQlDocument(activity, document);
     }
 
     /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>

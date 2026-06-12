@@ -37,9 +37,7 @@ public static class QylInterceptedHttpWebRequest
                 activity.SetTag(QylSemanticAttributes.ServerPort, request.RequestUri.Port);
 
             var requestUri = request.RequestUri.ToString();
-            activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(
-                requestUri,
-                options.HttpClientUrlQueryRedactionDisabled));
+            QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, requestUri);
         }
 
         QylCaptureHelpers.SetRequestHeaders(activity, options.HttpClientCapturedRequestHeaderMap, request.Headers);

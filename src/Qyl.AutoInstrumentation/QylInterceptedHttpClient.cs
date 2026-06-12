@@ -603,9 +603,7 @@ public static class QylInterceptedHttpClient
                     }
 
                     var urlFull = requestUri.IsAbsoluteUri ? requestUri.ToString() : rawRequestUri ?? requestUri.ToString();
-                    activity.SetTag(QylSemanticAttributes.UrlFull, QylCaptureHelpers.FormatUrlFull(
-                        urlFull,
-                        options.HttpClientUrlQueryRedactionDisabled));
+                    QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, urlFull);
                 }
             }
         }

@@ -36,8 +36,7 @@ public static class QylInterceptedDbCommand
         if (!string.IsNullOrWhiteSpace(databaseName))
             activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
 
-        if (ShouldCaptureCommandText(command, instrumentationId))
-            activity.SetTag(QylSemanticAttributes.DbQueryText, command.CommandText);
+        QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);
 
         return activity;
     }
@@ -92,21 +91,6 @@ public static class QylInterceptedDbCommand
     public static void RecordException(Activity? activity, Exception exception)
     {
         QylActivityStatus.RecordException(activity, exception);
-    }
-
-    private static bool ShouldCaptureCommandText(DbCommand command, string instrumentationId)
-    {
-        if (string.IsNullOrWhiteSpace(command.CommandText))
-            return false;
-
-        var options = QylAutoInstrumentationOptions.Current;
-        return instrumentationId switch
-        {
-            QylAutoInstrumentationIds.SqlClient => options.SqlClientSetDbStatementForText,
-            QylAutoInstrumentationIds.EntityFrameworkCore => options.EntityFrameworkCoreSetDbStatementForText,
-            QylAutoInstrumentationIds.OracleMda => options.OracleMdaSetDbStatementForText,
-            _ => false,
-        };
     }
 
     private static string GetQuerySummary(DbCommand command, string operation)

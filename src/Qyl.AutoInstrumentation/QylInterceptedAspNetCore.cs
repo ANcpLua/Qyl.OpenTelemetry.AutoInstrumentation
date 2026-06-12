@@ -90,11 +90,7 @@ public static class QylInterceptedAspNetCore
         {
             // url.query is the query component without the leading '?' that QueryString.Value carries.
             var query = context.Request.QueryString.Value![1..];
-            activity.SetTag(
-                QylSemanticAttributes.UrlQuery,
-                options.AspNetCoreUrlQueryRedactionDisabled
-                    ? query
-                    : QylCaptureHelpers.RedactQueryValues(query));
+            QylSensitiveCapturePolicy.SetAspNetCoreUrlQuery(activity, query);
         }
 
         if (route is not null)

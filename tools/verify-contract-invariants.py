@@ -488,6 +488,49 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
                 fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
 
 
+def verify_intercepted_runtime_sensitive_capture_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs").read_text()
+    for token in [
+        "QylAutoInstrumentationOptions.Current.AspNetCoreUrlQueryRedactionDisabled",
+        "QylCaptureHelpers.RedactQueryValues(query)",
+        "QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled",
+        "QylCaptureHelpers.FormatUrlFull(",
+        "activity.SetTag(QylSemanticAttributes.DbQueryText, command.CommandText);",
+        "QylAutoInstrumentationIds.SqlClient => options.SqlClientSetDbStatementForText",
+        "QylAutoInstrumentationIds.EntityFrameworkCore => options.EntityFrameworkCoreSetDbStatementForText",
+        "QylAutoInstrumentationIds.OracleMda => options.OracleMdaSetDbStatementForText",
+        "QylAutoInstrumentationOptions.Current.GraphQlSetDocument",
+        "activity.SetTag(QylSemanticAttributes.GraphQlDocument, document);",
+    ]:
+        if token not in helper:
+            fail(f"QylSensitiveCapturePolicy must own sensitive capture token: {token}")
+
+    sensitive_capture_owned_helpers = {
+        "QylInterceptedAspNetCore.cs",
+        "QylInterceptedDbCommand.cs",
+        "QylInterceptedGraphQl.cs",
+        "QylInterceptedHttpClient.cs",
+        "QylInterceptedHttpWebRequest.cs",
+    }
+    forbidden_tokens = [
+        "AspNetCoreUrlQueryRedactionDisabled",
+        "HttpClientUrlQueryRedactionDisabled",
+        "GraphQlSetDocument",
+        "SqlClientSetDbStatementForText",
+        "EntityFrameworkCoreSetDbStatementForText",
+        "OracleMdaSetDbStatementForText",
+        "SetTag(QylSemanticAttributes.DbQueryText",
+        "SetTag(QylSemanticAttributes.GraphQlDocument",
+        "QylCaptureHelpers.FormatUrlFull",
+        "QylCaptureHelpers.RedactQueryValues",
+    ]
+    for name in sorted(sensitive_capture_owned_helpers):
+        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        for token in forbidden_tokens:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate sensitive capture to QylSensitiveCapturePolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+
+
 def verify_intercepted_runtime_duration_metric_policy() -> None:
     helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylDurationMetrics.cs").read_text()
     for token in [
@@ -611,6 +654,7 @@ def verify_behavior_semantics_contract() -> None:
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
     verify_intercepted_runtime_activity_start_policy()
+    verify_intercepted_runtime_sensitive_capture_policy()
     verify_intercepted_runtime_duration_metric_policy()
     verify_intercepted_runtime_semantic_tag_policy()
     verify_intercepted_runtime_async_observer_policy()
