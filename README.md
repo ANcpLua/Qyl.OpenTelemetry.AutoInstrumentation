@@ -152,7 +152,7 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 | 20 | `signals.traces.QUARTZ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 21 | `signals.traces.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 22 | `signals.traces.SQLITE` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
-| 23 | `signals.traces.STACKEXCHANGEREDIS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
+| 23 | `signals.traces.STACKEXCHANGEREDIS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 24 | `signals.traces.WCFCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 25 | `signals.traces.WCFCORE` | `unsupported_nativeaot` | `unsupported_nativeaot` | `library_internal` | `reflection_required` | `none` |
 | 26 | `signals.traces.WCFSERVICE` | `unsupported_nativeaot` | `unsupported_nativeaot` | `library_internal` | `reflection_required` | `none` |

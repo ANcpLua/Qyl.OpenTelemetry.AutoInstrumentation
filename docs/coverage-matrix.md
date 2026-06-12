@@ -41,8 +41,8 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 |---|---:|
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 20 |
-| `verified_nativeaot` | 13 |
+| `verified_managed` | 19 |
+| `verified_nativeaot` | 14 |
 
 ## Matrix
 
@@ -70,7 +70,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 20 | `signals.traces.QUARTZ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 21 | `signals.traces.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 22 | `signals.traces.SQLITE` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
-| 23 | `signals.traces.STACKEXCHANGEREDIS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 23 | `signals.traces.STACKEXCHANGEREDIS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 24 | `signals.traces.WCFCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 25 | `signals.traces.WCFCORE` | `unsupported_nativeaot` | `unsupported_nativeaot` | `library_internal` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
 | 26 | `signals.traces.WCFSERVICE` | `unsupported_nativeaot` | `unsupported_nativeaot` | `library_internal` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
