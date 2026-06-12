@@ -1491,9 +1491,12 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceDurationMetricArgumentKind",
         "TraceActivityEnrichmentDescriptor",
         "TraceActivityEnrichmentArgumentKind",
+        "TraceAsyncObservationDescriptor",
+        "TraceAsyncObservationCondition",
         "new TraceRuntimeHelperDescriptor",
         "new TraceDurationMetricDescriptor",
         "new TraceActivityEnrichmentDescriptor",
+        "new TraceAsyncObservationDescriptor",
         "TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName",
         "TraceStartActivityArgumentKind.ReceiverTypeAndTargetMethodName",
         "TraceStartActivityArgumentKind.RedisOperationName",
@@ -1501,9 +1504,12 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceStartActivityArgumentKind.RabbitMqExchange",
         "TraceDurationMetricArgumentKind.TargetMethodName",
         "TraceActivityEnrichmentArgumentKind.GraphQlExecutionOptions",
+        "TraceAsyncObservationCondition.AsyncWithByRefParameters",
         "descriptor.DurationMetric.AppendMetricStartStatement(builder)",
         "descriptor.DurationMetric.AppendRecordDurationStatement(builder, target)",
         "descriptor.ActivityEnrichment.Append(builder, target)",
+        "descriptor.AsyncObservation.AppliesTo(target)",
+        "descriptor.AsyncObservation.ObserveAsyncMethod",
     ]:
         if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
             fail(f"contract/generator missing separated descriptor API token: {token}")
@@ -1518,6 +1524,16 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     ]:
         if method_name in generator:
             fail(f"generator must model reusable trace behavior with descriptors, not private emitter method: {method_name}")
+
+    for token in [
+        "TraceBoolProvider",
+        "RuntimeObservesAsync",
+        "RuntimeObservesAsyncWhen",
+        "ShouldRuntimeObserveElasticAsync",
+        "ObserveAsyncMethod:",
+    ]:
+        if token in generator:
+            fail(f"generator must model trace async observation with TraceAsyncObservationDescriptor, not token: {token}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigate from NavigationManager.NavigateTo")
