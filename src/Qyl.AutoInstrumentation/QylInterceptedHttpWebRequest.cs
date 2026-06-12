@@ -22,23 +22,13 @@ public static class QylInterceptedHttpWebRequest
             return null;
 
         var method = QylHttpMethod.Normalize(request.Method);
-        var activity = QylActivitySource.StartActivity(QylActivityNames.HttpClient(method), ActivityKind.Client);
+        var activity = QylHttpActivityPolicy.StartClientActivity(
+            QylInstrumentationDomains.HttpWebRequest,
+            method,
+            request.RequestUri,
+            request.RequestUri?.ToString());
         if (activity is null)
             return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpWebRequest);
-        activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
-
-        if (request.RequestUri is not null)
-        {
-            activity.SetTag(QylSemanticAttributes.ServerAddress, request.RequestUri.Host);
-
-            if (!request.RequestUri.IsDefaultPort)
-                activity.SetTag(QylSemanticAttributes.ServerPort, request.RequestUri.Port);
-
-            var requestUri = request.RequestUri.ToString();
-            QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, requestUri);
-        }
 
         QylCaptureHelpers.SetRequestHeaders(activity, options.HttpClientCapturedRequestHeaderMap, request.Headers);
         return activity;
@@ -71,15 +61,11 @@ public static class QylInterceptedHttpWebRequest
         var statusCode = (int)response.StatusCode;
         if (activity is not null)
         {
-            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
+            QylHttpActivityPolicy.SetResponseStatus(activity, statusCode, markErrorForStatus ? 400 : int.MaxValue);
             QylCaptureHelpers.SetRequestHeaders(
                 activity,
                 QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap,
                 response.Headers);
-            if (markErrorForStatus && statusCode >= 400)
-            {
-                QylActivityStatus.RecordError(activity, statusCode);
-            }
         }
 
         return statusCode;

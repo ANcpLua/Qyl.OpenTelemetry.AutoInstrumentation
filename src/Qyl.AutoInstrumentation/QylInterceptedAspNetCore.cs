@@ -77,24 +77,13 @@ public static class QylInterceptedAspNetCore
 
         var method = QylHttpMethod.Normalize(context.Request.Method);
         var route = GetRoute(context);
-        var activity = QylActivitySource.StartActivity(QylActivityNames.HttpServer(method, route), ActivityKind.Server);
+        var activity = QylHttpActivityPolicy.StartServerActivity(
+            method,
+            route,
+            context.Request.Path.Value,
+            context.Request.QueryString.HasValue ? context.Request.QueryString.Value![1..] : null);
         if (activity is null)
             return null;
-
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
-        activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
-
-        activity.SetTag(QylSemanticAttributes.UrlPath, context.Request.Path.Value);
-
-        if (context.Request.QueryString.HasValue)
-        {
-            // url.query is the query component without the leading '?' that QueryString.Value carries.
-            var query = context.Request.QueryString.Value![1..];
-            QylSensitiveCapturePolicy.SetAspNetCoreUrlQuery(activity, query);
-        }
-
-        if (route is not null)
-            activity.SetTag(QylSemanticAttributes.HttpRoute, route);
 
         QylCaptureHelpers.SetRequestHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, context.Request.Headers);
         return activity;
@@ -134,15 +123,11 @@ public static class QylInterceptedAspNetCore
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, context.Response.StatusCode);
+        QylHttpActivityPolicy.SetResponseStatus(activity, context.Response.StatusCode, 500);
         QylCaptureHelpers.SetRequestHeaders(
             activity,
             QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaderMap,
             context.Response.Headers);
-        if (context.Response.StatusCode >= 500)
-        {
-            QylActivityStatus.RecordError(activity, context.Response.StatusCode);
-        }
     }
 
     private static RequestDelegate Observe(RequestDelegate requestDelegate)

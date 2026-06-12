@@ -587,25 +587,11 @@ public static class QylInterceptedHttpClient
         if (traceEnabled)
         {
             requestUri = ResolveRequestUri(client, requestUri);
-            activity = QylActivitySource.StartActivity(QylActivityNames.HttpClient(method), ActivityKind.Client);
-            if (activity is not null)
-            {
-                activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
-                activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
-
-                if (requestUri is not null)
-                {
-                    if (requestUri.IsAbsoluteUri)
-                    {
-                        activity.SetTag(QylSemanticAttributes.ServerAddress, requestUri.Host);
-                        if (!requestUri.IsDefaultPort)
-                            activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
-                    }
-
-                    var urlFull = requestUri.IsAbsoluteUri ? requestUri.ToString() : rawRequestUri ?? requestUri.ToString();
-                    QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, urlFull);
-                }
-            }
+            activity = QylHttpActivityPolicy.StartClientActivity(
+                QylInstrumentationDomains.HttpClient,
+                method,
+                requestUri,
+                rawRequestUri);
         }
 
         return new HttpClientObservation(activity, startTimeUtc, method, metricsEnabled);
@@ -639,15 +625,13 @@ public static class QylInterceptedHttpClient
         var activity = observation.Activity;
         if (activity is not null)
         {
-            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
+            QylHttpActivityPolicy.SetResponseStatus(activity, statusCode, 400);
             QylCaptureHelpers.SetHttpHeaders(
                 activity,
                 QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap,
                 response.Headers,
                 response.Content?.Headers);
 
-            if (statusCode >= 400)
-                RecordHttpStatusError(activity, statusCode);
         }
 
         RecordDuration(observation, statusCode);
@@ -688,17 +672,10 @@ public static class QylInterceptedHttpClient
         var activity = observation.Activity;
         if (activity is not null)
         {
-            activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
-            if (statusCode >= 400)
-                RecordHttpStatusError(activity, statusCode);
+            QylHttpActivityPolicy.SetResponseStatus(activity, statusCode, 400);
         }
 
         RecordDuration(observation, statusCode);
-    }
-
-    private static void RecordHttpStatusError(Activity activity, int statusCode)
-    {
-        QylActivityStatus.RecordError(activity, statusCode);
     }
 
     private static void RecordDuration(HttpClientObservation observation, int? statusCode)
