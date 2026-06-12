@@ -1307,6 +1307,8 @@ def verify_interceptor_signal_ownership(generator: str, kinds: set[str]) -> None
 def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
     for token in [
         "ValidateMethodShape(descriptor);",
+        "ValidateSingleBodyDescriptor(descriptor);",
+        "Interceptor emission descriptor must define exactly one typed body descriptor",
         "Interceptor emission descriptor method shape mismatch",
         "Trace body descriptor has unsupported method shape",
         "Trace body descriptor must provide a runtime helper",
@@ -1324,6 +1326,20 @@ def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
     missing_policies = kinds - set(policies_by_kind)
     if missing_policies:
         fail(f"InterceptorKind values missing signal/error/duration policies: {sorted(missing_policies)}")
+
+    for body_name in [
+        "TraceBody",
+        "ForwardingBody",
+        "HttpWebRequestBody",
+        "DbCommandBody",
+        "GrpcClientBody",
+        "MeterProviderBuilderBody",
+        "LoggerBody",
+        "ExternalLoggerBody",
+    ]:
+        token = f"descriptor.{body_name}.IsDefined"
+        if token not in generator:
+            fail(f"generator single-body descriptor validation missing {token}")
 
     for kind, (method_shape, ownership, error_policy, duration_policy, body) in sorted(policies_by_kind.items()):
         if duration_policy == "RuntimeMetric" and ownership != "TraceAndMetric":

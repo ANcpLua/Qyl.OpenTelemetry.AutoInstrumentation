@@ -359,6 +359,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static void ValidateEmissionDescriptorPolicy(InterceptorEmissionDescriptor descriptor)
     {
+        ValidateSingleBodyDescriptor(descriptor);
         ValidateMethodShape(descriptor);
 
         if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
@@ -471,6 +472,30 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         throw new InvalidOperationException("Unsupported interceptor emission policy shape: " + descriptor.Kind);
+    }
+
+    private static void ValidateSingleBodyDescriptor(InterceptorEmissionDescriptor descriptor)
+    {
+        var bodyCount = 0;
+        if (descriptor.TraceBody.IsDefined)
+            bodyCount++;
+        if (descriptor.ForwardingBody.IsDefined)
+            bodyCount++;
+        if (descriptor.HttpWebRequestBody.IsDefined)
+            bodyCount++;
+        if (descriptor.DbCommandBody.IsDefined)
+            bodyCount++;
+        if (descriptor.GrpcClientBody.IsDefined)
+            bodyCount++;
+        if (descriptor.MeterProviderBuilderBody.IsDefined)
+            bodyCount++;
+        if (descriptor.LoggerBody.IsDefined)
+            bodyCount++;
+        if (descriptor.ExternalLoggerBody.IsDefined)
+            bodyCount++;
+
+        if (bodyCount != 1)
+            throw new InvalidOperationException("Interceptor emission descriptor must define exactly one typed body descriptor: " + descriptor.Kind);
     }
 
     private static void ValidateMethodShape(InterceptorEmissionDescriptor descriptor)
