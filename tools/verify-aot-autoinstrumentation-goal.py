@@ -23,6 +23,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("conformance opt-in", [sys.executable, "tools/verify-conformance-opt-in.py"]),
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
+    ("real adonet demo", [sys.executable, "tools/verify-real-adonet-demo.py"]),
     ("real graphql demo", [sys.executable, "tools/verify-real-graphql-demo.py"]),
     ("real log4net demo", [sys.executable, "tools/verify-real-log4net-demo.py"]),
     ("real nlog demo", [sys.executable, "tools/verify-real-nlog-demo.py"]),

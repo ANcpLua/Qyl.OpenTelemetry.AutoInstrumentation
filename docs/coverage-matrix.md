@@ -39,17 +39,17 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 20 |
+| `compile_binding_only` | 19 |
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 8 |
+| `verified_managed` | 9 |
 | `verified_nativeaot` | 5 |
 
 ## Matrix
 
 | # | Key | Lane | qyl status | Call-site visibility | Payload access | Evidence | Owner |
 |---:|---|---|---|---|---|---|---|
-| 1 | `signals.traces.ADONET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 1 | `signals.traces.ADONET` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 2 | `signals.traces.ASPNET` | `unsupported_nativeaot` | `unsupported_nativeaot` | `user_code` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
 | 3 | `signals.traces.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 4 | `signals.traces.AZURE` | `framework_initialization` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator framework initialization |
