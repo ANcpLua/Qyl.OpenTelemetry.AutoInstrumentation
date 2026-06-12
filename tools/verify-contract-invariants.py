@@ -415,6 +415,23 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
         if REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN not in body and not any(token in body for token in descriptor_delegation_tokens):
             fail(f"{name} must delegate intercepted behavior to Qyl runtime instrumentation")
 
+    for name in [
+        "EmitDirectLoggerInterceptor",
+        "EmitLoggerExtensionInterceptor",
+        "EmitExternalLoggerInterceptor",
+    ]:
+        body = emitter_blocks.get(name)
+        if body is None:
+            fail(f"{name} missing from generator")
+        if "descriptor.HelperType" not in body:
+            fail(f"{name} must route logging helper calls through its body descriptor")
+        for token in [
+            "global::Qyl.AutoInstrumentation.QylInterceptedLogger.",
+            "global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.",
+        ]:
+            if token in body:
+                fail(f"{name} must not hardcode logging runtime helper calls: {token}")
+
 
 def find_catch_blocks(text: str) -> list[str]:
     blocks: list[str] = []
