@@ -16,6 +16,7 @@ OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentatio
 IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
 SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
+RUNTIME_SEMANTICS_PATH = ROOT / "docs" / "RUNTIME_SEMANTICS.md"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
@@ -90,6 +91,28 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw caughtException;",
     "throw ex;",
 ]
+MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS = {
+    "signals.traces.NSERVICEBUS": [
+        "NServiceBus",
+        "NativeAOT is structurally blocked",
+        "Reflection.Emit",
+        "ConcreteProxyCreator",
+        "Particular/NServiceBus#7817",
+    ],
+    "signals.metrics.NSERVICEBUS": [
+        "NServiceBus",
+        "NativeAOT is structurally blocked",
+        "Reflection.Emit",
+        "ConcreteProxyCreator",
+        "Particular/NServiceBus#7817",
+    ],
+    "signals.traces.WCFCLIENT": [
+        "WCF client",
+        "NativeAOT is blocked",
+        "DispatchProxy",
+        "PlatformNotSupportedException",
+    ],
+}
 REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"
 REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylIntercepted"
 FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS = FORBIDDEN_GENERATOR_MECHANISM_TOKENS
@@ -137,6 +160,27 @@ def parse_options_id_array(options: str, name: str, id_constants: dict[str, str]
 def verify_contract_artifacts(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     artifacts.verify_contract_model(contract)
     artifacts.verify_generated_files(contract)
+
+
+def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str, Any]) -> None:
+    managed_keys = {
+        str(item["key"])
+        for item in artifacts.implemented_signal_items(contract)
+        if item.get("evidence_level") == "verified_managed"
+    }
+    expected_boundary_keys = set(MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS)
+    if managed_keys != expected_boundary_keys:
+        fail(
+            "verified_managed implemented signals must be an explicit NativeAOT boundary set: "
+            f"missing_boundary={sorted(managed_keys - expected_boundary_keys)} "
+            f"stale_boundary={sorted(expected_boundary_keys - managed_keys)}"
+        )
+
+    runtime_semantics = RUNTIME_SEMANTICS_PATH.read_text()
+    for key, tokens in sorted(MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS.items()):
+        for token in tokens:
+            if token not in runtime_semantics:
+                fail(f"{key} verified_managed boundary is not documented in RUNTIME_SEMANTICS.md: {token}")
 
 
 def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any]) -> None:
@@ -642,6 +686,7 @@ def main() -> None:
     artifacts = load_artifacts()
     contract = artifacts.load_contract()
     verify_contract_artifacts(artifacts, contract)
+    verify_managed_evidence_boundaries(artifacts, contract)
     verify_generator_keys(artifacts, contract)
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
