@@ -450,6 +450,52 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
     if "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient." in grpc_wrapper:
         fail("gRPC stream wrapper must not hardcode QylInterceptedGrpcNetClient helper calls")
 
+    specialized_descriptor_methods = {
+        "EmitHttpWebRequestInterceptor": [
+            "descriptor.GetStartTimeUtcMethod",
+            "descriptor.StartActivityMethod",
+            "descriptor.RecordResultMethod",
+            "descriptor.RecordExceptionMethod",
+        ],
+        "EmitDbCommandInterceptor": [
+            "descriptor.GetTimestampMethod",
+            "descriptor.StartActivityMethod",
+            "descriptor.ObserveAsyncMethod",
+            "descriptor.RecordSuccessMethod",
+            "descriptor.RecordExceptionMethod",
+            "descriptor.RecordDurationMethod",
+        ],
+    }
+    for name, required_tokens in sorted(specialized_descriptor_methods.items()):
+        body = emitter_blocks.get(name)
+        if body is None:
+            fail(f"{name} missing from generator")
+        for token in required_tokens:
+            if token not in body:
+                fail(f"{name} must route specialized runtime method names through its body descriptor: {token}")
+
+    specialized_forbidden_tokens = {
+        "EmitHttpWebRequestInterceptor": [
+            ".GetStartTimeUtc();",
+            ".StartActivity(httpWebRequest, ",
+            ".RecordResult(activity, metricStartTimeUtc, httpWebRequest.Method, result);",
+            ".RecordException(activity, metricStartTimeUtc, httpWebRequest.Method, exception);",
+        ],
+        "EmitDbCommandInterceptor": [
+            ".GetTimestamp();",
+            ".StartActivity(",
+            ".ObserveAsync(resultTask, activity, metricStart, ",
+            ".RecordSuccess(activity);",
+            ".RecordException(activity, exception);",
+            ".RecordDuration(metricStart, ",
+        ],
+    }
+    for name, forbidden_tokens in sorted(specialized_forbidden_tokens.items()):
+        body = emitter_blocks[name]
+        for token in forbidden_tokens:
+            if token in body:
+                fail(f"{name} must not hardcode specialized runtime helper method name: {token}")
+
 
 def find_catch_blocks(text: str) -> list[str]:
     blocks: list[str] = []

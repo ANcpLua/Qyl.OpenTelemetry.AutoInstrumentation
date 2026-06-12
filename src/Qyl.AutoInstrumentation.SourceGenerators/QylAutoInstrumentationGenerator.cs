@@ -81,7 +81,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         ImmutableArray.Create(
             new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, ForwardingBody: new ForwardingInterceptorBodyDescriptor("HttpClient", "client", "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient", ReceiverTypeOverride: "global::System.Net.Http.HttpClient")),
-            new InterceptorEmissionDescriptor(InterceptorKind.HttpWebRequest, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, HttpWebRequestBody: new HttpWebRequestBodyDescriptor("HttpWebRequest", "request", "global::System.Net.HttpWebRequest", "global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest")),
+            new InterceptorEmissionDescriptor(InterceptorKind.HttpWebRequest, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, HttpWebRequestBody: new HttpWebRequestBodyDescriptor("HttpWebRequest", "request", "global::System.Net.HttpWebRequest", "global::Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest", "GetStartTimeUtc", "StartActivity", "RecordResult", "RecordException")),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreWebApplicationBuilderBuild, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreWebApplicationBuilder", "builder", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "Build")),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreRequestDelegate", "requestDelegate", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "InvokeAsync")),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreEndpointMap", "endpoints", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore")),
@@ -109,7 +109,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger", "global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreDbContext", "dbContext", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreQueryable, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreQueryable", "query", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
-            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, DbCommandBody: new DbCommandBodyDescriptor("DbCommand", "command", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand")));
+            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, DbCommandBody: new DbCommandBodyDescriptor("DbCommand", "command", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand", "GetTimestamp", "StartActivity", "ObserveAsync", "RecordSuccess", "RecordException", "RecordDuration")));
 
     /// <summary>
     /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
@@ -825,10 +825,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(";");
         builder.Append("            var metricStartTimeUtc = ");
         builder.Append(descriptor.HelperType);
-        builder.AppendLine(".GetStartTimeUtc();");
+        builder.Append('.');
+        builder.Append(descriptor.GetStartTimeUtcMethod);
+        builder.AppendLine("();");
         builder.Append("            var activity = ");
         builder.Append(descriptor.HelperType);
-        builder.Append(".StartActivity(httpWebRequest, ");
+        builder.Append('.');
+        builder.Append(descriptor.StartActivityMethod);
+        builder.Append("(httpWebRequest, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
         builder.AppendLine("            try");
@@ -857,14 +861,18 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         builder.Append("                ");
         builder.Append(descriptor.HelperType);
-        builder.AppendLine(".RecordResult(activity, metricStartTimeUtc, httpWebRequest.Method, result);");
+        builder.Append('.');
+        builder.Append(descriptor.RecordResultMethod);
+        builder.AppendLine("(activity, metricStartTimeUtc, httpWebRequest.Method, result);");
         builder.AppendLine("                return result;");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
         builder.Append("                ");
         builder.Append(descriptor.HelperType);
-        builder.AppendLine(".RecordException(activity, metricStartTimeUtc, httpWebRequest.Method, exception);");
+        builder.Append('.');
+        builder.Append(descriptor.RecordExceptionMethod);
+        builder.AppendLine("(activity, metricStartTimeUtc, httpWebRequest.Method, exception);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         EmitActivityDisposeFinally(builder);
@@ -883,13 +891,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("        {");
         builder.Append("            var metricStart = ");
         builder.Append(descriptor.MetricsType);
-        builder.AppendLine(".GetTimestamp();");
+        builder.Append('.');
+        builder.Append(descriptor.GetTimestampMethod);
+        builder.AppendLine("();");
         builder.Append("            const string instrumentationId = ");
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.AppendLine(";");
         builder.Append("            var activity = ");
         builder.Append(descriptor.HelperType);
-        builder.Append(".StartActivity(");
+        builder.Append('.');
+        builder.Append(descriptor.StartActivityMethod);
+        builder.Append('(');
         builder.Append(descriptor.ReceiverName);
         builder.Append(", ");
         builder.Append("instrumentationId, ");
@@ -909,7 +921,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             builder.AppendLine(");");
             builder.Append("                return ");
             builder.Append(descriptor.HelperType);
-            builder.Append(".ObserveAsync(resultTask, activity, metricStart, ");
+            builder.Append('.');
+            builder.Append(descriptor.ObserveAsyncMethod);
+            builder.Append("(resultTask, activity, metricStart, ");
             builder.Append("instrumentationId");
             builder.AppendLine(");");
         }
@@ -925,10 +939,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
             builder.Append("                ");
             builder.Append(descriptor.HelperType);
-            builder.AppendLine(".RecordSuccess(activity);");
+            builder.Append('.');
+            builder.Append(descriptor.RecordSuccessMethod);
+            builder.AppendLine("(activity);");
             builder.Append("                ");
             builder.Append(descriptor.MetricsType);
-            builder.Append(".RecordDuration(metricStart, ");
+            builder.Append('.');
+            builder.Append(descriptor.RecordDurationMethod);
+            builder.Append("(metricStart, ");
             builder.Append("instrumentationId");
             builder.AppendLine(");");
             builder.AppendLine("                return result;");
@@ -938,10 +956,14 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            {");
         builder.Append("                ");
         builder.Append(descriptor.HelperType);
-        builder.AppendLine(".RecordException(activity, exception);");
+        builder.Append('.');
+        builder.Append(descriptor.RecordExceptionMethod);
+        builder.AppendLine("(activity, exception);");
         builder.Append("                ");
         builder.Append(descriptor.MetricsType);
-        builder.Append(".RecordDuration(metricStart, ");
+        builder.Append('.');
+        builder.Append(descriptor.RecordDurationMethod);
+        builder.Append("(metricStart, ");
         builder.Append("instrumentationId");
         builder.AppendLine(");");
         builder.AppendLine("                throw;");
@@ -3888,6 +3910,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string ReceiverName,
         string HelperType,
         string MetricsType,
+        string GetTimestampMethod,
+        string StartActivityMethod,
+        string ObserveAsyncMethod,
+        string RecordSuccessMethod,
+        string RecordExceptionMethod,
+        string RecordDurationMethod,
         bool IsDefined = true);
 
     private readonly record struct HttpWebRequestBodyDescriptor(
@@ -3895,6 +3923,10 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string ReceiverName,
         string RequestType,
         string HelperType,
+        string GetStartTimeUtcMethod,
+        string StartActivityMethod,
+        string RecordResultMethod,
+        string RecordExceptionMethod,
         bool IsDefined = true);
 
     private readonly record struct MeterProviderBuilderBodyDescriptor(
