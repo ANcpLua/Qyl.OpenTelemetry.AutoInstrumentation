@@ -112,9 +112,14 @@ orb stop qyl-ci     # when done
 
 While `qyl-ci` is stopped, `qyl-linux` shows offline and Linux jobs **queue** (they don't
 fail) until the machine is back. `qyl-macos` is unaffected. Quitting the OrbStack app
-entirely also kills the host Docker engine (it IS the docker daemon) — fine when nothing
-needs docker, recoverable with `open -a OrbStack`. The machine `otelvm` is unrelated to
-this repo; it was found idle and stopped on 2026-06-12.
+entirely also kills the host Docker engine (it IS the docker daemon) and removes the
+OrbStack NFS mount from Finder — fine when nothing needs docker, recoverable with
+`open -a OrbStack`. The machine `otelvm` is unrelated to this repo; it was found idle and
+stopped on 2026-06-12.
+
+Gotcha: **any** `docker`/`orb` CLI call auto-relaunches OrbStack in the background, even
+right after quitting it. When verifying it's down, use `pgrep -fl "OrbStack Helper"` — do
+not run docker commands.
 
 ## Going public (the transition checklist)
 
