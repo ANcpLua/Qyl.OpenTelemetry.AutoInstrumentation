@@ -432,6 +432,24 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
             if token in body:
                 fail(f"{name} must not hardcode logging runtime helper calls: {token}")
 
+    wrapper_match = re.search(
+        r"private static void EmitGrpcStreamReaderWrapper\(StringBuilder builder, string helperType\).*?\n    }",
+        generator,
+        re.DOTALL,
+    )
+    if wrapper_match is None:
+        fail("EmitGrpcStreamReaderWrapper missing from generator")
+    grpc_wrapper = wrapper_match.group(0)
+    for token in [
+        "EmitGrpcStreamReaderWrapper(StringBuilder builder, string helperType)",
+        "builder.Append(helperType);",
+        "GetGrpcStreamReaderHelperType(invocations)",
+    ]:
+        if token not in generator:
+            fail(f"gRPC stream wrapper must route helper calls through GrpcClientBodyDescriptor.HelperType: {token}")
+    if "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient." in grpc_wrapper:
+        fail("gRPC stream wrapper must not hardcode QylInterceptedGrpcNetClient helper calls")
+
 
 def find_catch_blocks(text: str) -> list[str]:
     blocks: list[str] = []

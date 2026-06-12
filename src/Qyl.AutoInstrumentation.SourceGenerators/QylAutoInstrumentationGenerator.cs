@@ -317,8 +317,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
 
         builder.AppendLine("    }");
-        if (RequiresGrpcStreamReader(invocations))
-            EmitGrpcStreamReaderWrapper(builder);
+        var grpcStreamReaderHelperType = GetGrpcStreamReaderHelperType(invocations);
+        if (!string.IsNullOrEmpty(grpcStreamReaderHelperType))
+            EmitGrpcStreamReaderWrapper(builder, grpcStreamReaderHelperType);
 
         builder.AppendLine("}");
 
@@ -1105,7 +1106,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("null");
     }
 
-    private static void EmitGrpcStreamReaderWrapper(StringBuilder builder)
+    private static void EmitGrpcStreamReaderWrapper(StringBuilder builder, string helperType)
     {
         builder.AppendLine();
         builder.AppendLine("    internal static class QylObservedAsyncStreamReader");
@@ -1138,16 +1139,24 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("                if (!hasNext && !_completed)");
         builder.AppendLine("                {");
         builder.AppendLine("                    _completed = true;");
-        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.CaptureCompletedResponseHeaders(_responseHeadersTask, _activity);");
-        builder.AppendLine("                    global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordStreamingComplete(_activity);");
+        builder.Append("                    ");
+        builder.Append(helperType);
+        builder.AppendLine(".CaptureCompletedResponseHeaders(_responseHeadersTask, _activity);");
+        builder.Append("                    ");
+        builder.Append(helperType);
+        builder.AppendLine(".RecordStreamingComplete(_activity);");
         builder.AppendLine("                }");
         builder.AppendLine();
         builder.AppendLine("                return hasNext;");
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.RecordException(_activity, exception);");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(_activity);");
+        builder.Append("                ");
+        builder.Append(helperType);
+        builder.AppendLine(".RecordException(_activity, exception);");
+        builder.Append("                ");
+        builder.Append(helperType);
+        builder.AppendLine(".Dispose(_activity);");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
         builder.AppendLine("        }");
@@ -3702,10 +3711,32 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         return CleanTypeName(symbol);
     }
 
-    private static bool RequiresGrpcStreamReader(InterceptedInvocation[] invocations)
-        => invocations.Any(static invocation =>
-            invocation.Target.Kind is InterceptorKind.GrpcNetClientAsyncServerStreamingCall or
-                InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall);
+    private static string GetGrpcStreamReaderHelperType(InterceptedInvocation[] invocations)
+    {
+        var helperType = "";
+        foreach (var invocation in invocations)
+        {
+            if (invocation.Target.Kind is not (InterceptorKind.GrpcNetClientAsyncServerStreamingCall or
+                    InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall))
+            {
+                continue;
+            }
+
+            var descriptor = GetEmissionDescriptor(invocation.Target).GrpcClientBody;
+            if (!descriptor.IsDefined)
+                throw new InvalidOperationException("gRPC streaming interceptor kind has no gRPC body descriptor: " + invocation.Target.Kind);
+            if (string.IsNullOrEmpty(helperType))
+            {
+                helperType = descriptor.HelperType;
+                continue;
+            }
+
+            if (!string.Equals(helperType, descriptor.HelperType, StringComparison.Ordinal))
+                throw new InvalidOperationException("gRPC streaming helper types disagree.");
+        }
+
+        return helperType;
+    }
 
     private static void AppendStringLiteral(StringBuilder builder, string value)
     {
