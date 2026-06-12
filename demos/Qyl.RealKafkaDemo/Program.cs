@@ -29,10 +29,13 @@ ActivitySource.AddActivityListener(listener);
 await WaitForKafkaAsync(bootstrapServers, topic);
 
 using (var producer = new ProducerBuilder<string, string>(new ProducerConfig
-{
-    BootstrapServers = bootstrapServers,
-    MessageTimeoutMs = 15000,
-}).Build())
+    {
+        BootstrapServers = bootstrapServers,
+        MessageTimeoutMs = 15000,
+    })
+    .SetErrorHandler(static (_, _) => { })
+    .SetLogHandler(static (_, _) => { })
+    .Build())
 {
     var delivery = await producer.ProduceAsync(topic, new Message<string, string> { Key = "alpha", Value = "qyl-async" });
     Console.WriteLine("produced-offset=" + delivery.Offset.Value.ToString(CultureInfo.InvariantCulture));
@@ -42,12 +45,15 @@ using (var producer = new ProducerBuilder<string, string>(new ProducerConfig
 }
 
 using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig
-{
-    BootstrapServers = bootstrapServers,
-    GroupId = "qyl-probe-consumer",
-    AutoOffsetReset = AutoOffsetReset.Earliest,
-    EnableAutoCommit = false,
-}).Build())
+    {
+        BootstrapServers = bootstrapServers,
+        GroupId = "qyl-probe-consumer",
+        AutoOffsetReset = AutoOffsetReset.Earliest,
+        EnableAutoCommit = false,
+    })
+    .SetErrorHandler(static (_, _) => { })
+    .SetLogHandler(static (_, _) => { })
+    .Build())
 {
     consumer.Subscribe(topic);
 
@@ -66,12 +72,15 @@ using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig
 try
 {
     using var failingProducer = new ProducerBuilder<string, string>(new ProducerConfig
-    {
-        BootstrapServers = "127.0.0.1:1",
-        MessageTimeoutMs = 1500,
-        SocketTimeoutMs = 1000,
-        ApiVersionRequestTimeoutMs = 1000,
-    }).Build();
+        {
+            BootstrapServers = "127.0.0.1:1",
+            MessageTimeoutMs = 1500,
+            SocketTimeoutMs = 1000,
+            ApiVersionRequestTimeoutMs = 1000,
+        })
+        .SetErrorHandler(static (_, _) => { })
+        .SetLogHandler(static (_, _) => { })
+        .Build();
 
     _ = await failingProducer.ProduceAsync(topic, new Message<string, string> { Key = "gamma", Value = "qyl-error" });
 }
@@ -91,7 +100,10 @@ return report.Pass ? 0 : 1;
 
 static async Task WaitForKafkaAsync(string bootstrapServers, string topic)
 {
-    using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers }).Build();
+    using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers })
+        .SetErrorHandler(static (_, _) => { })
+        .SetLogHandler(static (_, _) => { })
+        .Build();
 
     Exception? lastException = null;
     for (var attempt = 0; attempt < 60; attempt++)

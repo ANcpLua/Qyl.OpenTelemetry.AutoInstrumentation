@@ -25,6 +25,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
     ("real adonet demo", [sys.executable, "tools/verify-real-adonet-demo.py"]),
     ("real graphql demo", [sys.executable, "tools/verify-real-graphql-demo.py"]),
+    ("real kafka demo", [sys.executable, "tools/verify-real-kafka-demo.py"]),
     ("real log4net demo", [sys.executable, "tools/verify-real-log4net-demo.py"]),
     ("real masstransit demo", [sys.executable, "tools/verify-real-masstransit-demo.py"]),
     ("real mongodb demo", [sys.executable, "tools/verify-real-mongodb-demo.py"]),

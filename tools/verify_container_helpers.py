@@ -26,22 +26,36 @@ def run_published_container(
     name_prefix: str,
     image: str,
     container_port: int,
+    host_port: int | None = None,
+    container_env: dict[str, str] | None = None,
+    command: list[str] | None = None,
     timeout_seconds: int = 90,
 ) -> Iterator[PublishedContainer]:
     name = f"qyl-{name_prefix}-{uuid.uuid4().hex[:12]}"
     run_checked(["docker", "info"], cwd, env)
-    run_checked(
+    publish = f"127.0.0.1:{host_port}:{container_port}" if host_port is not None else f"127.0.0.1::{container_port}"
+    command_line = [
+        "docker",
+        "run",
+        "--rm",
+        "--detach",
+        "--name",
+        name,
+    ]
+    for key, value in (container_env or {}).items():
+        command_line.extend(["--env", f"{key}={value}"])
+    command_line.extend(
         [
-            "docker",
-            "run",
-            "--rm",
-            "--detach",
-            "--name",
-            name,
             "--publish",
-            f"127.0.0.1::{container_port}",
+            publish,
             image,
-        ],
+        ]
+    )
+    if command:
+        command_line.extend(command)
+
+    run_checked(
+        command_line,
         cwd,
         env,
     )
