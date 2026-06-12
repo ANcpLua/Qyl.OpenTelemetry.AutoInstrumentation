@@ -115,7 +115,7 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_managed
+  evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
