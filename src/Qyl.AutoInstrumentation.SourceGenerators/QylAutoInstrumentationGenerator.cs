@@ -21,7 +21,7 @@ namespace Qyl.AutoInstrumentation.SourceGenerators;
 [Generator(LanguageNames.CSharp)]
 public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 {
-    private static readonly SymbolDisplayFormat FullyQualifiedFormat =
+    private static readonly SymbolDisplayFormat s_fullyQualifiedFormat =
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
@@ -51,10 +51,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             .Where(static invocation => invocation is not null)
             .Collect();
 
-        context.RegisterSourceOutput(interceptedInvocations, static (sourceContext, invocations) =>
-        {
-            EmitInterceptors(sourceContext, invocations);
-        });
+        context.RegisterSourceOutput(interceptedInvocations, EmitInterceptors);
     }
 
     private static InterceptedInvocation? TryCreateInterceptedInvocation(
@@ -3722,7 +3719,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     }
 
     private static string CleanTypeName(ITypeSymbol symbol)
-        => symbol.ToDisplayString(FullyQualifiedFormat);
+        => symbol.ToDisplayString(s_fullyQualifiedFormat);
 
     private static string CleanTypeName(ITypeSymbol symbol, IMethodSymbol method)
     {
@@ -3751,7 +3748,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (symbol is INamedTypeSymbol { IsGenericType: true } named && named.TypeArguments.Length > 0)
         {
-            var constructedName = named.ConstructedFrom.ToDisplayString(FullyQualifiedFormat);
+            var constructedName = named.ConstructedFrom.ToDisplayString(s_fullyQualifiedFormat);
             var genericStart = constructedName.IndexOf('<');
             var typeName = genericStart < 0 ? constructedName : constructedName.Substring(0, genericStart);
             var arguments = named.TypeArguments

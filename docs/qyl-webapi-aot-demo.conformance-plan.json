@@ -1,0 +1,74 @@
+{
+  "schema_version": "1",
+  "graph_schema_version": "1",
+  "services": [
+    {
+      "service_name": "qyl-webapi-aot-demo",
+      "profile_id": "qyl-aot-autoinstrumentation",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "aspnetcore.server",
+          "required_attributes": [
+            "http.request.method",
+            "http.response.status_code",
+            "http.route",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "efcore.sqlite",
+          "required_attributes": [
+            "db.operation.name",
+            "db.query.summary",
+            "db.system.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "httpclient.downstream",
+          "required_attributes": [
+            "http.request.method",
+            "http.response.status_code",
+            "qyl.instrumentation.domain",
+            "server.address"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "httpclient.self",
+          "required_attributes": [
+            "http.request.method",
+            "http.response.status_code",
+            "qyl.instrumentation.domain",
+            "server.address",
+            "server.port"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "sqlclient.command",
+          "required_attributes": [
+            "db.operation.name",
+            "db.query.summary",
+            "db.system.name",
+            "error.type",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        }
+      ]
+    }
+  ]
+}

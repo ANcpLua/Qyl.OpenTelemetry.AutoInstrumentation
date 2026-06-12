@@ -1,0 +1,842 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import difflib
+import json
+import re
+import sys
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+ROOT = Path(__file__).resolve().parents[1]
+YAML_PATH = ROOT / "docs" / "otel-dotnet-auto-60-contract-items.yaml"
+SCHEMA_PATH = ROOT / "docs" / "otel-dotnet-auto-60-contract-items.schema.json"
+COVERAGE_MATRIX_PATH = ROOT / "docs" / "coverage-matrix.md"
+CONFORMANCE_PLAN_PATH = ROOT / "docs" / "qyl-webapi-aot-demo.conformance-plan.json"
+README_PATH = ROOT / "README.md"
+CONTRACT_CS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
+WEBAPI_REPORT_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
+GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
+OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
+
+SERVICE_NAME = "qyl-webapi-aot-demo"
+PROFILE_ID = "qyl-aot-autoinstrumentation"
+README_START = "<!-- qyl-contract-summary:start -->"
+README_END = "<!-- qyl-contract-summary:end -->"
+
+SIGNAL_KIND = "signal_specific_instrumentation_promise"
+CONTROL_KIND = "global_environment_control"
+OPTION_KIND = "instrumentation_option"
+
+LANES = {
+    "source_interceptor",
+    "runtime_public_telemetry",
+    "framework_initialization",
+    "official_library_hook",
+    "environment_control",
+    "instrumentation_option",
+    "unsupported_nativeaot",
+}
+STATUSES = {
+    "implemented",
+    "control_bound",
+    "option_bound",
+    "research_required",
+    "unsupported_nativeaot",
+}
+CALL_SITE_VISIBILITIES = {"user_code", "library_internal", "both", "not_applicable"}
+PAYLOAD_ACCESS_VALUES = {"typed_public", "reflection_required", "not_applicable"}
+
+UNSUPPORTED_SIGNAL_KEYS = {
+    "signals.traces.ASPNET",
+    "signals.traces.WCFCORE",
+    "signals.traces.WCFSERVICE",
+    "signals.metrics.ASPNET",
+}
+
+RUNTIME_PUBLIC_TELEMETRY_KEYS = {
+    "signals.traces.ASPNETCORE",
+    "signals.traces.ENTITYFRAMEWORKCORE",
+    "signals.traces.GRPCNETCLIENT",
+    "signals.metrics.ASPNETCORE",
+    "signals.metrics.HTTPCLIENT",
+    "signals.metrics.NETRUNTIME",
+    "signals.metrics.NPGSQL",
+    "signals.metrics.NSERVICEBUS",
+    "signals.metrics.PROCESS",
+    "signals.metrics.SQLCLIENT",
+}
+
+FRAMEWORK_INITIALIZATION_KEYS = {
+    "signals.traces.AZURE",
+}
+
+BOTH_VISIBLE_KEYS = {
+    "signals.traces.ASPNETCORE",
+    "signals.traces.ENTITYFRAMEWORKCORE",
+    "signals.traces.GRPCNETCLIENT",
+    "signals.traces.HTTPCLIENT",
+    "signals.metrics.HTTPCLIENT",
+}
+
+LIBRARY_INTERNAL_KEYS = {
+    "signals.metrics.ASPNETCORE",
+    "signals.metrics.NETRUNTIME",
+    "signals.metrics.NPGSQL",
+    "signals.metrics.NSERVICEBUS",
+    "signals.metrics.PROCESS",
+    "signals.metrics.SQLCLIENT",
+    "signals.traces.WCFCORE",
+    "signals.traces.WCFSERVICE",
+}
+
+REFLECTION_REQUIRED_KEYS = {
+    "signals.traces.ASPNET",
+    "signals.traces.WCFCORE",
+    "signals.traces.WCFSERVICE",
+    "signals.metrics.ASPNET",
+}
+
+CONFORMANCE_KIND_BY_REPORT_SIGNAL = {
+    "activity": "span",
+}
+
+EXPECTED_SIGNAL_NAMES = [
+    "aspnetcore.server",
+    "efcore.sqlite",
+    "httpclient.downstream",
+    "httpclient.self",
+    "sqlclient.command",
+]
+
+
+class ContractError(RuntimeError):
+    pass
+
+
+def fail(message: str) -> None:
+    raise ContractError(message)
+
+
+def load_contract() -> dict[str, Any]:
+    data = yaml.safe_load(YAML_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        fail("contract YAML root must be an object")
+    items = data.get("contract_items")
+    if not isinstance(items, list):
+        fail("contract YAML must contain contract_items[]")
+    return normalize_contract(data)
+
+
+def normalize_contract(data: dict[str, Any]) -> dict[str, Any]:
+    items = data.get("contract_items")
+    if not isinstance(items, list):
+        fail("contract YAML must contain contract_items[]")
+
+    normalized_items: list[dict[str, Any]] = []
+    for raw in sorted(items, key=lambda candidate: int(candidate["index"])):
+        if not isinstance(raw, dict):
+            fail(f"contract item must be an object: {raw!r}")
+        item = dict(raw)
+        apply_ownership_defaults(item)
+        normalized_items.append(item)
+
+    return {
+        "schema_id": data.get("schema_id", "otel-dotnet-auto-instrumentation-contract-items"),
+        "schema_version": str(data.get("schema_version", "1.0.0")),
+        "generated_at": str(data.get("generated_at", "2026-06-04")),
+        "source": data.get("source", {}),
+        "contract_items": normalized_items,
+    }
+
+
+def apply_ownership_defaults(item: dict[str, Any]) -> None:
+    kind = str(item.get("kind", ""))
+    key = str(item.get("key", ""))
+
+    if kind == CONTROL_KIND:
+        item["lane"] = "environment_control"
+        item["qyl_status"] = "control_bound"
+        item["call_site_visibility"] = "not_applicable"
+        item["payload_access"] = "not_applicable"
+        return
+
+    if kind == OPTION_KIND:
+        item["lane"] = "instrumentation_option"
+        item["qyl_status"] = "option_bound"
+        item["call_site_visibility"] = "not_applicable"
+        item["payload_access"] = "not_applicable"
+        return
+
+    if kind != SIGNAL_KIND:
+        fail(f"unknown contract item kind: {kind}")
+
+    if key in UNSUPPORTED_SIGNAL_KEYS:
+        item["lane"] = "unsupported_nativeaot"
+        item["qyl_status"] = "unsupported_nativeaot"
+    elif key in RUNTIME_PUBLIC_TELEMETRY_KEYS:
+        item["lane"] = "runtime_public_telemetry"
+        item["qyl_status"] = "implemented"
+    elif key in FRAMEWORK_INITIALIZATION_KEYS:
+        item["lane"] = "framework_initialization"
+        item["qyl_status"] = "implemented"
+    else:
+        item["lane"] = "source_interceptor"
+        item["qyl_status"] = "implemented"
+
+    if key in LIBRARY_INTERNAL_KEYS:
+        item["call_site_visibility"] = "library_internal"
+    elif key in BOTH_VISIBLE_KEYS:
+        item["call_site_visibility"] = "both"
+    else:
+        item["call_site_visibility"] = "user_code"
+
+    if key in REFLECTION_REQUIRED_KEYS:
+        item["payload_access"] = "reflection_required"
+    elif item["lane"] == "runtime_public_telemetry":
+        item["payload_access"] = "typed_public"
+    else:
+        item["payload_access"] = "not_applicable"
+
+
+def verify_contract_model(contract: dict[str, Any]) -> None:
+    items = contract_items(contract)
+    if len(items) != 60:
+        fail(f"wrong contract item count: {len(items)}")
+
+    indexes = [int(item["index"]) for item in items]
+    if indexes != list(range(1, 61)):
+        fail(f"contract indexes must be contiguous 1..60: {indexes}")
+
+    ids = [str(item["contract_item_id"]) for item in items]
+    expected_ids = [f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, 61)]
+    if ids != expected_ids:
+        fail("contract_item_id sequence mismatch")
+
+    counts = contract_counts(contract)
+    expected_counts = {
+        "signal_specific_instrumentation_promises": 37,
+        "global_environment_controls": 7,
+        "instrumentation_options": 16,
+        "total_contract_items": 60,
+        "traces_signal_specific_promises": 26,
+        "metrics_signal_specific_promises": 8,
+        "logs_signal_specific_promises": 3,
+        "unique_instrumentation_ids": 31,
+    }
+    if counts != expected_counts:
+        fail(f"contract count mismatch: expected={expected_counts} actual={counts}")
+
+    for item in items:
+        key = str(item["key"])
+        lane = str(item.get("lane", ""))
+        status = str(item.get("qyl_status", ""))
+        visibility = str(item.get("call_site_visibility", ""))
+        payload = str(item.get("payload_access", ""))
+        if lane not in LANES:
+            fail(f"invalid lane for {key}: {lane}")
+        if status not in STATUSES:
+            fail(f"invalid qyl_status for {key}: {status}")
+        if visibility not in CALL_SITE_VISIBILITIES:
+            fail(f"invalid call_site_visibility for {key}: {visibility}")
+        if payload not in PAYLOAD_ACCESS_VALUES:
+            fail(f"invalid payload_access for {key}: {payload}")
+        if visibility == "library_internal" and lane == "source_interceptor":
+            fail(f"library_internal item cannot use source_interceptor lane: {key}")
+        if lane == "runtime_public_telemetry" and payload != "typed_public":
+            fail(f"runtime_public_telemetry item must use typed_public payload access: {key}")
+        if payload == "reflection_required" and status not in {"research_required", "unsupported_nativeaot"}:
+            fail(f"reflection_required item must be research_required or unsupported_nativeaot: {key}")
+        if key == "signals.traces.SQLCLIENT" and lane != "source_interceptor":
+            fail("SqlClient trace contract must remain interceptor-primary")
+        if key == "signals.metrics.SQLCLIENT" and lane == "runtime_public_telemetry" and payload != "typed_public":
+            fail("SqlClient metric runtime lane must remain typed-public if used")
+
+
+def contract_items(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    return list(contract["contract_items"])
+
+
+def signal_items(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    return [item for item in contract_items(contract) if item["kind"] == SIGNAL_KIND]
+
+
+def implemented_signal_items(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    return [item for item in signal_items(contract) if item.get("qyl_status") == "implemented"]
+
+
+def unsupported_signal_items(contract: dict[str, Any]) -> list[dict[str, Any]]:
+    return [item for item in signal_items(contract) if item.get("qyl_status") == "unsupported_nativeaot"]
+
+
+def contract_counts(contract: dict[str, Any]) -> dict[str, int]:
+    items = contract_items(contract)
+    signals = signal_items(contract)
+    return {
+        "signal_specific_instrumentation_promises": len(signals),
+        "global_environment_controls": sum(1 for item in items if item["kind"] == CONTROL_KIND),
+        "instrumentation_options": sum(1 for item in items if item["kind"] == OPTION_KIND),
+        "total_contract_items": len(items),
+        "traces_signal_specific_promises": sum(1 for item in signals if item.get("signal") == "traces"),
+        "metrics_signal_specific_promises": sum(1 for item in signals if item.get("signal") == "metrics"),
+        "logs_signal_specific_promises": sum(1 for item in signals if item.get("signal") == "logs"),
+        "unique_instrumentation_ids": len({str(item.get("instrumentation_id")) for item in signals}),
+    }
+
+
+def expected_outputs(contract: dict[str, Any]) -> dict[Path, str]:
+    return {
+        YAML_PATH: render_yaml(contract),
+        SCHEMA_PATH: render_schema(),
+        CONTRACT_CS_PATH: render_contract_cs(contract),
+        COVERAGE_MATRIX_PATH: render_coverage_matrix(contract),
+        CONFORMANCE_PLAN_PATH: render_conformance_plan(),
+        README_PATH: render_readme(contract),
+    }
+
+
+def render_yaml(contract: dict[str, Any]) -> str:
+    text = yaml.safe_dump(contract, sort_keys=False, allow_unicode=True, width=120)
+    return text if text.endswith("\n") else text + "\n"
+
+
+def render_schema() -> str:
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://qyl.dev/schemas/otel-dotnet-auto-60-contract-items.schema.json",
+        "$comment": "<auto-generated/> Regenerate with tools/generate-contract-artifacts.py --write.",
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["schema_id", "schema_version", "generated_at", "source", "contract_items"],
+        "properties": {
+            "schema_id": {"const": "otel-dotnet-auto-instrumentation-contract-items"},
+            "schema_version": {"type": "string"},
+            "generated_at": {"type": "string"},
+            "source": {"type": "object"},
+            "contract_items": {
+                "type": "array",
+                "minItems": 60,
+                "maxItems": 60,
+                "items": {"$ref": "#/$defs/contract_item"},
+            },
+        },
+        "$defs": {
+            "contract_item": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": [
+                    "kind",
+                    "key",
+                    "status",
+                    "index",
+                    "contract_item_id",
+                    "lane",
+                    "qyl_status",
+                    "call_site_visibility",
+                    "payload_access",
+                ],
+                "properties": {
+                    "kind": {"enum": [SIGNAL_KIND, CONTROL_KIND, OPTION_KIND]},
+                    "signal": {"enum": ["traces", "metrics", "logs"]},
+                    "lane": {"enum": sorted(LANES)},
+                    "qyl_status": {"enum": sorted(STATUSES)},
+                    "call_site_visibility": {"enum": sorted(CALL_SITE_VISIBILITIES)},
+                    "payload_access": {"enum": sorted(PAYLOAD_ACCESS_VALUES)},
+                    "index": {"type": "integer", "minimum": 1, "maximum": 60},
+                    "contract_item_id": {"type": "string", "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"},
+                    "key": {"type": "string"},
+                    "environment_toggle": {"type": "string"},
+                    "environment_variable": {"type": "string"},
+                    "instrumentation_id": {"type": "string"},
+                    "attribute_names": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+    }
+    return json.dumps(schema, indent=2, sort_keys=False) + "\n"
+
+
+def render_contract_cs(contract: dict[str, Any]) -> str:
+    counts = contract_counts(contract)
+    items = contract_items(contract)
+    unsupported_keys = [str(item["key"]) for item in unsupported_signal_items(contract)]
+    source_generated_keys = [str(item["key"]) for item in implemented_signal_items(contract)]
+    unique_ids = sorted({str(item.get("instrumentation_id")) for item in signal_items(contract)})
+
+    lines: list[str] = [
+        "// <auto-generated/>",
+        "// Regenerate with tools/generate-contract-artifacts.py --write.",
+        "using System;",
+        "using System.Collections.Generic;",
+        "using System.Collections.Immutable;",
+        "using System.Linq;",
+        "using System.Text;",
+        "",
+        "namespace Qyl.AutoInstrumentation.SourceGenerators;",
+        "",
+        "internal enum InstrumentationContractKind",
+        "{",
+        "    SignalSpecificInstrumentationPromise,",
+        "    GlobalEnvironmentControl,",
+        "    InstrumentationOption,",
+        "}",
+        "",
+        "internal enum InstrumentationSignal",
+        "{",
+        "    None,",
+        "    Traces,",
+        "    Metrics,",
+        "    Logs,",
+        "}",
+        "",
+        "internal enum InstrumentationContractLane",
+        "{",
+        "    SourceInterceptor,",
+        "    RuntimePublicTelemetry,",
+        "    FrameworkInitialization,",
+        "    OfficialLibraryHook,",
+        "    EnvironmentControl,",
+        "    InstrumentationOption,",
+        "    UnsupportedNativeAot,",
+        "}",
+        "",
+        "internal enum QylContractStatus",
+        "{",
+        "    Implemented,",
+        "    ControlBound,",
+        "    OptionBound,",
+        "    ResearchRequired,",
+        "    UnsupportedNativeAot,",
+        "}",
+        "",
+        "internal enum SourceVisibility",
+        "{",
+        "    UserCode,",
+        "    LibraryInternal,",
+        "    Both,",
+        "    NotApplicable,",
+        "}",
+        "",
+        "internal enum PayloadAccess",
+        "{",
+        "    TypedPublic,",
+        "    ReflectionRequired,",
+        "    NotApplicable,",
+        "}",
+        "",
+        "internal readonly record struct InstrumentationContractItem(",
+        "    int Index,",
+        "    string ContractItemId,",
+        "    InstrumentationContractKind Kind,",
+        "    string Key,",
+        "    InstrumentationSignal Signal,",
+        "    string InstrumentationId,",
+        "    string EnvironmentVariable,",
+        "    string SupportedVersions,",
+        "    ImmutableArray<string> Libraries,",
+        "    ImmutableArray<string> InstrumentationTypes,",
+        "    string Promise,",
+        "    ImmutableArray<string> AttributeNames,",
+        "    InstrumentationContractLane Lane,",
+        "    QylContractStatus QylStatus,",
+        "    SourceVisibility SourceVisibility,",
+        "    PayloadAccess PayloadAccess);",
+        "",
+        "internal static class InstrumentationContract",
+        "{",
+        f"    public const int SignalSpecificInstrumentationPromiseCount = {counts['signal_specific_instrumentation_promises']};",
+        f"    public const int GlobalEnvironmentControlCount = {counts['global_environment_controls']};",
+        f"    public const int InstrumentationOptionCount = {counts['instrumentation_options']};",
+        "    public const int TotalCount =",
+        "        SignalSpecificInstrumentationPromiseCount +",
+        "        GlobalEnvironmentControlCount +",
+        "        InstrumentationOptionCount;",
+        "",
+        f"    public const int TracesSignalSpecificPromiseCount = {counts['traces_signal_specific_promises']};",
+        f"    public const int MetricsSignalSpecificPromiseCount = {counts['metrics_signal_specific_promises']};",
+        f"    public const int LogsSignalSpecificPromiseCount = {counts['logs_signal_specific_promises']};",
+        f"    public const int UniqueInstrumentationIdCount = {len(unique_ids)};",
+        f"    public const int UnsupportedNativeAotSignalPromiseCount = {len(unsupported_keys)};",
+        "    public const int SourceGeneratedSignalPromiseCount =",
+        "        SignalSpecificInstrumentationPromiseCount -",
+        "        UnsupportedNativeAotSignalPromiseCount;",
+        "",
+        "    public const string AspNetCoreComponentsMeterName = \"Microsoft.AspNetCore.Components\";",
+        "    public const string AspNetCoreComponentsNavigationMetricName = \"aspnetcore.components.navigation\";",
+        "",
+    ]
+    lines.extend(render_csharp_string_array("UnsupportedNativeAotSignalKeys", unsupported_keys, readonly=True))
+    lines.append("")
+    lines.append("    public static readonly ImmutableArray<InstrumentationContractItem> Items =")
+    lines.append("        ImmutableArray.Create(")
+    for index, item in enumerate(items):
+        suffix = "," if index < len(items) - 1 else ""
+        lines.append("            " + render_contract_item_ctor(item) + suffix)
+    lines.append("        );")
+    lines.extend([
+        "",
+        "    public static string EmitGeneratedManifestSource()",
+        "    {",
+        "        var builder = new StringBuilder();",
+        "        builder.AppendLine(\"// <auto-generated/>\");",
+        "        builder.AppendLine(\"namespace Qyl.AutoInstrumentation.Generated;\");",
+        "        builder.AppendLine();",
+        "        builder.AppendLine(\"internal static class QylGeneratedInstrumentationContract\");",
+        "        builder.AppendLine(\"{\");",
+        "        builder.AppendLine($\"    public const int SignalSpecificInstrumentationPromiseCount = {SignalSpecificInstrumentationPromiseCount};\");",
+        "        builder.AppendLine($\"    public const int GlobalEnvironmentControlCount = {GlobalEnvironmentControlCount};\");",
+        "        builder.AppendLine($\"    public const int InstrumentationOptionCount = {InstrumentationOptionCount};\");",
+        "        builder.AppendLine($\"    public const int TotalCount = {TotalCount};\");",
+        "        builder.AppendLine($\"    public const int TracesSignalSpecificPromiseCount = {TracesSignalSpecificPromiseCount};\");",
+        "        builder.AppendLine($\"    public const int MetricsSignalSpecificPromiseCount = {MetricsSignalSpecificPromiseCount};\");",
+        "        builder.AppendLine($\"    public const int LogsSignalSpecificPromiseCount = {LogsSignalSpecificPromiseCount};\");",
+        "        builder.AppendLine($\"    public const int UniqueInstrumentationIdCount = {UniqueInstrumentationIdCount};\");",
+        "        builder.AppendLine($\"    public const int UnsupportedNativeAotSignalPromiseCount = {UnsupportedNativeAotSignalPromiseCount};\");",
+        "        builder.AppendLine($\"    public const int SourceGeneratedSignalPromiseCount = {SourceGeneratedSignalPromiseCount};\");",
+        "        builder.AppendLine(\"    public const string AspNetCoreComponentsMeterName = \\\"Microsoft.AspNetCore.Components\\\";\");",
+        "        builder.AppendLine(\"    public const string AspNetCoreComponentsNavigationMetricName = \\\"aspnetcore.components.navigation\\\";\");",
+        "        builder.AppendLine();",
+        "        EmitStringArray(builder, \"ItemIds\", Items.Select(static item => item.Key));",
+        "        EmitStringArray(builder, \"SignalKeys\", Items.Where(static item => item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise).Select(static item => item.Key));",
+        "        EmitStringArray(builder, \"SourceGeneratedSignalKeys\", Items.Where(static item => item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise && item.QylStatus is QylContractStatus.Implemented).Select(static item => item.Key));",
+        "        EmitStringArray(builder, \"UnsupportedNativeAotSignalKeys\", UnsupportedNativeAotSignalKeys);",
+        "        EmitStringArray(builder, \"GlobalEnvironmentControls\", Items.Where(static item => item.Kind is InstrumentationContractKind.GlobalEnvironmentControl).Select(static item => item.EnvironmentVariable));",
+        "        EmitStringArray(builder, \"InstrumentationOptions\", Items.Where(static item => item.Kind is InstrumentationContractKind.InstrumentationOption).Select(static item => item.EnvironmentVariable));",
+        "        builder.AppendLine(\"}\");",
+        "        return builder.ToString();",
+        "    }",
+        "",
+        "    public static InstrumentationContractItem? TryGetSourceGeneratedSignal(string key)",
+        "    {",
+        "        foreach (var item in Items)",
+        "        {",
+        "            if (item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise &&",
+        "                item.QylStatus is QylContractStatus.Implemented &&",
+        "                string.Equals(item.Key, key, StringComparison.Ordinal))",
+        "            {",
+        "                return item;",
+        "            }",
+        "        }",
+        "",
+        "        return null;",
+        "    }",
+        "",
+        "    public static InstrumentationContractItem? TryGetSupportedSignal(string key)",
+        "    {",
+        "        foreach (var item in Items)",
+        "        {",
+        "            if (item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise &&",
+        "                string.Equals(item.Key, key, StringComparison.Ordinal))",
+        "            {",
+        "                return item;",
+        "            }",
+        "        }",
+        "",
+        "        return null;",
+        "    }",
+        "",
+        "    private static void EmitStringArray(StringBuilder builder, string name, IEnumerable<string> values)",
+        "    {",
+        "        builder.Append(\"    public static string[] \");",
+        "        builder.Append(name);",
+        "        builder.AppendLine(\" => new[]\");",
+        "        builder.AppendLine(\"    {\");",
+        "",
+        "        foreach (var value in values)",
+        "        {",
+        "            builder.Append(\"        \\\"\");",
+        "            builder.Append(value.Replace(\"\\\\\", \"\\\\\\\\\").Replace(\"\\\"\", \"\\\\\\\"\"));",
+        "            builder.AppendLine(\"\\\",\");",
+        "        }",
+        "",
+        "        builder.AppendLine(\"    };\");",
+        "        builder.AppendLine();",
+        "    }",
+        "}",
+        "",
+    ])
+    return "\n".join(lines)
+
+
+def render_csharp_string_array(name: str, values: list[str], readonly: bool) -> list[str]:
+    declaration = "public static readonly ImmutableArray<string>" if readonly else "public static ImmutableArray<string>"
+    if not values:
+        return [f"    {declaration} {name} = ImmutableArray<string>.Empty;"]
+    lines = [f"    {declaration} {name} =", "        ImmutableArray.Create("]
+    for index, value in enumerate(values):
+        suffix = "," if index < len(values) - 1 else ""
+        lines.append(f"            {cs_string(value)}{suffix}")
+    lines.append("        );")
+    return lines
+
+
+def render_contract_item_ctor(item: dict[str, Any]) -> str:
+    kind = {
+        SIGNAL_KIND: "SignalSpecificInstrumentationPromise",
+        CONTROL_KIND: "GlobalEnvironmentControl",
+        OPTION_KIND: "InstrumentationOption",
+    }[str(item["kind"])]
+    signal = str(item.get("signal") or item.get("target_signal") or "none")
+    signal_name = {"traces": "Traces", "metrics": "Metrics", "logs": "Logs", "none": "None"}.get(signal, "None")
+    instrumentation_id = str(item.get("instrumentation_id") or item.get("target_instrumentation_id") or "")
+    environment_variable = str(item.get("environment_toggle") or item.get("environment_variable") or "")
+    supported_versions = str(item.get("supported_versions") or "")
+    libraries = flatten_libraries(item.get("libraries", []))
+    instrumentation_types = [str(value) for value in item.get("instrumentation_types", [])]
+    attributes = [str(value) for value in item.get("attribute_names", [])]
+    promise = promise_text(item)
+    return (
+        "new InstrumentationContractItem("
+        + ", ".join(
+            [
+                str(int(item["index"])),
+                cs_string(str(item["contract_item_id"])),
+                f"InstrumentationContractKind.{kind}",
+                cs_string(str(item["key"])),
+                f"InstrumentationSignal.{signal_name}",
+                cs_string(instrumentation_id),
+                cs_string(environment_variable),
+                cs_string(supported_versions),
+                cs_immutable_array(libraries),
+                cs_immutable_array(instrumentation_types),
+                cs_string(promise),
+                cs_immutable_array(attributes),
+                "InstrumentationContractLane." + pascal(str(item["lane"])),
+                "QylContractStatus." + pascal(str(item["qyl_status"])),
+                "SourceVisibility." + pascal(str(item["call_site_visibility"])),
+                "PayloadAccess." + pascal(str(item["payload_access"])),
+            ]
+        )
+        + ")"
+    )
+
+
+def flatten_libraries(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    names: list[str] = []
+    for entry in value:
+        if isinstance(entry, str):
+            names.append(entry)
+        elif isinstance(entry, dict):
+            name = entry.get("name")
+            if isinstance(name, dict):
+                names.append(str(name.get("name", "")))
+            elif name is not None:
+                names.append(str(name))
+    return [name for name in names if name]
+
+
+def promise_text(item: dict[str, Any]) -> str:
+    if item["kind"] == OPTION_KIND or item["kind"] == CONTROL_KIND:
+        return str(item.get("description", ""))
+    notes = item.get("notes")
+    if isinstance(notes, list) and notes:
+        return " ".join(str(note) for note in notes)
+    documentation = item.get("documentation")
+    if isinstance(documentation, dict) and documentation.get("name"):
+        return str(documentation["name"])
+    return str(item["key"]) + " instrumentation promise."
+
+
+def pascal(value: str) -> str:
+    overrides = {"aot": "Aot", "nativeaot": "NativeAot", "qyl": "Qyl"}
+    return "".join(overrides.get(part, part.capitalize()) for part in value.split("_"))
+
+
+def cs_immutable_array(values: list[str]) -> str:
+    if not values:
+        return "ImmutableArray<string>.Empty"
+    return "ImmutableArray.Create(" + ", ".join(cs_string(value) for value in values) + ")"
+
+
+def cs_string(value: str) -> str:
+    return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\""
+
+
+def render_coverage_matrix(contract: dict[str, Any]) -> str:
+    counts = contract_counts(contract)
+    status_counts: dict[str, int] = {}
+    lane_counts: dict[str, int] = {}
+    for item in contract_items(contract):
+        status_counts[str(item["qyl_status"])] = status_counts.get(str(item["qyl_status"]), 0) + 1
+        lane_counts[str(item["lane"])] = lane_counts.get(str(item["lane"]), 0) + 1
+
+    lines = [
+        "# AOT Ownership Coverage Matrix",
+        "",
+        "// <auto-generated/>",
+        "// Regenerate with `python3 tools/generate-contract-artifacts.py --write`.",
+        "",
+        "This matrix is generated from `docs/otel-dotnet-auto-60-contract-items.yaml`.",
+        "The YAML manifest is the source of truth; this file is review output only.",
+        "",
+        "## Counts",
+        "",
+        "| Count | Value |",
+        "|---|---:|",
+        f"| Total contract items | {counts['total_contract_items']} |",
+        f"| Signal promises | {counts['signal_specific_instrumentation_promises']} |",
+        f"| Global environment controls | {counts['global_environment_controls']} |",
+        f"| Instrumentation options | {counts['instrumentation_options']} |",
+        "",
+        "## qyl status counts",
+        "",
+        "| Status | Count |",
+        "|---|---:|",
+    ]
+    for status in sorted(status_counts):
+        lines.append(f"| `{status}` | {status_counts[status]} |")
+    lines.extend(["", "## Lane counts", "", "| Lane | Count |", "|---|---:|"])
+    for lane in sorted(lane_counts):
+        lines.append(f"| `{lane}` | {lane_counts[lane]} |")
+    lines.extend(
+        [
+            "",
+            "## Matrix",
+            "",
+            "| # | Key | Lane | qyl status | Call-site visibility | Payload access |",
+            "|---:|---|---|---|---|---|",
+        ]
+    )
+    for item in contract_items(contract):
+        lines.append(
+            f"| {int(item['index'])} | `{item['key']}` | `{item['lane']}` | `{item['qyl_status']}` | "
+            f"`{item['call_site_visibility']}` | `{item['payload_access']}` |"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def render_conformance_plan() -> str:
+    report = json.loads(WEBAPI_REPORT_PATH.read_text(encoding="utf-8"))
+    if report.get("RuntimeMode") != "nativeaot" or report.get("Pass") is not True:
+        fail("webapi verified report must be passing NativeAOT output")
+    signals = report.get("Signals")
+    if not isinstance(signals, list):
+        fail("webapi verified report must contain Signals[]")
+    actual_names = sorted(str(signal.get("Signal")) for signal in signals)
+    if actual_names != EXPECTED_SIGNAL_NAMES:
+        fail(f"unexpected webapi verified signal set: expected={EXPECTED_SIGNAL_NAMES} actual={actual_names}")
+
+    expected_signals = []
+    for signal in sorted(signals, key=lambda candidate: str(candidate["Signal"])):
+        tags = signal.get("Tags")
+        if not isinstance(tags, dict):
+            fail(f"webapi signal missing Tags object: {signal}")
+        expected_signals.append(
+            {
+                "kind": CONFORMANCE_KIND_BY_REPORT_SIGNAL.get(str(signal.get("SignalKind", "activity")), "span"),
+                "name": str(signal["Signal"]),
+                "required_attributes": sorted(str(key) for key in tags),
+                "recommended_attributes": [],
+                "opt_in_attributes": [],
+            }
+        )
+
+    plan = {
+        "schema_version": "1",
+        "graph_schema_version": "1",
+        "services": [
+            {
+                "service_name": SERVICE_NAME,
+                "profile_id": PROFILE_ID,
+                "expected_signals": expected_signals,
+            }
+        ],
+    }
+    return json.dumps(plan, indent=2, sort_keys=False) + "\n"
+
+
+def render_readme(contract: dict[str, Any]) -> str:
+    original = README_PATH.read_text(encoding="utf-8")
+    block = render_readme_block(contract)
+    if README_START in original and README_END in original:
+        return re.sub(
+            re.escape(README_START) + r".*?" + re.escape(README_END),
+            block.strip(),
+            original,
+            flags=re.DOTALL,
+        )
+
+    anchor = "The conformance processor is off by default:\n\n```bash\nQYL_CONFORMANCE_ENABLED=1\n```\n"
+    if anchor not in original:
+        fail("README insertion anchor missing")
+    return original.replace(anchor, anchor + "\n" + block + "\n", 1)
+
+
+def render_readme_block(contract: dict[str, Any]) -> str:
+    lines = [
+        README_START,
+        "## Generated contract ownership summary",
+        "",
+        "// <auto-generated/>",
+        "// Regenerate with `python3 tools/generate-contract-artifacts.py --write`.",
+        "",
+        "YAML is the source of truth for the 60-item upstream contract. The generated matrix keeps mechanism ownership explicit so source interceptors are not claimed for library-internal work.",
+        "",
+        "| # | Key | Lane | qyl status | Visibility | Payload |",
+        "|---:|---|---|---|---|---|",
+    ]
+    for item in contract_items(contract):
+        lines.append(
+            f"| {int(item['index'])} | `{item['key']}` | `{item['lane']}` | `{item['qyl_status']}` | "
+            f"`{item['call_site_visibility']}` | `{item['payload_access']}` |"
+        )
+    lines.extend(["", README_END, ""])
+    return "\n".join(lines)
+
+
+def verify_generated_files(contract: dict[str, Any]) -> None:
+    mismatches: list[str] = []
+    for path, expected in expected_outputs(contract).items():
+        if not path.exists():
+            mismatches.append(f"missing generated artifact: {path.relative_to(ROOT)}")
+            continue
+        actual = path.read_text(encoding="utf-8")
+        if actual != expected:
+            diff = "".join(
+                difflib.unified_diff(
+                    actual.splitlines(keepends=True),
+                    expected.splitlines(keepends=True),
+                    fromfile=str(path.relative_to(ROOT)),
+                    tofile=str(path.relative_to(ROOT)) + " (generated)",
+                    n=3,
+                )
+            )
+            mismatches.append(f"stale generated artifact: {path.relative_to(ROOT)}\n{diff[:4000]}")
+    if mismatches:
+        fail("\n".join(mismatches) + "\nrun: python3 tools/generate-contract-artifacts.py --write")
+
+
+def write_generated_files(contract: dict[str, Any]) -> None:
+    for path, content in expected_outputs(contract).items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate or verify qyl AOT contract artifacts from the YAML manifest.")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--write", action="store_true", help="Regenerate tracked contract artifacts.")
+    group.add_argument("--check", action="store_true", help="Fail if tracked contract artifacts are stale.")
+    args = parser.parse_args()
+
+    try:
+        contract = load_contract()
+        verify_contract_model(contract)
+        if args.write:
+            write_generated_files(contract)
+            print("contract-artifacts-generated")
+        else:
+            verify_generated_files(contract)
+            print("contract-artifacts-ok")
+    except ContractError as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+if __name__ == "__main__":
+    main()

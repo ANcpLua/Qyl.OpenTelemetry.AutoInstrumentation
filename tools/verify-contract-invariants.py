@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import importlib.util
 import re
 from pathlib import Path
+from types import ModuleType
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-YAML_PATH = ROOT / "docs" / "otel-dotnet-auto-60-contract-items.yaml"
+ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 CONTRACT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
 GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
 OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
@@ -16,7 +19,20 @@ SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerator
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
-INTENTIONALLY_UNSUPPORTED_DYNAMIC_SIGNAL_KEYS = {"signals.traces.WCFCORE"}
+RUNTIME_EMISSION_ROOTS = [
+    ROOT / "src" / "Qyl.AutoInstrumentation",
+    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
+]
+PRODUCTIVE_MECHANISM_ROOTS = [
+    ROOT / "src" / "Qyl.AutoInstrumentation",
+    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.AutoInstrumentation.Hosting",
+    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators",
+]
 FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
     "IOperationInvoker",
     "IServiceBehavior",
@@ -58,20 +74,6 @@ FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
     "GetLocation()",
     "Location.Create",
 ]
-RUNTIME_EMISSION_ROOTS = [
-    ROOT / "src" / "Qyl.AutoInstrumentation",
-    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
-]
-PRODUCTIVE_MECHANISM_ROOTS = [
-    ROOT / "src" / "Qyl.AutoInstrumentation",
-    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.AutoInstrumentation.Hosting",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
-    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators",
-]
 FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
     re.compile(r'\.SetTag\(\s*"[^"]+"'),
     re.compile(r'\.AddTag\(\s*"[^"]+"'),
@@ -90,131 +92,20 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
 ]
 REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"
 REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylIntercepted"
-FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS = [
-    "CORECLR_PROFILER",
-    "DOTNET_STARTUP_HOOKS",
-    "ICorProfiler",
-    "ReJIT",
-    "ILRewrite",
-    "ILRewriter",
-    "Assembly.Load",
-    "Assembly.GetTypes",
-    "System.Reflection",
-    "Activator.CreateInstance",
-    "Type.GetType",
-    "GetTypes(",
-    "GetFields(",
-    "GetProperties(",
-    "GetMethods(",
-    "MakeGeneric",
-    "CallSite",
-    "dynamic ",
-]
+FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS = FORBIDDEN_GENERATOR_MECHANISM_TOKENS
 
 
 def fail(message: str) -> None:
     raise SystemExit(message)
 
 
-def parse_scalar(block: str, name: str) -> str | None:
-    match = re.search(rf"(?m)^  {re.escape(name)}: (.+)$", block)
-    if match is None:
-        return None
-
-    value = match.group(1).strip()
-    if len(value) >= 2 and value[0] == value[-1] == "'":
-        return value[1:-1]
-
-    return value
-
-
-def parse_list(block: str, name: str) -> list[str]:
-    match = re.search(rf"(?ms)^  {re.escape(name)}:\n((?:  - .+\n)+)", block)
-    if match is None:
-        return []
-
-    return [line[4:].strip() for line in match.group(1).splitlines()]
-
-
-def parse_yaml_items() -> list[dict[str, object]]:
-    text = YAML_PATH.read_text()
-    try:
-        contract_text = text.split("\ncontract_items:\n", 1)[1]
-    except IndexError:
-        fail("contract_items block missing from YAML")
-
-    items: list[dict[str, object]] = []
-    for raw in contract_text.split("\n- kind: "):
-        if not raw.strip():
-            continue
-
-        block = "- kind: " + raw if raw.startswith("signal") or raw.startswith("global") or raw.startswith("instrumentation") else raw
-        first_line, _, rest = block.partition("\n")
-        kind = first_line.removeprefix("- kind: ").strip()
-        item_block = "\n" + rest
-        index_value = parse_scalar(item_block, "index")
-        if index_value is None:
-            fail(f"YAML item missing index: {kind}")
-
-        items.append(
-            {
-                "kind": kind,
-                "index": int(index_value),
-                "key": parse_scalar(item_block, "key"),
-                "signal": parse_scalar(item_block, "signal"),
-                "instrumentation_id": parse_scalar(item_block, "instrumentation_id"),
-                "environment_toggle": parse_scalar(item_block, "environment_toggle"),
-                "environment_variable": parse_scalar(item_block, "environment_variable"),
-                "not_supported_on": parse_list(item_block, "not_supported_on"),
-            }
-        )
-
-    return items
-
-
-def parse_contract_source() -> tuple[list[tuple[int, str, str, str, str]], list[tuple[int, str, str]], list[tuple[int, str, str, str, str]]]:
-    text = CONTRACT_PATH.read_text()
-    signals = [
-        (int(m.group(1)), m.group(2), m.group(3).lower(), m.group(4), m.group(5))
-        for m in re.finditer(
-            r'Signal\((\d+), "([^"]+)", InstrumentationSignal\.([A-Za-z]+), "([^"]+)", "([^"]+)"',
-            text,
-        )
-    ]
-    controls = [
-        (int(m.group(1)), m.group(2), m.group(3))
-        for m in re.finditer(r'Control\((\d+), "([^"]+)", "([^"]+)"', text)
-    ]
-    options = [
-        (int(m.group(1)), m.group(2), m.group(3), m.group(4).lower(), m.group(5))
-        for m in re.finditer(
-            r'Option\((\d+), "([^"]+)", "([^"]+)", InstrumentationSignal\.([A-Za-z]+), "([^"]+)"',
-            text,
-        )
-    ]
-    return signals, controls, options
-
-
-def parse_unsupported_keys() -> set[str]:
-    text = CONTRACT_PATH.read_text()
-    try:
-        block = text.split("UnsupportedNativeAotSignalKeys", 1)[1].split("];", 1)[0]
-    except IndexError:
-        fail("UnsupportedNativeAotSignalKeys block missing")
-
-    return set(re.findall(r'"(signals\.[^"]+)"', block))
-
-
-def parse_contract_signal_promises() -> dict[str, str]:
-    text = CONTRACT_PATH.read_text()
-    promises: dict[str, str] = {}
-    for match in re.finditer(
-        r'Signal\(\d+, "([^"]+)", InstrumentationSignal\.[A-Za-z]+, "[^"]+", "[^"]+", "[^"]+", "[^"]+", "[^"]+", "([^"]+)"\)',
-        text,
-    ):
-        promises[match.group(1)] = match.group(2)
-
-    return promises
+def load_artifacts() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("qyl_contract_artifacts", ARTIFACTS_PATH)
+    if spec is None or spec.loader is None:
+        fail(f"cannot load contract artifact generator: {ARTIFACTS_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def parse_instrumentation_id_constants() -> dict[str, str]:
@@ -243,80 +134,18 @@ def parse_options_id_array(options: str, name: str, id_constants: dict[str, str]
     return values
 
 
-def verify_yaml_vs_contract() -> tuple[set[str], set[str]]:
-    yaml_items = parse_yaml_items()
-    signals, controls, options = parse_contract_source()
-    if (len(signals), len(controls), len(options), len(signals) + len(controls) + len(options)) != (37, 7, 16, 60):
-        fail(f"wrong InstrumentationContract counts: {len(signals)}/{len(controls)}/{len(options)}")
-
-    by_index = {int(item["index"]): item for item in yaml_items}
-    if len(by_index) != 60:
-        fail(f"wrong YAML contract item count: {len(by_index)}")
-
-    for index, key, signal, instrumentation_id, environment_toggle in signals:
-        item = by_index.get(index)
-        if item is None:
-            fail(f"YAML missing signal item {index}")
-        if item["key"] != key or item["signal"] != signal or item["instrumentation_id"] != instrumentation_id or item["environment_toggle"] != environment_toggle:
-            fail(f"signal item mismatch at {index}: YAML={item} CS={(key, signal, instrumentation_id, environment_toggle)}")
-
-    for index, key, environment_variable in controls:
-        item = by_index.get(index)
-        if item is None:
-            fail(f"YAML missing control item {index}")
-        if item["key"] != key or item["environment_variable"] != environment_variable:
-            fail(f"control item mismatch at {index}: YAML={item} CS={(key, environment_variable)}")
-
-    for index, key, environment_variable, _signal, _instrumentation_id in options:
-        item = by_index.get(index)
-        if item is None:
-            fail(f"YAML missing option item {index}")
-        if item["key"] != key or item["environment_variable"] != environment_variable:
-            fail(f"option item mismatch at {index}: YAML={item} CS={(key, environment_variable)}")
-
-    yaml_signal_keys = {
-        str(item["key"])
-        for item in yaml_items
-        if item["kind"] == "signal_specific_instrumentation_promise"
-    }
-    yaml_dotnet_unsupported = {
-        str(item["key"])
-        for item in yaml_items
-        if item["kind"] == "signal_specific_instrumentation_promise"
-        and ".NET" in item["not_supported_on"]
-    }
-    expected_unsupported = yaml_dotnet_unsupported | INTENTIONALLY_UNSUPPORTED_DYNAMIC_SIGNAL_KEYS
-    contract_unsupported = parse_unsupported_keys()
-    if expected_unsupported != contract_unsupported:
-        fail(f"unsupported set mismatch: expected={sorted(expected_unsupported)} CS={sorted(contract_unsupported)}")
-
-    source_generated_keys = yaml_signal_keys - contract_unsupported
-    contract_promises = parse_contract_signal_promises()
-    for key in sorted(source_generated_keys):
-        promise = contract_promises.get(key)
-        if promise is None:
-            fail(f"contract promise missing for source-generated signal: {key}")
-        if "Not supported for .NET NativeAOT" in promise or "retained only for contract parity" in promise:
-            fail(f"source-generated signal cannot be documented as NativeAOT-unsupported/parity-only: {key}")
-
-    return yaml_signal_keys, contract_unsupported
+def verify_contract_artifacts(artifacts: ModuleType, contract: dict[str, Any]) -> None:
+    artifacts.verify_contract_model(contract)
+    artifacts.verify_generated_files(contract)
 
 
-def verify_environment_contract() -> None:
-    yaml_items = parse_yaml_items()
+def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any]) -> None:
+    items = artifacts.contract_items(contract)
     options = OPTIONS_PATH.read_text()
     id_constants = parse_instrumentation_id_constants()
 
-    controls = [
-        item
-        for item in yaml_items
-        if item["kind"] == "global_environment_control"
-    ]
-    instrumentation_options = [
-        item
-        for item in yaml_items
-        if item["kind"] == "instrumentation_option"
-    ]
+    controls = [item for item in items if item["kind"] == artifacts.CONTROL_KIND]
+    instrumentation_options = [item for item in items if item["kind"] == artifacts.OPTION_KIND]
     if len(controls) != 7:
         fail(f"wrong YAML global environment control count: {len(controls)}")
     if len(instrumentation_options) != 16:
@@ -338,21 +167,12 @@ def verify_environment_contract() -> None:
             fail(f"instrumentation option is not read by QylAutoInstrumentationOptions: {variable}")
 
     expected_by_signal = {
-        "traces": {
+        signal: {
             str(item["instrumentation_id"])
-            for item in yaml_items
-            if item["kind"] == "signal_specific_instrumentation_promise" and item["signal"] == "traces"
-        },
-        "metrics": {
-            str(item["instrumentation_id"])
-            for item in yaml_items
-            if item["kind"] == "signal_specific_instrumentation_promise" and item["signal"] == "metrics"
-        },
-        "logs": {
-            str(item["instrumentation_id"])
-            for item in yaml_items
-            if item["kind"] == "signal_specific_instrumentation_promise" and item["signal"] == "logs"
-        },
+            for item in items
+            if item["kind"] == artifacts.SIGNAL_KIND and item.get("signal") == signal
+        }
+        for signal in ["traces", "metrics", "logs"]
     }
     actual_by_signal = {
         "traces": parse_options_id_array(options, "TraceInstrumentationIds", id_constants),
@@ -607,14 +427,15 @@ def parse_switch_helper_keys(generator: str, helper_name: str) -> set[str]:
     return set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(0)))
 
 
-def verify_interceptor_target_coverage(generator: str, source_generated_keys: set[str]) -> None:
+def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: set[str]) -> None:
     kinds = parse_interceptor_kinds(generator)
     if not kinds:
         fail("InterceptorKind enum has no values")
 
     try:
         dispatch_block = generator.split("for (var index = 0; index < invocations.Length; index++)", 1)[1].split(
-            'context.AddSource("QylAutoInstrumentation.Interceptors.g.cs"', 1)[0]
+            'context.AddSource("QylAutoInstrumentation.Interceptors.g.cs"', 1
+        )[0]
     except IndexError:
         fail("EmitInterceptors dispatch block missing")
 
@@ -649,8 +470,8 @@ def verify_interceptor_target_coverage(generator: str, source_generated_keys: se
         fail("DbCommand target must route metric contract keys through GetDbMetricContractKeys")
     target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
 
-    missing_contract_keys = source_generated_keys - target_contract_keys
-    extra_contract_keys = target_contract_keys - source_generated_keys
+    missing_contract_keys = implemented_signal_keys - target_contract_keys
+    extra_contract_keys = target_contract_keys - implemented_signal_keys
     if missing_contract_keys or extra_contract_keys:
         fail(
             "generator target contract key mismatch: "
@@ -658,15 +479,16 @@ def verify_interceptor_target_coverage(generator: str, source_generated_keys: se
         )
 
 
-def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]) -> None:
+def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     generator = GENERATOR_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
-    source_generated_keys = yaml_signal_keys - unsupported_keys
-    if generator_keys != source_generated_keys:
+    implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
+    unsupported_keys = {str(item["key"]) for item in artifacts.unsupported_signal_items(contract)}
+    if generator_keys != implemented_signal_keys:
         fail(
             "generator signal key mismatch: "
-            f"missing={sorted(source_generated_keys - generator_keys)} "
-            f"extra={sorted(generator_keys - source_generated_keys)}"
+            f"missing={sorted(implemented_signal_keys - generator_keys)} "
+            f"extra={sorted(generator_keys - implemented_signal_keys)}"
         )
 
     if generator_keys & unsupported_keys:
@@ -697,13 +519,15 @@ def verify_generator_keys(yaml_signal_keys: set[str], unsupported_keys: set[str]
     if "InterceptsLocationAttribute(" in generator and "GetInterceptsLocationAttributeSyntax(" not in generator:
         fail("generator must emit InterceptsLocationAttribute through Roslyn GetInterceptsLocationAttributeSyntax")
 
-    verify_interceptor_target_coverage(generator, source_generated_keys)
+    verify_interceptor_target_coverage(generator, implemented_signal_keys)
 
 
 def main() -> None:
-    yaml_signal_keys, unsupported_keys = verify_yaml_vs_contract()
-    verify_generator_keys(yaml_signal_keys, unsupported_keys)
-    verify_environment_contract()
+    artifacts = load_artifacts()
+    contract = artifacts.load_contract()
+    verify_contract_artifacts(artifacts, contract)
+    verify_generator_keys(artifacts, contract)
+    verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
     verify_metric_contract()
     verify_behavior_semantics_contract()
