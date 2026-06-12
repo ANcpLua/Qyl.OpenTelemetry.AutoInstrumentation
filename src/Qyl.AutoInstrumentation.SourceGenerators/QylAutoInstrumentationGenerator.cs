@@ -80,7 +80,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitAzureClientInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitElasticInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitElasticInterceptor),
-            new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.SyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitWcfClientInterceptor),
+            new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, EmitWcfClientInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncUnaryInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncServerStreamingInterceptor),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, EmitGrpcNetClientAsyncClientStreamingInterceptor),
@@ -183,11 +183,48 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         foreach (var descriptor in s_matcherDescriptors)
         {
             if (descriptor.TryMatch(symbol, receiverType, out target))
+            {
+                EnsureTargetDeclaredByMatcher(descriptor, target);
+                target = target with
+                {
+                    MatcherName = descriptor.Name,
+                    MatcherReceiverTypePattern = descriptor.ReceiverTypePattern,
+                    MatcherFamily = descriptor.Family,
+                    MatcherMethodShape = descriptor.MethodShape,
+                    MatcherContractKeys = descriptor.ContractKeys,
+                };
                 return true;
+            }
         }
 
         target = default;
         return false;
+    }
+
+    private static void EnsureTargetDeclaredByMatcher(InterceptorMatcherDescriptor descriptor, InterceptorTarget target)
+    {
+        EnsureContractDeclaredByMatcher(descriptor, target.ContractKey, target.Kind);
+
+        if (target.AdditionalContractKeys is not { Length: > 0 } additionalContractKeys)
+            return;
+
+        foreach (var contractKey in additionalContractKeys)
+            EnsureContractDeclaredByMatcher(descriptor, contractKey, target.Kind);
+    }
+
+    private static void EnsureContractDeclaredByMatcher(
+        InterceptorMatcherDescriptor descriptor,
+        string contractKey,
+        InterceptorKind kind)
+    {
+        foreach (var declaredContractKey in descriptor.ContractKeys)
+        {
+            if (string.Equals(declaredContractKey, contractKey, StringComparison.Ordinal))
+                return;
+        }
+
+        throw new InvalidOperationException(
+            "Matcher descriptor '" + descriptor.Name + "' produced interceptor kind '" + kind + "' for undeclared contract key '" + contractKey + "'.");
     }
 
     private static void EmitInterceptors(
@@ -218,7 +255,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         for (var index = 0; index < invocations.Length; index++)
         {
             var invocation = invocations[index];
-            var descriptor = GetEmissionDescriptor(invocation.Target.Kind);
+            var descriptor = GetEmissionDescriptor(invocation.Target);
             descriptor.Emitter(builder, invocation, index);
         }
 
@@ -231,15 +268,38 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
-    private static InterceptorEmissionDescriptor GetEmissionDescriptor(InterceptorKind kind)
+    private static InterceptorEmissionDescriptor GetEmissionDescriptor(InterceptorTarget target)
     {
         foreach (var descriptor in s_emissionDescriptors)
         {
-            if (descriptor.Kind == kind)
-                return descriptor;
+            if (descriptor.Kind != target.Kind)
+                continue;
+
+            EnsureEmissionDescriptorMatchesMatcher(target, descriptor);
+            return descriptor;
         }
 
-        throw new InvalidOperationException("Unsupported interceptor kind: " + kind);
+        throw new InvalidOperationException("Unsupported interceptor kind: " + target.Kind);
+    }
+
+    private static void EnsureEmissionDescriptorMatchesMatcher(
+        InterceptorTarget target,
+        InterceptorEmissionDescriptor descriptor)
+    {
+        if (string.IsNullOrEmpty(target.MatcherName))
+            throw new InvalidOperationException("Interceptor kind '" + target.Kind + "' has no matcher descriptor.");
+
+        if (target.MatcherFamily != descriptor.Family)
+        {
+            throw new InvalidOperationException(
+                "Matcher descriptor '" + target.MatcherName + "' and emission descriptor '" + descriptor.Kind + "' disagree on emitter family.");
+        }
+
+        if (target.MatcherMethodShape != descriptor.MethodShape)
+        {
+            throw new InvalidOperationException(
+                "Matcher descriptor '" + target.MatcherName + "' and emission descriptor '" + descriptor.Kind + "' disagree on method shape.");
+        }
     }
 
     private static void EmitActivityDisposeFinally(StringBuilder builder)
@@ -3969,7 +4029,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         string TypeParameterList = "",
         string ConstraintClauses = "",
         string ExtensionContainingType = "",
-        EquatableArray<string> AdditionalContractKeys = default);
+        EquatableArray<string> AdditionalContractKeys = default,
+        string MatcherName = "",
+        string MatcherReceiverTypePattern = "",
+        InterceptorEmitterFamily MatcherFamily = default,
+        InterceptorMethodShape MatcherMethodShape = default,
+        EquatableArray<string> MatcherContractKeys = default);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }
