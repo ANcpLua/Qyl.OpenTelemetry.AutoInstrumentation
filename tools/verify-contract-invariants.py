@@ -17,6 +17,7 @@ IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
 SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
 RUNTIME_SEMANTICS_PATH = ROOT / "docs" / "RUNTIME_SEMANTICS.md"
+HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
@@ -181,6 +182,21 @@ def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str
         for token in tokens:
             if token not in runtime_semantics:
                 fail(f"{key} verified_managed boundary is not documented in RUNTIME_SEMANTICS.md: {token}")
+
+
+def verify_handoff_real_demo_coverage(artifacts: ModuleType, contract: dict[str, Any]) -> None:
+    evidence_real_demo_verifiers = {
+        evidence
+        for item in artifacts.implemented_signal_items(contract)
+        for evidence in item.get("evidence", [])
+        if isinstance(evidence, str)
+        and evidence.startswith("tools/verify-real-")
+        and evidence.endswith("-demo.py")
+    }
+    handoff_gate = HANDOFF_GATE_PATH.read_text()
+    missing = sorted(path for path in evidence_real_demo_verifiers if path not in handoff_gate)
+    if missing:
+        fail(f"real demo evidence missing from whole-goal handoff gate: {missing}")
 
 
 def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any]) -> None:
@@ -687,6 +703,7 @@ def main() -> None:
     contract = artifacts.load_contract()
     verify_contract_artifacts(artifacts, contract)
     verify_managed_evidence_boundaries(artifacts, contract)
+    verify_handoff_real_demo_coverage(artifacts, contract)
     verify_generator_keys(artifacts, contract)
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
