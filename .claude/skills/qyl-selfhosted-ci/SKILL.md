@@ -101,6 +101,40 @@ also persists the SDK across runs (no re-download). macOS needs no override.
   Docker version) and removing duplicate tags. The named volumes `paperless_*` and
   `bsc_texlive-cache` hold real data — leave them.
 
+## OrbStack on demand (host performance)
+
+OrbStack VMs cause noticeable lag on the host, so machines stay **stopped when CI is idle**:
+
+```bash
+orb start qyl-ci    # BEFORE pushing anything that triggers CI
+orb stop qyl-ci     # when done
+```
+
+While `qyl-ci` is stopped, `qyl-linux` shows offline and Linux jobs **queue** (they don't
+fail) until the machine is back. `qyl-macos` is unaffected. Quitting the OrbStack app
+entirely also kills the host Docker engine (it IS the docker daemon) — fine when nothing
+needs docker, recoverable with `open -a OrbStack`. The machine `otelvm` is unrelated to
+this repo; it was found idle and stopped on 2026-06-12.
+
+## Going public (the transition checklist)
+
+The repo goes public only after the deliberate history overhaul, and only by Alex's hand.
+Order matters:
+
+1. **Rewrite history first** — semantically compacted commits; strip internal-only docs and
+   notes. Full-history gitleaks scan on 2026-06-12 found zero real secrets (4 false
+   positives: the YAML contract key `signals.logs.LOG4NET`). Re-run before the flip:
+   `gitleaks git --no-banner .`
+2. **Decommission both self-hosted runners BEFORE the visibility change** — on a public
+   repo, fork PRs could execute arbitrary code on the dev Mac:
+   `cd ~/actions-runners/qyl-macos && ./svc.sh stop && ./svc.sh uninstall && ./config.sh remove --token <removal-token>`
+   (same inside `qyl-ci`, then `orb delete qyl-ci`).
+3. **Switch workflows back to `ubuntu-latest`/`macos-latest`** — public repos get unlimited
+   free GitHub-hosted minutes, so the self-hosted setup becomes unnecessary the moment the
+   repo is public. Drop the `DOTNET_INSTALL_DIR` note with it.
+4. Review README/AGENTS.md for internal-only constraints before they ship.
+5. Flip visibility (human action), then re-enable trusted publishing checks.
+
 ## Security and constraints
 
 - Self-hosted runners are safe here **only because the repo is private and solo**. If the
