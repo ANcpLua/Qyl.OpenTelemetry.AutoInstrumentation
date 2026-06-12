@@ -39,6 +39,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         StringBuilder builder,
         InterceptorTarget target);
 
+    private delegate string TraceStringProvider(
+        InterceptorTarget target);
+
+    private delegate bool TraceBoolProvider(
+        InterceptorTarget target);
+
     private delegate bool SymbolInterceptorMatcher(
         IMethodSymbol symbol,
         out InterceptorTarget target);
@@ -325,12 +331,13 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceInterceptorBodyDescriptor descriptor)
     {
         var target = invocation.Target;
-        var signatureIsAsync = target.IsAsync && !descriptor.RuntimeObservesAsync;
+        var runtimeObservesAsync = ShouldRuntimeObserveAsync(target, descriptor);
+        var signatureIsAsync = target.IsAsync && !runtimeObservesAsync;
         EmitAttributeAndSignature(
             builder,
             invocation.Location,
             target.ReturnType,
-            descriptor.MethodPrefix + "_" + target.MethodName,
+            GetTraceMethodPrefix(target, descriptor),
             index,
             target.ReceiverType,
             descriptor.ReceiverName,
@@ -355,22 +362,36 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("                ");
         builder.AppendLine(descriptor.RecordExceptionStatement);
         descriptor.AppendAfterExceptionStatement?.Invoke(builder, target);
-        if (descriptor.RuntimeObservesAsync)
+        if (runtimeObservesAsync)
             builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");
-        if (!descriptor.RuntimeObservesAsync)
+        if (!runtimeObservesAsync)
             EmitActivityDisposeFinally(builder);
         builder.AppendLine("        }");
         builder.AppendLine();
     }
+
+    private static string GetTraceMethodPrefix(
+        InterceptorTarget target,
+        TraceInterceptorBodyDescriptor descriptor)
+        => descriptor.MethodPrefixProvider is not null
+            ? descriptor.MethodPrefixProvider(target)
+            : descriptor.MethodPrefix + "_" + target.MethodName;
+
+    private static bool ShouldRuntimeObserveAsync(
+        InterceptorTarget target,
+        TraceInterceptorBodyDescriptor descriptor)
+        => descriptor.RuntimeObservesAsyncWhen is not null
+            ? descriptor.RuntimeObservesAsyncWhen(target)
+            : descriptor.RuntimeObservesAsync;
 
     private static void EmitTraceInvocation(
         StringBuilder builder,
         InterceptorTarget target,
         TraceInterceptorBodyDescriptor descriptor)
     {
-        if (target.IsAsync && descriptor.RuntimeObservesAsync)
+        if (target.IsAsync && ShouldRuntimeObserveAsync(target, descriptor))
         {
             builder.Append("                var resultTask = ");
             AppendInvocationCall(builder, target, descriptor.ReceiverName);
@@ -503,6 +524,21 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedWcfClient.StartActivity(");
         AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(')');
+    }
+
+    private static string GetElasticMethodPrefix(InterceptorTarget target)
+        => target.InstrumentationId + "_" + target.MethodName;
+
+    private static bool ShouldRuntimeObserveElasticAsync(InterceptorTarget target)
+        => target.IsAsync && HasByRefParameters(target.Parameters);
+
+    private static void AppendElasticStartActivity(StringBuilder builder, InterceptorTarget target)
+    {
+        builder.Append("global::Qyl.AutoInstrumentation.QylInterceptedElastic.StartActivity(");
+        AppendStringLiteral(builder, target.InstrumentationId);
         builder.Append(", ");
         AppendStringLiteral(builder, target.MethodName);
         builder.Append(')');
@@ -703,77 +739,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 "global::Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(activity, exception);"));
 
     private static void EmitElasticInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        var hasByRefParameters = HasByRefParameters(target.Parameters);
-        EmitAttributeAndSignature(
+        => EmitTraceInterceptor(
             builder,
-            invocation.Location,
-            target.ReturnType,
-            target.InstrumentationId + "_" + target.MethodName,
+            invocation,
             index,
-            target.ReceiverType,
-            "client",
-            target.Parameters,
-            target.IsAsync && !hasByRefParameters,
-            target.TypeParameterList,
-            target.ConstraintClauses);
-        builder.AppendLine("        {");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedElastic.StartActivity(");
-        AppendStringLiteral(builder, target.InstrumentationId);
-        builder.Append(", ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            if (hasByRefParameters)
-            {
-                builder.Append("                var resultTask = ");
-                AppendInvocationCall(builder, target, "client");
-                builder.AppendLine(";");
-                builder.AppendLine("                return global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync(resultTask, activity);");
-            }
-            else if (string.Equals(target.ReturnType, "global::System.Threading.Tasks.Task", StringComparison.Ordinal))
-            {
-                builder.Append("                await ");
-                AppendInvocationCall(builder, target, "client");
-                builder.AppendLine(".ConfigureAwait(false);");
-                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
-            }
-            else
-            {
-                builder.Append("                var result = await ");
-                AppendInvocationCall(builder, target, "client");
-                builder.AppendLine(".ConfigureAwait(false);");
-                builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
-                builder.AppendLine("                return result;");
-            }
-        }
-        else
-        {
-            builder.Append("                var result = ");
-            AppendInvocationCall(builder, target, "client");
-            builder.AppendLine(";");
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);");
-            builder.AppendLine("                return result;");
-        }
-
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);");
-        if (target.IsAsync && hasByRefParameters)
-            builder.AppendLine("                activity?.Dispose();");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        if (!target.IsAsync || !hasByRefParameters)
-            EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
+            new TraceInterceptorBodyDescriptor(
+                "Elastic",
+                "client",
+                AppendElasticStartActivity,
+                "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(activity);",
+                "global::Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(activity, exception);",
+                ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync",
+                MethodPrefixProvider: GetElasticMethodPrefix,
+                RuntimeObservesAsyncWhen: ShouldRuntimeObserveElasticAsync));
 
     private static void EmitWcfClientInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
         => EmitTraceInterceptor(
@@ -3774,7 +3752,9 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceStatementEmitter? AppendBeforeActivityStatement = null,
         TraceStatementEmitter? AppendAfterActivityStatement = null,
         TraceStatementEmitter? AppendAfterSuccessStatement = null,
-        TraceStatementEmitter? AppendAfterExceptionStatement = null);
+        TraceStatementEmitter? AppendAfterExceptionStatement = null,
+        TraceStringProvider? MethodPrefixProvider = null,
+        TraceBoolProvider? RuntimeObservesAsyncWhen = null);
 
     private readonly record struct InterceptorMatcherDescriptor
     {
