@@ -22,6 +22,7 @@ RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstr
 ACTIVITY_STATUS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityStatus.cs"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
+ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylActivityNames.cs"
 DIAGNOSTIC_SEMANTICS_ROOT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Semantics"
 RUNTIME_EMISSION_ROOTS = [
     ROOT / "src" / "Qyl.AutoInstrumentation",
@@ -488,6 +489,41 @@ def verify_runtime_public_telemetry_payload_access_policy() -> None:
         for token in forbidden_tokens:
             if token in text:
                 fail(f"runtime-public telemetry payload reader must not use reflection/dynamic access: {relative_path} {token}")
+
+
+def verify_bounded_activity_name_policy() -> None:
+    names = ACTIVITY_NAMES_PATH.read_text()
+    for token in [
+        "Composes the bounded, low-cardinality span names emitted by qyl auto-instrumentation.",
+        "Every input is already low-cardinality by construction",
+        "private const string HttpFallback = \"HTTP\";",
+        "private const string GrpcFallback = \"gRPC\";",
+        "private const string DbFallback = \"DB CLIENT\";",
+        "private const string SqlFallback = \"SQL CLIENT\";",
+        "internal const string KafkaMessage = \"Kafka message\";",
+        "internal const string MongoDbCommand = \"MongoDB command\";",
+        "internal const string RabbitMqPublish = \"RabbitMQ publish\";",
+        "public static string HttpClient(string? normalizedMethod)",
+        "public static string HttpServer(string? normalizedMethod, string? route)",
+        "public static string GrpcClient(string? service, string? method)",
+        "public static string DbCommand(string? operation)",
+        "public static string SqlClientCommand(string? operation)",
+    ]:
+        if token not in names:
+            fail(f"QylActivityNames must preserve bounded span-name policy token: {token}")
+
+    forbidden_parameter_fragments = ["url", "uri", "path", "query", "exception", "message", "statement", "text"]
+    for match in re.finditer(r"public static string [A-Za-z0-9]+\(([^)]*)\)", names):
+        parameters = [
+            parameter.strip().split(" ")[-1].strip("?")
+            for parameter in match.group(1).split(",")
+            if parameter.strip()
+        ]
+        for parameter in parameters:
+            lowered = parameter.lower()
+            for fragment in forbidden_parameter_fragments:
+                if fragment in lowered:
+                    fail(f"QylActivityNames public span-name composer must not accept unbounded parameter '{parameter}'")
 
 
 def parse_interceptor_emitter_blocks(generator: str) -> dict[str, str]:
@@ -1740,6 +1776,7 @@ def main() -> None:
     verify_metric_contract()
     verify_runtime_public_telemetry_status_policy()
     verify_runtime_public_telemetry_payload_access_policy()
+    verify_bounded_activity_name_policy()
     verify_behavior_semantics_contract()
     verify_productive_mechanism_contract()
     print("contract-invariants-ok")
