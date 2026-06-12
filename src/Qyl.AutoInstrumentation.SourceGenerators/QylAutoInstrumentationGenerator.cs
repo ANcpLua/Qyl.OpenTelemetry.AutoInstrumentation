@@ -31,6 +31,44 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptedInvocation invocation,
         int index);
 
+    private delegate bool SymbolInterceptorMatcher(
+        IMethodSymbol symbol,
+        out InterceptorTarget target);
+
+    private delegate bool ReceiverInterceptorMatcher(
+        IMethodSymbol symbol,
+        ITypeSymbol? receiverType,
+        out InterceptorTarget target);
+
+    private static readonly ImmutableArray<InterceptorMatcherDescriptor> s_matcherDescriptors =
+        ImmutableArray.Create(
+            new InterceptorMatcherDescriptor("HttpClient", "global::System.Net.Http.HttpClient", ContractKeys("signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"), InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, TryGetHttpClientInvocation),
+            new InterceptorMatcherDescriptor("HttpWebRequest", "global::System.Net.HttpWebRequest", ContractKeys("signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"), InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncOrSyncValue, TryGetHttpWebRequestInvocation),
+            new InterceptorMatcherDescriptor("AspNetCoreWebApplicationBuilderBuild", "global::Microsoft.AspNetCore.Builder.WebApplicationBuilder", "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.BuilderInitialization, TryGetAspNetCoreWebApplicationBuilderBuildInvocation),
+            new InterceptorMatcherDescriptor("AspNetCoreRequestDelegate", "global::Microsoft.AspNetCore.Http.RequestDelegate", "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.AsyncTask, TryGetAspNetCoreRequestDelegateInvocation),
+            new InterceptorMatcherDescriptor("AspNetCoreEndpointMap", "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions", "signals.traces.ASPNETCORE", InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, TryGetAspNetCoreEndpointMapInvocation),
+            new InterceptorMatcherDescriptor("MeterProviderBuilderAddMeter", "global::OpenTelemetry.Metrics.MeterProviderBuilder", ContractKeys("signals.metrics.ASPNETCORE", "signals.metrics.HTTPCLIENT", "signals.metrics.NETRUNTIME", "signals.metrics.NPGSQL", "signals.metrics.NSERVICEBUS", "signals.metrics.PROCESS", "signals.metrics.SQLCLIENT"), InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, TryGetMeterProviderBuilderAddMeterInvocation),
+            new InterceptorMatcherDescriptor("AzureClient", "Azure.*Client", "signals.traces.AZURE", InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, TryGetAzureClientInvocation),
+            new InterceptorMatcherDescriptor("Elastic", "Elastic.Clients.Elasticsearch.*Client|Elastic.Transport.ITransport", ContractKeys("signals.traces.ELASTICSEARCH", "signals.traces.ELASTICTRANSPORT"), InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, TryGetElasticInvocation),
+            new InterceptorMatcherDescriptor("WcfClient", "global::System.ServiceModel.ClientBase<TChannel>", "signals.traces.WCFCLIENT", InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, TryGetWcfClientInvocation),
+            new InterceptorMatcherDescriptor("GrpcNetClientUnary", "global::Grpc.Core.ClientBase<T>", "signals.traces.GRPCNETCLIENT", InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, TryGetGrpcNetClientAsyncUnaryInvocation),
+            new InterceptorMatcherDescriptor("GrpcNetClientStreaming", "global::Grpc.Core.ClientBase<T>", "signals.traces.GRPCNETCLIENT", InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, TryGetGrpcNetClientStreamingInvocation),
+            new InterceptorMatcherDescriptor("Kafka", "Confluent.Kafka.IProducer<TKey,TValue>|Confluent.Kafka.IConsumer<TKey,TValue>", "signals.traces.KAFKA", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncValue, TryGetKafkaInvocation),
+            new InterceptorMatcherDescriptor("MassTransit", "MassTransit.IPublishEndpoint|MassTransit.ISendEndpoint|MassTransit.ISendEndpointProvider", "signals.traces.MASSTRANSIT", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, TryGetMassTransitInvocation),
+            new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IEndpointInstance|NServiceBus.IPipelineContext", ContractKeys("signals.traces.NSERVICEBUS", "signals.metrics.NSERVICEBUS"), InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, TryGetNServiceBusInvocation),
+            new InterceptorMatcherDescriptor("Quartz", "Quartz.IJob", "signals.traces.QUARTZ", InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, TryGetQuartzInvocation),
+            new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabase", "signals.traces.STACKEXCHANGEREDIS", InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, TryGetStackExchangeRedisInvocation),
+            new InterceptorMatcherDescriptor("GraphQL", "GraphQL.IDocumentExecuter", "signals.traces.GRAPHQL", InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, TryGetGraphQlInvocation),
+            new InterceptorMatcherDescriptor("MongoDb", "MongoDB.Driver.IMongoCollection<TDocument>", "signals.traces.MONGODB", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetMongoDbInvocation),
+            new InterceptorMatcherDescriptor("RabbitMq", "RabbitMQ.Client.IModel|RabbitMQ.Client.IChannel", "signals.traces.RABBITMQ", InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, TryGetRabbitMqInvocation),
+            new InterceptorMatcherDescriptor("LoggerExtensions", "global::Microsoft.Extensions.Logging.LoggerExtensions", "signals.logs.ILOGGER", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLoggerExtensionInvocation),
+            new InterceptorMatcherDescriptor("ILogger", "global::Microsoft.Extensions.Logging.ILogger", "signals.logs.ILOGGER", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLoggerInvocation),
+            new InterceptorMatcherDescriptor("NLog", "NLog.Logger", "signals.logs.NLOG", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetNLogInvocation),
+            new InterceptorMatcherDescriptor("Log4Net", "log4net.ILog|log4net.Core.ILogger", "signals.logs.LOG4NET", InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, TryGetLog4NetInvocation),
+            new InterceptorMatcherDescriptor("EntityFrameworkCoreDbContext", "global::Microsoft.EntityFrameworkCore.DbContext", "signals.traces.ENTITYFRAMEWORKCORE", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetEntityFrameworkCoreDbContextInvocation),
+            new InterceptorMatcherDescriptor("EntityFrameworkCoreQueryable", "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions", "signals.traces.ENTITYFRAMEWORKCORE", InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncValue, TryGetEntityFrameworkCoreQueryableInvocation),
+            new InterceptorMatcherDescriptor("DbCommand", "global::System.Data.Common.DbCommand", ContractKeys("signals.traces.ADONET", "signals.traces.MYSQLCONNECTOR", "signals.traces.MYSQLDATA", "signals.traces.NPGSQL", "signals.traces.ORACLEMDA", "signals.traces.SQLCLIENT", "signals.traces.SQLITE", "signals.metrics.NPGSQL", "signals.metrics.SQLCLIENT"), InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, TryGetDbCommandInvocation));
+
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         ImmutableArray.Create(
             new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, InterceptorEmitterFamily.HttpClient, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.HttpStatusAndException, InterceptorDurationPolicy.RuntimeMetric, EmitHttpClientInterceptor),
@@ -142,83 +180,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
     private static bool TryGetInvocation(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
     {
-        if (TryGetHttpClientInvocation(symbol, out target))
-            return true;
-
-        if (TryGetHttpWebRequestInvocation(symbol, receiverType, out target))
-            return true;
-
-        if (TryGetAspNetCoreWebApplicationBuilderBuildInvocation(symbol, out target))
-            return true;
-
-        if (TryGetAspNetCoreRequestDelegateInvocation(symbol, out target))
-            return true;
-
-        if (TryGetAspNetCoreEndpointMapInvocation(symbol, out target))
-            return true;
-
-        if (TryGetMeterProviderBuilderAddMeterInvocation(symbol, out target))
-            return true;
-
-        if (TryGetAzureClientInvocation(symbol, out target))
-            return true;
-
-        if (TryGetElasticInvocation(symbol, out target))
-            return true;
-
-        if (TryGetWcfClientInvocation(symbol, out target))
-            return true;
-
-        if (TryGetGrpcNetClientAsyncUnaryInvocation(symbol, out target))
-            return true;
-
-        if (TryGetGrpcNetClientStreamingInvocation(symbol, out target))
-            return true;
-
-        if (TryGetKafkaInvocation(symbol, out target))
-            return true;
-
-        if (TryGetMassTransitInvocation(symbol, out target))
-            return true;
-
-        if (TryGetNServiceBusInvocation(symbol, out target))
-            return true;
-
-        if (TryGetQuartzInvocation(symbol, out target))
-            return true;
-
-        if (TryGetStackExchangeRedisInvocation(symbol, out target))
-            return true;
-
-        if (TryGetGraphQlInvocation(symbol, out target))
-            return true;
-
-        if (TryGetMongoDbInvocation(symbol, out target))
-            return true;
-
-        if (TryGetRabbitMqInvocation(symbol, out target))
-            return true;
-
-        if (TryGetLoggerExtensionInvocation(symbol, out target))
-            return true;
-
-        if (TryGetLoggerInvocation(symbol, out target))
-            return true;
-
-        if (TryGetNLogInvocation(symbol, out target))
-            return true;
-
-        if (TryGetLog4NetInvocation(symbol, out target))
-            return true;
-
-        if (TryGetEntityFrameworkCoreDbContextInvocation(symbol, out target))
-            return true;
-
-        if (TryGetEntityFrameworkCoreQueryableInvocation(symbol, out target))
-            return true;
-
-        if (TryGetDbCommandInvocation(symbol, out target))
-            return true;
+        foreach (var descriptor in s_matcherDescriptors)
+        {
+            if (descriptor.TryMatch(symbol, receiverType, out target))
+                return true;
+        }
 
         target = default;
         return false;
@@ -3876,6 +3842,90 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         InterceptorErrorPolicy ErrorPolicy,
         InterceptorDurationPolicy DurationPolicy,
         InterceptorEmitter Emitter);
+
+    private readonly record struct InterceptorMatcherDescriptor
+    {
+        private readonly SymbolInterceptorMatcher? _symbolMatcher;
+        private readonly ReceiverInterceptorMatcher? _receiverMatcher;
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            string contractKey,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            SymbolInterceptorMatcher matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+        {
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            EquatableArray<string> contractKeys,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            SymbolInterceptorMatcher matcher)
+        {
+            Name = name;
+            ReceiverTypePattern = receiverTypePattern;
+            ContractKeys = contractKeys;
+            Family = family;
+            MethodShape = methodShape;
+            _symbolMatcher = matcher;
+            _receiverMatcher = null;
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            string contractKey,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            ReceiverInterceptorMatcher matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+        {
+        }
+
+        public InterceptorMatcherDescriptor(
+            string name,
+            string receiverTypePattern,
+            EquatableArray<string> contractKeys,
+            InterceptorEmitterFamily family,
+            InterceptorMethodShape methodShape,
+            ReceiverInterceptorMatcher matcher)
+        {
+            Name = name;
+            ReceiverTypePattern = receiverTypePattern;
+            ContractKeys = contractKeys;
+            Family = family;
+            MethodShape = methodShape;
+            _symbolMatcher = null;
+            _receiverMatcher = matcher;
+        }
+
+        public string Name { get; }
+
+        public string ReceiverTypePattern { get; }
+
+        public EquatableArray<string> ContractKeys { get; }
+
+        public InterceptorEmitterFamily Family { get; }
+
+        public InterceptorMethodShape MethodShape { get; }
+
+        public bool TryMatch(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
+        {
+            if (_receiverMatcher is not null)
+                return _receiverMatcher(symbol, receiverType, out target);
+
+            if (_symbolMatcher is not null)
+                return _symbolMatcher(symbol, out target);
+
+            target = default;
+            return false;
+        }
+    }
 
     private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false);
 

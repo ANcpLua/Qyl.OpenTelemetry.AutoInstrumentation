@@ -421,6 +421,19 @@ def parse_emission_descriptor_kinds(generator: str) -> set[str]:
     return descriptor_kinds
 
 
+def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
+    try:
+        descriptor_block = generator.split("s_matcherDescriptors =", 1)[1].split("s_emissionDescriptors =", 1)[0]
+    except IndexError:
+        fail("s_matcherDescriptors block missing from generator")
+
+    matcher_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', descriptor_block))
+    if not matcher_keys:
+        fail("s_matcherDescriptors must describe source-visible matcher contract keys")
+
+    return matcher_keys
+
+
 def parse_contract_keys_call_keys(generator: str) -> set[str]:
     keys: set[str] = set()
     for match in re.finditer(r"ContractKeys\((.*?)\)", generator, re.DOTALL):
@@ -475,6 +488,21 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     if "descriptor.Emitter(builder, invocation, index);" not in dispatch_block:
         fail("emitter dispatch must invoke the descriptor emitter")
 
+    try:
+        matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(
+            "private static void EmitInterceptors(",
+            1,
+        )[0]
+    except IndexError:
+        fail("TryGetInvocation matcher dispatch block missing")
+
+    if "foreach (var descriptor in s_matcherDescriptors)" not in matcher_dispatch_block:
+        fail("matcher dispatch must use the descriptor table")
+    if "descriptor.TryMatch(symbol, receiverType, out target)" not in matcher_dispatch_block:
+        fail("matcher dispatch must invoke descriptor.TryMatch")
+    if re.search(r"if\s*\(\s*TryGet[A-Za-z0-9]+Invocation\(", matcher_dispatch_block) is not None:
+        fail("matcher dispatch must not reintroduce hand-coded TryGet*Invocation sequencing")
+
     descriptor_kinds = parse_emission_descriptor_kinds(generator)
     descriptor_missing = kinds - descriptor_kinds
     descriptor_extra = descriptor_kinds - kinds
@@ -493,6 +521,11 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
 
     target_contract_keys = collect_generator_target_contract_keys(generator)
+    matcher_contract_keys = parse_matcher_descriptor_contract_keys(generator)
+    missing_matcher_contract_keys = target_contract_keys - matcher_contract_keys
+    if missing_matcher_contract_keys:
+        fail(f"generator target contract keys missing matcher descriptors: {sorted(missing_matcher_contract_keys)}")
+
     missing_contract_keys = implemented_signal_keys - target_contract_keys
     extra_contract_keys = target_contract_keys - implemented_signal_keys
     if missing_contract_keys or extra_contract_keys:
