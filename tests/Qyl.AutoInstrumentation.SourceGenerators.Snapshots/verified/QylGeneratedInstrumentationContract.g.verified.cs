@@ -12,8 +12,8 @@ internal static class QylGeneratedInstrumentationContract
     public const int LogsSignalSpecificPromiseCount = 3;
     public const int UniqueInstrumentationIdCount = 31;
     public const int ImplementedSignalPromiseCount = 33;
-    public const int SourceInterceptorSignalPromiseCount = 24;
-    public const int RuntimePublicTelemetrySignalPromiseCount = 8;
+    public const int SourceInterceptorSignalPromiseCount = 25;
+    public const int RuntimePublicTelemetrySignalPromiseCount = 7;
     public const int UnsupportedNativeAotSignalPromiseCount = 4;
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     public const string AspNetCoreComponentsNavigationMetricName = "aspnetcore.components.navigation";
@@ -181,6 +181,7 @@ internal static class QylGeneratedInstrumentationContract
         "signals.traces.SQLITE",
         "signals.traces.STACKEXCHANGEREDIS",
         "signals.traces.WCFCLIENT",
+        "signals.metrics.NPGSQL",
         "signals.metrics.NSERVICEBUS",
         "signals.metrics.SQLCLIENT",
         "signals.logs.ILOGGER",
@@ -196,7 +197,6 @@ internal static class QylGeneratedInstrumentationContract
         "signals.metrics.ASPNETCORE",
         "signals.metrics.HTTPCLIENT",
         "signals.metrics.NETRUNTIME",
-        "signals.metrics.NPGSQL",
         "signals.metrics.PROCESS",
     };
 

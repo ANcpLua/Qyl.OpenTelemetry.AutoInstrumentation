@@ -145,7 +145,7 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 | 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 14 | `signals.traces.MYSQLCONNECTOR` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` |
 | 15 | `signals.traces.MYSQLDATA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` |
-| 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` |
+| 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 17 | `signals.traces.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 18 | `signals.traces.ORACLEMDA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` |
 | 19 | `signals.traces.RABBITMQ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
@@ -160,7 +160,7 @@ The upstream OpenTelemetry contract, qyl mechanism ownership, and generated reso
 | 28 | `signals.metrics.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` |
 | 29 | `signals.metrics.HTTPCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_managed` |
 | 30 | `signals.metrics.NETRUNTIME` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` |
-| 31 | `signals.metrics.NPGSQL` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` |
+| 31 | `signals.metrics.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |
 | 32 | `signals.metrics.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` |
 | 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` |
 | 34 | `signals.metrics.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` |

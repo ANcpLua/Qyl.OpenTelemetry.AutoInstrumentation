@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.RealNpgsqlDemo</RootNamespace>
+    <AssemblyName>Qyl.RealNpgsqlDemo</AssemblyName>
+    <Description>Real zero-code Npgsql DbCommand source-interceptor proof for qyl.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj"
+                      Condition="'$(PublishAot)' != 'true'"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <Analyzer Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\bin\Release\netstandard2.0\Qyl.AutoInstrumentation.SourceGenerators.dll"
+              Condition="'$(PublishAot)' == 'true'" />
+  </ItemGroup>
+
+  <Import Project="..\..\src\Qyl.AutoInstrumentation\buildTransitive\Qyl.AutoInstrumentation.targets" />
+
+</Project>

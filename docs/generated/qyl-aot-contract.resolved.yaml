@@ -494,11 +494,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: compile_binding_only
+  evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealNpgsqlDemo
+  - tools/verify-real-npgsql-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.NSERVICEBUS
   signal: traces
@@ -942,16 +944,18 @@ contract_items:
   - .NET Framework
   index: 31
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
-  lane: runtime_public_telemetry
+  lane: source_interceptor
   qyl_status: implemented
-  call_site_visibility: library_internal
-  payload_access: typed_public
-  evidence_level: compile_binding_only
-  primary_owner: Qyl public telemetry listeners/meters
+  call_site_visibility: user_code
+  payload_access: not_applicable
+  evidence_level: verified_nativeaot
+  primary_owner: QylAutoInstrumentationGenerator + QylDbClientMetrics
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
+  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.AutoInstrumentation/QylDbClientMetrics.cs
+  - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealNpgsqlDemo
+  - tools/verify-real-npgsql-demo.py
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NSERVICEBUS
   signal: metrics

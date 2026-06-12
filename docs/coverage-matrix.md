@@ -31,19 +31,19 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | `environment_control` | 7 |
 | `framework_initialization` | 1 |
 | `instrumentation_option` | 16 |
-| `runtime_public_telemetry` | 8 |
-| `source_interceptor` | 24 |
+| `runtime_public_telemetry` | 7 |
+| `source_interceptor` | 25 |
 | `unsupported_nativeaot` | 4 |
 
 ## Evidence counts
 
 | Evidence level | Count |
 |---|---:|
-| `compile_binding_only` | 10 |
+| `compile_binding_only` | 8 |
 | `none` | 4 |
 | `option_bound` | 23 |
 | `verified_managed` | 17 |
-| `verified_nativeaot` | 6 |
+| `verified_nativeaot` | 8 |
 
 ## Matrix
 
@@ -64,7 +64,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 13 | `signals.traces.MONGODB` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 14 | `signals.traces.MYSQLCONNECTOR` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 15 | `signals.traces.MYSQLDATA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
-| 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
+| 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 17 | `signals.traces.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 18 | `signals.traces.ORACLEMDA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `compile_binding_only` | QylAutoInstrumentationGenerator |
 | 19 | `signals.traces.RABBITMQ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
@@ -79,7 +79,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 28 | `signals.metrics.ASPNETCORE` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
 | 29 | `signals.metrics.HTTPCLIENT` | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_managed` | Qyl public telemetry listeners/meters |
 | 30 | `signals.metrics.NETRUNTIME` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` | Qyl public telemetry listeners/meters |
-| 31 | `signals.metrics.NPGSQL` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `compile_binding_only` | Qyl public telemetry listeners/meters |
+| 31 | `signals.metrics.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator + QylDbClientMetrics |
 | 32 | `signals.metrics.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator + QylNServiceBusMetrics |
 | 33 | `signals.metrics.PROCESS` | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_managed` | Qyl public telemetry listeners/meters |
 | 34 | `signals.metrics.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator + QylDbClientMetrics |
