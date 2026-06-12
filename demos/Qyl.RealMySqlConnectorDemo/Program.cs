@@ -1,0 +1,116 @@
+using System.Diagnostics;
+using System.Globalization;
+using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using MySqlConnector;
+using Qyl.AutoInstrumentation;
+
+var capturedActivities = new List<CapturedActivity>();
+using var activityListener = new ActivityListener
+{
+    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+    ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
+};
+ActivitySource.AddActivityListener(activityListener);
+
+for (var index = 0; index < 2; index++)
+{
+    try
+    {
+        using var command = new MySqlCommand(index is 0 ? "SELECT 1" : "SELECT missing_column");
+        _ = command.ExecuteScalar();
+    }
+    catch (InvalidOperationException exception)
+    {
+        Console.WriteLine("expected-mysqlconnector-error=" + exception.GetType().Name);
+    }
+}
+
+var report = MySqlConnectorReport.Create(
+    RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
+    capturedActivities.ToArray());
+
+var json = JsonSerializer.Serialize(report, RealMySqlConnectorJsonContext.Default.MySqlConnectorReport);
+Console.WriteLine(json);
+
+return report.Pass ? 0 : 1;
+
+internal sealed record CapturedActivity(
+    string Name,
+    string Kind,
+    string Status,
+    IReadOnlyDictionary<string, string> Tags)
+{
+    public static CapturedActivity From(Activity activity)
+        => new(
+            activity.DisplayName,
+            activity.Kind.ToString(),
+            activity.Status.ToString(),
+            activity.TagObjects.ToDictionary(
+                static tag => tag.Key,
+                static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
+                StringComparer.Ordinal));
+}
+
+internal sealed record MySqlConnectorReport(
+    string RuntimeMode,
+    bool Pass,
+    string[] Failures,
+    CapturedActivity[] Activities)
+{
+    public static MySqlConnectorReport Create(string runtimeMode, CapturedActivity[] activities)
+    {
+        var failures = new List<string>();
+        var mysqlSpans = activities
+            .Where(static activity =>
+                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
+                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.DbClient) &&
+                activity.Tags.TryGetValue(QylSemanticAttributes.DbSystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, QylSemanticAttributes.DbSystemMysql))
+            .ToArray();
+
+        if (mysqlSpans.Length != 2)
+            failures.Add($"expected 2 MySqlConnector command spans, got {mysqlSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+
+        foreach (var span in mysqlSpans)
+        {
+            if (!StringComparer.Ordinal.Equals(span.Name, "DB SELECT"))
+                failures.Add($"unexpected MySqlConnector span name: {span.Name}");
+            if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
+                failures.Add($"expected MySqlConnector span kind Client, got {span.Kind}");
+            if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
+                failures.Add($"expected MySqlConnector span status Error, got {span.Status}");
+
+            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMysql, failures);
+            RequireTag(span, QylSemanticAttributes.DbOperationName, "SELECT", failures);
+            RequireTag(span, QylSemanticAttributes.ErrorType, nameof(InvalidOperationException), failures);
+            RequireMissingTag(span, QylSemanticAttributes.DbQueryText, failures);
+        }
+
+        return new MySqlConnectorReport(runtimeMode, failures.Count is 0, failures.ToArray(), mysqlSpans);
+    }
+
+    private static void RequireTag(CapturedActivity activity, string key, string expected, ICollection<string> failures)
+    {
+        if (!activity.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing {key}");
+            return;
+        }
+
+        if (!StringComparer.Ordinal.Equals(actual, expected))
+            failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequireMissingTag(CapturedActivity activity, string key, ICollection<string> failures)
+    {
+        if (activity.Tags.ContainsKey(key))
+            failures.Add($"unexpected {key}");
+    }
+}
+
+[JsonSerializable(typeof(MySqlConnectorReport))]
+[JsonSourceGenerationOptions(WriteIndented = true)]
+internal sealed partial class RealMySqlConnectorJsonContext : JsonSerializerContext;

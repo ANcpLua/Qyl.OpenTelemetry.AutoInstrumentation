@@ -204,11 +204,13 @@ ownership_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: compile_binding_only
+  evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
+  - demos/Qyl.RealMySqlConnectorDemo
+  - tools/verify-real-mysqlconnector-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
   key: signals.traces.MYSQLDATA
   lane: source_interceptor
