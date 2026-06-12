@@ -41,8 +41,8 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 |---|---:|
 | `none` | 4 |
 | `option_bound` | 23 |
-| `verified_managed` | 21 |
-| `verified_nativeaot` | 12 |
+| `verified_managed` | 20 |
+| `verified_nativeaot` | 13 |
 
 ## Matrix
 
@@ -66,7 +66,7 @@ The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.
 | 16 | `signals.traces.NPGSQL` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 17 | `signals.traces.NSERVICEBUS` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 18 | `signals.traces.ORACLEMDA` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
-| 19 | `signals.traces.RABBITMQ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 19 | `signals.traces.RABBITMQ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 20 | `signals.traces.QUARTZ` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 21 | `signals.traces.SQLCLIENT` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 22 | `signals.traces.SQLITE` | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
