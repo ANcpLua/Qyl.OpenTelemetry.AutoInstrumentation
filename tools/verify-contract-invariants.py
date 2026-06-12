@@ -1255,6 +1255,7 @@ def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
         "ValidateMethodShape(descriptor);",
         "Interceptor emission descriptor method shape mismatch",
         "Trace body descriptor has unsupported method shape",
+        "Trace body descriptor must provide a runtime helper",
         "Forwarding body descriptor has unsupported method shape",
         "ValidateEmissionDescriptorPolicy(descriptor);",
         "Runtime metric duration policy requires trace+metric ownership",
@@ -1529,6 +1530,15 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
             fail(f"generator must model reusable trace behavior with descriptors, not private emitter method: {method_name}")
 
     for token in [
+        "TraceActivityExpressionEmitter",
+        "TraceStatementEmitter",
+        "AppendStartActivityExpression",
+        "AppendBeforeActivityStatement",
+        "AppendAfterActivityStatement",
+        "AppendAfterSuccessStatement",
+        "AppendAfterExceptionStatement",
+        "string RecordSuccessStatement",
+        "string RecordExceptionStatement",
         "TraceBoolProvider",
         "RuntimeObservesAsync",
         "RuntimeObservesAsyncWhen",

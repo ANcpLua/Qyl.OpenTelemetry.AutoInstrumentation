@@ -26,14 +26,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-    private delegate void TraceActivityExpressionEmitter(
-        StringBuilder builder,
-        InterceptorTarget target);
-
-    private delegate void TraceStatementEmitter(
-        StringBuilder builder,
-        InterceptorTarget target);
-
     private delegate bool SymbolInterceptorMatcher(
         IMethodSymbol symbol,
         out InterceptorTarget target);
@@ -447,6 +439,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 throw new InvalidOperationException("Trace body descriptor must own traces: " + descriptor.Kind);
             if (descriptor.ErrorPolicy is not InterceptorErrorPolicy.Exception)
                 throw new InvalidOperationException("Trace body descriptor must use exception error policy: " + descriptor.Kind);
+            if (!descriptor.TraceBody.RuntimeHelper.IsDefined)
+                throw new InvalidOperationException("Trace body descriptor must provide a runtime helper: " + descriptor.Kind);
             if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
                 !descriptor.TraceBody.DurationMetric.IsDefined)
             {
@@ -647,13 +641,11 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("        {");
         if (descriptor.DurationMetric.IsDefined)
             descriptor.DurationMetric.AppendMetricStartStatement(builder);
-        descriptor.AppendBeforeActivityStatement?.Invoke(builder, target);
         builder.Append("            var activity = ");
         descriptor.AppendStartActivity(builder, target);
         builder.AppendLine(";");
         if (descriptor.ActivityEnrichment.IsDefined)
             descriptor.ActivityEnrichment.Append(builder, target);
-        descriptor.AppendAfterActivityStatement?.Invoke(builder, target);
         builder.AppendLine("            try");
         builder.AppendLine("            {");
 
@@ -666,7 +658,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(descriptor.GetRecordExceptionStatement());
         if (descriptor.DurationMetric.IsDefined)
             descriptor.DurationMetric.AppendRecordDurationStatement(builder, target);
-        descriptor.AppendAfterExceptionStatement?.Invoke(builder, target);
         if (runtimeObservesAsync)
             builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("                throw;");
@@ -758,7 +749,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine(descriptor.GetRecordSuccessStatement());
         if (descriptor.DurationMetric.IsDefined)
             descriptor.DurationMetric.AppendRecordDurationStatement(builder, target);
-        descriptor.AppendAfterSuccessStatement?.Invoke(builder, target);
     }
 
     private static bool IsTaskLikeReturnWithoutResult(string returnType)
@@ -4103,13 +4093,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private readonly record struct TraceInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
-        TraceActivityExpressionEmitter? AppendStartActivityExpression = null,
-        string RecordSuccessStatement = "",
-        string RecordExceptionStatement = "",
-        TraceStatementEmitter? AppendBeforeActivityStatement = null,
-        TraceStatementEmitter? AppendAfterActivityStatement = null,
-        TraceStatementEmitter? AppendAfterSuccessStatement = null,
-        TraceStatementEmitter? AppendAfterExceptionStatement = null,
         TraceMethodPrefixKind MethodPrefixKind = TraceMethodPrefixKind.Default,
         bool IsDefined = true,
         TraceRuntimeHelperDescriptor RuntimeHelper = default,
@@ -4119,32 +4102,19 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     {
         public void AppendStartActivity(StringBuilder builder, InterceptorTarget target)
         {
-            if (RuntimeHelper.IsDefined)
-            {
-                builder.Append(RuntimeHelper.HelperType);
-                builder.Append('.');
-                builder.Append(RuntimeHelper.StartActivityMethod);
-                builder.Append('(');
-                QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(builder, target, RuntimeHelper.StartActivityArguments);
-                builder.Append(')');
-                return;
-            }
-
-            if (AppendStartActivityExpression is null)
-                throw new InvalidOperationException("Trace interceptor body descriptor has no start activity expression: " + MethodPrefix);
-
-            AppendStartActivityExpression(builder, target);
+            builder.Append(RuntimeHelper.HelperType);
+            builder.Append('.');
+            builder.Append(RuntimeHelper.StartActivityMethod);
+            builder.Append('(');
+            QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(builder, target, RuntimeHelper.StartActivityArguments);
+            builder.Append(')');
         }
 
         public string GetRecordSuccessStatement()
-            => RuntimeHelper.IsDefined
-                ? RuntimeHelper.GetRecordSuccessStatement()
-                : RecordSuccessStatement;
+            => RuntimeHelper.GetRecordSuccessStatement();
 
         public string GetRecordExceptionStatement()
-            => RuntimeHelper.IsDefined
-                ? RuntimeHelper.GetRecordExceptionStatement()
-                : RecordExceptionStatement;
+            => RuntimeHelper.GetRecordExceptionStatement();
     }
 
     private readonly record struct InterceptorMatcherDescriptor
