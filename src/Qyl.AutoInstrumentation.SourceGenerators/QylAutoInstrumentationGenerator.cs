@@ -100,7 +100,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.NServiceBusMessageOperation, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, TraceBody: new TraceInterceptorBodyDescriptor("NServiceBus", "endpoint", DurationMetric: new TraceDurationMetricDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus", "GetTimestamp", "RecordDuration", TraceDurationMetricArgumentKind.TargetMethodName), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedNServiceBus", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.QuartzJobExecute, InterceptorEmitterFamily.Scheduler, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Quartz", "job", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedQuartz", "StartActivity", "RecordSuccess", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.StackExchangeRedisCommandAsync, InterceptorEmitterFamily.Cache, InterceptorMethodShape.AsyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("StackExchangeRedis", "database", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedRedis", "StartCommandActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.RedisOperationName))),
-            new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("GraphQl", "executer", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync", AppendAfterActivityStatement: AppendGraphQlExecutionOptionsStatement, RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedGraphQl", "StartActivity", "RecordSuccess", "RecordException"))),
+            new InterceptorEmissionDescriptor(InterceptorKind.GraphQlDocumentExecuter, InterceptorEmitterFamily.GraphQl, InterceptorMethodShape.AsyncTask, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("GraphQl", "executer", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync", ActivityEnrichment: new TraceActivityEnrichmentDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedGraphQl", "RecordExecutionOptions", TraceActivityEnrichmentArgumentKind.GraphQlExecutionOptions), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedGraphQl", "StartActivity", "RecordSuccess", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.MongoDbCollection, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("MongoDb", "collection", RuntimeObservesAsync: true, ObserveAsyncMethod: "global::Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedMongoDb", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.RabbitMqBasicPublish, InterceptorEmitterFamily.Messaging, InterceptorMethodShape.AsyncOrSyncVoid, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("RabbitMq", "channel", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedRabbitMq", "StartPublishActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.RabbitMqExchange))),
             new InterceptorEmissionDescriptor(InterceptorKind.ILoggerExtensionLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, LoggerBody: new LoggerBodyDescriptor(LoggerInterceptorBodyKind.LoggerExtensionLog, "LoggerExtensions", "global::Qyl.AutoInstrumentation.QylInterceptedLogger")),
@@ -657,6 +657,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.Append("            var activity = ");
         descriptor.AppendStartActivity(builder, target);
         builder.AppendLine(";");
+        if (descriptor.ActivityEnrichment.IsDefined)
+            descriptor.ActivityEnrichment.Append(builder, target);
         descriptor.AppendAfterActivityStatement?.Invoke(builder, target);
         builder.AppendLine("            try");
         builder.AppendLine("            {");
@@ -793,18 +795,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             default:
                 throw new InvalidOperationException("Unknown trace start activity argument kind: " + argumentKind);
         }
-    }
-
-    private static void AppendGraphQlExecutionOptionsStatement(StringBuilder builder, InterceptorTarget target)
-    {
-        builder.AppendLine("            if (activity is not null)");
-        builder.AppendLine("            {");
-        builder.Append("                global::Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordExecutionOptions(activity, ");
-        AppendGraphQlOperationNameExpression(builder, target);
-        builder.Append(", ");
-        AppendGraphQlDocumentCaptureExpression(builder, target);
-        builder.AppendLine(");");
-        builder.AppendLine("            }");
     }
 
     private static string GetElasticMethodPrefix(InterceptorTarget target)
@@ -3901,6 +3891,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TargetMethodName,
     }
 
+    private enum TraceActivityEnrichmentArgumentKind
+    {
+        None,
+        GraphQlExecutionOptions,
+    }
+
     private enum GrpcClientCallShape
     {
         None,
@@ -4040,6 +4036,44 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         }
     }
 
+    private readonly record struct TraceActivityEnrichmentDescriptor(
+        string HelperType,
+        string EnrichMethod,
+        TraceActivityEnrichmentArgumentKind Arguments = TraceActivityEnrichmentArgumentKind.None,
+        bool IsDefined = true)
+    {
+        public void Append(StringBuilder builder, InterceptorTarget target)
+        {
+            builder.AppendLine("            if (activity is not null)");
+            builder.AppendLine("            {");
+            builder.Append("                ");
+            builder.Append(HelperType);
+            builder.Append('.');
+            builder.Append(EnrichMethod);
+            builder.Append("(activity");
+            AppendArguments(builder, target);
+            builder.AppendLine(");");
+            builder.AppendLine("            }");
+        }
+
+        private void AppendArguments(StringBuilder builder, InterceptorTarget target)
+        {
+            switch (Arguments)
+            {
+                case TraceActivityEnrichmentArgumentKind.None:
+                    return;
+                case TraceActivityEnrichmentArgumentKind.GraphQlExecutionOptions:
+                    builder.Append(", ");
+                    QylAutoInstrumentationGenerator.AppendGraphQlOperationNameExpression(builder, target);
+                    builder.Append(", ");
+                    QylAutoInstrumentationGenerator.AppendGraphQlDocumentCaptureExpression(builder, target);
+                    return;
+                default:
+                    throw new InvalidOperationException("Unknown trace activity enrichment argument kind: " + Arguments);
+            }
+        }
+    }
+
     private readonly record struct TraceInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
@@ -4056,7 +4090,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceBoolProvider? RuntimeObservesAsyncWhen = null,
         bool IsDefined = true,
         TraceRuntimeHelperDescriptor RuntimeHelper = default,
-        TraceDurationMetricDescriptor DurationMetric = default)
+        TraceDurationMetricDescriptor DurationMetric = default,
+        TraceActivityEnrichmentDescriptor ActivityEnrichment = default)
     {
         public void AppendStartActivity(StringBuilder builder, InterceptorTarget target)
         {

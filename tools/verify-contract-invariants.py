@@ -1489,16 +1489,21 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceStartActivityArgumentKind",
         "TraceDurationMetricDescriptor",
         "TraceDurationMetricArgumentKind",
+        "TraceActivityEnrichmentDescriptor",
+        "TraceActivityEnrichmentArgumentKind",
         "new TraceRuntimeHelperDescriptor",
         "new TraceDurationMetricDescriptor",
+        "new TraceActivityEnrichmentDescriptor",
         "TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName",
         "TraceStartActivityArgumentKind.ReceiverTypeAndTargetMethodName",
         "TraceStartActivityArgumentKind.RedisOperationName",
         "TraceStartActivityArgumentKind.TargetMethodName",
         "TraceStartActivityArgumentKind.RabbitMqExchange",
         "TraceDurationMetricArgumentKind.TargetMethodName",
+        "TraceActivityEnrichmentArgumentKind.GraphQlExecutionOptions",
         "descriptor.DurationMetric.AppendMetricStartStatement(builder)",
         "descriptor.DurationMetric.AppendRecordDurationStatement(builder, target)",
+        "descriptor.ActivityEnrichment.Append(builder, target)",
     ]:
         if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
             fail(f"contract/generator missing separated descriptor API token: {token}")
@@ -1509,9 +1514,10 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     for method_name in [
         "AppendNServiceBusMetricStartStatement",
         "AppendNServiceBusRecordDurationStatement",
+        "AppendGraphQlExecutionOptionsStatement",
     ]:
         if method_name in generator:
-            fail(f"generator must model trace duration metrics with TraceDurationMetricDescriptor, not private emitter method: {method_name}")
+            fail(f"generator must model reusable trace behavior with descriptors, not private emitter method: {method_name}")
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigate from NavigationManager.NavigateTo")
