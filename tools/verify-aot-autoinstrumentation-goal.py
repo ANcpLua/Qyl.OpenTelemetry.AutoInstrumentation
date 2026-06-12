@@ -23,6 +23,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("conformance opt-in", [sys.executable, "tools/verify-conformance-opt-in.py"]),
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
+    ("real quartz demo", [sys.executable, "tools/verify-real-quartz-demo.py"]),
     ("smoketest", ["bash", "tools/smoketest.sh"]),
     ("webapi aot demo", [sys.executable, "tools/verify-webapi-aot-demo.py"]),
     ("otlp verified fixtures", [sys.executable, "tools/verify-otlp-fixtures.py"]),
