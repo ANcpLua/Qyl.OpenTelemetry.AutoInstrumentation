@@ -15,6 +15,7 @@
   <Project Path="demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj" />
   <Project Path="demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj" />
   <Project Path="demos/Qyl.RealSqlClientDemo/Qyl.RealSqlClientDemo.csproj" />
+  <Project Path="demos/Qyl.RealSqliteDemo/Qyl.RealSqliteDemo.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj" />
   <Project Path="src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj" />
