@@ -114,7 +114,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreDbContext, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreDbContext", "dbContext", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
             new InterceptorEmissionDescriptor(InterceptorKind.EntityFrameworkCoreQueryable, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("EntityFrameworkCoreQueryable", "query", AppendEntityFrameworkCoreStartActivity, "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(activity);", "global::Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(activity, exception);")),
-            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, EmitDbCommandInterceptor));
+            new InterceptorEmissionDescriptor(InterceptorKind.DbCommand, InterceptorEmitterFamily.Database, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.TraceAndMetric, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.RuntimeMetric, DbCommandBody: new DbCommandBodyDescriptor("DbCommand", "command", "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand", "global::Qyl.AutoInstrumentation.QylDbClientMetrics")));
 
     /// <summary>
     /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
@@ -285,6 +285,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             if (descriptor.HttpWebRequestBody.IsDefined)
             {
                 EmitHttpWebRequestInterceptor(builder, invocation, index, descriptor.HttpWebRequestBody);
+                continue;
+            }
+
+            if (descriptor.DbCommandBody.IsDefined)
+            {
+                EmitDbCommandInterceptor(builder, invocation, index, descriptor.DbCommandBody);
                 continue;
             }
 
@@ -700,16 +706,26 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine();
     }
 
-    private static void EmitDbCommandInterceptor(StringBuilder builder, InterceptedInvocation invocation, int index)
+    private static void EmitDbCommandInterceptor(
+        StringBuilder builder,
+        InterceptedInvocation invocation,
+        int index,
+        DbCommandBodyDescriptor descriptor)
     {
         var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, "DbCommand_" + target.MethodName, index, target.ReceiverType, "command", target.Parameters, isAsync: false);
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName, target.Parameters, isAsync: false);
         builder.AppendLine("        {");
-        builder.AppendLine("            var metricStart = global::Qyl.AutoInstrumentation.QylDbClientMetrics.GetTimestamp();");
+        builder.Append("            var metricStart = ");
+        builder.Append(descriptor.MetricsType);
+        builder.AppendLine(".GetTimestamp();");
         builder.Append("            const string instrumentationId = ");
         AppendStringLiteral(builder, target.InstrumentationId);
         builder.AppendLine(";");
-        builder.Append("            var activity = global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(command, ");
+        builder.Append("            var activity = ");
+        builder.Append(descriptor.HelperType);
+        builder.Append(".StartActivity(");
+        builder.Append(descriptor.ReceiverName);
+        builder.Append(", ");
         builder.Append("instrumentationId, ");
         AppendStringLiteral(builder, target.MethodName);
         builder.AppendLine(");");
@@ -718,25 +734,35 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
 
         if (target.IsAsync)
         {
-            builder.Append("                var resultTask = command.");
+            builder.Append("                var resultTask = ");
+            builder.Append(descriptor.ReceiverName);
+            builder.Append('.');
             builder.Append(target.MethodName);
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
             builder.AppendLine(");");
-            builder.Append("                return global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.ObserveAsync(resultTask, activity, metricStart, ");
+            builder.Append("                return ");
+            builder.Append(descriptor.HelperType);
+            builder.Append(".ObserveAsync(resultTask, activity, metricStart, ");
             builder.Append("instrumentationId");
             builder.AppendLine(");");
         }
         else
         {
-            builder.Append("                var result = command.");
+            builder.Append("                var result = ");
+            builder.Append(descriptor.ReceiverName);
+            builder.Append('.');
             builder.Append(target.MethodName);
             builder.Append('(');
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
             builder.AppendLine(");");
 
-            builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordSuccess(activity);");
-            builder.Append("                global::Qyl.AutoInstrumentation.QylDbClientMetrics.RecordDuration(metricStart, ");
+            builder.Append("                ");
+            builder.Append(descriptor.HelperType);
+            builder.AppendLine(".RecordSuccess(activity);");
+            builder.Append("                ");
+            builder.Append(descriptor.MetricsType);
+            builder.Append(".RecordDuration(metricStart, ");
             builder.Append("instrumentationId");
             builder.AppendLine(");");
             builder.AppendLine("                return result;");
@@ -744,8 +770,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
         builder.AppendLine("            {");
-        builder.AppendLine("                global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordException(activity, exception);");
-        builder.Append("                global::Qyl.AutoInstrumentation.QylDbClientMetrics.RecordDuration(metricStart, ");
+        builder.Append("                ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".RecordException(activity, exception);");
+        builder.Append("                ");
+        builder.Append(descriptor.MetricsType);
+        builder.Append(".RecordDuration(metricStart, ");
         builder.Append("instrumentationId");
         builder.AppendLine(");");
         builder.AppendLine("                throw;");
@@ -3663,9 +3693,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceInterceptorBodyDescriptor TraceBody = default,
         ForwardingInterceptorBodyDescriptor ForwardingBody = default,
         HttpWebRequestBodyDescriptor HttpWebRequestBody = default,
+        DbCommandBodyDescriptor DbCommandBody = default,
         MeterProviderBuilderBodyDescriptor MeterProviderBuilderBody = default,
         LoggerBodyDescriptor LoggerBody = default,
         ExternalLoggerBodyDescriptor ExternalLoggerBody = default);
+
+    private readonly record struct DbCommandBodyDescriptor(
+        string MethodPrefix,
+        string ReceiverName,
+        string HelperType,
+        string MetricsType,
+        bool IsDefined = true);
 
     private readonly record struct HttpWebRequestBodyDescriptor(
         string MethodPrefix,
