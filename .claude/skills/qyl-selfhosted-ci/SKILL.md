@@ -79,7 +79,13 @@ orb -m qyl-ci bash -c "mkdir -p ~/actions-runner && cd ~/actions-runner \
   && ./config.sh --url https://github.com/ANcpLua/qyl-dotnet-autoinstrumentation \
      --token $TOKEN --name qyl-linux --labels qyl-linux --work _work --unattended"
 orb -m qyl-ci bash -c "cd ~/actions-runner && sudo ./svc.sh install ancplua && sudo ./svc.sh start"
+orb -m qyl-ci bash -c 'echo "DOTNET_INSTALL_DIR=/home/ancplua/.dotnet" >> ~/actions-runner/.env \
+  && sudo systemctl restart actions.runner.ANcpLua-qyl-dotnet-autoinstrumentation.qyl-linux'
 ```
+
+The `.env` line is mandatory: on self-hosted Linux, `actions/setup-dotnet` defaults to
+`/usr/share/dotnet` and dies with `mkdir: Permission denied`. Pointing it at the user home
+also persists the SDK across runs (no re-download). macOS needs no override.
 
 ## Resource discipline (why downloads don't repeat)
 
