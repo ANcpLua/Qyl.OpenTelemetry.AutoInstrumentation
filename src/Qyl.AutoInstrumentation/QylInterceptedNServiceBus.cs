@@ -24,9 +24,11 @@ public static class QylInterceptedNServiceBus
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);
+        QylActivityTags.SetMessaging(
+            activity,
+            QylSemanticAttributes.MessagingSystemNServiceBus,
+            QylSemanticAttributes.MessagingOperationTypeSend,
+            operation);
         return activity;
     }
 

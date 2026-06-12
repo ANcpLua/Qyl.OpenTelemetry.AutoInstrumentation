@@ -23,9 +23,11 @@ public static class QylInterceptedMongoDb
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMongodb);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);
+        QylActivityTags.SetDb(
+            activity,
+            QylSemanticAttributes.DbSystemMongodb,
+            operation,
+            operation);
         return activity;
     }
 

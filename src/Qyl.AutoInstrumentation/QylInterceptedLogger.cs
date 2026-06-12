@@ -80,7 +80,7 @@ public static class QylInterceptedLogger
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.LogSeverity, severity);
+        QylActivityTags.SetLogSeverity(activity, severity);
 
         if (exception is not null)
             RecordException(activity, exception);

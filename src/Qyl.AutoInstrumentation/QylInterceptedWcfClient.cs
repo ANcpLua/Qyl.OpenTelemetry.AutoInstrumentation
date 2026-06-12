@@ -20,9 +20,11 @@ public static class QylInterceptedWcfClient
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf);
-        activity.SetTag(QylSemanticAttributes.RpcService, clientType);
-        activity.SetTag(QylSemanticAttributes.RpcMethod, methodName);
+        QylActivityTags.SetRpc(
+            activity,
+            QylSemanticAttributes.RpcSystemDotNetWcf,
+            clientType,
+            methodName);
         return activity;
     }
 

@@ -20,9 +20,11 @@ public static class QylInterceptedWcfCore
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf);
-        activity.SetTag(QylSemanticAttributes.RpcService, string.IsNullOrEmpty(contractName) ? serviceName : contractName);
-        activity.SetTag(QylSemanticAttributes.RpcMethod, operationName);
+        QylActivityTags.SetRpc(
+            activity,
+            QylSemanticAttributes.RpcSystemDotNetWcf,
+            string.IsNullOrEmpty(contractName) ? serviceName : contractName,
+            operationName);
         return activity;
     }
 

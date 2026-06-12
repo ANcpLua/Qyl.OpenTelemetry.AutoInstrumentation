@@ -24,9 +24,11 @@ public static class QylInterceptedMassTransit
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemMassTransit);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationName, operation);
+        QylActivityTags.SetMessaging(
+            activity,
+            QylSemanticAttributes.MessagingSystemMassTransit,
+            QylSemanticAttributes.MessagingOperationTypeSend,
+            operation);
         return activity;
     }
 

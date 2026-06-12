@@ -23,7 +23,9 @@ public static class QylInterceptedExternalLogger
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.LogSeverity, NormalizeSeverity(string.IsNullOrWhiteSpace(severityName) ? methodName : severityName));
+        QylActivityTags.SetLogSeverity(
+            activity,
+            NormalizeSeverity(string.IsNullOrWhiteSpace(severityName) ? methodName : severityName));
         return activity;
     }
 

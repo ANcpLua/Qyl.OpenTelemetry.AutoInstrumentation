@@ -22,9 +22,11 @@ public static class QylInterceptedElastic
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemElasticsearch);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operation);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, operation);
+        QylActivityTags.SetDb(
+            activity,
+            QylSemanticAttributes.DbSystemElasticsearch,
+            operation,
+            operation);
         return activity;
     }
 

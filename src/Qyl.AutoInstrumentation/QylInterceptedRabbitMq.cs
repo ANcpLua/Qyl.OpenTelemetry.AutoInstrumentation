@@ -20,9 +20,11 @@ public static class QylInterceptedRabbitMq
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemRabbitMq);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish);
+        QylActivityTags.SetMessaging(
+            activity,
+            QylSemanticAttributes.MessagingSystemRabbitMq,
+            QylSemanticAttributes.MessagingOperationTypeSend,
+            QylSemanticAttributes.MessagingOperationNamePublish);
 
         return activity;
     }

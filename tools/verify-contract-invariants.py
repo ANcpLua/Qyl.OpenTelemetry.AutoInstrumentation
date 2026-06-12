@@ -488,6 +488,58 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
                 fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
 
 
+def verify_intercepted_runtime_semantic_tag_policy() -> None:
+    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityTags.cs").read_text()
+    for token in [
+        "activity.SetTag(QylSemanticAttributes.MessagingSystem, system);",
+        "activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);",
+        "activity.SetTag(QylSemanticAttributes.MessagingOperationName, operationName);",
+        "activity.SetTag(QylSemanticAttributes.DbSystemName, systemName);",
+        "activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);",
+        "activity.SetTag(QylSemanticAttributes.DbQuerySummary, querySummary);",
+        "activity.SetTag(QylSemanticAttributes.RpcSystem, system);",
+        "activity.SetTag(QylSemanticAttributes.RpcService, service);",
+        "activity.SetTag(QylSemanticAttributes.RpcMethod, method);",
+        "activity.SetTag(QylSemanticAttributes.GraphQlOperationName, operationName);",
+        "activity.SetTag(QylSemanticAttributes.LogSeverity, severity);",
+    ]:
+        if token not in helper:
+            fail(f"QylActivityTags must own semantic tag-set token: {token}")
+
+    tag_set_owned_helpers = {
+        "QylInterceptedElastic.cs",
+        "QylInterceptedExternalLogger.cs",
+        "QylInterceptedGraphQl.cs",
+        "QylInterceptedKafka.cs",
+        "QylInterceptedLogger.cs",
+        "QylInterceptedMassTransit.cs",
+        "QylInterceptedMongoDb.cs",
+        "QylInterceptedNServiceBus.cs",
+        "QylInterceptedRabbitMq.cs",
+        "QylInterceptedRedis.cs",
+        "QylInterceptedWcfClient.cs",
+        "QylInterceptedWcfCore.cs",
+    }
+    forbidden_tokens = [
+        "SetTag(QylSemanticAttributes.MessagingSystem",
+        "SetTag(QylSemanticAttributes.MessagingOperationType",
+        "SetTag(QylSemanticAttributes.MessagingOperationName",
+        "SetTag(QylSemanticAttributes.DbSystemName",
+        "SetTag(QylSemanticAttributes.DbOperationName",
+        "SetTag(QylSemanticAttributes.DbQuerySummary",
+        "SetTag(QylSemanticAttributes.RpcSystem",
+        "SetTag(QylSemanticAttributes.RpcService",
+        "SetTag(QylSemanticAttributes.RpcMethod",
+        "SetTag(QylSemanticAttributes.GraphQlOperationName",
+        "SetTag(QylSemanticAttributes.LogSeverity",
+    ]
+    for name in sorted(tag_set_owned_helpers):
+        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        for token in forbidden_tokens:
+            if token in text:
+                fail(f"intercepted runtime helper must delegate semantic tag sets to QylActivityTags: src/Qyl.AutoInstrumentation/{name} {token}")
+
+
 def verify_intercepted_runtime_async_observer_policy() -> None:
     helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityObserver.cs").read_text()
     for token in [
@@ -515,6 +567,7 @@ def verify_behavior_semantics_contract() -> None:
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
     verify_intercepted_runtime_activity_start_policy()
+    verify_intercepted_runtime_semantic_tag_policy()
     verify_intercepted_runtime_async_observer_policy()
 
     for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:

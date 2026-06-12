@@ -20,9 +20,11 @@ public static class QylInterceptedRedis
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, operationName);
+        QylActivityTags.SetDb(
+            activity,
+            QylSemanticAttributes.DbSystemRedis,
+            operationName,
+            operationName);
 
         return activity;
     }

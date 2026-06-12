@@ -20,7 +20,7 @@ public static class QylInterceptedGraphQl
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.GraphQlOperationName, "execute");
+        QylActivityTags.SetGraphQlOperationName(activity, "execute");
         return activity;
     }
 
@@ -31,7 +31,7 @@ public static class QylInterceptedGraphQl
             return;
 
         if (!string.IsNullOrWhiteSpace(operationName))
-            activity.SetTag(QylSemanticAttributes.GraphQlOperationName, operationName);
+            QylActivityTags.SetGraphQlOperationName(activity, operationName);
 
         if (QylAutoInstrumentationOptions.Current.GraphQlSetDocument &&
             !string.IsNullOrWhiteSpace(document))

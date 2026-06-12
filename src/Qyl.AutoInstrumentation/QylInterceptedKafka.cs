@@ -48,9 +48,11 @@ public static class QylInterceptedKafka
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemKafka);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);
-        activity.SetTag(QylSemanticAttributes.MessagingOperationName, operationName);
+        QylActivityTags.SetMessaging(
+            activity,
+            QylSemanticAttributes.MessagingSystemKafka,
+            operationType,
+            operationName);
 
         return activity;
     }
