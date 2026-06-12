@@ -1493,6 +1493,7 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceActivityEnrichmentArgumentKind",
         "TraceAsyncObservationDescriptor",
         "TraceAsyncObservationCondition",
+        "TraceMethodPrefixKind",
         "new TraceRuntimeHelperDescriptor",
         "new TraceDurationMetricDescriptor",
         "new TraceActivityEnrichmentDescriptor",
@@ -1505,6 +1506,8 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceDurationMetricArgumentKind.TargetMethodName",
         "TraceActivityEnrichmentArgumentKind.GraphQlExecutionOptions",
         "TraceAsyncObservationCondition.AsyncWithByRefParameters",
+        "TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName",
+        "descriptor.MethodPrefixKind",
         "descriptor.DurationMetric.AppendMetricStartStatement(builder)",
         "descriptor.DurationMetric.AppendRecordDurationStatement(builder, target)",
         "descriptor.ActivityEnrichment.Append(builder, target)",
@@ -1530,6 +1533,9 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "RuntimeObservesAsync",
         "RuntimeObservesAsyncWhen",
         "ShouldRuntimeObserveElasticAsync",
+        "TraceStringProvider",
+        "MethodPrefixProvider",
+        "GetElasticMethodPrefix",
         "ObserveAsyncMethod:",
     ]:
         if token in generator:

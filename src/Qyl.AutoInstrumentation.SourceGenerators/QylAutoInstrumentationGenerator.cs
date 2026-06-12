@@ -34,9 +34,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         StringBuilder builder,
         InterceptorTarget target);
 
-    private delegate string TraceStringProvider(
-        InterceptorTarget target);
-
     private delegate bool SymbolInterceptorMatcher(
         IMethodSymbol symbol,
         out InterceptorTarget target);
@@ -84,8 +81,8 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, InterceptorEmitterFamily.AspNetCore, InterceptorMethodShape.EndpointRegistration, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, ForwardingBody: new ForwardingInterceptorBodyDescriptor("AspNetCoreEndpointMap", "endpoints", "global::Qyl.AutoInstrumentation.QylInterceptedAspNetCore")),
             new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, InterceptorEmitterFamily.Meter, InterceptorMethodShape.BuilderRegistration, InterceptorSignalOwnership.Metric, InterceptorErrorPolicy.None, InterceptorDurationPolicy.None, MeterProviderBuilderBody: new MeterProviderBuilderBodyDescriptor("MeterProviderBuilder", "builder", "global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()")),
             new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, InterceptorEmitterFamily.Azure, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("AzureClient", "client", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedAzure", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),
-            new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", MethodPrefixProvider: GetElasticMethodPrefix, AsyncObservation: new TraceAsyncObservationDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", TraceAsyncObservationCondition.AsyncWithByRefParameters), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName))),
-            new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", MethodPrefixProvider: GetElasticMethodPrefix, AsyncObservation: new TraceAsyncObservationDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", TraceAsyncObservationCondition.AsyncWithByRefParameters), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName))),
+            new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", MethodPrefixKind: TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName, AsyncObservation: new TraceAsyncObservationDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", TraceAsyncObservationCondition.AsyncWithByRefParameters), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName))),
+            new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, InterceptorEmitterFamily.Search, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("Elastic", "client", MethodPrefixKind: TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName, AsyncObservation: new TraceAsyncObservationDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic.ObserveAsync", TraceAsyncObservationCondition.AsyncWithByRefParameters), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedElastic", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, InterceptorEmitterFamily.Wcf, InterceptorMethodShape.AsyncOrSyncValue, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, TraceBody: new TraceInterceptorBodyDescriptor("WcfClient", "client", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.AutoInstrumentation.QylInterceptedWcfClient", "StartActivity", "RecordSuccess", "RecordException", TraceStartActivityArgumentKind.ReceiverTypeAndTargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcUnary, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, GrpcClientBody: new GrpcClientBodyDescriptor(GrpcClientCallShape.Unary, "GrpcNetClientAsyncUnary", "client", "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient")),
             new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, InterceptorEmitterFamily.Grpc, InterceptorMethodShape.GrpcStreaming, InterceptorSignalOwnership.Trace, InterceptorErrorPolicy.GrpcStatusAndException, InterceptorDurationPolicy.None, GrpcClientBody: new GrpcClientBodyDescriptor(GrpcClientCallShape.ServerStreaming, "GrpcNetClientAsyncServerStreaming", "client", "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient")),
@@ -683,9 +680,17 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
     private static string GetTraceMethodPrefix(
         InterceptorTarget target,
         TraceInterceptorBodyDescriptor descriptor)
-        => descriptor.MethodPrefixProvider is not null
-            ? descriptor.MethodPrefixProvider(target)
-            : descriptor.MethodPrefix + "_" + target.MethodName;
+    {
+        switch (descriptor.MethodPrefixKind)
+        {
+            case TraceMethodPrefixKind.Default:
+                return descriptor.MethodPrefix + "_" + target.MethodName;
+            case TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName:
+                return target.InstrumentationId + "_" + target.MethodName;
+            default:
+                throw new InvalidOperationException("Unknown trace method prefix kind: " + descriptor.MethodPrefixKind);
+        }
+    }
 
     private static bool ShouldRuntimeObserveAsync(
         InterceptorTarget target,
@@ -792,9 +797,6 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
                 throw new InvalidOperationException("Unknown trace start activity argument kind: " + argumentKind);
         }
     }
-
-    private static string GetElasticMethodPrefix(InterceptorTarget target)
-        => target.InstrumentationId + "_" + target.MethodName;
 
     private static void EmitHttpWebRequestInterceptor(
         StringBuilder builder,
@@ -3896,6 +3898,12 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         AsyncWithByRefParameters,
     }
 
+    private enum TraceMethodPrefixKind
+    {
+        Default,
+        InstrumentationIdAndTargetMethodName,
+    }
+
     private enum GrpcClientCallShape
     {
         None,
@@ -4102,7 +4110,7 @@ public sealed class QylAutoInstrumentationGenerator : IIncrementalGenerator
         TraceStatementEmitter? AppendAfterActivityStatement = null,
         TraceStatementEmitter? AppendAfterSuccessStatement = null,
         TraceStatementEmitter? AppendAfterExceptionStatement = null,
-        TraceStringProvider? MethodPrefixProvider = null,
+        TraceMethodPrefixKind MethodPrefixKind = TraceMethodPrefixKind.Default,
         bool IsDefined = true,
         TraceRuntimeHelperDescriptor RuntimeHelper = default,
         TraceDurationMetricDescriptor DurationMetric = default,
