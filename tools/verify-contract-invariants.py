@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 CONTRACT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
 GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
-GENERATED_INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.g.cs"
+INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
 OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
 IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
@@ -137,10 +137,7 @@ def load_artifacts() -> ModuleType:
 
 
 def read_generator_sources() -> str:
-    sources = [GENERATOR_PATH.read_text()]
-    if GENERATED_INTERCEPTOR_CATALOG_PATH.exists():
-        sources.append(GENERATED_INTERCEPTOR_CATALOG_PATH.read_text())
-
+    sources = [GENERATOR_PATH.read_text(), INTERCEPTOR_CATALOG_PATH.read_text()]
     return "\n".join(sources)
 
 
