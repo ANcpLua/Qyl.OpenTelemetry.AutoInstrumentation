@@ -189,6 +189,15 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             .Where(static invocation => invocation is not null)
             .Select(static invocation => invocation!.Value)
             .Distinct()
+            // Stable, content-based ordering so the emission order and the _N interceptor-name indices
+            // are a pure function of the matched call sites — independent of Roslyn's cross-tree syntax
+            // visitation order, which is NOT guaranteed stable across machines or incremental rebuilds.
+            // Location.Data encodes file path + position and is unique per call site; the Target tie-break
+            // is belt-and-suspenders. Keeps the generated file byte-reproducible (Directory.Build.props
+            // sets Deterministic=true) once a consumer has 2+ matched call sites.
+            .OrderBy(static invocation => invocation.Location.Data, StringComparer.Ordinal)
+            .ThenBy(static invocation => invocation.Target.ReceiverType, StringComparer.Ordinal)
+            .ThenBy(static invocation => invocation.Target.MethodName, StringComparer.Ordinal)
             .ToArray();
 
         if (invocations.Length is 0)
@@ -205,6 +214,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
         for (var index = 0; index < invocations.Length; index++)
         {
+            context.CancellationToken.ThrowIfCancellationRequested();
             var invocation = invocations[index];
             var descriptor = GetEmissionDescriptor(invocation.Target);
             if (descriptor.TraceBody.IsDefined)
@@ -1884,6 +1894,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         target = default;
         if (symbol.IsStatic ||
             symbol.MethodKind is not MethodKind.Ordinary ||
+            !CanEmitByValueOrInParameters(symbol) ||
             !IsAzureClientType(symbol.ContainingType) ||
             !TryGetAzureClientOperationReturn(symbol.ReturnType, out var isAsync))
         {
