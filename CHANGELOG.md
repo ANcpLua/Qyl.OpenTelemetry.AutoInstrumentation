@@ -1,5 +1,8 @@
 # Changelog
 
+Unresolved design/validation questions are tracked in
+[docs/OPEN-QUESTIONS.md](docs/OPEN-QUESTIONS.md).
+
 ## Unreleased
 
 ### Telemetry semantics
