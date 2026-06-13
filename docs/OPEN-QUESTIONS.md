@@ -7,7 +7,7 @@ Update the status in the same commit that resolves the question. Linked from
 
 | # | Question | Status |
 |---|---|---|
-| 1 | Catalog SSOT: descriptor truth lives as C#-lines-in-Python-strings in `render_interceptor_catalog_cs` (copy machine, not generator). Where should it live in a C#-only product environment? | briefed:B1 |
+| 1 | Catalog SSOT: descriptor truth no longer lives as C#-lines-in-Python-strings — `render_interceptor_catalog_cs`/`render_contract_cs` are deleted; `QylGeneratedSourceInterceptorCatalog.cs` and `InstrumentationContract.cs` are now owned C# source, and the Python generator emits only data artifacts (YAML/JSON/schema/matrix). | answered:a359782 |
 | 2 | Evidence residual: as of `cc3053b` ALL 33 `implemented` signal promises carry verified evidence (30 `verified_nativeaot`, 3 `verified_managed`; the earlier "only 4 verified_nativeaot" figure was stale goal text). Residual question: should the 3 `verified_managed` items be promoted to NativeAOT proofs, or documented as managed-only by design? | open |
 | 3 | Silent non-interception: driver signature drift on a version bump means the interceptor is silently not emitted (span missing, demo gates only catch pinned versions). How does the build name the cause? | briefed:B4 |
 | 4 | Options flow: `QylAutoInstrumentationOptions` is sometimes threaded as a parameter (sometimes unused) and sometimes re-read via `.Current` mid-operation. What is the one policy? | briefed:B5 |

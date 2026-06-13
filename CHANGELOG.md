@@ -47,8 +47,6 @@ Unresolved design/validation questions are tracked in
   NativeAOT auto-instrumentation runtime.
 - Added `AGENTS.md` as the canonical repo-local continuation contract and made `CLAUDE.md` a
   symlink to avoid duplicate agent instructions.
-- Added project-local `SKILL.md` files so future agents can enter the correct product area without
-  mixing runtime, source-generator, demo, benchmark, and verification concerns.
 - Rewrote the coverage ledger into a neutral current-state ledger, removing stale ceremonial and
   substrate-era ceremony from the user-facing path.
 - Removed stale `claude/**` workflow triggering from the WebAPI AOT demo workflow.
