@@ -275,9 +275,12 @@ knowledge_base:
     filePatterns:
       - 'CLAUDE.md'
       - 'AGENTS.md'
+      - 'COVERAGE_LEDGER.md'
       - '**/CLAUDE.md'
       - '**/AGENTS.md'
       - '.editorconfig'
+  # Cross-repo context (Pro Plus): related ANcpLua repos inform reviews here.
+  automatic_repository_linking: true
   jira:
     usage: disabled
   linear:
@@ -298,15 +301,3 @@ issue_enrichment:
         - 'help-wanted'
   labeling:
     auto_apply_labels: true
-
-knowledge_base:
-  web_search:
-    enabled: true
-  code_guidelines:
-    enabled: true
-    filePatterns:
-      - 'CLAUDE.md'
-      - 'AGENTS.md'
-      - 'COVERAGE_LEDGER.md'
-  # Cross-repo context (Pro Plus): related ANcpLua repos inform reviews here.
-  automatic_repository_linking: true
