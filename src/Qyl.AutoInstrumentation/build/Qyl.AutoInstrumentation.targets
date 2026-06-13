@@ -6,12 +6,5 @@
 
   <PropertyGroup Condition="'$(_QylAutoInstrumentationCoreBuildAssetsAlreadyImported)' != 'true'">
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
-    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(_QylAutoInstrumentationCoreBuildAssetsAlreadyImported)' != 'true' and '$(QylAutoInstrumentationDisableInterceptorsAttribute)' != 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
-             Link="Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
-             Visible="false" />
-  </ItemGroup>
 </Project>

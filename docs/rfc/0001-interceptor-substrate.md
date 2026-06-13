@@ -53,14 +53,14 @@ The package must carry all compiler-facing substrate assets:
 
 - `analyzers/dotnet/cs/Qyl.AutoInstrumentation.SourceGenerators.dll`
 - `build/Qyl.AutoInstrumentation.targets`
-- `build/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs`
 - `buildTransitive/Qyl.AutoInstrumentation.targets`
-- `buildTransitive/Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs`
 
 `build/` and `buildTransitive/` intentionally contain the same core target content. The
-target enables the interceptors namespace and adds the local
-`InterceptsLocationAttribute` source. A guard property prevents duplicate imports when a
-direct package and a transitive package both try to bring in the same core assets.
+target enables the stable interceptors namespace. A guard property prevents duplicate
+imports when a direct package and a transitive package both try to bring in the same
+core assets.
+The source generator emits the file-local `InterceptsLocationAttribute` in the same generated
+file as the interceptor methods so it cannot collide with another generator's attribute source.
 
 `PackageReference` is the zero-config consumer path. A consumer should be able to add the
 package and have the analyzer plus targets participate in compilation automatically.

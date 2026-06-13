@@ -170,7 +170,7 @@ def verify_generated_interceptor_source(directory: Path) -> None:
     for token in [
         "#nullable enable",
         "Qyl.AutoInstrumentation.Generated",
-        "InterceptsLocationAttribute",
+        "file sealed class InterceptsLocationAttribute",
         "global::Microsoft.Extensions.Logging.ILogger",
     ]:
         if token not in text:

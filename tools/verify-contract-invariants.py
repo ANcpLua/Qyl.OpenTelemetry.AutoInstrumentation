@@ -73,6 +73,7 @@ REQUIRED_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
     "GetInterceptableLocation(invocation, cancellationToken)",
     "interceptableLocation is null",
     "GetInterceptsLocationAttributeSyntax(",
+    "file sealed class InterceptsLocationAttribute",
 ]
 FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
     "new InterceptableLocation",

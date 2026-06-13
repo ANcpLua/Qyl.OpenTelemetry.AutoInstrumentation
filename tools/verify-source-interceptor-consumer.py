@@ -589,6 +589,7 @@ def verify_generated_interceptor_source(directory: Path) -> None:
     text = generated_files[0].read_text(encoding="utf-8")
     for token in [
         "#nullable enable",
+        "file sealed class InterceptsLocationAttribute",
         "namespace Qyl.AutoInstrumentation.Generated",
         "[global::System.Runtime.CompilerServices.InterceptsLocationAttribute(",
         "// Intercepted call at ",

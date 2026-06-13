@@ -9,17 +9,11 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
-    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Qyl.AutoInstrumentation.DiagnosticListeners" />
     <InternalsVisibleTo Include="Qyl.AutoInstrumentation.Hosting" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="build\**\*.cs" />
-    <Compile Remove="buildTransitive\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,13 +27,7 @@
     <None Include="build\Qyl.AutoInstrumentation.targets"
           Pack="true"
           PackagePath="build\" />
-    <None Include="build\Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
-          Pack="true"
-          PackagePath="build\" />
     <None Include="buildTransitive\Qyl.AutoInstrumentation.targets"
-          Pack="true"
-          PackagePath="buildTransitive\" />
-    <None Include="buildTransitive\Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs"
           Pack="true"
           PackagePath="buildTransitive\" />
     <None Include="$(ArtifactsPath)\bin\Qyl.AutoInstrumentation.SourceGenerators\$(Configuration.ToLowerInvariant())\Qyl.AutoInstrumentation.SourceGenerators.dll"
