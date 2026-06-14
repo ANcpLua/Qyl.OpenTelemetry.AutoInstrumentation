@@ -1,0 +1,145 @@
+name: nuget-publish
+
+# Keyless NuGet Trusted Publishing (GitHub OIDC -> nuget.org). No stored secret, no API key:
+# NuGet/login exchanges a GitHub-signed OIDC token for a 1-hour single-use key at push time.
+#
+# EXPLICIT only. This runs ONLY on manual workflow_dispatch, never on push — the repo stays
+# private and the packages stay unreleased until the deliberate history overhaul. Pushing to
+# main does NOT publish; you publish by running this workflow when you decide to.
+#
+# ONE-TIME setup before the first successful run (still zero API keys):
+#   1. Repo Settings -> Environments -> create an environment named `nuget`.
+#   2. nuget.org -> your account -> Trusted Publishing -> Add a policy:
+#        Owner:         ANcpLua
+#        Repository:    ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation
+#        Workflow File: nuget-publish.yml     (file NAME only — no .github/workflows/ prefix)
+#        Environment:   nuget
+#      (The form has NO package field; that is by design.)
+#   3. Actions -> nuget-publish -> Run workflow. The first success pins the policy to the
+#      repo's immutable owner/repo IDs.
+# Before the policy exists the publish job fails loudly at "Authenticate to NuGet" — that
+# proves the gate works; it is never a missing-key problem.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (no v prefix), e.g. 0.3.0-pre.1. Empty = auto patch-bump from the latest reachable v* tag.'
+        required: false
+
+concurrency:
+  group: nuget-publish
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - id: ver
+        run: |
+          set -euo pipefail
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # Floor when there is no reachable clean-semver v* tag. The existing v0.* tags are
+            # orphaned by the pending history rewrite and carry -pre suffixes the bump regex skips,
+            # so a fresh repo behaves as "no tag" and uses the base. Pass an explicit version input
+            # for the first real release instead of relying on this.
+            BASE="0.3.0-pre.1"
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR=${BASH_REMATCH[1]}; MINOR=${BASH_REMATCH[2]}; PATCH=${BASH_REMATCH[3]}
+              if git tag --points-at HEAD | grep -qFx "$LATEST_TAG"; then
+                VERSION="$MAJOR.$MINOR.$PATCH"
+              else
+                VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+              fi
+            else
+              VERSION="$BASE"
+            fi
+          fi
+          echo "Publishing version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  verify:
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Pre-publish gate (NativeAOT smoke, package + project reference)
+        run: bash tools/smoketest.sh
+      - name: Pack the five qyl packages
+        run: |
+          set -euo pipefail
+          for proj in \
+            src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj \
+            src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj \
+            src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj \
+            src/Qyl.AutoInstrumentation.EntityFrameworkCore/Qyl.AutoInstrumentation.EntityFrameworkCore.csproj \
+            src/Qyl.AutoInstrumentation.SqlClient/Qyl.AutoInstrumentation.SqlClient.csproj; do
+            dotnet pack "$proj" -c Release -o artifacts -p:Version="${{ needs.version.outputs.version }}"
+          done
+      - name: Upload packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: packages
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+
+  publish:
+    needs: [version, verify]
+    runs-on: ubuntu-latest
+    environment: nuget          # must match the nuget.org Trusted Publishing policy's Environment field
+    permissions:
+      contents: write           # for the git tag + GitHub release
+      id-token: write           # REQUIRED for the OIDC exchange; without it NuGet/login fails
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: artifacts/
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Authenticate to NuGet
+        id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ANcpLua
+      - name: Push to NuGet
+        run: |
+          set -euo pipefail
+          for pkg in artifacts/*.nupkg; do
+            dotnet nuget push "$pkg" \
+              --source https://api.nuget.org/v3/index.json \
+              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
+              --skip-duplicate
+          done
+      - name: Tag + GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists, skipping."
+          else
+            gh release create "$TAG" --generate-notes --title "$TAG"
+          fi

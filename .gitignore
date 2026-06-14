@@ -1,0 +1,8 @@
+artifacts/
+bin/
+obj/
+*.user
+.DS_Store
+
+# local agent scratch (internal infra docs) — never public
+.agents/

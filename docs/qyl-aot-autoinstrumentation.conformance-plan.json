@@ -1,0 +1,507 @@
+{
+  "schema_version": "1",
+  "graph_schema_version": "1",
+  "services": [
+    {
+      "service_name": "qyl-webapi-aot-demo",
+      "profile_id": "qyl-aot-webapi",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "aspnetcore.server",
+          "required_attributes": [
+            "http.request.method",
+            "http.response.status_code",
+            "http.route",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "httpclient.downstream",
+          "required_attributes": [
+            "http.request.method",
+            "http.response.status_code",
+            "server.address",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "httpclient.self",
+          "required_attributes": [
+            "http.request.method",
+            "http.response.status_code",
+            "server.address",
+            "server.port",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-db-aot-demo",
+      "profile_id": "qyl-aot-db",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "adonet.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "efcore.sqlite",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "mongodb.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "mysqlconnector.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "mysqldata.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "npgsql.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "oraclemda.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "sqlite.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        },
+        {
+          "kind": "span",
+          "name": "sqlclient.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-grpc-aot-demo",
+      "profile_id": "qyl-aot-grpc",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "grpc.client",
+          "required_attributes": [
+            "rpc.system",
+            "rpc.service",
+            "rpc.method",
+            "rpc.grpc.status_code",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-azure-aot-demo",
+      "profile_id": "qyl-aot-azure",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "azure.sdk",
+          "required_attributes": [
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-search-aot-demo",
+      "profile_id": "qyl-aot-search",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "elasticsearch.request",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "elastictransport.request",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-graphql-aot-demo",
+      "profile_id": "qyl-aot-graphql",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "graphql.execute",
+          "required_attributes": [
+            "graphql.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "graphql.document"
+          ]
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-messaging-aot-demo",
+      "profile_id": "qyl-aot-messaging",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "kafka.message",
+          "required_attributes": [
+            "messaging.system",
+            "messaging.operation.type",
+            "messaging.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "masstransit.message",
+          "required_attributes": [
+            "messaging.system",
+            "messaging.operation.type",
+            "messaging.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "rabbitmq.publish",
+          "required_attributes": [
+            "messaging.system",
+            "messaging.operation.type",
+            "messaging.operation.name",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-cache-aot-demo",
+      "profile_id": "qyl-aot-cache",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "redis.command",
+          "required_attributes": [
+            "db.system.name",
+            "db.operation.name",
+            "db.query.summary",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": [
+            "db.query.text"
+          ]
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-scheduler-aot-demo",
+      "profile_id": "qyl-aot-scheduler",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "quartz.execute",
+          "required_attributes": [
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-logging-aot-demo",
+      "profile_id": "qyl-aot-logging",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "ilogger.log",
+          "required_attributes": [
+            "log.severity",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "log4net.log",
+          "required_attributes": [
+            "log.severity",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "nlog.log",
+          "required_attributes": [
+            "log.severity",
+            "qyl.instrumentation.domain"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-metrics-aot-demo",
+      "profile_id": "qyl-aot-metrics",
+      "expected_signals": [
+        {
+          "kind": "metric",
+          "name": "aspnetcore.components.render_diff.duration",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "aspnetcore.components.render_diff.size",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "aspnetcore.components.update_parameters.duration",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "http.client.request.duration",
+          "required_attributes": [
+            "http.request.method"
+          ],
+          "recommended_attributes": [
+            "http.response.status_code",
+            "error.type"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "db.client.operation.duration",
+          "required_attributes": [
+            "db.system.name"
+          ],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "dotnet.gc.collections",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "dotnet.gc.last_collection.heap.size",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "dotnet.thread_pool.thread.count",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "dotnet.process.cpu.time",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "dotnet.process.memory.working_set",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "metric",
+          "name": "dotnet.process.cpu.count",
+          "required_attributes": [],
+          "recommended_attributes": [],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
+      "service_name": "qyl-unsupported-nativeaot-demo",
+      "profile_id": "qyl-aot-unsupported-nativeaot",
+      "expected_signals": []
+    }
+  ]
+}

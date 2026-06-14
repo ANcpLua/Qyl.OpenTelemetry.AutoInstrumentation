@@ -1,0 +1,303 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit configuration for ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation — maxed advisory.
+#
+# Posture: advisory, never blocking. CodeRabbit comments on every PR but never
+# submits CHANGES_REQUESTED, never fails a commit status, and never gates a merge.
+# Skip a review per PR with the `skip-review` label or `[skip review]` in the title.
+# Repo: vendor-neutral .NET zero-code instrumentation runtime (private, Pro Plus covered).
+# Owned by this repo (seed-only fleet policy: this file is never overwritten).
+# Schema: https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+tone_instructions: "Fast senior reviewer with an ego. One definitive, evidence-backed review: file:line or silence. No open questions, no invented sources or versions, no praise, no nits. Solo-dev repo: breaking changes are normal; never flag backward compatibility."
+early_access: true
+enable_free_tier: false
+
+reviews:
+  profile: assertive
+
+  # Advisory, not blocking. The defining choice of this template.
+  request_changes_workflow: false
+
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  auto_title_instructions: >-
+    Use conventional commits format with area prefix. Keep under 72 characters.
+    No periods. Examples: feat(api): add endpoint, fix(build): pin SDK.
+  review_status: true
+  review_details: true
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: true
+  changed_files_summary: true
+  sequence_diagrams: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  in_progress_fortune: false
+  poem: false
+  enable_prompt_for_ai_agents: true
+  abort_on_close: true
+  disable_cache: true
+
+  slop_detection:
+    enabled: true
+    label: 'review:slop'
+
+  path_filters:
+    - '!**/*.g.cs'
+    - '!**/*.g.ts'
+    - '!**/*.g.sql'
+    - '!**/*.g.tsp'
+    - '!**/*.Designer.cs'
+    - '!**/Generated/**'
+    - '!**/generated/**'
+    - '!**/bin/**'
+    - '!**/obj/**'
+    - '!**/dist/**'
+    - '!**/node_modules/**'
+    - '!**/*.min.js'
+    - '!**/*.min.css'
+    - '!**/package-lock.json'
+    - '!**/pnpm-lock.yaml'
+    - '!**/yarn.lock'
+    - '!Artifacts/**'
+
+  path_instructions:
+    - path: "**"
+      instructions: |
+        Operating principles (solo-dev, agentic SDLC — reviews are advisory, agents act on them):
+        1. LAZY: one self-contained, correct review beats ten partial ones. Every finding is
+           definitive — concrete evidence with file:line, a concrete fix, no "consider maybe",
+           no open or ambiguous questions back to the author. If you cannot decide a point
+           from the diff plus repo context, stay silent on it. Never cite a source, API, or
+           version you have not verified; an unverifiable claim is a dropped claim.
+        2. IMPATIENT: never stall a PR. There are no compatibility obligations here — internal
+           and dogfooding code has NO public-API contract; removing shims, breaking signatures,
+           and deleting dead paths are normal, desirable changes. Do not flag backward
+           compatibility, deprecation ceremony, or migration paths. (SemVer applies only to
+           commercially sold libraries — this repo has none.)
+        3. EGO: hold the bar of the best reviewer on the market — flag real correctness,
+           security, data-loss, and structural problems precisely; produce zero noise.
+    - path: "src/**/*.cs"
+      instructions: |
+        Zero-code instrumentation runtime: this code runs inside EVERY request of host
+        applications. Top priorities, in order: (1) allocations and boxing on hot paths —
+        flag closures, LINQ, params arrays, string concat in listener/semantic-tag code;
+        (2) tag cardinality — any attribute value that is unbounded (raw URLs, user input,
+        exception messages) explodes at scale; (3) Activity/Meter lifecycle — undisposed
+        listeners, leaked subscriptions, double-Start/Stop; (4) thread safety of shared
+        listener state. PublicAPI.Shipped/Unshipped.txt are analyzer-managed: edits must
+        come from the analyzer flow, and API breaks are fine (internal product, no
+        compatibility contract).
+    - path: "src/**/Semantics/**"
+      instructions: |
+        OTel semantic conventions surface. Attribute names, stability levels, and units
+        must match the referenced semconv version exactly — verify against the actual
+        spec, never from memory. Flag invented attribute names.
+    - path: "tests/**"
+      instructions: |
+        Deterministic only: no Task.Delay/sleep-based synchronization, no wall-clock
+        assertions, no external services. A test asserts observable telemetry output
+        (exported activities/metrics), not implementation internals. COVERAGE_LEDGER.md
+        must move with coverage-relevant changes.
+    - path: "benchmarks/**"
+      instructions: |
+        BenchmarkDotNet projects. Flag benchmarks that measure nothing (dead code paths,
+        constant-folded bodies) and setup work leaking into the measured body.
+    - path: ".github/workflows/**"
+      instructions: |
+        Check event triggers, permissions, token scope, concurrency, and runtime cost —
+        smoketest/fixture workflows must stay bounded.
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    auto_pause_after_reviewed_commits: 0
+    drafts: true
+    ignore_title_keywords:
+      - '[skip review]'
+    ignore_usernames:
+      # Loop brake: never review CodeRabbit's own PRs; bot bumps auto-merge unreviewed.
+      - 'coderabbitai[bot]'
+      - 'renovate[bot]'
+      - 'dependabot[bot]'
+    # Per-PR bool toggle: label a PR `skip-review` and CodeRabbit stays away.
+    labels:
+      - '!skip-review'
+
+  finishing_touches:
+    docstrings:
+      enabled: true
+    unit_tests:
+      enabled: true
+    simplify:
+      enabled: true
+
+  # Hard gates are off in the baseline — they are repo-specific. qyl keeps
+  # its own pre_merge_checks block in qyl/.coderabbit.yaml.
+  pre_merge_checks:
+    docstrings:
+      mode: 'off'
+    title:
+      mode: warning
+    description:
+      mode: warning
+    issue_assessment:
+      mode: 'off'
+
+  tools:
+    ast-grep:
+      essential_rules: true
+    markdownlint:
+      enabled: true
+    hadolint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    gitleaks:
+      enabled: true
+    actionlint:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 900000
+    presidio:
+      enabled: true
+    biome:
+      enabled: true
+    languagetool:
+      enabled: false
+    ruff:
+      enabled: false
+    golangci-lint:
+      enabled: false
+    phpstan:
+      enabled: false
+    phpmd:
+      enabled: false
+    phpcs:
+      enabled: false
+    swiftlint:
+      enabled: false
+    detekt:
+      enabled: false
+    pmd:
+      enabled: false
+    semgrep:
+      enabled: false
+    opengrep:
+      enabled: false
+    trufflehog:
+      enabled: false
+    checkov:
+      enabled: false
+    tflint:
+      enabled: false
+    eslint:
+      enabled: false
+    flake8:
+      enabled: false
+    rubocop:
+      enabled: false
+    buf:
+      enabled: false
+    regal:
+      enabled: false
+    clang:
+      enabled: false
+    cppcheck:
+      enabled: false
+    circleci:
+      enabled: false
+    clippy:
+      enabled: false
+    sqlfluff:
+      enabled: false
+    trivy:
+      enabled: false
+    prismaLint:
+      enabled: false
+    pylint:
+      enabled: false
+    oxc:
+      enabled: false
+    shopifyThemeCheck:
+      enabled: false
+    luacheck:
+      enabled: false
+    brakeman:
+      enabled: false
+    dotenvLint:
+      enabled: false
+    htmlhint:
+      enabled: false
+    stylelint:
+      enabled: false
+    checkmake:
+      enabled: false
+    osvScanner:
+      enabled: false
+    blinter:
+      enabled: false
+    yamllint:
+      enabled: false
+    psscriptanalyzer:
+      enabled: false
+
+chat:
+  auto_reply: true
+  art: false
+  allow_non_org_members: false
+  integrations:
+    jira:
+      usage: disabled
+    linear:
+      usage: disabled
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'COVERAGE_LEDGER.md'
+      - '**/CLAUDE.md'
+      - '**/AGENTS.md'
+      - '.editorconfig'
+  # Cross-repo context (Pro Plus): related ANcpLua repos inform reviews here.
+  automatic_repository_linking: true
+  jira:
+    usage: disabled
+  linear:
+    usage: disabled
+  mcp:
+    usage: enabled
+
+issue_enrichment:
+  auto_enrich:
+    enabled: true
+  planning:
+    enabled: true
+    auto_planning:
+      enabled: true
+      labels:
+        - 'plan:auto'
+        - 'good-first-issue'
+        - 'help-wanted'
+  labeling:
+    auto_apply_labels: true

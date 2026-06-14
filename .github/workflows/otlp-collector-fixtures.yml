@@ -1,0 +1,23 @@
+name: qyl-otlp-collector-fixtures
+
+# Uses a real OpenTelemetry Collector container, so this is Linux-only (GitHub-hosted macOS
+# runners have no Docker).
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  otlp-collector-fixtures:
+    name: otlp collector fixtures
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify collector-backed OTLP transport fixtures
+        run: python3 tools/verify-otlp-collector-fixtures.py

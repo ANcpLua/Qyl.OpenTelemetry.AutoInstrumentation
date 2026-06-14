@@ -1,0 +1,32 @@
+name: qyl-verify-real-demos
+
+# The 28 container-backed real-demo verifiers (Kafka, Mongo, Redis, RabbitMQ, Postgres, MySQL,
+# Oracle, Elasticsearch, gRPC, Azure, WCF, …). Each packs the runtime, builds + NativeAOT-
+# publishes a real consumer, spins a testcontainer, and asserts emitted telemetry end-to-end.
+# Linux-only (needs Docker for testcontainers). Heavy, so it runs post-merge on main and on
+# demand — not on every feature push. Run the whole gate locally with:
+#   python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  real-demos:
+    name: real demos
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: NativeAOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Run the container-backed real-demo verifiers
+        run: python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only

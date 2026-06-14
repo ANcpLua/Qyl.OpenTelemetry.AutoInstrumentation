@@ -1,0 +1,183 @@
+{
+  "Activities": [
+    {
+      "Kind": "Client",
+      "Name": "DB CREATE",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "db.operation.name": "CREATE",
+        "db.query.summary": "CREATE",
+        "db.system.name": "other_sql",
+        "qyl.instrumentation.domain": "db.client"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "DB INSERT",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "db.operation.name": "INSERT",
+        "db.query.summary": "ExecuteSqlRaw INSERT",
+        "db.system.name": "sqlite",
+        "qyl.instrumentation.domain": "db.efcore"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "DB SELECT",
+      "Signal": "activity",
+      "Status": "Error",
+      "Tags": {
+        "db.operation.name": "SELECT",
+        "db.query.summary": "SELECT",
+        "db.system.name": "other_sql",
+        "error.type": "InvalidOperationException",
+        "qyl.instrumentation.domain": "db.client"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "GET",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "127.0.0.1",
+        "server.port": "<port>"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "GET",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "127.0.0.1",
+        "server.port": "<port>"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "GET",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "qyl-webapi.invalid"
+      }
+    },
+    {
+      "Kind": "Server",
+      "Name": "GET /probe/{id:int}",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "http.route": "/probe/{id:int}",
+        "qyl.instrumentation.domain": "aspnetcore.server"
+      }
+    },
+    {
+      "Kind": "Server",
+      "Name": "GET /probe/{id:int}",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "http.route": "/probe/{id:int}",
+        "qyl.instrumentation.domain": "http.server"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "SQL SELECT",
+      "Signal": "activity",
+      "Status": "Error",
+      "Tags": {
+        "db.operation.name": "SELECT",
+        "db.query.summary": "Text SELECT",
+        "db.system.name": "microsoft.sql_server",
+        "error.type": "System.InvalidOperationException",
+        "qyl.instrumentation.domain": "db.sqlclient"
+      }
+    }
+  ],
+  "Failures": [],
+  "Pass": true,
+  "RuntimeMode": "nativeaot",
+  "Signals": [
+    {
+      "Kind": "Server",
+      "Name": "GET /probe/{id:int}",
+      "Signal": "aspnetcore.server",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "http.route": "/probe/{id:int}",
+        "qyl.instrumentation.domain": "http.server"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "DB INSERT",
+      "Signal": "efcore.sqlite",
+      "Status": "Unset",
+      "Tags": {
+        "db.operation.name": "INSERT",
+        "db.query.summary": "ExecuteSqlRaw INSERT",
+        "db.system.name": "sqlite",
+        "qyl.instrumentation.domain": "db.efcore"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "GET",
+      "Signal": "httpclient.downstream",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "qyl-webapi.invalid"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "GET",
+      "Signal": "httpclient.self",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "qyl.instrumentation.domain": "http.client",
+        "server.address": "127.0.0.1",
+        "server.port": "<port>"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "SQL SELECT",
+      "Signal": "sqlclient.command",
+      "Status": "Error",
+      "Tags": {
+        "db.operation.name": "SELECT",
+        "db.query.summary": "Text SELECT",
+        "db.system.name": "microsoft.sql_server",
+        "error.type": "System.InvalidOperationException",
+        "qyl.instrumentation.domain": "db.sqlclient"
+      }
+    }
+  ]
+}

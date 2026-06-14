@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.RealMassTransitDemo</RootNamespace>
+    <AssemblyName>Qyl.RealMassTransitDemo</AssemblyName>
+    <Description>Real zero-code MassTransit source-interceptor proof for qyl.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MassTransit 8.x is the last Apache-2.0 open-source line; 9.x is commercial. -->
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.10" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.SourceGenerators\Qyl.AutoInstrumentation.SourceGenerators.csproj"
+                      Condition="'$(PublishAot)' != 'true'"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <Analyzer Include="..\..\artifacts\bin\Qyl.AutoInstrumentation.SourceGenerators\release\Qyl.AutoInstrumentation.SourceGenerators.dll"
+              Condition="'$(PublishAot)' == 'true'" />
+  </ItemGroup>
+
+  <Import Project="..\..\src\Qyl.AutoInstrumentation\buildTransitive\Qyl.AutoInstrumentation.targets" />
+
+</Project>

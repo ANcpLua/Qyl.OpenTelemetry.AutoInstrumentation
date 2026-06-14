@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.AutoInstrumentation.EntityFrameworkCore</RootNamespace>
+    <AssemblyName>Qyl.AutoInstrumentation.EntityFrameworkCore</AssemblyName>
+    <PackageId>Qyl.AutoInstrumentation.EntityFrameworkCore</PackageId>
+    <Description>Zero-code AOT-native EFCore DiagnosticSource instrumentation for qyl.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="buildTransitive\Qyl.AutoInstrumentation.EntityFrameworkCore.targets"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+    <None Include="buildTransitive\Qyl.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qyl.AutoInstrumentation\Qyl.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\Qyl.AutoInstrumentation.DiagnosticListeners\Qyl.AutoInstrumentation.DiagnosticListeners.csproj" />
+  </ItemGroup>
+
+</Project>

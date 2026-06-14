@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <_QylAutoInstrumentationCoreBuildAssetsAlreadyImported>$(QylAutoInstrumentationCoreBuildAssetsImported)</_QylAutoInstrumentationCoreBuildAssetsAlreadyImported>
+    <QylAutoInstrumentationCoreBuildAssetsImported>true</QylAutoInstrumentationCoreBuildAssetsImported>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_QylAutoInstrumentationCoreBuildAssetsAlreadyImported)' != 'true'">
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+</Project>

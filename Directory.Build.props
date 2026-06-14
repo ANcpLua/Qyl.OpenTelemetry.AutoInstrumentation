@@ -1,0 +1,99 @@
+<Project>
+
+  <!--
+    Root-of-repo MSBuild defaults shared by every project under src/.
+
+    Rationale:
+    The runtime used to be the OpenTelemetry .NET auto-instrumentation native CLR profiler;
+    we now ship a pure-managed runtime that runs under NativeAOT-published apps. Runtime
+    projects MUST stay AOT-clean: trim analyzer, AOT analyzer, and single-file analyzer are
+    turned on at the repo root so a regression fails the build, not the deployment. Build-time
+    Roslyn components opt out locally and must stay isolated from the runtime publish graph.
+  -->
+
+  <PropertyGroup>
+    <!-- Centralized build output (.NET 8+ artifacts layout): everything lands under
+         artifacts/<bin|obj|publish|package>/<project>/<pivot> at the repo root instead of
+         per-project bin/ and obj/ folders. Must live here — setting it in a csproj is
+         NETSDK1199. Tools that consume build output resolve paths from this layout. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+
+    <!-- Language / nullability / usings: pinned at repo root so individual csprojs stay small. -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- AOT/trim/single-file safety floor. Per-project csproj overrides only where unavoidable
+         (e.g. the source-generator project targets netstandard2.0 for Roslyn host compatibility). -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
+
+    <!-- Deterministic + reproducible builds — verified-OTLP gates need byte-stable artifacts. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- One version source of truth across all packed projects. Bump only after validation. -->
+    <Version>0.3.0-pre.1</Version>
+    <Authors>qyl</Authors>
+    <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Analyzer proof stack requested for the NativeAOT-readiness gate. -->
+    <ANcpLuaAnalyzersVersion>2.0.2</ANcpLuaAnalyzersVersion>
+    <MicrosoftCodeAnalysisAnalyzersVersion>5.3.0</MicrosoftCodeAnalysisAnalyzersVersion>
+    <MicrosoftCodeAnalysisCSharpVersion>5.3.0</MicrosoftCodeAnalysisCSharpVersion>
+    <ErrorProneNETCoreAnalyzersVersion>0.8.2-beta.1</ErrorProneNETCoreAnalyzersVersion>
+    <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
+    <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
+    <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.6</JonSkeetRoslynAnalyzersVersion>
+    <MicrosoftCodeAnalysisPublicApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisPublicApiAnalyzersVersion>
+    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.SqlClient'">true</QylEnablePublicApiAnalyzers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md"
+          Pack="true"
+          PackagePath=""
+          Visible="false" />
+    <PackageReference Include="ANcpLua.Analyzers"
+                      Version="$(ANcpLuaAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers"
+                      Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="ErrorProne.NET.CoreAnalyzers"
+                      Version="$(ErrorProneNETCoreAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="ErrorProne.NET.Structs"
+                      Version="$(ErrorProneNETStructsVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Roslynator.Analyzers"
+                      Version="$(RoslynatorAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="JonSkeet.RoslynAnalyzers"
+                      Version="$(JonSkeetRoslynAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers"
+                      Condition="'$(QylEnablePublicApiAnalyzers)' == 'true'"
+                      Version="$(MicrosoftCodeAnalysisPublicApiAnalyzersVersion)"
+                      PrivateAssets="all"
+                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
+  </ItemGroup>
+
+</Project>
