@@ -23,8 +23,9 @@ git stash list
 git status --short
 ```
 
-Work from `main` unless the task explicitly asks for a topic branch. Do not leave stale local
-branches, stashes, staged files, or unrelated untracked files behind.
+Work from `main` unless the task explicitly asks for a topic branch, and hand the tree back as
+clean as you found it — no stale local branches, stashes, staged files, or unrelated untracked
+files left behind.
 
 ## Build and test reality
 
@@ -40,10 +41,11 @@ branches, stashes, staged files, or unrelated untracked files behind.
   baselines next to each packaged project (`python3 tools/verify-public-api-baseline.py`).
 - CI runs `tools/smoketest.sh` on every push/PR, plus the OTLP collector fixture and WebAPI
   AOT demo workflows under `.github/workflows/`.
-- **CI runs on self-hosted runners** (`qyl-linux` in the OrbStack machine `qyl-ci`,
-  `qyl-macos` on the dev Mac — both arm64), because the repo is private and GitHub-hosted
-  minutes are exhausted. Never switch workflows back to `ubuntu-latest`/`macos-latest`, and
-  never make the repo public to fix CI — it must stay private until the deliberate history
+- **CI runs on the two self-hosted arm64 runners** — `qyl-linux` (in the OrbStack machine
+  `qyl-ci`) and `qyl-macos` (on the dev Mac). These are the accepted CI substrate: the repo
+  stays private and GitHub-hosted minutes are exhausted, so the self-hosted pair is what every
+  workflow targets. Out of bounds: switching any workflow back to `ubuntu-latest`/`macos-latest`,
+  and making the repo public to unblock CI — it stays private until the deliberate history
   overhaul. Operations, recreation, and troubleshooting:
   `.claude/skills/qyl-selfhosted-ci/SKILL.md` (the `qyl-selfhosted-ci` skill).
 
@@ -73,7 +75,13 @@ runtime project, the generator project as analyzer, and the core targets file ex
 
 ## Architecture invariants
 
-Never reintroduce these mechanisms into product code or package assets:
+The accepted qyl instrumentation mechanisms here are exactly these: ordinary C# compiled into
+the app, source-generated interceptors, build-transitive assets, module-initializer activation,
+BCL telemetry primitives, and public library diagnostic payloads. Build every integration out
+of these.
+
+The following are the old substrate this repo deliberately replaced; reintroducing any of them
+into product code or package assets is out of bounds:
 
 - CLR profiler attach,
 - startup hooks,
@@ -84,10 +92,6 @@ Never reintroduce these mechanisms into product code or package assets:
 - `gate.sh` substrate attach flows,
 - reflection-based instrumentation dispatch.
 
-The only accepted qyl mechanisms here are ordinary C# compiled into the app, source-generated
-interceptors, build-transitive assets, module-initializer activation, BCL telemetry primitives,
-and public library diagnostic payloads.
-
 ## Package boundaries
 
 Keep dependency-heavy integrations isolated:
@@ -97,12 +101,17 @@ Keep dependency-heavy integrations isolated:
 - Generic hosting/bootstrap code belongs in `Qyl.AutoInstrumentation.Hosting`.
 - Core shared runtime helpers belong in `Qyl.AutoInstrumentation`.
 
-Do not leak EFCore or SqlClient dependencies, warnings, or app-side NativeAOT constraints into
-Hosting or the core runtime package.
+EFCore lives in `Qyl.AutoInstrumentation.EntityFrameworkCore` and SqlClient in
+`Qyl.AutoInstrumentation.SqlClient`; their dependencies, build warnings, and app-side NativeAOT
+constraints stay contained there. Hosting and the core runtime package keep a clean,
+dependency-light surface — leaking any EFCore or SqlClient dependency, warning, or NativeAOT
+constraint into them is out of bounds.
 
 ## Generated and evidence files
 
-Do not hand-edit generated output. Fix the generator or input, then regenerate.
+Generated output's single source of truth is its generator and inputs: change one of those,
+then regenerate. Hand-editing generated output is out of bounds — such edits don't survive the
+next regeneration.
 
 Generated/evidence surfaces include:
 
