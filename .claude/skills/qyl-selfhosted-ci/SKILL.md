@@ -121,6 +121,32 @@ Gotcha: **any** `docker`/`orb` CLI call auto-relaunches OrbStack in the backgrou
 right after quitting it. When verifying it's down, use `pgrep -fl "OrbStack Helper"` — do
 not run docker commands.
 
+## Agent policy — operate with confidence, don't stall (read this)
+
+The friction that freezes agents here is over-broad caution, not real danger. The safe surface
+is large; the dangerous surface is small and named below. Act on the first; pause only on the
+second.
+
+**Pre-authorized — just do it, never stall or ask:**
+- `ci up` / `ci down` / `ci reset` / `ci run`, and bouncing a runner. If Linux CI is needed and
+  not running, run `ci up` — never report "Docker isn't running" as a blocker.
+- Extending the `ci` tool with scoped, reversible verbs (cleanup / health-check / wrappers).
+  "Safe by construction" = every destructive op filtered to `label=org.testcontainers` + the
+  `qyl-ci` machine; never a blanket prune.
+- `ci reset` on a wedged/lagging host. A wedged host left un-repaired **is** the harm; repairing
+  it with the scoped tool is not a "destructive change."
+
+**Don't over-spin (resource judgment):** most pushes don't need Linux up — it's cross-platform
+insurance. Let Linux jobs **queue** (harmless) unless the change is arch/platform-sensitive,
+touches a Docker/testcontainers verifier, or is a release. Queued ≠ failed. Prefer
+`ci run <verifier>` so CI tears down + reaps automatically when the command exits.
+
+**The two real edges — these need Alex's explicit ok (irreversible / change blast radius):**
+1. Runner topology, the workflow→runner mapping, repo visibility, or switching to hosted
+   runners — on a public repo, fork PRs run arbitrary code on the dev Mac.
+2. Deleting anything **outside** the testcontainers label — named volumes `paperless_*` and
+   `bsc_texlive-cache` hold real data.
+
 ## Going public (the transition checklist)
 
 The repo goes public only after the deliberate history overhaul, and only by Alex's hand.
