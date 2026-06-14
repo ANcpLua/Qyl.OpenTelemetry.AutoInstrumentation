@@ -401,34 +401,69 @@ def verify_metric_contract() -> None:
     metric_implementation_text = "\n".join([generator, meters, names])
 
     for token in [
+        'public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";',
+        'public const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";',
+        'public const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";',
+        'public const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";',
+        'public const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";',
+        'public const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";',
+        'public const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";',
+        'public const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";',
+        'public const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";',
         'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";',
         'public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";',
         'public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";',
-        'public const string AspNetCoreComponentsNavigateMetricName = "aspnetcore.components.navigate";',
+        'public const string NameResolutionMeterName = "System.Net.NameResolution";',
+        'public const string NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";',
     ]:
         if token not in contract:
-            fail(f"InstrumentationContract must pin the .NET 10 ASP.NET Core components metric proof: {token}")
+            fail(f"InstrumentationContract must pin the .NET 10 metric meter proof: {token}")
 
-    if 'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";' not in meters:
-        fail("QylMetricMeters must register the .NET 10 ASP.NET Core components meter")
     for token in [
+        'public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";',
+        'public const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";',
+        'public const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";',
+        'public const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";',
+        'public const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";',
+        'public const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";',
+        'public const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";',
+        'public const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";',
+        'public const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";',
+        'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";',
+        'public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";',
+        'public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";',
+        'public const string NameResolutionMeterName = "System.Net.NameResolution";',
+        'public const string NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";',
+        "names.Add(AspNetCoreHostingMeterName);",
+        "names.Add(AspNetCoreRoutingMeterName);",
+        "names.Add(AspNetCoreDiagnosticsMeterName);",
+        "names.Add(AspNetCoreRateLimitingMeterName);",
+        "names.Add(AspNetCoreHeaderParsingMeterName);",
+        "names.Add(AspNetCoreServerKestrelMeterName);",
+        "names.Add(AspNetCoreHttpConnectionsMeterName);",
+        "names.Add(AspNetCoreAuthorizationMeterName);",
+        "names.Add(AspNetCoreAuthenticationMeterName);",
         "names.Add(AspNetCoreComponentsMeterName);",
         "names.Add(AspNetCoreComponentsLifecycleMeterName);",
         "names.Add(AspNetCoreComponentsServerCircuitsMeterName);",
+        "names.Add(NameResolutionMeterName);",
+        "names.Add(NServiceBusIncomingPipelineMeterName);",
     ]:
         if token not in meters:
-            fail(f"QylMetricMeters must add the .NET 10 ASP.NET Core components meter when ASPNETCORE metrics are enabled: {token}")
+            fail(f"QylMetricMeters must register expanded .NET 10 metric meters when metrics are enabled: {token}")
     if 'public const string AspNetCoreComponentsNavigate = "aspnetcore.components.navigate";' not in names:
         fail("QylMetricNames must pin the .NET 10 ASP.NET Core components navigate metric")
+    if 'public const string HttpServerRequestDuration = "http.server.request.duration";' not in names:
+        fail("QylMetricNames must pin the .NET 10 ASP.NET Core hosting request duration metric")
+    if 'public const string DnsLookupDuration = "dns.lookup.duration";' not in names:
+        fail("QylMetricNames must pin the .NET System.Net.NameResolution DNS lookup duration metric")
 
     for token in [
-        "Microsoft.AspNetCore.Hosting",
-        "http.server.request.duration",
         "NavigationManager",
         "NavigateTo",
     ]:
         if token in metric_implementation_text:
-            fail(f"productive code must not use an obsolete or call-site-invented ASP.NET Core metric proof: {token}")
+            fail(f"productive code must not synthesize source-visible ASP.NET Core component metrics: {token}")
 
 
 def verify_runtime_public_telemetry_status_policy() -> None:
@@ -1817,9 +1852,6 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
 
     if "NavigationManager" in generator or "NavigateTo" in generator:
         fail("generator must not synthesize aspnetcore.components.navigate from NavigationManager.NavigateTo")
-
-    if "http.server.request.duration" in generator or "Microsoft.AspNetCore.Hosting" in generator:
-        fail("generator must not use the old ASP.NET Core Hosting meter metric proof")
 
     for token in FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS:
         if token in generator:

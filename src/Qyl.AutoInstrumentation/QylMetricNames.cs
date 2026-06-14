@@ -5,6 +5,8 @@ namespace Qyl.AutoInstrumentation;
 /// <example><code>var apiType = typeof(QylMetricNames);</code></example>
 public static class QylMetricNames
 {
+    /// <summary>Well-known HTTP Server Request Duration value used by qyl auto-instrumentation.</summary>
+    public const string HttpServerRequestDuration = "http.server.request.duration";
     /// <summary>Well-known ASP.NET Core Components Navigate value used by qyl auto-instrumentation.</summary>
     public const string AspNetCoreComponentsNavigate = "aspnetcore.components.navigate";
     /// <summary>Well-known ASP.NET Core Components Handle Event Duration value used by qyl auto-instrumentation.</summary>
@@ -20,6 +22,8 @@ public static class QylMetricNames
     public const string DbClientOperationDuration = "db.client.operation.duration";
     /// <summary>Well-known HTTP Client Request Duration value used by qyl auto-instrumentation.</summary>
     public const string HttpClientRequestDuration = "http.client.request.duration";
+    /// <summary>Well-known DNS Lookup Duration value used by qyl auto-instrumentation.</summary>
+    public const string DnsLookupDuration = "dns.lookup.duration";
     /// <summary>Well-known N Service Bus Messaging Operation Duration value used by qyl auto-instrumentation.</summary>
     public const string NServiceBusMessagingOperationDuration = "nservicebus.messaging.operation.duration";
 

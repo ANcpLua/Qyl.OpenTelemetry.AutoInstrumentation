@@ -15,10 +15,20 @@ internal static class QylGeneratedInstrumentationContract
     public const int SourceInterceptorSignalPromiseCount = 24;
     public const int RuntimePublicTelemetrySignalPromiseCount = 8;
     public const int UnsupportedNativeAotSignalPromiseCount = 4;
+    public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";
+    public const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";
+    public const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";
+    public const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";
+    public const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";
+    public const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";
+    public const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
+    public const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";
+    public const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
     public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
-    public const string AspNetCoreComponentsNavigateMetricName = "aspnetcore.components.navigate";
+    public const string NameResolutionMeterName = "System.Net.NameResolution";
+    public const string NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
 
     public static string[] ItemIds => new[]
     {

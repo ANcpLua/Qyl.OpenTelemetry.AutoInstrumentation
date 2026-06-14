@@ -105,10 +105,20 @@ internal static class InstrumentationContract
     public const int RuntimePublicTelemetrySignalPromiseCount = 8;
     public const int UnsupportedNativeAotSignalPromiseCount = 4;
 
+    public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";
+    public const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";
+    public const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";
+    public const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";
+    public const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";
+    public const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";
+    public const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
+    public const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";
+    public const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";
     public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
     public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
-    public const string AspNetCoreComponentsNavigateMetricName = "aspnetcore.components.navigate";
+    public const string NameResolutionMeterName = "System.Net.NameResolution";
+    public const string NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
 
     public static readonly ImmutableArray<string> ImplementedSignalKeys =
         ImmutableArray.Create(
@@ -279,10 +289,20 @@ internal static class InstrumentationContract
         builder.AppendLine($"    public const int SourceInterceptorSignalPromiseCount = {SourceInterceptorSignalPromiseCount};");
         builder.AppendLine($"    public const int RuntimePublicTelemetrySignalPromiseCount = {RuntimePublicTelemetrySignalPromiseCount};");
         builder.AppendLine($"    public const int UnsupportedNativeAotSignalPromiseCount = {UnsupportedNativeAotSignalPromiseCount};");
+        builder.AppendLine("    public const string AspNetCoreHostingMeterName = \"Microsoft.AspNetCore.Hosting\";");
+        builder.AppendLine("    public const string AspNetCoreRoutingMeterName = \"Microsoft.AspNetCore.Routing\";");
+        builder.AppendLine("    public const string AspNetCoreDiagnosticsMeterName = \"Microsoft.AspNetCore.Diagnostics\";");
+        builder.AppendLine("    public const string AspNetCoreRateLimitingMeterName = \"Microsoft.AspNetCore.RateLimiting\";");
+        builder.AppendLine("    public const string AspNetCoreHeaderParsingMeterName = \"Microsoft.AspNetCore.HeaderParsing\";");
+        builder.AppendLine("    public const string AspNetCoreServerKestrelMeterName = \"Microsoft.AspNetCore.Server.Kestrel\";");
+        builder.AppendLine("    public const string AspNetCoreHttpConnectionsMeterName = \"Microsoft.AspNetCore.Http.Connections\";");
+        builder.AppendLine("    public const string AspNetCoreAuthorizationMeterName = \"Microsoft.AspNetCore.Authorization\";");
+        builder.AppendLine("    public const string AspNetCoreAuthenticationMeterName = \"Microsoft.AspNetCore.Authentication\";");
         builder.AppendLine("    public const string AspNetCoreComponentsMeterName = \"Microsoft.AspNetCore.Components\";");
         builder.AppendLine("    public const string AspNetCoreComponentsLifecycleMeterName = \"Microsoft.AspNetCore.Components.Lifecycle\";");
         builder.AppendLine("    public const string AspNetCoreComponentsServerCircuitsMeterName = \"Microsoft.AspNetCore.Components.Server.Circuits\";");
-        builder.AppendLine("    public const string AspNetCoreComponentsNavigateMetricName = \"aspnetcore.components.navigate\";");
+        builder.AppendLine("    public const string NameResolutionMeterName = \"System.Net.NameResolution\";");
+        builder.AppendLine("    public const string NServiceBusIncomingPipelineMeterName = \"NServiceBus.Core.Pipeline.Incoming\";");
         builder.AppendLine();
         EmitStringArray(builder, "ItemIds", Items.Select(static item => item.Key));
         EmitStringArray(builder, "SignalKeys", Items.Where(static item => item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise).Select(static item => item.Key));

@@ -7,6 +7,11 @@ Unresolved design/validation questions are tracked in
 
 ### Telemetry semantics
 
+- Expanded the metrics registration surface with the useful part of the superseded
+  instrumentation research: ASP.NET Core now registers the current framework-owned built-in
+  meters beyond components, HTTP client metrics also register `System.Net.NameResolution`, and
+  NServiceBus metrics also register the vendor incoming-pipeline meter. The old
+  profiler/startup-hook/EventPipe substrate remains superseded and was not reintroduced.
 - Adopted the upstream OpenTelemetry .NET privacy model and removed the
   `QYL_AUTOINSTRUMENTATION_CAPTURE_SENSITIVE_VALUES` option entirely: `url.full` is always
   emitted on client spans and `url.path`/`url.query` on server spans, with query values

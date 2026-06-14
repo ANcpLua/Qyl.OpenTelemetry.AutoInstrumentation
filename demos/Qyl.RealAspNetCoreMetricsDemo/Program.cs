@@ -3,10 +3,12 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -38,6 +40,8 @@ await renderer.Dispatcher.InvokeAsync(async () =>
     _ = await renderer.RenderComponentAsync<TestComponent>();
 });
 
+await RunAspNetCoreRequestAsync(args);
+
 for (var attempt = 0; attempt < 20 && exportedMetrics.Count is 0; attempt++)
 {
     meterProvider.ForceFlush();
@@ -55,6 +59,34 @@ var json = JsonSerializer.Serialize(report, RealAspNetCoreMetricsJsonContext.Def
 Console.WriteLine(json);
 
 return report.Pass ? 0 : 1;
+
+static async Task RunAspNetCoreRequestAsync(string[] args)
+{
+    var builder = WebApplication.CreateSlimBuilder(args);
+    builder.WebHost.UseUrls("http://127.0.0.1:0");
+
+    await using var app = builder.Build();
+    app.Run(static context =>
+    {
+        context.Response.ContentType = "text/plain";
+        return context.Response.WriteAsync("42");
+    });
+
+    await app.StartAsync();
+    try
+    {
+        var address = app.Urls.FirstOrDefault()
+            ?? throw new InvalidOperationException("ASP.NET Core metrics demo did not bind to an address.");
+
+        using var httpClient = new HttpClient();
+        using var response = await httpClient.GetAsync($"{address}/metrics/42");
+        response.EnsureSuccessStatusCode();
+    }
+    finally
+    {
+        await app.StopAsync();
+    }
+}
 
 internal sealed class TestComponent : ComponentBase
 {
@@ -107,31 +139,50 @@ internal sealed record AspNetCoreMetricsReport(
     public static AspNetCoreMetricsReport Create(string runtimeMode, string[] enabledMeterNames, CapturedMetric[] metrics)
     {
         var failures = new List<string>();
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreHostingMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreRoutingMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreDiagnosticsMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreRateLimitingMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreHeaderParsingMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreServerKestrelMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreHttpConnectionsMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreAuthorizationMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreAuthenticationMeterName, failures);
         RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreComponentsMeterName, failures);
         RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, failures);
         RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreComponentsServerCircuitsMeterName, failures);
 
-        var aspNetCoreMetrics = metrics
+        var capturedAspNetCoreMetrics = metrics
+            .Where(static metric => metric.MeterName.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal))
+            .ToArray();
+        var componentMetrics = capturedAspNetCoreMetrics
             .Where(static metric => metric.MeterName.StartsWith("Microsoft.AspNetCore.Components", StringComparison.Ordinal))
             .ToArray();
+        var hostingMetrics = capturedAspNetCoreMetrics
+            .Where(static metric => StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.AspNetCoreHostingMeterName))
+            .ToArray();
 
-        if (aspNetCoreMetrics.Length is 0)
+        if (componentMetrics.Length is 0)
         {
             failures.Add("expected real ASP.NET Core component metrics, got none");
             failures.Add("observed metrics: " + string.Join("|", metrics.Select(static metric => metric.MeterName + ":" + metric.Name).OrderBy(static name => name, StringComparer.Ordinal)));
         }
 
-        RequireMetric(aspNetCoreMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsRenderDiffDuration, failures);
-        RequireMetric(aspNetCoreMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsRenderDiffSize, failures);
-        RequireMetric(aspNetCoreMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsUpdateParametersDuration, failures);
+        if (hostingMetrics.Length is 0)
+        {
+            failures.Add("expected real ASP.NET Core hosting metrics, got none");
+            failures.Add("observed metrics: " + string.Join("|", metrics.Select(static metric => metric.MeterName + ":" + metric.Name).OrderBy(static name => name, StringComparer.Ordinal)));
+        }
 
-        foreach (var metric in aspNetCoreMetrics.Where(static metric => metric.PointCount <= 0))
+        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsRenderDiffDuration, failures);
+        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsRenderDiffSize, failures);
+        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsUpdateParametersDuration, failures);
+        RequireMetric(hostingMetrics, QylMetricMeters.AspNetCoreHostingMeterName, QylMetricNames.HttpServerRequestDuration, failures);
+
+        foreach (var metric in capturedAspNetCoreMetrics.Where(static metric => metric.PointCount <= 0))
             failures.Add($"expected at least one metric point for {metric.MeterName}:{metric.Name}, got {metric.PointCount.ToString(CultureInfo.InvariantCulture)}");
 
-        if (metrics.Any(static metric => StringComparer.Ordinal.Equals(metric.MeterName, "Microsoft.AspNetCore.Hosting") || StringComparer.Ordinal.Equals(metric.Name, "http.server.request.duration")))
-            failures.Add("unexpected stale ASP.NET Core hosting metric was collected");
-
-        return new AspNetCoreMetricsReport(runtimeMode, failures.Count is 0, failures.ToArray(), enabledMeterNames, aspNetCoreMetrics);
+        return new AspNetCoreMetricsReport(runtimeMode, failures.Count is 0, failures.ToArray(), enabledMeterNames, capturedAspNetCoreMetrics);
     }
 
     private static void RequireEnabledMeter(IEnumerable<string> names, string expected, ICollection<string> failures)
