@@ -398,6 +398,7 @@ def verify_metric_contract() -> None:
     generator = read_generator_sources()
     meters = METRIC_METERS_PATH.read_text()
     names = METRIC_NAMES_PATH.read_text()
+    options = OPTIONS_PATH.read_text()
     metric_implementation_text = "\n".join([generator, meters, names])
 
     for token in [
@@ -457,6 +458,21 @@ def verify_metric_contract() -> None:
         fail("QylMetricNames must pin the .NET 10 ASP.NET Core hosting request duration metric")
     if 'public const string DnsLookupDuration = "dns.lookup.duration";' not in names:
         fail("QylMetricNames must pin the .NET System.Net.NameResolution DNS lookup duration metric")
+
+    for token in [
+        'MetricsAdditionalSourcesVariable = "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES"',
+        "EnvironmentOptions.ReadCaseSensitiveList(MetricsAdditionalSourcesVariable)",
+        "internal string[] AdditionalMetricMeterNames",
+    ]:
+        if token not in options:
+            fail(f"QylAutoInstrumentationOptions must preserve upstream additional metric source support: {token}")
+
+    for token in [
+        "AddDistinct(names, options.AdditionalMetricMeterNames);",
+        "!target.Contains(name, StringComparer.Ordinal)",
+    ]:
+        if token not in meters:
+            fail(f"QylMetricMeters must append upstream additional metric sources without case folding or duplicates: {token}")
 
     for token in [
         "NavigationManager",

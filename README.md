@@ -108,6 +108,13 @@ OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION=true
 OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION=true
 ```
 
+Custom metric meters can be appended to the source-generated meter registration path with the
+upstream additional-sources option. Names are case-sensitive and de-duplicated:
+
+```bash
+OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES=YourCompany.CustomMeter,Other.Meter
+```
+
 The conformance processor is off by default:
 
 ```bash

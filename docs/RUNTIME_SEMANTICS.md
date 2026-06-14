@@ -17,6 +17,8 @@ instrumentation code; qyl code lives in the package bootstrap and listeners.
 - Keep span names bounded. Do not include full URLs, paths, query text, IDs, or exception messages.
 - Prefer low-cardinality summaries: route templates over paths, database operation/summary over raw
   SQL, and well-known error identifiers over exception messages.
+- Append custom metric meters only through `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES`; meter
+  names are case-sensitive and de-duplicated against qyl's built-in registrations.
 
 ## Privacy
 

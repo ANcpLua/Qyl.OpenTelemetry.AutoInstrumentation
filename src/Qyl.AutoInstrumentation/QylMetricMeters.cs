@@ -102,6 +102,18 @@ public static class QylMetricMeters
             && !names.Contains(ProcessMeterName, StringComparer.Ordinal))
             names.Add(ProcessMeterName);
 
+        if (options.MetricsEnabled)
+            AddDistinct(names, options.AdditionalMetricMeterNames);
+
         return names.ToArray();
+    }
+
+    private static void AddDistinct(List<string> target, IEnumerable<string> names)
+    {
+        foreach (var name in names)
+        {
+            if (!target.Contains(name, StringComparer.Ordinal))
+                target.Add(name);
+        }
     }
 }

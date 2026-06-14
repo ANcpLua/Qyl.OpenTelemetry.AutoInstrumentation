@@ -12,6 +12,7 @@ public sealed class QylAutoInstrumentationOptions
     private const string GlobalEnabledVariable = "OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED";
     private const string TracesEnabledVariable = "OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED";
     private const string MetricsEnabledVariable = "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED";
+    private const string MetricsAdditionalSourcesVariable = "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES";
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
     private const string ConformanceEnabledVariable = "QYL_CONFORMANCE_ENABLED";
     private const string EntityFrameworkCoreDbStatementVariable =
@@ -69,6 +70,7 @@ public sealed class QylAutoInstrumentationOptions
         string[] grpcNetClientCapturedResponseMetadata,
         string[] httpClientCapturedRequestHeaders,
         string[] httpClientCapturedResponseHeaders,
+        string[] additionalMetricMeterNames,
         bool aspNetCoreUrlQueryRedactionDisabled,
         bool httpClientUrlQueryRedactionDisabled,
         bool aspNetUrlQueryRedactionDisabled,
@@ -98,6 +100,7 @@ public sealed class QylAutoInstrumentationOptions
         GrpcNetClientCapturedResponseMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcResponseMetadataPrefix, grpcNetClientCapturedResponseMetadata, normalizeLookupName: true);
         HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, httpClientCapturedRequestHeaders);
         HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, httpClientCapturedResponseHeaders);
+        AdditionalMetricMeterNames = additionalMetricMeterNames;
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
         AspNetUrlQueryRedactionDisabled = aspNetUrlQueryRedactionDisabled;
@@ -166,6 +169,8 @@ public sealed class QylAutoInstrumentationOptions
     internal QylCapturedNameMap HttpClientCapturedRequestHeaderMap { get; }
 
     internal QylCapturedNameMap HttpClientCapturedResponseHeaderMap { get; }
+
+    internal string[] AdditionalMetricMeterNames { get; }
 
     /// <summary>Gets the configured ASP.NET Core Url Query Redaction Disabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool AspNetCoreUrlQueryRedactionDisabled { get; }
@@ -282,6 +287,7 @@ public sealed class QylAutoInstrumentationOptions
             EnvironmentOptions.ReadList(GrpcClientResponseMetadataVariable),
             EnvironmentOptions.ReadList(HttpClientRequestHeadersVariable),
             EnvironmentOptions.ReadList(HttpClientResponseHeadersVariable),
+            EnvironmentOptions.ReadCaseSensitiveList(MetricsAdditionalSourcesVariable),
             EnvironmentOptions.ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
             EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false,
             EnvironmentOptions.ReadBoolean(AspNetUrlQueryRedactionDisabledVariable) ?? false,
@@ -373,6 +379,19 @@ public sealed class QylAutoInstrumentationOptions
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(static item => item.Length > 0)
                 .Select(static item => item.ToLower(CultureInfo.InvariantCulture))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
+
+        internal static string[] ReadCaseSensitiveList(string variable)
+        {
+            var value = Environment.GetEnvironmentVariable(variable);
+            if (string.IsNullOrWhiteSpace(value))
+                return [];
+
+            return value
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(static item => item.Length > 0)
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
         }

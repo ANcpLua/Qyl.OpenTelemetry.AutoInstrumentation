@@ -176,6 +176,36 @@ sql.ilrewrite.requested=True
 sql.ilrewrite.enabled=False
 """
 
+ADDITIONAL_METRIC_SOURCES_EXPECTED = """global=True
+traces=True
+metrics=True
+logs=True
+conformance=False
+trace.http=True
+trace.sql=True
+metric.http=True
+metric.sql=True
+log.ilogger=True
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
+ef.text=False
+graphql.document=False
+oracle.text=False
+sql.text=False
+aspnet.req=
+aspnet.res=
+aspnetcore.req=
+aspnetcore.res=
+grpc.req=
+grpc.res=
+http.req=
+http.res=
+aspnetcore.query.unredacted=False
+http.query.unredacted=False
+aspnet.query.unredacted=False
+sql.ilrewrite.requested=False
+sql.ilrewrite.enabled=False
+"""
+
 
 def fail(message: str) -> None:
     raise SystemExit(message)
@@ -316,6 +346,17 @@ def main() -> None:
                 },
             ),
             OPTIONS_EXPECTED,
+        )
+        assert_scenario(
+            "additional metric sources",
+            run_scenario(
+                assembly,
+                env,
+                {
+                    "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES": "YourCompany.CustomMeter, System.Net.Http, custom.case.Meter, YourCompany.CustomMeter",
+                },
+            ),
+            ADDITIONAL_METRIC_SOURCES_EXPECTED,
         )
 
     print("environment-options-behavior-ok")
