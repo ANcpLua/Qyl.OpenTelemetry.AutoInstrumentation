@@ -17,8 +17,19 @@ namespace Qyl.AutoInstrumentation.Generated
     internal static class QylGeneratedInterceptors
     {
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(5,8)
-        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "OrHTaGeKBKDZi8Kz3ulm2VQAAABQcm9ncmFtLmNz")]
+        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "BZ/VvozrZJa2e0oqXWVjZFQAAABQcm9ncmFtLmNz")]
         public static void ILogger_Log_0<TState>(
+            this global::Microsoft.Extensions.Logging.ILogger logger,
+            global::Microsoft.Extensions.Logging.LogLevel logLevel,
+            global::Microsoft.Extensions.Logging.EventId eventId,
+            TState state,
+            global::System.Exception? exception,
+            global::System.Func<TState, global::System.Exception?, string> formatter)
+            => global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
+
+        // Intercepted call at /_qyl_generator_snapshot/Probe.cs(10,16)
+        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "bCVh78nW9Q7jLziddD9BAPcBAABQcm9iZS5jcw==")]
+        public static void ILogger_Log_1<TState>(
             this global::Microsoft.Extensions.Logging.ILogger logger,
             global::Microsoft.Extensions.Logging.LogLevel logLevel,
             global::Microsoft.Extensions.Logging.EventId eventId,

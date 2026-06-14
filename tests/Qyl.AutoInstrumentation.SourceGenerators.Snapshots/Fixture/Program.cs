@@ -9,6 +9,8 @@ logger.Log(
     exception: null,
     static (state, exception) => exception is null ? state : state + ":" + exception.GetType().Name);
 
+Probe.Emit(logger);
+
 return 0;
 
 internal sealed class SnapshotLogger : ILogger

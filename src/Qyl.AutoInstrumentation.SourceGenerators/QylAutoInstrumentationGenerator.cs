@@ -41,6 +41,22 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         CreateGeneratedEmissionDescriptors();
 
+    // The qyl runtime packages hold the QylIntercepted* forwarding helpers, whose own framework
+    // calls would self-intercept (e.g. QylInterceptedHttpClient.SendAsync calls client.SendAsync).
+    // A compilation that IS one of these packages is never instrumented. Today only the core package
+    // carries self-forwarding helpers and only it gets the analyzer, but matching the whole set keeps
+    // the guard correct under the documented package-boundary moves (a helper relocating to a sibling
+    // that later gains the analyzer). Keep in sync with the runtime packages under /src — a consumer,
+    // demo, or test fixture is deliberately NOT in this set and stays instrumented.
+    private static readonly HashSet<string> s_qylRuntimeAssemblies = new(StringComparer.Ordinal)
+    {
+        "Qyl.AutoInstrumentation",
+        "Qyl.AutoInstrumentation.DiagnosticListeners",
+        "Qyl.AutoInstrumentation.Hosting",
+        "Qyl.AutoInstrumentation.EntityFrameworkCore",
+        "Qyl.AutoInstrumentation.SqlClient",
+    };
+
     /// <summary>
     /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
     /// </summary>
@@ -71,7 +87,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         CancellationToken cancellationToken)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        if (string.Equals(context.SemanticModel.Compilation.AssemblyName, "Qyl.AutoInstrumentation", StringComparison.Ordinal))
+        if (context.SemanticModel.Compilation.AssemblyName is { } assemblyName &&
+            s_qylRuntimeAssemblies.Contains(assemblyName))
             return null;
 
         if (context.SemanticModel.GetInterceptorMethod(invocation, cancellationToken) is not null)
@@ -1937,9 +1954,15 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             return false;
         }
 
+        // Require the client to come from a real Azure SDK assembly (Azure.Storage.Blobs,
+        // Azure.Messaging.*, …) — not merely any user type parked in an `Azure.*` namespace.
+        // Together with the Azure.Response return-type gate this stops a false-positive Azure span
+        // on a user-authored *Client placed in the reserved Azure root namespace.
         var namespaceName = named.ContainingNamespace.ToDisplayString();
         return namespaceName.StartsWithOrdinal("Azure.") &&
-               !namespaceName.StartsWithOrdinal("Azure.Core");
+               !namespaceName.StartsWithOrdinal("Azure.Core") &&
+               named.ContainingAssembly?.Name is { } assemblyName &&
+               assemblyName.StartsWithOrdinal("Azure.");
     }
 
     private static bool TryGetAzureClientOperationReturn(ITypeSymbol returnType, out bool isAsync)
