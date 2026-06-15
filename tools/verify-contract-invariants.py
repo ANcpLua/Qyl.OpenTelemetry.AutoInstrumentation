@@ -137,8 +137,14 @@ def load_artifacts() -> ModuleType:
     return module
 
 
+def generator_partial_paths():
+    # The generator is split across QylAutoInstrumentationGenerator{,.Descriptors,.Detection,.Shapes}.cs partials.
+    return sorted(GENERATOR_PATH.parent.glob("QylAutoInstrumentationGenerator*.cs"))
+
+
 def read_generator_sources() -> str:
-    sources = [GENERATOR_PATH.read_text(), INTERCEPTOR_CATALOG_PATH.read_text()]
+    sources = [p.read_text() for p in generator_partial_paths()]
+    sources.append(INTERCEPTOR_CATALOG_PATH.read_text())
     return "\n".join(sources)
 
 
@@ -1258,7 +1264,7 @@ def verify_behavior_semantics_contract() -> None:
         if token in generator:
             fail(f"generator must not inline telemetry behavior instead of delegating to runtime: {token}")
 
-    behavior_sources = [GENERATOR_PATH, *sorted((ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation").glob("QylIntercepted*.cs"))]
+    behavior_sources = [*generator_partial_paths(), *sorted((ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation").glob("QylIntercepted*.cs"))]
     for path in behavior_sources:
         text = path.read_text()
         for token in FORBIDDEN_EXCEPTION_REWRITE_TOKENS:
