@@ -1,0 +1,1298 @@
+using ANcpLua.Roslyn.Utilities;
+using Microsoft.CodeAnalysis;
+
+namespace Qyl.AutoInstrumentation.SourceGenerators;
+
+public sealed partial class QylAutoInstrumentationGenerator
+{
+    private static bool TryGetHttpClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsType(symbol.ContainingType, "global::System.Net.Http.HttpClient"))
+            return false;
+
+        if (string.Equals(symbol.Name, "Send", StringComparison.Ordinal) &&
+            IsType(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetSendShape(symbol, out var parameters))
+        {
+            target = HttpTarget(symbol, "Send", "global::System.Net.Http.HttpResponseMessage", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "SendAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetSendShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "SendAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: true, out parameters))
+        {
+            target = HttpTarget(symbol, "GetAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "DeleteAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "DeleteAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "PostAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriContentShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "PostAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "PutAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriContentShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "PutAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "PatchAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriContentShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "PatchAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetStringAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.String") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "GetStringAsync", "global::System.Threading.Tasks.Task<string>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetByteArrayAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Byte[]") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "GetByteArrayAsync", "global::System.Threading.Tasks.Task<byte[]>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetStreamAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.IO.Stream") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "GetStreamAsync", "global::System.Threading.Tasks.Task<global::System.IO.Stream>", parameters);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetHttpWebRequestInvocation(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
+    {
+        target = default;
+        var effectiveReceiverType = IsType(symbol.ContainingType, "global::System.Net.HttpWebRequest")
+            ? symbol.ContainingType
+            : receiverType;
+
+        if (effectiveReceiverType is null ||
+            !IsType(effectiveReceiverType, "global::System.Net.HttpWebRequest") ||
+            !TryGetNoParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        var methodName = symbol.Name;
+        var isAsync = methodName.EndsWithOrdinal("Async");
+        if (!TryGetHttpWebRequestReturn(symbol, methodName, isAsync, out var returnType))
+            return false;
+
+        target = new InterceptorTarget(
+            InterceptorKind.HttpWebRequest,
+            "signals.traces.HTTPCLIENT",
+            "HTTPCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            methodName,
+            returnType,
+            parameters,
+            isAsync,
+            AdditionalContractKeys: ContractKeys("signals.metrics.HTTPCLIENT"));
+        return true;
+    }
+
+    private static bool TryGetDbCommandInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!InheritsFromOrIs(symbol.ContainingType, "global::System.Data.Common.DbCommand"))
+            return false;
+
+        var methodName = symbol.Name;
+        var isAsync = methodName.EndsWithOrdinal("Async");
+        if (!TryGetDbCommandParameters(symbol, methodName, out var parameters))
+            return false;
+
+        if (!TryGetDbCommandReturn(symbol, methodName, isAsync, out var returnType))
+            return false;
+
+        var instrumentationId = GetDbInstrumentationId(symbol.ContainingType);
+        target = new InterceptorTarget(
+            InterceptorKind.DbCommand,
+            GetDbTraceContractKey(instrumentationId),
+            instrumentationId,
+            CleanTypeName(symbol.ContainingType),
+            methodName,
+            returnType,
+            parameters,
+            isAsync,
+            AdditionalContractKeys: GetDbMetricContractKeys(instrumentationId));
+        return true;
+    }
+
+    private static bool TryGetAspNetCoreRequestDelegateInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Invoke", StringComparison.Ordinal) ||
+            !IsType(symbol.ContainingType, "global::Microsoft.AspNetCore.Http.RequestDelegate") ||
+            !IsTask(symbol.ReturnType) ||
+            symbol.Parameters.Length is not 1 ||
+            !IsType(symbol.Parameters[0].Type, "global::Microsoft.AspNetCore.Http.HttpContext"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreRequestDelegate,
+            "signals.traces.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(symbol.ContainingType),
+            "Invoke",
+            "global::System.Threading.Tasks.Task",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetAspNetCoreWebApplicationBuilderBuildInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            !string.Equals(symbol.Name, "Build", StringComparison.Ordinal) ||
+            !IsType(symbol.ContainingType, "global::Microsoft.AspNetCore.Builder.WebApplicationBuilder") ||
+            !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.WebApplication") ||
+            symbol.Parameters.Length is not 0)
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreWebApplicationBuilderBuild,
+            "signals.traces.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(symbol.ContainingType),
+            "Build",
+            "global::Microsoft.AspNetCore.Builder.WebApplication",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetAspNetCoreEndpointMapInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom;
+
+        if (original is null ||
+            !IsSupportedAspNetCoreMapMethod(symbol.Name) ||
+            !IsType(original.ContainingType, "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions") ||
+            !TryGetAspNetCoreEndpointMapReturnType(symbol, out var returnType))
+            return false;
+
+        target = new InterceptorTarget(
+            InterceptorKind.AspNetCoreEndpointMap,
+            "signals.traces.ASPNETCORE",
+            "ASPNETCORE",
+            "global::Microsoft.AspNetCore.Routing.IEndpointRouteBuilder",
+            symbol.Name,
+            returnType,
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetAspNetCoreEndpointMapReturnType(IMethodSymbol symbol, out string returnType)
+    {
+        returnType = string.Empty;
+
+        var handlerIndex = 1;
+        if (string.Equals(symbol.Name, "MapMethods", StringComparison.Ordinal))
+        {
+            if (symbol.Parameters.Length is not 3 ||
+                !IsType(symbol.Parameters[0].Type, "global::System.String") ||
+                !IsConstructedFrom(symbol.Parameters[1].Type, "global::System.Collections.Generic.IEnumerable<T>"))
+            {
+                return false;
+            }
+
+            handlerIndex = 2;
+        }
+        else if (symbol.Parameters.Length is not 2 ||
+                 !IsType(symbol.Parameters[0].Type, "global::System.String"))
+        {
+            return false;
+        }
+
+        if (IsType(symbol.Parameters[handlerIndex].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate") &&
+            IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder"))
+        {
+            returnType = "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder";
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsSupportedAspNetCoreMapMethod(string name)
+        => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch" or "MapMethods";
+
+    private static bool TryGetMeterProviderBuilderAddMeterInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        var extensionContainingType = string.Empty;
+        if (symbol.ReducedFrom is { Parameters.Length: > 0 } original)
+        {
+            receiverType = original.Parameters[0].Type;
+            extensionContainingType = CleanTypeName(original.ContainingType);
+        }
+        else if (symbol.IsStatic)
+        {
+            return false;
+        }
+
+        if (!string.Equals(symbol.Name, "AddMeter", StringComparison.Ordinal) ||
+            !IsType(receiverType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
+            !IsType(symbol.ReturnType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
+            symbol.Parameters.Length is not 1 ||
+            !IsArrayOf(symbol.Parameters[0].Type, "global::System.String"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.MeterProviderBuilderAddMeter,
+            "signals.metrics.ASPNETCORE",
+            "ASPNETCORE",
+            CleanTypeName(receiverType),
+            "AddMeter",
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            false,
+            ExtensionContainingType: extensionContainingType,
+            AdditionalContractKeys: ContractKeys(
+                "signals.metrics.HTTPCLIENT",
+                "signals.metrics.NETRUNTIME",
+                "signals.metrics.NPGSQL",
+                "signals.metrics.NSERVICEBUS",
+                "signals.metrics.PROCESS",
+                "signals.metrics.SQLCLIENT"));
+        return true;
+    }
+
+    private static bool TryGetAzureClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            !IsAzureClientType(symbol.ContainingType) ||
+            !TryGetAzureClientOperationReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.AzureClient,
+            "signals.traces.AZURE",
+            "AZURE",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            isAsync);
+        return true;
+    }
+
+    private static bool IsAzureClientType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named ||
+            !named.Name.EndsWithOrdinal("Client"))
+        {
+            return false;
+        }
+
+        // Require the client to come from a real Azure SDK assembly (Azure.Storage.Blobs,
+        // Azure.Messaging.*, …) — not merely any user type parked in an `Azure.*` namespace.
+        // Together with the Azure.Response return-type gate this stops a false-positive Azure span
+        // on a user-authored *Client placed in the reserved Azure root namespace.
+        var namespaceName = named.ContainingNamespace.ToDisplayString();
+        return namespaceName.StartsWithOrdinal("Azure.") &&
+               !namespaceName.StartsWithOrdinal("Azure.Core") &&
+               named.ContainingAssembly?.Name is { } assemblyName &&
+               assemblyName.StartsWithOrdinal("Azure.");
+    }
+
+    private static bool TryGetAzureClientOperationReturn(ITypeSymbol returnType, out bool isAsync)
+    {
+        isAsync = false;
+        if (IsAzureResponseType(returnType))
+            return true;
+
+        if (TryGetTaskResult(returnType, out var resultType) && IsAzureResponseType(resultType))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsAzureResponseType(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol named &&
+           (IsTypeByMetadata(named, "Azure", "Response") ||
+            IsConstructedGeneric(named, "Azure", "Response`1"));
+
+    private static bool TryGetElasticInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        if (TryGetElasticsearchClientInvocation(symbol, out target))
+            return true;
+
+        return TryGetElasticTransportInvocation(symbol, out target);
+    }
+
+    private static bool TryGetElasticsearchClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.ReturnsVoid ||
+            symbol.DeclaredAccessibility is not Accessibility.Public ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            !IsElasticsearchClientType(symbol.ContainingType) ||
+            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ElasticsearchClient,
+            "signals.traces.ELASTICSEARCH",
+            "ELASTICSEARCH",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            isAsync,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool TryGetElasticTransportInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsOrImplementsType(receiverType, "Elastic.Transport", "ITransport") &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsOrImplementsType(receiverType, "Elastic.Transport", "ITransport")))
+        {
+            return false;
+        }
+
+        if (!IsSupportedElasticTransportMethod(symbol.Name) ||
+            symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary and not MethodKind.ReducedExtension ||
+            symbol.ReturnsVoid ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ElasticTransport,
+            "signals.traces.ELASTICTRANSPORT",
+            "ELASTICTRANSPORT",
+            CleanTypeName(receiverType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            isAsync,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
+        return true;
+    }
+
+    private static bool IsElasticsearchClientType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named ||
+            !named.Name.EndsWithOrdinal("Client"))
+        {
+            return false;
+        }
+
+        return named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("Elastic.Clients.Elasticsearch");
+    }
+
+    private static bool IsSupportedElasticTransportMethod(string methodName)
+        => methodName is "Request" or "RequestAsync";
+
+    private static bool CanEmitElasticReturn(ITypeSymbol returnType, out bool isAsync)
+    {
+        isAsync = false;
+        if (IsTask(returnType))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        if (TryGetTaskResult(returnType, out _))
+        {
+            isAsync = true;
+            return true;
+        }
+
+        return true;
+    }
+
+    private static bool TryGetWcfClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.IsGenericMethod ||
+            IsWcfInfrastructureMethod(symbol.Name) ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::System.ServiceModel.ClientBase<TChannel>") ||
+            IsSystemServiceModelType(symbol.ContainingType))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.WcfClient,
+            "signals.traces.WCFCLIENT",
+            "WCFCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
+        return true;
+    }
+
+    private static bool IsWcfInfrastructureMethod(string methodName)
+        => methodName is "Open" or
+            "OpenAsync" or
+            "Close" or
+            "CloseAsync" or
+            "Abort" or
+            "Dispose" or
+            "GetProperty" or
+            "BeginOpen" or
+            "EndOpen" or
+            "BeginClose" or
+            "EndClose";
+
+    private static bool IsSystemServiceModelType(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol named &&
+           named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("System.ServiceModel");
+
+    private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncUnaryCall<TResponse>") ||
+            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.GrpcNetClientAsyncUnaryCall,
+            "signals.traces.GRPCNETCLIENT",
+            "GRPCNETCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetGrpcNetClientStreamingInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
+            return false;
+
+        var kind = default(InterceptorKind);
+        if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncServerStreamingCall<TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncServerStreamingCall;
+        }
+        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncClientStreamingCall;
+        }
+        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall;
+        }
+        else
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            kind,
+            "signals.traces.GRPCNETCLIENT",
+            "GRPCNETCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetKafkaInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (TryGetKafkaProducerInvocation(symbol, out target))
+            return true;
+
+        return TryGetKafkaConsumerInvocation(symbol, out target);
+    }
+
+    private static bool TryGetMassTransitInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsMassTransitEndpointType(receiverType) &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsMassTransitEndpointType(receiverType)))
+        {
+            return false;
+        }
+
+        if (!IsSupportedMassTransitOperation(symbol.Name) ||
+            !IsTask(symbol.ReturnType) ||
+            symbol.Parameters.Length is 0)
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.MassTransitMessageOperation,
+            "signals.traces.MASSTRANSIT",
+            "MASSTRANSIT",
+            CleanTypeName(receiverType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            true,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
+        return true;
+    }
+
+    private static bool IsSupportedMassTransitOperation(string methodName)
+        => methodName is "Publish" or "Send";
+
+    private static bool IsMassTransitEndpointType(ITypeSymbol? symbol)
+        => IsOrImplementsType(symbol, "MassTransit", "IPublishEndpoint") ||
+           IsOrImplementsType(symbol, "MassTransit", "ISendEndpoint") ||
+           IsOrImplementsType(symbol, "MassTransit", "ISendEndpointProvider");
+
+    private static bool TryGetNServiceBusInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsNServiceBusEndpointType(receiverType) &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsNServiceBusEndpointType(receiverType)))
+        {
+            return false;
+        }
+
+        if (!IsSupportedNServiceBusOperation(symbol.Name) ||
+            !IsTask(symbol.ReturnType) ||
+            symbol.Parameters.Length is 0)
+        {
+            return false;
+        }
+
+        var typeParameterList = GetTypeParameterList(symbol);
+        var receiverTypeName = CleanTypeName(receiverType);
+        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
+        var parameters = Parameters(symbol);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, receiverType);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
+
+        target = new InterceptorTarget(
+            InterceptorKind.NServiceBusMessageOperation,
+            "signals.traces.NSERVICEBUS",
+            "NSERVICEBUS",
+            receiverTypeName,
+            symbol.Name,
+            returnTypeName,
+            parameters,
+            true,
+            typeParameterList,
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol),
+            AdditionalContractKeys: ContractKeys("signals.metrics.NSERVICEBUS"));
+        return true;
+    }
+
+    private static bool IsSupportedNServiceBusOperation(string methodName)
+        => methodName is "Publish" or "Send";
+
+    private static bool IsNServiceBusEndpointType(ITypeSymbol? symbol)
+        => IsOrImplementsType(symbol, "NServiceBus", "IMessageSession") ||
+           IsOrImplementsType(symbol, "NServiceBus", "IMessageHandlerContext");
+
+    private static bool TryGetQuartzInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Execute", StringComparison.Ordinal) ||
+            !IsTask(symbol.ReturnType) ||
+            !IsOrImplementsType(symbol.ContainingType, "Quartz", "IJob") ||
+            symbol.Parameters.Length is not 1 ||
+            !IsType(symbol.Parameters[0].Type, "global::Quartz.IJobExecutionContext"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.QuartzJobExecute,
+            "signals.traces.QUARTZ",
+            "QUARTZ",
+            CleanTypeName(symbol.ContainingType),
+            "Execute",
+            "global::System.Threading.Tasks.Task",
+            Parameters(symbol),
+            true);
+        return true;
+    }
+
+    private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsSupportedRedisAsyncCommand(symbol.Name) ||
+            !IsOrImplementsType(symbol.ContainingType, "StackExchange.Redis", "IDatabaseAsync") ||
+            !TryGetTaskResult(symbol.ReturnType, out _) ||
+            !TryGetRedisCommandParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.StackExchangeRedisCommandAsync,
+            "signals.traces.STACKEXCHANGEREDIS",
+            "STACKEXCHANGEREDIS",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            parameters,
+            true);
+        return true;
+    }
+
+    private static bool IsSupportedRedisAsyncCommand(string methodName)
+        => methodName is "StringGetAsync" or
+            "StringSetAsync" or
+            "StringIncrementAsync" or
+            "StringDecrementAsync" or
+            "HashGetAsync" or
+            "HashSetAsync" or
+            "HashDeleteAsync" or
+            "HashExistsAsync" or
+            "KeyDeleteAsync" or
+            "KeyExistsAsync" or
+            "ListLeftPushAsync" or
+            "ListRightPushAsync" or
+            "SetAddAsync" or
+            "SetRemoveAsync" or
+            "SortedSetAddAsync" or
+            "SortedSetRemoveAsync" or
+            "ExecuteAsync";
+
+    private static string GetRedisOperationName(string methodName)
+        => methodName switch
+        {
+            "StringGetAsync" => "GET",
+            "StringSetAsync" => "SET",
+            "StringIncrementAsync" => "INCR",
+            "StringDecrementAsync" => "DECR",
+            "HashGetAsync" => "HGET",
+            "HashSetAsync" => "HSET",
+            "HashDeleteAsync" => "HDEL",
+            "HashExistsAsync" => "HEXISTS",
+            "KeyDeleteAsync" => "DEL",
+            "KeyExistsAsync" => "EXISTS",
+            "ListLeftPushAsync" => "LPUSH",
+            "ListRightPushAsync" => "RPUSH",
+            "SetAddAsync" => "SADD",
+            "SetRemoveAsync" => "SREM",
+            "SortedSetAddAsync" => "ZADD",
+            "SortedSetRemoveAsync" => "ZREM",
+            _ => "EXECUTE",
+        };
+
+    private static bool TryGetGraphQlInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "ExecuteAsync", StringComparison.Ordinal) ||
+            !IsOrImplementsType(symbol.ContainingType, "GraphQL", "IDocumentExecuter") ||
+            !TryGetTaskResult(symbol.ReturnType, out var resultType) ||
+            resultType is not INamedTypeSymbol namedResult ||
+            !IsTypeByMetadata(namedResult, "GraphQL", "ExecutionResult"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.GraphQlDocumentExecuter,
+            "signals.traces.GRAPHQL",
+            "GRAPHQL",
+            CleanTypeName(symbol.ContainingType),
+            "ExecuteAsync",
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            true);
+        return true;
+    }
+
+    private static bool TryGetMongoDbInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsOrImplementsConstructedGeneric(receiverType, "MongoDB.Driver", "IMongoCollection`1") &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsOrImplementsConstructedGeneric(receiverType, "MongoDB.Driver", "IMongoCollection`1")))
+        {
+            return false;
+        }
+
+        if (!IsSupportedMongoDbCollectionMethod(symbol.Name) ||
+            !CanEmitMongoDbReturn(symbol.ReturnType))
+        {
+            return false;
+        }
+
+        var typeParameterList = GetTypeParameterList(symbol);
+        var receiverTypeName = CleanTypeName(receiverType);
+        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
+        var parameters = Parameters(symbol);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, receiverType);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
+
+        target = new InterceptorTarget(
+            InterceptorKind.MongoDbCollection,
+            "signals.traces.MONGODB",
+            "MONGODB",
+            receiverTypeName,
+            symbol.Name,
+            returnTypeName,
+            parameters,
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _),
+            typeParameterList,
+            string.Empty,
+            GetReducedExtensionContainingType(symbol));
+        return true;
+    }
+
+    private static bool IsSupportedMongoDbCollectionMethod(string methodName)
+        => methodName is "Find" or
+            "FindAsync" or
+            "Aggregate" or
+            "AggregateAsync" or
+            "InsertOne" or
+            "InsertOneAsync" or
+            "InsertMany" or
+            "InsertManyAsync" or
+            "ReplaceOne" or
+            "ReplaceOneAsync" or
+            "DeleteOne" or
+            "DeleteOneAsync" or
+            "DeleteMany" or
+            "DeleteManyAsync" or
+            "UpdateOne" or
+            "UpdateOneAsync" or
+            "UpdateMany" or
+            "UpdateManyAsync" or
+            "CountDocuments" or
+            "CountDocumentsAsync" or
+            "EstimatedDocumentCount" or
+            "EstimatedDocumentCountAsync";
+
+    private static bool CanEmitMongoDbReturn(ITypeSymbol returnType)
+        => returnType.SpecialType is SpecialType.System_Void ||
+           IsTask(returnType) ||
+           TryGetTaskResult(returnType, out _) ||
+           returnType.SpecialType is not SpecialType.None ||
+           returnType is INamedTypeSymbol;
+
+    private static bool TryGetRabbitMqInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        ITypeSymbol receiverType = symbol.ContainingType;
+        if (!IsRabbitMqChannelType(receiverType) &&
+            (!TryGetReducedExtensionReceiverType(symbol, out receiverType) ||
+             !IsRabbitMqChannelType(receiverType)))
+        {
+            return false;
+        }
+
+        if (!TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        if (string.Equals(symbol.Name, "BasicPublish", StringComparison.Ordinal) &&
+            symbol.ReturnsVoid)
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.RabbitMqBasicPublish,
+                "signals.traces.RABBITMQ",
+                "RABBITMQ",
+                CleanTypeName(receiverType),
+                "BasicPublish",
+                "void",
+                parameters,
+                false,
+                ExtensionContainingType: GetReducedExtensionContainingType(symbol));
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "BasicPublishAsync", StringComparison.Ordinal) &&
+            IsValueTask(symbol.ReturnType))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.RabbitMqBasicPublish,
+                "signals.traces.RABBITMQ",
+                "RABBITMQ",
+                CleanTypeName(receiverType),
+                "BasicPublishAsync",
+                CleanTypeName(symbol.ReturnType, symbol),
+                parameters,
+                true,
+                GetTypeParameterList(symbol),
+                GetConstraintClauses(symbol),
+                GetReducedExtensionContainingType(symbol));
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsRabbitMqChannelType(ITypeSymbol? symbol)
+        => IsOrImplementsType(symbol, "RabbitMQ.Client", "IModel") ||
+           IsOrImplementsType(symbol, "RabbitMQ.Client", "IChannel");
+
+    private static bool TryGetLoggerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Log", StringComparison.Ordinal) ||
+            !symbol.ReturnsVoid ||
+            !symbol.IsGenericMethod ||
+            symbol.TypeParameters.Length is not 1 ||
+            !IsType(symbol.ContainingType, "global::Microsoft.Extensions.Logging.ILogger") ||
+            symbol.Parameters.Length is not 5 ||
+            !IsType(symbol.Parameters[0].Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
+            !IsType(symbol.Parameters[1].Type, "global::Microsoft.Extensions.Logging.EventId") ||
+            !IsLoggerFormatter(symbol.Parameters[4].Type))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ILoggerLog,
+            "signals.logs.ILOGGER",
+            "ILOGGER",
+            CleanTypeName(symbol.ContainingType),
+            "Log",
+            "void",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetLoggerExtensionInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom;
+        if (original is null ||
+            !symbol.ReturnsVoid ||
+            !IsType(original.ContainingType, "global::Microsoft.Extensions.Logging.LoggerExtensions") ||
+            !IsSupportedLoggerExtensionName(symbol.Name) ||
+            !IsSupportedLoggerExtensionParameters(symbol))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.ILoggerExtensionLog,
+            "signals.logs.ILOGGER",
+            "ILOGGER",
+            "global::Microsoft.Extensions.Logging.ILogger",
+            symbol.Name,
+            "void",
+            Parameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool IsSupportedLoggerExtensionName(string name)
+        => name is "Log" or
+            "LogTrace" or
+            "LogDebug" or
+            "LogInformation" or
+            "LogWarning" or
+            "LogError" or
+            "LogCritical";
+
+    private static bool IsSupportedLoggerExtensionParameters(IMethodSymbol symbol)
+    {
+        if (symbol.Parameters.Length is < 2)
+            return false;
+
+        var hasMessage = false;
+        var hasArgs = false;
+
+        foreach (var parameter in symbol.Parameters)
+        {
+            if (IsType(parameter.Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
+                IsType(parameter.Type, "global::Microsoft.Extensions.Logging.EventId") ||
+                IsType(parameter.Type, "global::System.Exception"))
+            {
+                continue;
+            }
+
+            if (IsType(parameter.Type, "global::System.String"))
+            {
+                hasMessage = true;
+                continue;
+            }
+
+            if (parameter.IsParams && IsArrayOf(parameter.Type, "global::System.Object"))
+            {
+                hasArgs = true;
+                continue;
+            }
+
+            return false;
+        }
+
+        return hasMessage && hasArgs;
+    }
+
+    private static bool TryGetNLogInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!symbol.ReturnsVoid ||
+            !IsTypeByMetadata(symbol.ContainingType, "NLog", "Logger") ||
+            !IsSupportedExternalLoggerMethodName(symbol.Name))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.NLogLogger,
+            "signals.logs.NLOG",
+            "NLOG",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            "void",
+            Parameters(symbol),
+            false,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            ExtensionContainingType: GetExternalLoggerEnabledProperty(symbol));
+        return true;
+    }
+
+    private static bool TryGetLog4NetInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!symbol.ReturnsVoid ||
+            !IsLog4NetLoggerType(symbol.ContainingType) ||
+            !IsSupportedExternalLoggerMethodName(symbol.Name))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.Log4NetLogger,
+            "signals.logs.LOG4NET",
+            "LOG4NET",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            "void",
+            Parameters(symbol),
+            false,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            ExtensionContainingType: GetExternalLoggerEnabledProperty(symbol));
+        return true;
+    }
+
+    private static bool IsSupportedExternalLoggerMethodName(string name)
+        => name is "Log" or
+            "Trace" or "TraceFormat" or
+            "Debug" or "DebugFormat" or
+            "Info" or "InfoFormat" or
+            "Warn" or "WarnFormat" or
+            "Warning" or "WarningFormat" or
+            "Error" or "ErrorFormat" or
+            "Fatal" or "FatalFormat" or
+            "Critical" or "CriticalFormat";
+
+    private static string GetExternalLoggerEnabledProperty(IMethodSymbol symbol)
+    {
+        var propertyName = symbol.Name switch
+        {
+            "Trace" or "TraceFormat" => "IsTraceEnabled",
+            "Debug" or "DebugFormat" => "IsDebugEnabled",
+            "Info" or "InfoFormat" => "IsInfoEnabled",
+            "Warn" or "WarnFormat" or "Warning" or "WarningFormat" => "IsWarnEnabled",
+            "Error" or "ErrorFormat" => "IsErrorEnabled",
+            "Fatal" or "FatalFormat" or "Critical" or "CriticalFormat" => "IsFatalEnabled",
+            _ => string.Empty,
+        };
+
+        return propertyName.Length > 0 && HasReadableBooleanProperty(symbol.ContainingType, propertyName)
+            ? propertyName
+            : string.Empty;
+    }
+
+    private static bool HasReadableBooleanProperty(ITypeSymbol? symbol, string propertyName)
+    {
+        for (var current = symbol; current is not null; current = current.BaseType)
+        {
+            foreach (var member in current.GetMembers(propertyName))
+            {
+                if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
+                    return true;
+            }
+        }
+
+        if (symbol is INamedTypeSymbol named)
+        {
+            foreach (var interfaceType in named.AllInterfaces)
+            {
+                foreach (var member in interfaceType.GetMembers(propertyName))
+                {
+                    if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsLog4NetLoggerType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named)
+            return false;
+
+        if (IsTypeByMetadata(named, "log4net", "ILog") ||
+            IsTypeByMetadata(named, "log4net.Core", "ILogger"))
+            return true;
+
+        foreach (var interfaceType in named.AllInterfaces)
+        {
+            if (IsTypeByMetadata(interfaceType, "log4net", "ILog") ||
+                IsTypeByMetadata(interfaceType, "log4net.Core", "ILogger"))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetKafkaProducerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsOrImplementsConstructedGeneric(symbol.ContainingType, "Confluent.Kafka", "IProducer`2"))
+        {
+            return false;
+        }
+
+        if (string.Equals(symbol.Name, "ProduceAsync", StringComparison.Ordinal) &&
+            TryGetTaskResult(symbol.ReturnType, out var resultType) &&
+            IsConstructedGeneric(resultType, "Confluent.Kafka", "DeliveryResult`2") &&
+            TryGetKafkaProduceParameters(symbol, isAsync: true, out var parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.KafkaProducer,
+                "signals.traces.KAFKA",
+                "KAFKA",
+                CleanTypeName(symbol.ContainingType),
+                "ProduceAsync",
+                CleanTypeName(symbol.ReturnType, symbol),
+                parameters,
+                true);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "Produce", StringComparison.Ordinal) &&
+            symbol.ReturnsVoid &&
+            TryGetKafkaProduceParameters(symbol, isAsync: false, out parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.KafkaProducer,
+                "signals.traces.KAFKA",
+                "KAFKA",
+                CleanTypeName(symbol.ContainingType),
+                "Produce",
+                "void",
+                parameters,
+                false);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetKafkaConsumerInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!string.Equals(symbol.Name, "Consume", StringComparison.Ordinal) ||
+            !IsOrImplementsConstructedGeneric(symbol.ContainingType, "Confluent.Kafka", "IConsumer`2") ||
+            !IsConstructedGeneric(symbol.ReturnType, "Confluent.Kafka", "ConsumeResult`2") ||
+            !TryGetKafkaConsumeParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.KafkaConsumer,
+            "signals.traces.KAFKA",
+            "KAFKA",
+            CleanTypeName(symbol.ContainingType),
+            "Consume",
+            CleanTypeName(symbol.ReturnType, symbol),
+            parameters,
+            false);
+        return true;
+    }
+
+    private static bool TryGetEntityFrameworkCoreDbContextInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!InheritsFromOrIs(symbol.ContainingType, "global::Microsoft.EntityFrameworkCore.DbContext"))
+            return false;
+
+        if (string.Equals(symbol.Name, "SaveChanges", StringComparison.Ordinal) &&
+            symbol.ReturnType.SpecialType is SpecialType.System_Int32 &&
+            TryGetEfCoreSaveChangesParameters(symbol, allowCancellationToken: false, out var parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.EntityFrameworkCoreDbContext,
+                "signals.traces.ENTITYFRAMEWORKCORE",
+                "ENTITYFRAMEWORKCORE",
+                CleanTypeName(symbol.ContainingType),
+                "SaveChanges",
+                "int",
+                parameters,
+                false);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "SaveChangesAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Int32") &&
+            TryGetEfCoreSaveChangesParameters(symbol, allowCancellationToken: true, out parameters))
+        {
+            target = new InterceptorTarget(
+                InterceptorKind.EntityFrameworkCoreDbContext,
+                "signals.traces.ENTITYFRAMEWORKCORE",
+                "ENTITYFRAMEWORKCORE",
+                CleanTypeName(symbol.ContainingType),
+                "SaveChangesAsync",
+                "global::System.Threading.Tasks.Task<int>",
+                parameters,
+                true);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetEntityFrameworkCoreQueryableInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        var original = symbol.ReducedFrom;
+        if (original is null ||
+            !IsType(original.ContainingType, "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions") ||
+            !IsSupportedEntityFrameworkCoreQueryableMethod(symbol.Name) ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            original.Parameters.Length is 0 ||
+            !TryGetEntityFrameworkCoreQueryableReturn(symbol.ReturnType))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.EntityFrameworkCoreQueryable,
+            "signals.traces.ENTITYFRAMEWORKCORE",
+            "ENTITYFRAMEWORKCORE",
+            CleanTypeName(original.Parameters[0].Type),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            Parameters(symbol),
+            true,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            ExtensionContainingType: "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
+        return true;
+    }
+
+    private static bool IsSupportedEntityFrameworkCoreQueryableMethod(string methodName)
+        => methodName is "ToListAsync" or
+            "ToArrayAsync" or
+            "FirstAsync" or
+            "FirstOrDefaultAsync" or
+            "SingleAsync" or
+            "SingleOrDefaultAsync" or
+            "LastAsync" or
+            "LastOrDefaultAsync" or
+            "AnyAsync" or
+            "AllAsync" or
+            "CountAsync" or
+            "LongCountAsync" or
+            "MinAsync" or
+            "MaxAsync" or
+            "SumAsync" or
+            "AverageAsync" or
+            "ContainsAsync" or
+            "LoadAsync" or
+            "ForEachAsync" or
+            "ExecuteDeleteAsync" or
+            "ExecuteUpdateAsync";
+
+    private static bool TryGetEntityFrameworkCoreQueryableReturn(ITypeSymbol returnType)
+        => IsTask(returnType) || TryGetTaskResult(returnType, out _);
+}
