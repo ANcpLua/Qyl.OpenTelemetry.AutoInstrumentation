@@ -155,3 +155,21 @@ For release/handoff work, run the whole repo handoff gate.
 For file changes, commit and push the intended scope. If the package version or release marker is
 changed, align tags only after validation and after confirming the tag target is the final commit.
 Use `--force-with-lease` for intentional history rewrites; never rewrite remote history by accident.
+
+## NuGet publishing (keyless — never an API key)
+
+Publishing is keyless OIDC **Trusted Publishing**, driven by `nuget-publish.yml`
+(`workflow_dispatch` only — qyl stays unreleased until deliberately published, and stays on a
+GitHub-hosted `ubuntu-latest` runner for reliable OIDC + `gh`). There is **no `NUGET_API_KEY`
+secret and you must never add one**: `NuGet/login` exchanges GitHub's OIDC token for a one-hour,
+single-use key at push time (requires `permissions: id-token: write` + `environment: nuget`).
+
+If the publish job fails at **"Authenticate to NuGet"**, the cause is a **missing nuget.org
+Trusted Publishing policy — never a missing key**. That policy is the one human-only step (no
+API for it); create it once at nuget.org → Trusted Publishing → Create with these fields:
+Package Owner `ANcpLua`, Repository Owner `ANcpLua`, Repository
+`Qyl.OpenTelemetry.AutoInstrumentation` (name only), Workflow File `nuget-publish.yml` (filename
+only, no `.github/workflows/` prefix), Environment `nuget` (must match the publish job). Then
+re-run the failed job: `gh run rerun <run-id> --failed`. Never park publishing as "blocked on
+credentials." The version is CI-owned (derived from the latest `v*` tag) — do not hand-maintain
+a `<Version>`/`<PackageVersion>` in the csproj.
