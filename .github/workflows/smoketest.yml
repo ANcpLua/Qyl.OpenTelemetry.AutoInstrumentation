@@ -2,6 +2,8 @@ name: qyl-smoketest
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -12,8 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest
-          - macos-latest
+          - qyl-linux
+          - qyl-macos
 
     steps:
       - uses: actions/checkout@v4

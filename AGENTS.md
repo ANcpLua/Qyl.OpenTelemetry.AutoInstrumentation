@@ -39,12 +39,17 @@ files left behind.
   (compare against `verified/`). Route changes through the validation table below.
 - Public API changes require updating the `PublicAPI.Shipped.txt`/`PublicAPI.Unshipped.txt`
   baselines next to each packaged project (`python3 tools/verify-public-api-baseline.py`).
-- CI runs `tools/smoketest.sh` on every push/PR, plus the OTLP collector fixture and WebAPI
-  AOT demo workflows under `.github/workflows/`.
-- CI runs on **GitHub-hosted runners** (`ubuntu-latest` + `macos-latest`) on every push and PR:
+- CI runs `tools/smoketest.sh` on pull requests and pushes to `main`, plus the OTLP collector
+  fixture and WebAPI AOT demo workflows under `.github/workflows/`.
+- CI runs on **self-hosted runners** — `qyl-linux` (ARM64 Linux, inside the OrbStack `qyl-ci`
+  VM) and `qyl-macos` (ARM64 macOS, native launchd) — on pull requests and pushes to `main`:
   the smoketest, the `verify` validation floor, the OTLP collector fixtures, the WebAPI AOT
-  demo, and the container-backed real-demo verifiers. Linux legs install the NativeAOT
-  prerequisites (`clang`, `zlib1g-dev`); the whole gate is `tools/verify-aot-autoinstrumentation-goal.py`.
+  demo, and the container-backed real-demo verifiers (these use the `qyl-ci` VM's Docker). Linux
+  legs install the NativeAOT prerequisites (`clang`, `zlib1g-dev`); the whole gate is
+  `tools/verify-aot-autoinstrumentation-goal.py`. Linux jobs queue while the `qyl-ci` VM is
+  stopped — run `ci up` before pushing CI that needs Linux legs. Only `nuget-publish.yml` stays
+  on a GitHub-hosted `ubuntu-latest` runner: it is manual (`workflow_dispatch`) and infrequent,
+  keeping reliable OIDC + `gh` for NuGet Trusted Publishing.
 
 ## Mechanism flow (big picture)
 

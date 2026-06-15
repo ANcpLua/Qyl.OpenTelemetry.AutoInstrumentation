@@ -16,7 +16,7 @@ on:
 jobs:
   real-demos:
     name: real demos
-    runs-on: ubuntu-latest
+    runs-on: qyl-linux
 
     steps:
       - uses: actions/checkout@v4

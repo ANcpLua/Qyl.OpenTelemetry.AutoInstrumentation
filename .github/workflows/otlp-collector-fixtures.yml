@@ -5,12 +5,14 @@ name: qyl-otlp-collector-fixtures
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
   otlp-collector-fixtures:
     name: otlp collector fixtures
-    runs-on: ubuntu-latest
+    runs-on: qyl-linux
 
     steps:
       - uses: actions/checkout@v4
