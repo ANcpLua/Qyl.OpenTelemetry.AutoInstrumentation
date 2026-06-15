@@ -25,7 +25,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.26" PrivateAssets="all" />
+    <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.27" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" PrivateAssets="all" />
     <!-- Runtime data-reader helper is irrelevant inside a Roslyn generator and trips this
          repo's stricter ErrorProne.NET gate (ERP022). -->
