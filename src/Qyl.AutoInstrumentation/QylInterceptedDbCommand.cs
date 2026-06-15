@@ -20,11 +20,6 @@ public static class QylInterceptedDbCommand
         return QylDbActivityPolicy.StartDbCommandActivity(command, instrumentationId, operationName);
     }
 
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
     public static long GetTimestamp()
         => QylDurationMetrics.GetDbClientStartTimestamp();
@@ -50,7 +45,6 @@ public static class QylInterceptedDbCommand
         try
         {
             var result = await task.ConfigureAwait(false);
-            RecordSuccess(activity);
             QylDurationMetrics.RecordDbClientDuration(metricStart, instrumentationId);
             return result;
         }

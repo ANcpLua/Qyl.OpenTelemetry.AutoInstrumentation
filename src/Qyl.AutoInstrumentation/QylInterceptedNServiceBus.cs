@@ -13,11 +13,6 @@ public static class QylInterceptedNServiceBus
     public static Activity? StartActivity(string operationName)
         => QylMessagingActivityPolicy.StartNServiceBusActivity(operationName);
 
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
     public static long GetTimestamp()
         => QylDurationMetrics.GetNServiceBusStartTimestamp();

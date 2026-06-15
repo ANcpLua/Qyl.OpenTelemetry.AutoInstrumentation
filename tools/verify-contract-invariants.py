@@ -702,7 +702,6 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
     descriptor_delegation_tokens = [
         "descriptor.HelperType",
         "descriptor.AppendStartActivity(builder, target)",
-        "descriptor.GetRecordSuccessStatement()",
         "descriptor.GetRecordExceptionStatement()",
         "descriptor.ObserveAsyncMethod",
         "EmitDirectLoggerInterceptor(",
@@ -763,7 +762,6 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
             "descriptor.GetTimestampMethod",
             "descriptor.StartActivityMethod",
             "descriptor.ObserveAsyncMethod",
-            "descriptor.RecordSuccessMethod",
             "descriptor.RecordExceptionMethod",
             "descriptor.RecordDurationMethod",
         ],
@@ -787,7 +785,6 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
             ".GetTimestamp();",
             ".StartActivity(",
             ".ObserveAsync(resultTask, activity, metricStart, ",
-            ".RecordSuccess(activity);",
             ".RecordException(activity, exception);",
             ".RecordDuration(metricStart, ",
         ],

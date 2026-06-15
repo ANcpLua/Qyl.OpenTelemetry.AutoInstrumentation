@@ -13,11 +13,6 @@ public static class QylInterceptedWcfClient
     public static Activity? StartActivity(string clientType, string methodName)
         => QylRpcActivityPolicy.StartWcfClientActivity(clientType, methodName);
 
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {

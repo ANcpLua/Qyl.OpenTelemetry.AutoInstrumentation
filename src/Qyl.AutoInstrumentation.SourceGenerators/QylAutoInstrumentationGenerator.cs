@@ -752,14 +752,14 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 builder.Append("                await ");
                 AppendInvocationCall(builder, target, descriptor.ReceiverName);
                 builder.AppendLine(".ConfigureAwait(false);");
-                EmitTraceSuccess(builder, target, descriptor);
+                EmitTraceSuccessDurationMetric(builder, target, descriptor);
                 return;
             }
 
             builder.Append("                var result = await ");
             AppendInvocationCall(builder, target, descriptor.ReceiverName);
             builder.AppendLine(".ConfigureAwait(false);");
-            EmitTraceSuccess(builder, target, descriptor);
+            EmitTraceSuccessDurationMetric(builder, target, descriptor);
             builder.AppendLine("                return result;");
             return;
         }
@@ -769,24 +769,22 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             builder.Append("                ");
             AppendInvocationCall(builder, target, descriptor.ReceiverName);
             builder.AppendLine(";");
-            EmitTraceSuccess(builder, target, descriptor);
+            EmitTraceSuccessDurationMetric(builder, target, descriptor);
             return;
         }
 
         builder.Append("                var result = ");
         AppendInvocationCall(builder, target, descriptor.ReceiverName);
         builder.AppendLine(";");
-        EmitTraceSuccess(builder, target, descriptor);
+        EmitTraceSuccessDurationMetric(builder, target, descriptor);
         builder.AppendLine("                return result;");
     }
 
-    private static void EmitTraceSuccess(
+    private static void EmitTraceSuccessDurationMetric(
         StringBuilder builder,
         InterceptorTarget target,
         TraceInterceptorBodyDescriptor descriptor)
     {
-        builder.Append("                ");
-        builder.AppendLine(descriptor.GetRecordSuccessStatement());
         if (descriptor.DurationMetric.IsDefined)
             descriptor.DurationMetric.AppendRecordDurationStatement(builder, target);
     }
@@ -956,11 +954,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
             builder.AppendLine(");");
 
-            builder.Append("                ");
-            builder.Append(descriptor.HelperType);
-            builder.Append('.');
-            builder.Append(descriptor.RecordSuccessMethod);
-            builder.AppendLine("(activity);");
             builder.Append("                ");
             builder.Append(descriptor.MetricsType);
             builder.Append('.');
@@ -3981,7 +3974,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         string GetTimestampMethod,
         string StartActivityMethod,
         string ObserveAsyncMethod,
-        string RecordSuccessMethod,
         string RecordExceptionMethod,
         string RecordDurationMethod,
         bool IsDefined = true);
@@ -4025,14 +4017,10 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     private readonly record struct TraceRuntimeHelperDescriptor(
         string HelperType,
         string StartActivityMethod,
-        string RecordSuccessMethod,
         string RecordExceptionMethod,
         TraceStartActivityArgumentKind StartActivityArguments = TraceStartActivityArgumentKind.None,
         bool IsDefined = true)
     {
-        public string GetRecordSuccessStatement()
-            => HelperType + "." + RecordSuccessMethod + "(activity);";
-
         public string GetRecordExceptionStatement()
             => HelperType + "." + RecordExceptionMethod + "(activity, exception);";
     }
@@ -4156,9 +4144,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(builder, target, RuntimeHelper.StartActivityArguments);
             builder.Append(')');
         }
-
-        public string GetRecordSuccessStatement()
-            => RuntimeHelper.GetRecordSuccessStatement();
 
         public string GetRecordExceptionStatement()
             => RuntimeHelper.GetRecordExceptionStatement();

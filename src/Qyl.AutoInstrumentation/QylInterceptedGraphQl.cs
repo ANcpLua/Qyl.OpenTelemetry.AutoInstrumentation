@@ -35,11 +35,6 @@ public static class QylInterceptedGraphQl
         QylSensitiveCapturePolicy.SetGraphQlDocument(activity, document);
     }
 
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Observes an asynchronous GraphQL operation and records qyl exception telemetry.</summary>
     public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
         => QylActivityObserver.ObserveAsync(task, activity);

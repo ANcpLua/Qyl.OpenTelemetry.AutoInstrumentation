@@ -17,11 +17,6 @@ public static class QylInterceptedEntityFrameworkCore
         return QylDbActivityPolicy.StartEntityFrameworkCoreActivity(operationName);
     }
 
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {

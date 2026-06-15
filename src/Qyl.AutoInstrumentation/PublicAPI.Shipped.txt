@@ -240,24 +240,19 @@ static Qyl.AutoInstrumentation.QylInterceptedAspNetCore.MapPatch(Microsoft.AspNe
 static Qyl.AutoInstrumentation.QylInterceptedAspNetCore.MapPost(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 static Qyl.AutoInstrumentation.QylInterceptedAspNetCore.MapPut(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
 static Qyl.AutoInstrumentation.QylInterceptedAzure.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedAzure.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedAzure.StartActivity(string! methodName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(System.Data.Common.DbCommand! command, string! instrumentationId, string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedElastic.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedElastic.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedElastic.StartActivity(string! instrumentationId, string! methodName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedEntityFrameworkCore.StartActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedExternalLogger.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.AutoInstrumentation.QylInterceptedExternalLogger.StartActivity(string! instrumentationId, string! domain, string! methodName, string? severityName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedGraphQl.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
 static Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordExecutionOptions(System.Diagnostics.Activity? activity, string? operationName, string? document) -> void
-static Qyl.AutoInstrumentation.QylInterceptedGraphQl.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedGraphQl.StartActivity() -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.CaptureCompletedResponseHeaders(System.Threading.Tasks.Task<Grpc.Core.Metadata!>? responseHeadersTask, System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient.Dispose(System.Diagnostics.Activity? activity) -> void
@@ -314,39 +309,29 @@ static Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.GetStartTimeUtc() ->
 static Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordException(System.Diagnostics.Activity? activity, System.DateTime startTimeUtc, string? method, System.Exception! exception) -> void
 static Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.RecordResult(System.Diagnostics.Activity? activity, System.DateTime startTimeUtc, string? method, object? result) -> void
 static Qyl.AutoInstrumentation.QylInterceptedHttpWebRequest.StartActivity(System.Net.HttpWebRequest! request, string! methodName) -> System.Diagnostics.Activity?
-static Qyl.AutoInstrumentation.QylInterceptedKafka.RecordConsumeSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedKafka.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedKafka.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedKafka.StartConsumerActivity() -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedKafka.StartProducerActivity() -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedLogger.Log<TState>(Microsoft.Extensions.Logging.ILogger! logger, Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, System.Exception? exception, System.Func<TState, System.Exception?, string!>! formatter) -> void
 static Qyl.AutoInstrumentation.QylInterceptedLogger.LogExtension(Microsoft.Extensions.Logging.ILogger! logger, Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, System.Exception? exception, string? message, object?[]! args) -> void
 static Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedMassTransit.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedMassTransit.StartActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
 static Qyl.AutoInstrumentation.QylInterceptedMongoDb.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
 static Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedMongoDb.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedMongoDb.StartActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedNServiceBus.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedNServiceBus.StartActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedQuartz.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
 static Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedQuartz.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedQuartz.StartActivity() -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedRabbitMq.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedRabbitMq.StartPublishActivity(string? exchange) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedRedis.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedRedis.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedRedis.StartCommandActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedWcfClient.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedWcfClient.StartActivity(string! clientType, string! methodName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylInterceptedWcfCore.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.AutoInstrumentation.QylInterceptedWcfCore.RecordSuccess(System.Diagnostics.Activity? activity) -> void
 static Qyl.AutoInstrumentation.QylInterceptedWcfCore.StartActivity(string! serviceName, string! contractName, string! operationName) -> System.Diagnostics.Activity?
 static Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames() -> string![]!
 static Qyl.AutoInstrumentation.QylNServiceBusMetrics.GetTimestamp() -> long

@@ -30,11 +30,6 @@ public static class QylInterceptedElastic
         return activity;
     }
 
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Runs the Observe Async runtime helper used by source-generated qyl interceptors.</summary>
     public static Task ObserveAsync(Task? task, Activity? activity)
         => QylActivityObserver.ObserveAsync(task, activity);

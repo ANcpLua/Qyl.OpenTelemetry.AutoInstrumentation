@@ -16,16 +16,6 @@ public static class QylInterceptedKafka
     public static Activity? StartConsumerActivity()
         => QylMessagingActivityPolicy.StartKafkaConsumerActivity();
 
-    /// <summary>Runs the Record Consume Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordConsumeSuccess(Activity? activity)
-    {
-    }
-
-    /// <summary>Runs the Record Success runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordSuccess(Activity? activity)
-    {
-    }
-
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
     {
