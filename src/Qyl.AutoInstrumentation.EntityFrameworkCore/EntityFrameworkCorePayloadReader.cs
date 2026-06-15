@@ -38,7 +38,7 @@ internal static class EntityFrameworkCorePayloadReader
             "Npgsql.EntityFrameworkCore.PostgreSQL" => QylSemanticAttributes.DbSystemPostgresql,
             "Pomelo.EntityFrameworkCore.MySql" => QylSemanticAttributes.DbSystemMysql,
             "MySql.EntityFrameworkCore" => QylSemanticAttributes.DbSystemMysql,
-            "Oracle.EntityFrameworkCore" => "oracle",
+            "Oracle.EntityFrameworkCore" => QylSemanticAttributes.DbSystemOracleDb,
             "IBM.EntityFrameworkCore" => "db2",
             _ => null,
         };

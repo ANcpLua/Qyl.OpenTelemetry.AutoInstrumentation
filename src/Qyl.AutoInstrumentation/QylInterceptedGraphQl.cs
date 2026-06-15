@@ -20,7 +20,6 @@ public static class QylInterceptedGraphQl
         if (activity is null)
             return null;
 
-        QylActivityTags.SetGraphQlOperationName(activity, "execute");
         return activity;
     }
 
