@@ -85,8 +85,6 @@ public static class QylSemanticAttributes
     public const string DbNamespace = DbAttributes.Namespace;
     /// <summary>Well-known database Operation Name value used by qyl auto-instrumentation.</summary>
     public const string DbOperationName = DbAttributes.OperationName;
-    /// <summary>Well-known database Operation Name Get value used by qyl auto-instrumentation.</summary>
-    public const string DbOperationNameGet = "GET";
     /// <summary>Well-known database Query Summary value used by qyl auto-instrumentation.</summary>
     public const string DbQuerySummary = DbAttributes.QuerySummary;
     /// <summary>Well-known database Query Text value used by qyl auto-instrumentation.</summary>
@@ -118,17 +116,11 @@ public static class QylSemanticAttributes
     /// <summary>Well-known Rpc System Dot Net Wcf value used by qyl auto-instrumentation.</summary>
     public const string RpcSystemDotNetWcf = RpcAttributes.SystemValues.DotnetWcf;
 #pragma warning restore CS0618
-    /// <summary>Well-known Rpc System Azure value used by qyl auto-instrumentation.</summary>
-    public const string RpcSystemAzure = "azure";
-    /// <summary>Well-known Rpc System Quartz value used by qyl auto-instrumentation.</summary>
-    public const string RpcSystemQuartz = "quartz";
 #pragma warning disable CS0618 // Qyl still mirrors the current OTEL .NET auto gRPC status attribute contract.
     /// <summary>Well-known Rpc Service value used by qyl auto-instrumentation.</summary>
     public const string RpcService = RpcAttributes.Service;
     /// <summary>Well-known Rpc Method value used by qyl auto-instrumentation.</summary>
     public const string RpcMethod = RpcAttributes.Method;
-    /// <summary>Well-known Rpc Method Execute value used by qyl auto-instrumentation.</summary>
-    public const string RpcMethodExecute = "Execute";
     /// <summary>Well-known Rpc gRPC Status Code value used by qyl auto-instrumentation.</summary>
     public const string RpcGrpcStatusCode = RpcAttributes.GrpcStatusCode;
     /// <summary>Well-known Rpc gRPC Status Code Ok value used by qyl auto-instrumentation.</summary>
@@ -153,8 +145,6 @@ public static class QylSemanticAttributes
     public const string MessagingOperationTypeReceive = MessagingAttributes.OperationTypeValues.Receive;
     /// <summary>Well-known Messaging Operation Type Send value used by qyl auto-instrumentation.</summary>
     public const string MessagingOperationTypeSend = MessagingAttributes.OperationTypeValues.Send;
-    /// <summary>Well-known Messaging Destination Name value used by qyl auto-instrumentation.</summary>
-    public const string MessagingDestinationName = MessagingAttributes.DestinationName;
     /// <summary>Well-known Messaging System Kafka value used by qyl auto-instrumentation.</summary>
     public const string MessagingSystemKafka = MessagingAttributes.SystemValues.Kafka;
     /// <summary>Well-known Messaging System Rabbit Mq value used by qyl auto-instrumentation.</summary>
@@ -178,8 +168,6 @@ public static class QylSemanticAttributes
     public const string LogSeverityError = "Error";
     /// <summary>Well-known Log Severity Critical value used by qyl auto-instrumentation.</summary>
     public const string LogSeverityCritical = "Critical";
-    /// <summary>Well-known Log Severity None value used by qyl auto-instrumentation.</summary>
-    public const string LogSeverityNone = "None";
     /// <summary>Well-known Log Severity Other value used by qyl auto-instrumentation.</summary>
     public const string LogSeverityOther = "Other";
     /// <summary>Well-known Log Event Name value used by qyl auto-instrumentation.</summary>
