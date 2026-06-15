@@ -1,5 +1,0 @@
-#nullable enable
-Qyl.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreAutoInstrumentationBootstrap
-Qyl.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreDiagnosticListener
-Qyl.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreDiagnosticListener.EntityFrameworkCoreDiagnosticListener() -> void
-static Qyl.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreAutoInstrumentationBootstrap.Boot() -> void

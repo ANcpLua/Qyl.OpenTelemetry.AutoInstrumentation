@@ -1,8 +1,0 @@
-namespace Qyl.AutoInstrumentation.DiagnosticListeners.Semantics;
-
-internal enum SemanticStability
-{
-    Development,
-    Stable,
-    Deprecated,
-}

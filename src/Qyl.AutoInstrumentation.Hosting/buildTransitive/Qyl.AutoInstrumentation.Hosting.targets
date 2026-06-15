@@ -1,7 +1,0 @@
-<Project>
-  <ItemGroup Condition="'$(QylAutoInstrumentationDisableBootstrap)' != 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)Qyl.AutoInstrumentation.Hosting.Bootstrap.g.cs"
-             Link="Qyl.AutoInstrumentation.Hosting.Bootstrap.g.cs"
-             Visible="false" />
-  </ItemGroup>
-</Project>

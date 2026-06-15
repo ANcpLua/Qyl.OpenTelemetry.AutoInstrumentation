@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Quartz;
 using Quartz.Impl;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener

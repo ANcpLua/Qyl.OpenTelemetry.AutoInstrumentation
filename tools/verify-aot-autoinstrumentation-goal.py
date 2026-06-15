@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COMMANDS: list[tuple[str, list[str]]] = [
     ("contract invariants", [sys.executable, "tools/verify-contract-invariants.py"]),
     ("contract coverage report", [sys.executable, "tools/verify-contract-coverage-report.py"]),
-    ("release build", ["dotnet", "build", "Qyl.AutoInstrumentation.slnx", "-c", "Release"]),
+    ("release build", ["dotnet", "build", "Qyl.OpenTelemetry.AutoInstrumentation.slnx", "-c", "Release"]),
     ("package layout", [sys.executable, "tools/verify-package-layout.py"]),
     ("projectreference behavior", [sys.executable, "tools/verify-projectreference-behavior.py"]),
     ("public api baseline", [sys.executable, "tools/verify-public-api-baseline.py"]),

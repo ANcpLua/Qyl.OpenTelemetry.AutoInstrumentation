@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.OpenTelemetry.AutoInstrumentation</RootNamespace>
+    <AssemblyName>Qyl.OpenTelemetry.AutoInstrumentation</AssemblyName>
+    <PackageId>Qyl.OpenTelemetry.AutoInstrumentation</PackageId>
+    <Description>AOT-native zero-code .NET instrumentation core. Source-generated semconv registry + Activity/Meter primitives. NO IL rewriting, NO CLR profiler attach.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.OpenTelemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" />
+    <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
+    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" Version="3.0.1" />
+    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" Version="3.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\Qyl.OpenTelemetry.AutoInstrumentation.targets"
+          Pack="true"
+          PackagePath="build\" />
+    <None Include="buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.targets"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+    <None Include="$(ArtifactsPath)\bin\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\$(Configuration.ToLowerInvariant())\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs/"
+          Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(PublishAot)' != 'true'">
+    <!-- Source generator referenced as analyzer: emits the semconv FrozenSet at compile time so the
+         runtime conformance check needs zero reflection (the substrate-era reflection path was JIT-only).
+         It is build-time-only; NativeAOT publish must not try to publish the netstandard2.0 generator. -->
+    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+  </ItemGroup>
+
+</Project>

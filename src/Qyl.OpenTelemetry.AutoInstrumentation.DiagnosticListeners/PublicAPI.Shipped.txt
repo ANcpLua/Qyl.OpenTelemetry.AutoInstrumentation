@@ -1,0 +1,19 @@
+#nullable enable
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore.AspNetCoreDiagnosticListener
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore.AspNetCoreDiagnosticListener.AspNetCoreDiagnosticListener() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.DiagnosticListenerSubscriber() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.Dispose() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.Subscribe() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.EntityFrameworkCore.EntityFrameworkCoreDiagnosticListener
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.EntityFrameworkCore.EntityFrameworkCoreDiagnosticListener.EntityFrameworkCoreDiagnosticListener() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient.GrpcClientDiagnosticListener
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient.GrpcClientDiagnosticListener.GrpcClientDiagnosticListener() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.HttpClient.HttpClientDiagnosticListener
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.HttpClient.HttpClientDiagnosticListener.HttpClientDiagnosticListener() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.SqlClient.SqlClientDiagnosticListener
+Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.SqlClient.SqlClientDiagnosticListener.SqlClientDiagnosticListener() -> void
+abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.InstrumentationId.get -> string!
+abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.ListenerName.get -> string!
+abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.OnEvent(string! name, object? payload) -> void
+abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.DiagnosticListenerSubscriber.Signal.get -> Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal

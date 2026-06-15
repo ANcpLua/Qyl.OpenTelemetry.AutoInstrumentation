@@ -7,8 +7,8 @@ FEED="$WORK/feed"
 PACKAGES="$WORK/packages"
 NUGET_ORG="https://api.nuget.org/v3/index.json"
 VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -n 1)"
-VERIFIED="$ROOT/tools/Qyl.AutoInstrumentation.SmokeTest/verified/stdout.txt"
-GENERATOR_DLL="$ROOT/artifacts/bin/Qyl.AutoInstrumentation.SourceGenerators/release/Qyl.AutoInstrumentation.SourceGenerators.dll"
+VERIFIED="$ROOT/tools/Qyl.OpenTelemetry.AutoInstrumentation.SmokeTest/verified/stdout.txt"
+GENERATOR_DLL="$ROOT/artifacts/bin/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/release/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
 
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64|Darwin-aarch64) RID="osx-arm64" ;;
@@ -29,10 +29,10 @@ fi
 rm -rf "$WORK"
 mkdir -p "$FEED" "$PACKAGES"
 
-dotnet build "$ROOT/src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
-dotnet pack "$ROOT/src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
-dotnet pack "$ROOT/src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
-dotnet pack "$ROOT/src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
+dotnet build "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
+dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
+dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
+dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
 
 write_program() {
   local dir="$1"
@@ -40,7 +40,7 @@ write_program() {
 using System.Diagnostics;
 using System.Net;
 using Microsoft.Extensions.Logging;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
 using var listener = new ActivityListener
@@ -142,8 +142,8 @@ write_package_consumer() {
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.AutoInstrumentation" Version="$VERSION" />
-    <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="$VERSION" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="$VERSION" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="$VERSION" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
@@ -170,8 +170,8 @@ write_projectreference_consumer() {
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$ROOT/src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj" />
-    <ProjectReference Include="$ROOT/src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj"
+    <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
+    <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
                       Condition="'\$(PublishAot)' != 'true'"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
@@ -181,7 +181,7 @@ write_projectreference_consumer() {
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 
-  <Import Project="$ROOT/src/Qyl.AutoInstrumentation/buildTransitive/Qyl.AutoInstrumentation.targets" />
+  <Import Project="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/buildTransitive/Qyl.OpenTelemetry.AutoInstrumentation.targets" />
 </Project>
 EOF
   write_program "$dir"

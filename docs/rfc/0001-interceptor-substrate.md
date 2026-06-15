@@ -51,9 +51,9 @@ profiler registration, ReJIT, runtime IL rewrite, dynamic `Assembly.Load`, or
 
 The package must carry all compiler-facing substrate assets:
 
-- `analyzers/dotnet/cs/Qyl.AutoInstrumentation.SourceGenerators.dll`
-- `build/Qyl.AutoInstrumentation.targets`
-- `buildTransitive/Qyl.AutoInstrumentation.targets`
+- `analyzers/dotnet/cs/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll`
+- `build/Qyl.OpenTelemetry.AutoInstrumentation.targets`
+- `buildTransitive/Qyl.OpenTelemetry.AutoInstrumentation.targets`
 
 `build/` and `buildTransitive/` intentionally contain the same core target content. The
 target enables the stable interceptors namespace. A guard property prevents duplicate

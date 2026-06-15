@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NServiceBus;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 var capturedMetrics = new List<CapturedMetric>();

@@ -8,15 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / "Directory.Build.props"
 
 PUBLIC_API_PROJECTS = [
-    ROOT / "src" / "Qyl.AutoInstrumentation",
-    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.AutoInstrumentation.Hosting",
-    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
 ]
 
 EXCLUDED_PROJECTS = [
-    "Qyl.AutoInstrumentation.SourceGenerators",
+    "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators",
     "Qyl.LiveInstrumentationDemo",
     "Qyl.RealAspNetCoreDemo",
     "Qyl.RealEfCoreDemo",
@@ -42,7 +42,7 @@ def verify_props() -> None:
             fail(f"Directory.Build.props missing PublicAPI token: {token}")
 
     for project in EXCLUDED_PROJECTS:
-        if project in text and project != "Qyl.AutoInstrumentation.SourceGenerators":
+        if project in text and project != "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators":
             fail(f"Directory.Build.props should not explicitly enable PublicAPI analyzers for {project}")
 
 

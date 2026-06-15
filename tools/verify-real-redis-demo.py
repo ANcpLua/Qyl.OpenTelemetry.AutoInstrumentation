@@ -13,7 +13,7 @@ from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealRedisDemo" / "Qyl.RealRedisDemo.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Qyl.AutoInstrumentation.SourceGenerators.csproj"
+GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
 REDIS_IMAGE = os.environ.get("QYL_REDIS_IMAGE", "redis:8-alpine")
 

@@ -9,8 +9,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS_PATH = ROOT / "Directory.Build.props"
-WEBAPI_REPORT_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
-OTLP_VERIFIED_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.OtlpFixtures" / "verified" / "webapi-aot-traces.otlp.json"
+WEBAPI_REPORT_PATH = ROOT / "tools" / "Qyl.OpenTelemetry.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
+OTLP_VERIFIED_PATH = ROOT / "tools" / "Qyl.OpenTelemetry.AutoInstrumentation.OtlpFixtures" / "verified" / "webapi-aot-traces.otlp.json"
 
 EXPECTED_SIGNALS = [
     "aspnetcore.server",
@@ -126,7 +126,7 @@ def render_otlp(report: dict[str, Any], version: str) -> dict[str, Any]:
                 "scopeSpans": [
                     {
                         "scope": {
-                            "name": "Qyl.AutoInstrumentation",
+                            "name": "Qyl.OpenTelemetry.AutoInstrumentation",
                             "version": version,
                         },
                         "spans": spans,

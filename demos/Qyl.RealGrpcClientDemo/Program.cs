@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 var byteArrayMarshaller = new Marshaller<byte[]>(

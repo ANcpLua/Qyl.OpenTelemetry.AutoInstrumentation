@@ -84,11 +84,11 @@ jobs:
         run: |
           set -euo pipefail
           for proj in \
-            src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj \
-            src/Qyl.AutoInstrumentation.DiagnosticListeners/Qyl.AutoInstrumentation.DiagnosticListeners.csproj \
-            src/Qyl.AutoInstrumentation.Hosting/Qyl.AutoInstrumentation.Hosting.csproj \
-            src/Qyl.AutoInstrumentation.EntityFrameworkCore/Qyl.AutoInstrumentation.EntityFrameworkCore.csproj \
-            src/Qyl.AutoInstrumentation.SqlClient/Qyl.AutoInstrumentation.SqlClient.csproj; do
+            src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj \
+            src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj \
+            src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj \
+            src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj \
+            src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj; do
             dotnet pack "$proj" -c Release -o artifacts -p:Version="${{ needs.version.outputs.version }}"
           done
       - name: Upload packages

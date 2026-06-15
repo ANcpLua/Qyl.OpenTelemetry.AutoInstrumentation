@@ -15,13 +15,13 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
+CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 
 PROGRAM = r'''
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var options = QylAutoInstrumentationOptions.Current;
 
@@ -66,7 +66,7 @@ trace.sql=True
 metric.http=True
 metric.sql=True
 log.ilogger=True
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
 ef.text=False
 graphql.document=False
 oracle.text=False
@@ -126,7 +126,7 @@ trace.sql=False
 metric.http=True
 metric.sql=False
 log.ilogger=False
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
 ef.text=False
 graphql.document=False
 oracle.text=False
@@ -156,7 +156,7 @@ trace.sql=True
 metric.http=True
 metric.sql=True
 log.ilogger=True
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
 ef.text=True
 graphql.document=True
 oracle.text=True
@@ -186,7 +186,7 @@ trace.sql=True
 metric.http=True
 metric.sql=True
 log.ilogger=True
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
 ef.text=False
 graphql.document=False
 oracle.text=False
@@ -243,7 +243,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
   </ItemGroup>
 </Project>
 ''',

@@ -9,10 +9,10 @@ from verify_helpers import clean_env, run_checked
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Qyl.AutoInstrumentation.SourceGenerators.csproj"
-GENERATOR_DLL = ROOT / "artifacts" / "bin" / "Qyl.AutoInstrumentation.SourceGenerators" / "release" / "Qyl.AutoInstrumentation.SourceGenerators.dll"
-CORE_TARGETS = ROOT / "src" / "Qyl.AutoInstrumentation" / "buildTransitive" / "Qyl.AutoInstrumentation.targets"
+CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+GENERATOR_DLL = ROOT / "artifacts" / "bin" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "release" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
+CORE_TARGETS = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.OpenTelemetry.AutoInstrumentation.targets"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
@@ -20,7 +20,7 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 PROGRAM = r'''
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
@@ -169,7 +169,7 @@ def verify_generated_interceptor_source(directory: Path) -> None:
     text = generated_files[0].read_text(encoding="utf-8")
     for token in [
         "#nullable enable",
-        "Qyl.AutoInstrumentation.Generated",
+        "Qyl.OpenTelemetry.AutoInstrumentation.Generated",
         "file sealed class InterceptsLocationAttribute",
         "global::Microsoft.Extensions.Logging.ILogger",
     ]:

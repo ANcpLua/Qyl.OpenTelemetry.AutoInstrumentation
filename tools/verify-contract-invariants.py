@@ -10,34 +10,34 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
-CONTRACT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
-GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
-INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
-OPTIONS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
-IDS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
-SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylSemanticAttributes.cs"
-SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
+CONTRACT_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
+GENERATOR_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
+INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
+OPTIONS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
+IDS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
+SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylSemanticAttributes.cs"
+SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
 RUNTIME_SEMANTICS_PATH = ROOT / "docs" / "RUNTIME_SEMANTICS.md"
 HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
-RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
-ACTIVITY_STATUS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityStatus.cs"
-METRIC_METERS_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricMeters.cs"
-METRIC_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylMetricNames.cs"
-ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.AutoInstrumentation" / "QylActivityNames.cs"
-DIAGNOSTIC_SEMANTICS_ROOT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Semantics"
+RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+ACTIVITY_STATUS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylActivityStatus.cs"
+METRIC_METERS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylMetricMeters.cs"
+METRIC_NAMES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylMetricNames.cs"
+ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylActivityNames.cs"
+DIAGNOSTIC_SEMANTICS_ROOT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Semantics"
 RUNTIME_EMISSION_ROOTS = [
-    ROOT / "src" / "Qyl.AutoInstrumentation",
-    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
 ]
 PRODUCTIVE_MECHANISM_ROOTS = [
-    ROOT / "src" / "Qyl.AutoInstrumentation",
-    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.AutoInstrumentation.Hosting",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient",
-    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators",
 ]
 FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
     "IOperationInvoker",
@@ -119,8 +119,8 @@ MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS = {
         "PlatformNotSupportedException",
     ],
 }
-REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"
-REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN = "global::Qyl.AutoInstrumentation.QylIntercepted"
+REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"
+REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylIntercepted"
 FORBIDDEN_PRODUCTIVE_MECHANISM_TOKENS = FORBIDDEN_GENERATOR_MECHANISM_TOKENS
 
 
@@ -507,20 +507,20 @@ def verify_runtime_public_telemetry_status_policy() -> None:
 
 def verify_runtime_public_telemetry_payload_access_policy() -> None:
     payload_readers = {
-        "src/Qyl.AutoInstrumentation.DiagnosticListeners/DiagnosticPayloadReader.cs": [
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/DiagnosticPayloadReader.cs": [
             "payload is IReadOnlyDictionary<string, object?> readOnlyDictionary",
             "payload is IEnumerable<KeyValuePair<string, object?>> keyValuePairs",
             "Activity.Current?.GetTagItem(key)",
         ],
-        "src/Qyl.AutoInstrumentation.DiagnosticListeners/AspNetCore/AspNetCorePayloadReader.cs": [
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/AspNetCore/AspNetCorePayloadReader.cs": [
             "payload as HttpContext",
             "endpoint is RouteEndpoint routeEndpoint",
         ],
-        "src/Qyl.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCorePayloadReader.cs": [
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCorePayloadReader.cs": [
             "payload is not CommandEventData commandEvent",
             "payload is CommandErrorEventData errorEvent",
         ],
-        "src/Qyl.AutoInstrumentation.SqlClient/SqlClientPayloadReader.cs": [
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/SqlClientPayloadReader.cs": [
             "payload is IEnumerable<KeyValuePair<string, object>> entries",
             "entry.Value is T matched",
             "TryGetPayloadValue<SqlCommand>(payload, CommandKey, out var sqlCommand)",
@@ -550,7 +550,7 @@ def verify_runtime_public_telemetry_payload_access_policy() -> None:
 
 
 def verify_sensitive_attribute_emission_policy() -> None:
-    policy_path = ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
+    policy_path = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
     policy = policy_path.read_text()
     for token in [
         "public static void SetAspNetCoreUrlQuery(Activity activity, string query)",
@@ -568,7 +568,7 @@ def verify_sensitive_attribute_emission_policy() -> None:
         if token not in policy:
             fail(f"QylSensitiveCapturePolicy must own sensitive raw attribute token: {token}")
 
-    http_semantics_path = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Semantics" / "HttpSemantics.cs"
+    http_semantics_path = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Semantics" / "HttpSemantics.cs"
     http_semantics = http_semantics_path.read_text()
     for token in [
         "public static void SetUrlTags(Activity? activity, string? url, string? serverAddress, int? serverPort)",
@@ -581,18 +581,18 @@ def verify_sensitive_attribute_emission_policy() -> None:
             fail(f"HttpSemantics must own runtime-public url.full redaction token: {token}")
 
     allowed_raw_settag_paths = {
-        "src/Qyl.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
     }
     allowed_url_format_paths = {
-        "src/Qyl.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
-        "src/Qyl.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
-        "src/Qyl.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
     }
     allowed_db_query_text_paths = {
-        "src/Qyl.AutoInstrumentation.DiagnosticListeners/EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
-        "src/Qyl.AutoInstrumentation.DiagnosticListeners/SqlClient/SqlClientDiagnosticListener.cs",
-        "src/Qyl.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
-        "src/Qyl.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/SqlClient/SqlClientDiagnosticListener.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
+        "src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
     }
 
     for root in RUNTIME_EMISSION_ROOTS:
@@ -614,7 +614,7 @@ def verify_sensitive_attribute_emission_policy() -> None:
                 "SemanticTagWriter.Set(activity, SemanticAttributes.UrlQuery",
                 "SemanticTagWriter.Set(activity, SemanticAttributes.GraphQlDocument",
             ]:
-                if token in text and relative_path != "src/Qyl.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs":
+                if token in text and relative_path != "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs":
                     fail(f"runtime-public sensitive writes must go through the owning semantics helper: {relative_path} {token}")
 
             if "QylCaptureHelpers.FormatUrlFull(" in text and relative_path not in allowed_url_format_paths:
@@ -727,8 +727,8 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
         if "descriptor.HelperType" not in body:
             fail(f"{name} must route logging helper calls through its body descriptor")
         for token in [
-            "global::Qyl.AutoInstrumentation.QylInterceptedLogger.",
-            "global::Qyl.AutoInstrumentation.QylInterceptedExternalLogger.",
+            "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedLogger.",
+            "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedExternalLogger.",
         ]:
             if token in body:
                 fail(f"{name} must not hardcode logging runtime helper calls: {token}")
@@ -748,7 +748,7 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
     ]:
         if token not in generator:
             fail(f"gRPC stream wrapper must route helper calls through GrpcClientBodyDescriptor.HelperType: {token}")
-    if "global::Qyl.AutoInstrumentation.QylInterceptedGrpcNetClient." in grpc_wrapper:
+    if "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedGrpcNetClient." in grpc_wrapper:
         fail("gRPC stream wrapper must not hardcode QylInterceptedGrpcNetClient helper calls")
 
     specialized_descriptor_methods = {
@@ -834,7 +834,7 @@ def verify_intercepted_runtime_error_policy() -> None:
         if token not in helper:
             fail(f"QylActivityStatus must own intercepted runtime error policy token: {token}")
 
-    for path in sorted((ROOT / "src" / "Qyl.AutoInstrumentation").glob("QylIntercepted*.cs")):
+    for path in sorted((ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation").glob("QylIntercepted*.cs")):
         text = path.read_text()
         for token in [
             "SetTag(QylSemanticAttributes.ErrorType",
@@ -845,7 +845,7 @@ def verify_intercepted_runtime_error_policy() -> None:
 
 
 def verify_intercepted_runtime_activity_start_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityFactory.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylActivityFactory.cs").read_text()
     for token in [
         "public static Activity? StartTraceActivity(",
         "public static Activity? StartLogActivity(",
@@ -875,17 +875,17 @@ def verify_intercepted_runtime_activity_start_policy() -> None:
         "QylInterceptedWcfCore.cs",
     }
     for name in sorted(factory_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in [
             "QylActivitySource.StartActivity(",
             "SetTag(QylSemanticAttributes.QylInstrumentationDomain",
         ]:
             if token in text:
-                fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate start/domain policy to QylActivityFactory: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_messaging_activity_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylMessagingActivityPolicy.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylMessagingActivityPolicy.cs").read_text()
     for token in [
         "QylActivityFactory.StartTraceActivity(",
         "QylActivityTags.SetMessaging(activity, messagingSystem, operationType, operationName);",
@@ -923,14 +923,14 @@ def verify_intercepted_runtime_messaging_activity_policy() -> None:
         "MessagingOperationNameSend",
     ]
     for name in sorted(messaging_policy_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate messaging activity policy to QylMessagingActivityPolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate messaging activity policy to QylMessagingActivityPolicy: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_db_activity_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylDbActivityPolicy.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylDbActivityPolicy.cs").read_text()
     for token in [
         "QylActivityFactory.StartTraceActivity(",
         "QylActivityNames.DbCommand(operation)",
@@ -971,14 +971,14 @@ def verify_intercepted_runtime_db_activity_policy() -> None:
         "GetQuerySummary(",
     ]
     for name in sorted(db_activity_policy_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate DB activity policy to QylDbActivityPolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate DB activity policy to QylDbActivityPolicy: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_http_activity_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylHttpActivityPolicy.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylHttpActivityPolicy.cs").read_text()
     for token in [
         "QylActivityFactory.StartTraceActivity(",
         "QylActivityNames.HttpClient(method)",
@@ -1014,14 +1014,14 @@ def verify_intercepted_runtime_http_activity_policy() -> None:
         "QylActivityStatus.RecordError(activity, context.Response.StatusCode)",
     ]
     for name in sorted(http_policy_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate HTTP activity policy to QylHttpActivityPolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate HTTP activity policy to QylHttpActivityPolicy: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_rpc_activity_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylRpcActivityPolicy.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylRpcActivityPolicy.cs").read_text()
     for token in [
         "QylActivityFactory.StartTraceActivity(",
         "QylAutoInstrumentationIds.GrpcNetClient",
@@ -1071,14 +1071,14 @@ def verify_intercepted_runtime_rpc_activity_policy() -> None:
         "GrpcNetClientCapturedResponseMetadataMap",
     ]
     for name in sorted(rpc_policy_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate RPC activity policy to QylRpcActivityPolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate RPC activity policy to QylRpcActivityPolicy: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_sensitive_capture_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs").read_text()
     for token in [
         "QylAutoInstrumentationOptions.Current.AspNetCoreUrlQueryRedactionDisabled",
         "QylCaptureHelpers.RedactQueryValues(query)",
@@ -1114,14 +1114,14 @@ def verify_intercepted_runtime_sensitive_capture_policy() -> None:
         "QylCaptureHelpers.RedactQueryValues",
     ]
     for name in sorted(sensitive_capture_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate sensitive capture to QylSensitiveCapturePolicy: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate sensitive capture to QylSensitiveCapturePolicy: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_duration_metric_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylDurationMetrics.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylDurationMetrics.cs").read_text()
     for token in [
         "QylHttpClientMetrics.RecordRequestDuration(startTimeUtc, method, statusCode);",
         "QylHttpClientMetrics.RecordRequestDurationUnchecked(startTimeUtc, method, statusCode);",
@@ -1158,14 +1158,14 @@ def verify_intercepted_runtime_duration_metric_policy() -> None:
         "QylNServiceBusMetrics.RecordDuration",
     ]
     for name in sorted(duration_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate duration metrics to QylDurationMetrics: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate duration metrics to QylDurationMetrics: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_semantic_tag_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityTags.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylActivityTags.cs").read_text()
     for token in [
         "activity.SetTag(QylSemanticAttributes.MessagingSystem, system);",
         "activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);",
@@ -1212,14 +1212,14 @@ def verify_intercepted_runtime_semantic_tag_policy() -> None:
         "SetTag(QylSemanticAttributes.LogSeverity",
     ]
     for name in sorted(tag_set_owned_helpers):
-        text = (ROOT / "src" / "Qyl.AutoInstrumentation" / name).read_text()
+        text = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / name).read_text()
         for token in forbidden_tokens:
             if token in text:
-                fail(f"intercepted runtime helper must delegate semantic tag sets to QylActivityTags: src/Qyl.AutoInstrumentation/{name} {token}")
+                fail(f"intercepted runtime helper must delegate semantic tag sets to QylActivityTags: src/Qyl.OpenTelemetry.AutoInstrumentation/{name} {token}")
 
 
 def verify_intercepted_runtime_async_observer_policy() -> None:
-    helper = (ROOT / "src" / "Qyl.AutoInstrumentation" / "Internal" / "QylActivityObserver.cs").read_text()
+    helper = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylActivityObserver.cs").read_text()
     for token in [
         "public static Task ObserveAsync(Task? task, Activity? activity)",
         "public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)",
@@ -1232,7 +1232,7 @@ def verify_intercepted_runtime_async_observer_policy() -> None:
     allowed_local_observers = {
         "QylInterceptedDbCommand.cs",
     }
-    for path in sorted((ROOT / "src" / "Qyl.AutoInstrumentation").glob("QylIntercepted*.cs")):
+    for path in sorted((ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation").glob("QylIntercepted*.cs")):
         text = path.read_text()
         if "ObserveSlowAsync" in text and path.name not in allowed_local_observers:
             fail(f"intercepted runtime helper must delegate async observation to QylActivityObserver: {path.relative_to(ROOT)}")
@@ -1240,7 +1240,7 @@ def verify_intercepted_runtime_async_observer_policy() -> None:
 
 def verify_behavior_semantics_contract() -> None:
     generator = read_generator_sources()
-    if "global::Qyl.AutoInstrumentation.QylIntercepted" not in generator:
+    if "global::Qyl.OpenTelemetry.AutoInstrumentation.QylIntercepted" not in generator:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
     verify_interceptor_emitter_runtime_delegation(generator)
     verify_intercepted_runtime_error_policy()
@@ -1258,7 +1258,7 @@ def verify_behavior_semantics_contract() -> None:
         if token in generator:
             fail(f"generator must not inline telemetry behavior instead of delegating to runtime: {token}")
 
-    behavior_sources = [GENERATOR_PATH, *sorted((ROOT / "src" / "Qyl.AutoInstrumentation").glob("QylIntercepted*.cs"))]
+    behavior_sources = [GENERATOR_PATH, *sorted((ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation").glob("QylIntercepted*.cs"))]
     for path in behavior_sources:
         text = path.read_text()
         for token in FORBIDDEN_EXCEPTION_REWRITE_TOKENS:

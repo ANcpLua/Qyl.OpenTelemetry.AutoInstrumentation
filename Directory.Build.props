@@ -32,7 +32,7 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.OpenTelemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
 
     <!-- Deterministic + reproducible builds — verified-OTLP gates need byte-stable artifacts. -->
     <Deterministic>true</Deterministic>
@@ -57,7 +57,7 @@
     <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
     <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.6</JonSkeetRoslynAnalyzersVersion>
     <MicrosoftCodeAnalysisPublicApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisPublicApiAnalyzersVersion>
-    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.AutoInstrumentation.SqlClient'">true</QylEnablePublicApiAnalyzers>
+    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient'">true</QylEnablePublicApiAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>

@@ -6,7 +6,7 @@ using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener

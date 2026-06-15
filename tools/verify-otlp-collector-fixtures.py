@@ -19,11 +19,11 @@ ROOT = Path(__file__).resolve().parents[1]
 WORK = Path("/tmp/qyl-otlp-collector-fixtures")
 FEED = WORK / "feed"
 APP = WORK / "collector-consumer"
-VERIFIED = ROOT / "tools/Qyl.AutoInstrumentation.OtlpCollectorFixtures/verified/httpclient-traces.collector.json"
+VERIFIED = ROOT / "tools/Qyl.OpenTelemetry.AutoInstrumentation.OtlpCollectorFixtures/verified/httpclient-traces.collector.json"
 EXPORTER_VERSION = "1.15.3"
 
 REQUIRED_STRINGS = (
-    "Qyl.AutoInstrumentation",
+    "Qyl.OpenTelemetry.AutoInstrumentation",
     "qyl.instrumentation.domain",
     "http.client",
     "http.request.method",
@@ -128,8 +128,8 @@ def clean_workdir() -> None:
 def pack_local_packages() -> str:
     version = f"{read_package_version()}.otlpcollector.{time.time_ns()}"
     projects = (
-        ROOT / "src/Qyl.AutoInstrumentation.SourceGenerators/Qyl.AutoInstrumentation.SourceGenerators.csproj",
-        ROOT / "src/Qyl.AutoInstrumentation/Qyl.AutoInstrumentation.csproj",
+        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj",
+        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj",
     )
     for project in projects:
         if project.exists():
@@ -148,11 +148,11 @@ def pack_local_packages() -> str:
                 cwd=ROOT,
             )
 
-    package_prefix = "Qyl.AutoInstrumentation."
+    package_prefix = "Qyl.OpenTelemetry.AutoInstrumentation."
     packages = sorted(FEED.glob(f"{package_prefix}*.nupkg"))
     runtime_packages = [package for package in packages if ".SourceGenerator." not in package.name]
     if not runtime_packages:
-        raise SystemExit("Qyl.AutoInstrumentation package was not produced")
+        raise SystemExit("Qyl.OpenTelemetry.AutoInstrumentation package was not produced")
 
     package = runtime_packages[-1]
     name = package.name
@@ -209,7 +209,7 @@ def write_consumer(version: str) -> None:
                 <Nullable>enable</Nullable>
               </PropertyGroup>
               <ItemGroup>
-                <PackageReference Include="Qyl.AutoInstrumentation" Version="{version}" />
+                <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
                 <PackageReference Include="OpenTelemetry" Version="{EXPORTER_VERSION}" />
                 <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="{EXPORTER_VERSION}" />
               </ItemGroup>
@@ -225,7 +225,7 @@ def write_consumer(version: str) -> None:
             using OpenTelemetry;
             using OpenTelemetry.Exporter;
             using OpenTelemetry.Trace;
-            using Qyl.AutoInstrumentation;
+            using Qyl.OpenTelemetry.AutoInstrumentation;
 
             if (args.Length != 1)
                 throw new InvalidOperationException("Expected OTLP trace endpoint.");

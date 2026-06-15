@@ -16,13 +16,13 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
+CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
 
 
 REQUIRED_PACKAGE_ENTRIES = {
-    "analyzers/dotnet/cs/Qyl.AutoInstrumentation.SourceGenerators.dll",
-    "build/Qyl.AutoInstrumentation.targets",
-    "buildTransitive/Qyl.AutoInstrumentation.targets",
+    "analyzers/dotnet/cs/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll",
+    "build/Qyl.OpenTelemetry.AutoInstrumentation.targets",
+    "buildTransitive/Qyl.OpenTelemetry.AutoInstrumentation.targets",
 }
 
 FORBIDDEN_PACKAGE_ENTRY_TOKENS = [
@@ -69,7 +69,7 @@ def pack_runtime(feed: Path, env: dict[str, str]) -> Path:
                 fcntl.flock(lock, fcntl.LOCK_UN)
 
     version = read_version()
-    package = feed / f"Qyl.AutoInstrumentation.{version}.nupkg"
+    package = feed / f"Qyl.OpenTelemetry.AutoInstrumentation.{version}.nupkg"
     if not package.exists():
         fail(f"package missing: {package}")
 
@@ -80,14 +80,14 @@ def verify_targets(name: str, text: str) -> None:
     for token in [
         "QylAutoInstrumentationCoreBuildAssetsImported",
         "_QylAutoInstrumentationCoreBuildAssetsAlreadyImported",
-        "<InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.AutoInstrumentation.Generated</InterceptorsNamespaces>",
+        "<InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.OpenTelemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>",
     ]:
         if token not in text:
             fail(f"{name} missing token: {token}")
 
     for token in [
         "InterceptorsPreviewNamespaces",
-        "Qyl.AutoInstrumentation.InterceptsLocationAttribute.g.cs",
+        "Qyl.OpenTelemetry.AutoInstrumentation.InterceptsLocationAttribute.g.cs",
         "QylAutoInstrumentationDisableInterceptorsAttribute",
     ]:
         if token in text:
@@ -109,8 +109,8 @@ def verify_package(package: Path) -> None:
             if name.endswith("InterceptsLocationAttribute.g.cs"):
                 fail(f"package must not ship a compilation-wide InterceptsLocationAttribute source: {name}")
 
-        build_targets = archive.read("build/Qyl.AutoInstrumentation.targets").decode("utf-8")
-        transitive_targets = archive.read("buildTransitive/Qyl.AutoInstrumentation.targets").decode("utf-8")
+        build_targets = archive.read("build/Qyl.OpenTelemetry.AutoInstrumentation.targets").decode("utf-8")
+        transitive_targets = archive.read("buildTransitive/Qyl.OpenTelemetry.AutoInstrumentation.targets").decode("utf-8")
         nuspec_name = next((name for name in names if name.endswith(".nuspec")), None)
         if nuspec_name is None:
             fail("package nuspec missing")

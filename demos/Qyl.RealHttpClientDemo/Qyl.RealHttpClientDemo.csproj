@@ -9,12 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.Hosting\Qyl.AutoInstrumentation.Hosting.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\Qyl.AutoInstrumentation.Hosting\buildTransitive\Qyl.AutoInstrumentation.Hosting.Bootstrap.g.cs"
-             Link="Qyl.AutoInstrumentation.Hosting.Bootstrap.g.cs"
+    <Compile Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.Bootstrap.g.cs"
+             Link="Qyl.OpenTelemetry.AutoInstrumentation.Hosting.Bootstrap.g.cs"
              Visible="false" />
   </ItemGroup>
 

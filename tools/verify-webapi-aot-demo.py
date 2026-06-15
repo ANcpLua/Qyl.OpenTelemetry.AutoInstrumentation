@@ -19,16 +19,16 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-VERIFIED_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
+VERIFIED_PATH = ROOT / "tools" / "Qyl.OpenTelemetry.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 TARGET_FRAMEWORK = "net10.0"
 
 PROJECTS_TO_PACK = [
-    ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj",
-    ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Qyl.AutoInstrumentation.DiagnosticListeners.csproj",
-    ROOT / "src" / "Qyl.AutoInstrumentation.Hosting" / "Qyl.AutoInstrumentation.Hosting.csproj",
-    ROOT / "src" / "Qyl.AutoInstrumentation.EntityFrameworkCore" / "Qyl.AutoInstrumentation.EntityFrameworkCore.csproj",
-    ROOT / "src" / "Qyl.AutoInstrumentation.SqlClient" / "Qyl.AutoInstrumentation.SqlClient.csproj",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj",
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj",
 ]
 
 EFCORE_COMPILED_MODEL_SOURCES = [
@@ -40,7 +40,7 @@ EFCORE_COMPILED_MODEL_SOURCES = [
     ROOT / "demos" / "Qyl.RealEfCoreDemo" / "CompiledModels" / "ProbeItemUnsafeAccessors.cs",
 ]
 
-PROGRAM_TEMPLATE_PATH = ROOT / "tools" / "Qyl.AutoInstrumentation.WebApiAotDemo" / "Program.cs"
+PROGRAM_TEMPLATE_PATH = ROOT / "tools" / "Qyl.OpenTelemetry.AutoInstrumentation.WebApiAotDemo" / "Program.cs"
 
 
 def fail(message: str) -> None:
@@ -98,9 +98,9 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="{version}" />
-    <PackageReference Include="Qyl.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
-    <PackageReference Include="Qyl.AutoInstrumentation.SqlClient" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="{version}" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
   </ItemGroup>
@@ -153,7 +153,7 @@ def publish_nativeaot(project: Path, output: Path, log: Path, env: dict[str, str
     qyl_warnings = [
         line for line in completed.stdout.splitlines()
         if re.search(r"\b(?:IL2[0-9]{3}|IL3[0-9]{3}|IL4[0-9]{3}|CA[0-9]{4})\b", line) and
-        "Qyl.AutoInstrumentation" in line
+        "Qyl.OpenTelemetry.AutoInstrumentation" in line
     ]
     if qyl_warnings:
         fail("NativeAOT web API publish emitted qyl-owned analyzer warnings:\n" + "\n".join(qyl_warnings))

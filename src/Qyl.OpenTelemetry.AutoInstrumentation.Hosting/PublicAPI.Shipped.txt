@@ -1,0 +1,10 @@
+#nullable enable
+Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap
+Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions
+Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions.EnableConformanceProcessor.get -> bool
+Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions.EnableConformanceProcessor.set -> void
+Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions.QylAutoInstrumentationHostingOptions() -> void
+Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions
+static Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap.Boot() -> void
+static Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions.AddQylAutoInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions.AddQylAutoInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Qyl.OpenTelemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationHostingOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

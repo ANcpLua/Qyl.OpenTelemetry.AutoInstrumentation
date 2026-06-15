@@ -11,12 +11,12 @@ runtime IL rewrite, attach tool, plugin store, or reflection-based dispatch.
 
 | Package project | Purpose |
 |---|---|
-| `src/Qyl.AutoInstrumentation` | Core runtime APIs, semantic helpers, metric helpers, generated-interceptor targets, and package build assets. |
-| `src/Qyl.AutoInstrumentation.SourceGenerators` | Build-time Roslyn generator for contract-gated source interceptors and generated semantic registries. |
-| `src/Qyl.AutoInstrumentation.DiagnosticListeners` | Shared DiagnosticListener substrate and runtime payload readers for framework/library events. |
-| `src/Qyl.AutoInstrumentation.Hosting` | General application bootstrap package with build-transitive module initializer and service registration. |
-| `src/Qyl.AutoInstrumentation.EntityFrameworkCore` | EFCore-specific bootstrap/listener package kept separate so EFCore dependencies and AOT warnings do not leak into non-EF apps. |
-| `src/Qyl.AutoInstrumentation.SqlClient` | Microsoft.Data.SqlClient-specific bootstrap/listener package kept separate for the same dependency-boundary reason. |
+| `src/Qyl.OpenTelemetry.AutoInstrumentation` | Core runtime APIs, semantic helpers, metric helpers, generated-interceptor targets, and package build assets. |
+| `src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators` | Build-time Roslyn generator for contract-gated source interceptors and generated semantic registries. |
+| `src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners` | Shared DiagnosticListener substrate and runtime payload readers for framework/library events. |
+| `src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting` | General application bootstrap package with build-transitive module initializer and service registration. |
+| `src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore` | EFCore-specific bootstrap/listener package kept separate so EFCore dependencies and AOT warnings do not leak into non-EF apps. |
+| `src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient` | Microsoft.Data.SqlClient-specific bootstrap/listener package kept separate for the same dependency-boundary reason. |
 
 The repository also contains real consumer demos, source-generator snapshots, NativeAOT
 smoke consumers, OTLP-shaped fixtures, and package-layout checks. These are not decorative;
@@ -29,7 +29,7 @@ instrumentation.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="0.3.0-pre.1" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="0.3.0-pre.1" />
 </ItemGroup>
 ```
 
@@ -37,8 +37,8 @@ Add package-specific references only when the app uses those libraries:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Qyl.AutoInstrumentation.EntityFrameworkCore" Version="0.3.0-pre.1" />
-  <PackageReference Include="Qyl.AutoInstrumentation.SqlClient" Version="0.3.0-pre.1" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="0.3.0-pre.1" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="0.3.0-pre.1" />
 </ItemGroup>
 ```
 
@@ -223,7 +223,7 @@ python3 tools/verify-webapi-aot-demo.py
 bash tools/smoketest.sh
 ```
 
-Benchmark measurements live in `benchmarks/Qyl.AutoInstrumentation.Benchmarks`. They are
+Benchmark measurements live in `benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks`. They are
 measurement evidence, not product code.
 
 ## NativeAOT boundaries

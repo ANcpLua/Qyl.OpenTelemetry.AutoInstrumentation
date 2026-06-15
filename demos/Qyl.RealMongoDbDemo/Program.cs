@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var connectionString = Environment.GetEnvironmentVariable("QYL_MONGODB_CONNECTION_STRING");
 if (string.IsNullOrWhiteSpace(connectionString))

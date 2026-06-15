@@ -1,5 +1,0 @@
-#nullable enable
-Qyl.AutoInstrumentation.SqlClient.SqlClientAutoInstrumentationBootstrap
-Qyl.AutoInstrumentation.SqlClient.SqlClientDiagnosticListener
-Qyl.AutoInstrumentation.SqlClient.SqlClientDiagnosticListener.SqlClientDiagnosticListener() -> void
-static Qyl.AutoInstrumentation.SqlClient.SqlClientAutoInstrumentationBootstrap.Boot() -> void

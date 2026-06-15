@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener

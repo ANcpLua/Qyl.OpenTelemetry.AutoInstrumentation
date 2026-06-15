@@ -50,7 +50,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealAdoNetDemo
   - tools/verify-real-adonet-demo.py
@@ -125,8 +125,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
   - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreDemo
   - tools/verify-real-aspnetcore-demo.py
@@ -166,7 +166,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator framework initialization
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealAzureDemo
   - tools/verify-real-azure-demo.py
@@ -206,7 +206,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealElasticsearchDemo
   - tools/verify-real-elasticsearch-demo.py
@@ -247,7 +247,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealElasticTransportDemo
   - tools/verify-real-elastictransport-demo.py
@@ -290,8 +290,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
   - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealEfCoreDemo
   - tools/verify-real-efcore-demo.py
@@ -334,7 +334,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealGraphQlDemo
   - tools/verify-real-graphql-demo.py
@@ -374,7 +374,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - demos/Qyl.RealGrpcClientDemo
   - tools/verify-real-grpc-client-demo.py
   conformance_signals:
@@ -419,7 +419,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - demos/Qyl.RealHttpClientDemo
   - tools/verify-real-http-client-demo.py
   conformance_signals:
@@ -470,7 +470,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealKafkaDemo
   - tools/verify-real-kafka-demo.py
@@ -513,7 +513,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMassTransitDemo
   - tools/verify-real-masstransit-demo.py
@@ -561,7 +561,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMongoDbDemo
   - tools/verify-real-mongodb-demo.py
@@ -602,7 +602,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlConnectorDemo
   - tools/verify-real-mysqlconnector-demo.py
@@ -646,7 +646,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlDataDemo
   - tools/verify-real-mysqldata-demo.py
@@ -688,7 +688,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNpgsqlDemo
   - tools/verify-real-npgsql-demo.py
@@ -731,7 +731,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNServiceBusDemo
   - tools/verify-real-nservicebus-demo.py
@@ -767,7 +767,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealOracleMdaDemo
   - tools/verify-real-oraclemda-demo.py
@@ -812,7 +812,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealRabbitMqDemo
   - tools/verify-real-rabbitmq-demo.py
@@ -855,7 +855,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
@@ -904,7 +904,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqlClientDemo
   - tools/verify-real-sqlclient-demo.py
@@ -946,7 +946,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqliteDemo
   - tools/verify-real-sqlite-demo.py
@@ -989,7 +989,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealRedisDemo
   - tools/verify-real-redis-demo.py
@@ -1031,7 +1031,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealWcfClientDemo
   - tools/verify-real-wcf-client-demo.py
@@ -1157,8 +1157,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation.DiagnosticListeners
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
   - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreMetricsDemo
   - tools/verify-real-aspnetcore-metrics-demo.py
@@ -1211,7 +1211,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealHttpClientDemo
   - tools/verify-real-http-client-demo.py
   conformance_signals:
@@ -1252,8 +1252,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
-  - src/Qyl.AutoInstrumentation/QylMetricNames.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
   conformance_signals:
@@ -1303,8 +1303,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator + QylDbClientMetrics
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.AutoInstrumentation/QylDbClientMetrics.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylDbClientMetrics.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqlClientDemo
   - tools/verify-real-sqlclient-demo.py
@@ -1347,8 +1347,8 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator + QylNServiceBusMetrics
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.AutoInstrumentation/QylNServiceBusMetrics.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylNServiceBusMetrics.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNServiceBusDemo
   - tools/verify-real-nservicebus-demo.py
@@ -1381,8 +1381,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl public telemetry listeners/meters
   evidence:
-  - src/Qyl.AutoInstrumentation/QylMetricMeters.cs
-  - src/Qyl.AutoInstrumentation/QylMetricNames.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
   conformance_signals:
@@ -1441,8 +1441,8 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator + QylDbClientMetrics
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.AutoInstrumentation/QylDbClientMetrics.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylDbClientMetrics.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealSqlClientDemo
   - tools/verify-real-sqlclient-demo.py
@@ -1485,7 +1485,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealILoggerDemo
   - tools/verify-real-ilogger-demo.py
@@ -1526,7 +1526,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealLog4NetDemo
   - tools/verify-real-log4net-demo.py
@@ -1566,7 +1566,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
-  - src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNLogDemo
   - tools/verify-real-nlog-demo.py
@@ -1597,7 +1597,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
@@ -1622,7 +1622,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
@@ -1652,7 +1652,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
@@ -1677,7 +1677,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
@@ -1707,7 +1707,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
@@ -1732,7 +1732,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
@@ -1762,7 +1762,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
@@ -1794,7 +1794,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
@@ -1822,7 +1822,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
@@ -1850,7 +1850,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
@@ -1884,7 +1884,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -1910,7 +1910,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1938,7 +1938,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -1964,7 +1964,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1990,7 +1990,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
@@ -2016,7 +2016,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
@@ -2042,7 +2042,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -2068,7 +2068,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -2094,7 +2094,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
@@ -2119,7 +2119,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
@@ -2144,7 +2144,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
@@ -2169,7 +2169,7 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
@@ -2201,5 +2201,5 @@ contract_items:
   evidence_level: option_bound
   primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py

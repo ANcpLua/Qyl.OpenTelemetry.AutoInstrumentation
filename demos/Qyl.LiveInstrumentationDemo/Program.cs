@@ -5,8 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
-using Qyl.AutoInstrumentation;
-using Qyl.AutoInstrumentation.Hosting;
+using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
 
 var options = DemoOptions.Parse(args);
 var captured = new List<CapturedActivity>();

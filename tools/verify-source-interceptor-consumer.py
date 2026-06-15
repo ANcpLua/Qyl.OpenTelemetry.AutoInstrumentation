@@ -16,9 +16,9 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
-DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Qyl.AutoInstrumentation.DiagnosticListeners.csproj"
-HOSTING_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.Hosting" / "Qyl.AutoInstrumentation.Hosting.csproj"
+CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj"
+HOSTING_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
@@ -32,7 +32,7 @@ using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
@@ -555,8 +555,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.AutoInstrumentation" Version="{version}" />
-    <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
@@ -590,19 +590,19 @@ def verify_generated_interceptor_source(directory: Path) -> None:
     for token in [
         "#nullable enable",
         "file sealed class InterceptsLocationAttribute",
-        "namespace Qyl.AutoInstrumentation.Generated",
+        "namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated",
         "[global::System.Runtime.CompilerServices.InterceptsLocationAttribute(",
         "// Intercepted call at ",
         "ILogger_Log_",
-        "global::Qyl.AutoInstrumentation.QylInterceptedLogger.Log(",
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedLogger.Log(",
         "HttpClient_GetStringAsync_",
-        "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync(",
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync(",
         "HttpClient_PostAsync_",
-        "global::Qyl.AutoInstrumentation.QylInterceptedHttpClient.PostAsync(",
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedHttpClient.PostAsync(",
         "DbCommand_ExecuteScalar_",
-        "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.GetTimestamp()",
-        "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.RecordDuration(",
-        "global::Qyl.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(",
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.GetTimestamp()",
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.RecordDuration(",
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.StartActivity(",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")

@@ -13,12 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.SqlClient\Qyl.AutoInstrumentation.SqlClient.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\Qyl.AutoInstrumentation.SqlClient\buildTransitive\Qyl.AutoInstrumentation.SqlClient.Bootstrap.g.cs"
-             Link="Qyl.AutoInstrumentation.SqlClient.Bootstrap.g.cs"
+    <Compile Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.Bootstrap.g.cs"
+             Link="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.Bootstrap.g.cs"
              Visible="false" />
   </ItemGroup>
 

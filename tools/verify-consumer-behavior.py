@@ -15,9 +15,9 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-CORE_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation" / "Qyl.AutoInstrumentation.csproj"
-DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.DiagnosticListeners" / "Qyl.AutoInstrumentation.DiagnosticListeners.csproj"
-HOSTING_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.Hosting" / "Qyl.AutoInstrumentation.Hosting.csproj"
+CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj"
+HOSTING_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
@@ -95,7 +95,7 @@ def write_project(directory: Path, instrumented: bool, feed: Path, packages: Pat
     package_reference = (
         f'''
   <ItemGroup>
-    <PackageReference Include="Qyl.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
   </ItemGroup>
 '''
         if instrumented
@@ -155,7 +155,7 @@ def main() -> None:
         mismatches.append(f"stderr:\nBASELINE\n{baseline.stderr}\nINSTRUMENTED\n{instrumented.stderr}")
 
     if mismatches:
-        fail("consumer behavior changed with Qyl.AutoInstrumentation.Hosting reference:\n" + "\n".join(mismatches))
+        fail("consumer behavior changed with Qyl.OpenTelemetry.AutoInstrumentation.Hosting reference:\n" + "\n".join(mismatches))
 
     print("consumer-behavior-ok")
 

@@ -33,7 +33,7 @@ Generated outputs:
 
 - `docs/generated/qyl-aot-contract.resolved.yaml`
 - `docs/generated/qyl-aot-contract.schema.json`
-- `src/Qyl.AutoInstrumentation.SourceGenerators/InstrumentationContract.cs`
+- `src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/InstrumentationContract.cs`
 - `docs/coverage-matrix.md`
 
 Current classification:

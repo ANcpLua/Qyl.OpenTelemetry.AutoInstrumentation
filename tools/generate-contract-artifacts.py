@@ -511,7 +511,7 @@ def verify_contract_item(item: dict[str, Any]) -> None:
             fail(f"implemented item evidence path does not exist for {key}: {missing_evidence_paths}")
         if lane == "source_interceptor":
             required_tokens = [
-                "src/Qyl.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs",
+                "src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs",
                 "tools/verify-source-interceptor-consumer.py",
             ]
             for token in required_tokens:
@@ -545,8 +545,8 @@ def verify_contract_item(item: dict[str, Any]) -> None:
                 fail(f"compile_binding_only item must not claim runtime verification evidence for {key}: {runtime_evidence}")
         if lane == "runtime_public_telemetry":
             proof_tokens = [
-                "src/Qyl.AutoInstrumentation.DiagnosticListeners",
-                "src/Qyl.AutoInstrumentation/QylMetricMeters.cs",
+                "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
+                "src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs",
                 "ILogger",
                 "ActivitySource",
                 "Meter",

@@ -1,0 +1,24 @@
+#nullable enable
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.NameResolutionMeterName = "System.Net.NameResolution" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricNames.AspNetCoreComponentsHandleEventDuration = "aspnetcore.components.handle_event.duration" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricNames.AspNetCoreComponentsRenderDiffDuration = "aspnetcore.components.render_diff.duration" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricNames.AspNetCoreComponentsRenderDiffSize = "aspnetcore.components.render_diff.size" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricNames.AspNetCoreComponentsUpdateParametersDuration = "aspnetcore.components.update_parameters.duration" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricNames.DnsLookupDuration = "dns.lookup.duration" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricNames.HttpServerRequestDuration = "http.server.request.duration" -> string!
+static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedElastic.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
+static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedElastic.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
+static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.GetTimestamp() -> long
+static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
+static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedNServiceBus.GetTimestamp() -> long
+static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void

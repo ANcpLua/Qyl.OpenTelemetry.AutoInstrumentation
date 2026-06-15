@@ -13,7 +13,7 @@ from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealRabbitMqDemo" / "Qyl.RealRabbitMqDemo.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.AutoInstrumentation.SourceGenerators" / "Qyl.AutoInstrumentation.SourceGenerators.csproj"
+GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
 RABBITMQ_IMAGE = os.environ.get("QYL_RABBITMQ_IMAGE", "rabbitmq:4.1-alpine")
 

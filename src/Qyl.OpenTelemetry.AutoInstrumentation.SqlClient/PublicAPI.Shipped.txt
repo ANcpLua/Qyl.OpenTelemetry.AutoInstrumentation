@@ -1,0 +1,5 @@
+#nullable enable
+Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.SqlClientAutoInstrumentationBootstrap
+Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.SqlClientDiagnosticListener
+Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.SqlClientDiagnosticListener.SqlClientDiagnosticListener() -> void
+static Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.SqlClientAutoInstrumentationBootstrap.Boot() -> void

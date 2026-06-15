@@ -21,12 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.AutoInstrumentation.EntityFrameworkCore\Qyl.AutoInstrumentation.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore\Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\Qyl.AutoInstrumentation.EntityFrameworkCore\buildTransitive\Qyl.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
-             Link="Qyl.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
+    <Compile Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
+             Link="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
              Visible="false" />
   </ItemGroup>
 

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 using StackExchange.Redis;
 
 var configuration = Environment.GetEnvironmentVariable("QYL_REDIS_CONFIGURATION");

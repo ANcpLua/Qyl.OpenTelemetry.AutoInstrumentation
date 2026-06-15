@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener

@@ -1,0 +1,21 @@
+{
+  "forbiddenStrings": [],
+  "matchedStrings": [
+    "GET",
+    "Qyl.OpenTelemetry.AutoInstrumentation",
+    "downstream.example",
+    "http.client",
+    "http.request.method",
+    "http.response.status_code",
+    "https://downstream.example/probe?access_token=Redacted",
+    "qyl.instrumentation.domain",
+    "server.address",
+    "url.full"
+  ],
+  "request": {
+    "contentType": "application/x-protobuf",
+    "method": "POST",
+    "path": "/v1/traces"
+  },
+  "wireFormat": "otlp-http-protobuf"
+}

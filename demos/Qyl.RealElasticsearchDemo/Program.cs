@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
-using Qyl.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener

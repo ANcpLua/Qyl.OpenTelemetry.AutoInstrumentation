@@ -1,0 +1,7 @@
+<Project>
+  <ItemGroup Condition="'$(QylAutoInstrumentationDisableBootstrap)' != 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
+             Link="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.Bootstrap.g.cs"
+             Visible="false" />
+  </ItemGroup>
+</Project>
