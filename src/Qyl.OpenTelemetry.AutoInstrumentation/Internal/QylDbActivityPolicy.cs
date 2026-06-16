@@ -35,7 +35,7 @@ internal static class QylDbActivityPolicy
             activity,
             GetDbSystemName(instrumentationId),
             operation,
-            GetQuerySummary(command, operation));
+            operation);
 
         var databaseName = command.Connection?.Database;
         if (!string.IsNullOrWhiteSpace(databaseName))
@@ -43,11 +43,6 @@ internal static class QylDbActivityPolicy
 
         QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);
         return activity;
-    }
-
-    private static string GetQuerySummary(DbCommand command, string operation)
-    {
-        return operation;
     }
 
     private static string NormalizeOperation(string operationName, DbCommand command)

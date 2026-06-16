@@ -1,24 +1,18 @@
-using System.Collections.Frozen;
 using System.Globalization;
 
 namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
 internal sealed class QylCapturedNameMap
 {
-    internal static readonly QylCapturedNameMap Empty = new([], [], FrozenDictionary<string, string>.Empty);
+    internal static readonly QylCapturedNameMap Empty = new([], []);
 
     private readonly string[] _lookupNames;
     private readonly string[] _tagNames;
-    private readonly FrozenDictionary<string, string> _tagNameByLookupName;
 
-    private QylCapturedNameMap(
-        string[] lookupNames,
-        string[] tagNames,
-        FrozenDictionary<string, string> tagNameByLookupName)
+    private QylCapturedNameMap(string[] lookupNames, string[] tagNames)
     {
         _lookupNames = lookupNames;
         _tagNames = tagNames;
-        _tagNameByLookupName = tagNameByLookupName;
     }
 
     internal int Count => _lookupNames.Length;
@@ -26,9 +20,6 @@ internal sealed class QylCapturedNameMap
     internal string GetLookupName(int index) => _lookupNames[index];
 
     internal string GetTagName(int index) => _tagNames[index];
-
-    internal bool TryGetTagName(string lookupName, out string tagName)
-        => _tagNameByLookupName.TryGetValue(lookupName, out tagName!);
 
     internal static QylCapturedNameMap Create(string prefix, string[] configuredNames, bool normalizeLookupName = false)
     {
@@ -60,10 +51,7 @@ internal sealed class QylCapturedNameMap
             index++;
         }
 
-        return new QylCapturedNameMap(
-            lookupNames,
-            tagNames,
-            entries.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
+        return new QylCapturedNameMap(lookupNames, tagNames);
     }
 
     private static string NormalizeName(string name)

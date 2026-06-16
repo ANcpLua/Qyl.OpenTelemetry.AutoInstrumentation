@@ -1197,31 +1197,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("    }");
     }
 
-    private static void AppendKafkaTopicExpression(StringBuilder builder, InterceptorTarget target)
-    {
-        if (target.Parameters.Length is 0)
-        {
-            builder.Append("null");
-            return;
-        }
-
-        if (string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal) ||
-            string.Equals(target.Parameters[0].TypeName, "global::System.String", StringComparison.Ordinal))
-        {
-            builder.Append(target.Parameters[0].Name);
-            return;
-        }
-
-        if (string.Equals(target.Parameters[0].TypeName, "global::Confluent.Kafka.TopicPartition", StringComparison.Ordinal))
-        {
-            builder.Append(target.Parameters[0].Name);
-            builder.Append(".Topic");
-            return;
-        }
-
-        builder.Append("null");
-    }
-
     private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, InterceptorTarget target)
     {
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))

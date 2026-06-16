@@ -17,9 +17,6 @@ internal static class DiagnosticPayloadReader
     public static string? GetString(object? payload, string key, string alias)
         => GetString(payload, key) ?? GetString(payload, alias);
 
-    public static string? GetString(object? payload, string key, string alias1, string alias2)
-        => GetString(payload, key) ?? GetString(payload, alias1) ?? GetString(payload, alias2);
-
     public static int? GetInt32(object? payload, string key)
     {
         if (!TryGetPayloadValue(payload, key, out var value) || value is null)
