@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Confluent.Kafka" Version="2.14.2" />
+    <PackageReference Include="Confluent.Kafka" />
     <!-- Confluent.Kafka binds librdkafka exports through reflection over its own
          NativeMethods classes; trimming removes them and breaks delegate wiring. -->
     <TrimmerRootAssembly Include="Confluent.Kafka" />

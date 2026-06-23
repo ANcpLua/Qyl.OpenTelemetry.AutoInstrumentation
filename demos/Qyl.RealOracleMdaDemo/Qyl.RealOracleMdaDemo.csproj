@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.9.0" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" />
   </ItemGroup>
 
   <ItemGroup>

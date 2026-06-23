@@ -19,7 +19,7 @@ using var listener = new ActivityListener
 ActivitySource.AddActivityListener(listener);
 
 IDocumentExecuter executer = new DocumentExecuter();
-var schema = new Schema { Query = new ProbeQuery() };
+var schema = new Schema(GraphQlServices.Instance) { Query = new ProbeQuery() };
 var result = await executer.ExecuteAsync(new ExecutionOptions
 {
     Schema = schema,
@@ -60,6 +60,19 @@ internal sealed class ProbeQuery : ObjectGraphType
             ResolvedType = new StringGraphType(),
             Resolver = new FuncFieldResolver<string>(static _ => "world"),
         });
+    }
+}
+
+internal sealed class GraphQlServices : IServiceProvider
+{
+    public static GraphQlServices Instance { get; } = new();
+
+    public object? GetService(Type serviceType)
+    {
+        if (serviceType == typeof(ProbeQuery))
+            return new ProbeQuery();
+
+        return null;
     }
 }
 

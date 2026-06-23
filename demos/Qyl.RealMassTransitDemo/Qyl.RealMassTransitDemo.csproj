@@ -9,9 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- MassTransit 8.x is the last Apache-2.0 open-source line; 9.x is commercial. -->
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.10" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+    <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
   <ItemGroup>

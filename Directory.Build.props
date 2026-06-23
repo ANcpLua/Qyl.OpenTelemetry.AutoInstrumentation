@@ -43,20 +43,12 @@
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- Analyzer proof stack requested for the NativeAOT-readiness gate. -->
-    <ANcpLuaAnalyzersVersion>2.0.2</ANcpLuaAnalyzersVersion>
-    <MicrosoftCodeAnalysisAnalyzersVersion>5.3.0</MicrosoftCodeAnalysisAnalyzersVersion>
-    <MicrosoftCodeAnalysisCSharpVersion>5.3.0</MicrosoftCodeAnalysisCSharpVersion>
-    <ErrorProneNETCoreAnalyzersVersion>0.8.2-beta.1</ErrorProneNETCoreAnalyzersVersion>
-    <ErrorProneNETStructsVersion>0.6.1-beta.1</ErrorProneNETStructsVersion>
-    <RoslynatorAnalyzersVersion>4.15.0</RoslynatorAnalyzersVersion>
-    <JonSkeetRoslynAnalyzersVersion>1.0.0-beta.6</JonSkeetRoslynAnalyzersVersion>
-    <MicrosoftCodeAnalysisPublicApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisPublicApiAnalyzersVersion>
+    <!-- Analyzer package versions live in Directory.Packages.props with the rest of the graph. -->
     <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient'">true</QylEnablePublicApiAnalyzers>
   </PropertyGroup>
 
@@ -66,32 +58,22 @@
           PackagePath=""
           Visible="false" />
     <PackageReference Include="ANcpLua.Analyzers"
-                      Version="$(ANcpLuaAnalyzersVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers"
-                      Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="ErrorProne.NET.CoreAnalyzers"
-                      Version="$(ErrorProneNETCoreAnalyzersVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="ErrorProne.NET.Structs"
-                      Version="$(ErrorProneNETStructsVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="Roslynator.Analyzers"
-                      Version="$(RoslynatorAnalyzersVersion)"
-                      PrivateAssets="all"
-                      IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
-    <PackageReference Include="JonSkeet.RoslynAnalyzers"
-                      Version="$(JonSkeetRoslynAnalyzersVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers"
                       Condition="'$(QylEnablePublicApiAnalyzers)' == 'true'"
-                      Version="$(MicrosoftCodeAnalysisPublicApiAnalyzersVersion)"
                       PrivateAssets="all"
                       IncludeAssets="runtime; build; native; contentfiles; analyzers; buildtransitive" />
   </ItemGroup>

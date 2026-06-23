@@ -111,7 +111,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         return new InterceptedInvocation(target, interceptableLocation);
     }
 
-    private static bool IsSupportedTarget(InterceptorTarget target)
+    private static bool IsSupportedTarget(in InterceptorTarget target)
     {
         if (InstrumentationContract.TryGetImplementedSignal(target.ContractKey) is null)
             return false;
@@ -159,7 +159,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         return false;
     }
 
-    private static void EnsureTargetDeclaredByMatcher(InterceptorMatcherDescriptor descriptor, InterceptorTarget target)
+    private static void EnsureTargetDeclaredByMatcher(InterceptorMatcherDescriptor descriptor, in InterceptorTarget target)
     {
         EnsureKindDeclaredByMatcher(descriptor, target.Kind);
         EnsureContractDeclaredByMatcher(descriptor, target.ContractKey, target.Kind);
@@ -311,7 +311,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine();
     }
 
-    private static InterceptorEmissionDescriptor GetEmissionDescriptor(InterceptorTarget target)
+    private static InterceptorEmissionDescriptor GetEmissionDescriptor(in InterceptorTarget target)
     {
         foreach (var descriptor in s_emissionDescriptors)
         {
@@ -353,8 +353,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     }
 
     private static void EnsureEmissionDescriptorMatchesMatcher(
-        InterceptorTarget target,
-        InterceptorEmissionDescriptor descriptor)
+        in InterceptorTarget target,
+        in InterceptorEmissionDescriptor descriptor)
     {
         if (string.IsNullOrEmpty(target.MatcherName))
             throw new InvalidOperationException("Interceptor kind '" + target.Kind + "' has no matcher descriptor.");
@@ -372,7 +372,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         }
     }
 
-    private static void ValidateEmissionDescriptorPolicy(InterceptorEmissionDescriptor descriptor)
+    private static void ValidateEmissionDescriptorPolicy(in InterceptorEmissionDescriptor descriptor)
     {
         ValidateSingleBodyDescriptor(descriptor);
         ValidateMethodShape(descriptor);
@@ -489,7 +489,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         throw new InvalidOperationException("Unsupported interceptor emission policy shape: " + descriptor.Kind);
     }
 
-    private static void ValidateSingleBodyDescriptor(InterceptorEmissionDescriptor descriptor)
+    private static void ValidateSingleBodyDescriptor(in InterceptorEmissionDescriptor descriptor)
     {
         var bodyCount = 0;
         if (descriptor.TraceBody.IsDefined)
@@ -513,7 +513,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             throw new InvalidOperationException("Interceptor emission descriptor must define exactly one typed body descriptor: " + descriptor.Kind);
     }
 
-    private static void ValidateMethodShape(InterceptorEmissionDescriptor descriptor)
+    private static void ValidateMethodShape(in InterceptorEmissionDescriptor descriptor)
     {
         if (descriptor.HttpWebRequestBody.IsDefined)
         {
@@ -590,7 +590,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     }
 
     private static void ValidateMethodShape(
-        InterceptorEmissionDescriptor descriptor,
+        in InterceptorEmissionDescriptor descriptor,
         InterceptorMethodShape methodShape)
     {
         if (descriptor.MethodShape != methodShape)
@@ -598,7 +598,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     }
 
     private static void ValidatePolicy(
-        InterceptorEmissionDescriptor descriptor,
+        in InterceptorEmissionDescriptor descriptor,
         InterceptorSignalOwnership signalOwnership,
         InterceptorErrorPolicy errorPolicy,
         InterceptorDurationPolicy durationPolicy)
@@ -622,7 +622,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitForwardingInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         ForwardingInterceptorBodyDescriptor descriptor)
     {
@@ -659,9 +659,9 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitTraceInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
-        TraceInterceptorBodyDescriptor descriptor)
+        in TraceInterceptorBodyDescriptor descriptor)
     {
         var target = invocation.Target;
         var runtimeObservesAsync = ShouldRuntimeObserveAsync(target, descriptor);
@@ -709,8 +709,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     }
 
     private static string GetTraceMethodPrefix(
-        InterceptorTarget target,
-        TraceInterceptorBodyDescriptor descriptor)
+        in InterceptorTarget target,
+        in TraceInterceptorBodyDescriptor descriptor)
     {
         switch (descriptor.MethodPrefixKind)
         {
@@ -724,15 +724,15 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     }
 
     private static bool ShouldRuntimeObserveAsync(
-        InterceptorTarget target,
-        TraceInterceptorBodyDescriptor descriptor)
+        in InterceptorTarget target,
+        in TraceInterceptorBodyDescriptor descriptor)
         => descriptor.AsyncObservation.IsDefined &&
            descriptor.AsyncObservation.AppliesTo(target);
 
     private static void EmitTraceInvocation(
         StringBuilder builder,
-        InterceptorTarget target,
-        TraceInterceptorBodyDescriptor descriptor)
+        in InterceptorTarget target,
+        in TraceInterceptorBodyDescriptor descriptor)
     {
         if (target.IsAsync && ShouldRuntimeObserveAsync(target, descriptor))
         {
@@ -782,8 +782,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitTraceSuccessDurationMetric(
         StringBuilder builder,
-        InterceptorTarget target,
-        TraceInterceptorBodyDescriptor descriptor)
+        in InterceptorTarget target,
+        in TraceInterceptorBodyDescriptor descriptor)
     {
         if (descriptor.DurationMetric.IsDefined)
             descriptor.DurationMetric.AppendRecordDurationStatement(builder, target);
@@ -795,7 +795,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void AppendTraceStartActivityArguments(
         StringBuilder builder,
-        InterceptorTarget target,
+        in InterceptorTarget target,
         TraceStartActivityArgumentKind argumentKind)
     {
         switch (argumentKind)
@@ -828,7 +828,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitHttpWebRequestInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         HttpWebRequestBodyDescriptor descriptor)
     {
@@ -899,9 +899,9 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitDbCommandInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
-        DbCommandBodyDescriptor descriptor)
+        in DbCommandBodyDescriptor descriptor)
     {
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType, descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName, target.Parameters, isAsync: false);
@@ -990,7 +990,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitMeterProviderBuilderAddMeterInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         MeterProviderBuilderBodyDescriptor descriptor)
     {
@@ -1023,7 +1023,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitGrpcNetClientInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         GrpcClientBodyDescriptor descriptor)
     {
@@ -1084,7 +1084,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("                    call.GetTrailers,");
     }
 
-    private static void EmitGrpcCallPreamble(StringBuilder builder, InterceptorTarget target, GrpcClientBodyDescriptor descriptor)
+    private static void EmitGrpcCallPreamble(StringBuilder builder, in InterceptorTarget target, GrpcClientBodyDescriptor descriptor)
     {
         builder.Append("            var activity = ");
         builder.Append(descriptor.HelperType);
@@ -1126,7 +1126,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("                    });");
     }
 
-    private static void AppendGrpcMetadataExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendGrpcMetadataExpression(StringBuilder builder, in InterceptorTarget target)
     {
         foreach (var parameter in target.Parameters)
         {
@@ -1197,7 +1197,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("    }");
     }
 
-    private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, in InterceptorTarget target)
     {
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
         {
@@ -1213,7 +1213,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.Append("null");
     }
 
-    private static void AppendGraphQlOperationNameExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendGraphQlOperationNameExpression(StringBuilder builder, in InterceptorTarget target)
     {
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName, "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
         {
@@ -1227,7 +1227,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.Append("null");
     }
 
-    private static void AppendRabbitMqExchangeExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendRabbitMqExchangeExpression(StringBuilder builder, in InterceptorTarget target)
     {
         if (target.Parameters.Length > 0 &&
             string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal))
@@ -1241,7 +1241,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitLoggerInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         LoggerBodyDescriptor descriptor)
     {
@@ -1256,7 +1256,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitDirectLoggerInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         LoggerBodyDescriptor descriptor)
     {
@@ -1285,7 +1285,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitLoggerExtensionInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         LoggerBodyDescriptor descriptor)
     {
@@ -1309,7 +1309,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitExternalLoggerInterceptor(
         StringBuilder builder,
-        InterceptedInvocation invocation,
+        in InterceptedInvocation invocation,
         int index,
         ExternalLoggerBodyDescriptor descriptor)
     {
@@ -1373,7 +1373,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine();
     }
 
-    private static void AppendExternalLoggerSeverityExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendExternalLoggerSeverityExpression(StringBuilder builder, in InterceptorTarget target)
     {
         foreach (var parameter in target.Parameters)
         {
@@ -1403,7 +1403,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.Append("null");
     }
 
-    private static void AppendLoggerLevelExpression(StringBuilder builder, InterceptorTarget target)
+    private static void AppendLoggerLevelExpression(StringBuilder builder, in InterceptorTarget target)
     {
         if (string.Equals(target.MethodName, "Log", StringComparison.Ordinal))
         {
@@ -1425,7 +1425,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.Append(levelName);
     }
 
-    private static void AppendFirstParameterExpression(StringBuilder builder, InterceptorTarget target, string typeName, string fallbackExpression)
+    private static void AppendFirstParameterExpression(StringBuilder builder, in InterceptorTarget target, string typeName, string fallbackExpression)
     {
         foreach (var parameter in target.Parameters)
         {
@@ -1439,7 +1439,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.Append(fallbackExpression);
     }
 
-    private static void AppendFirstArrayParameterExpression(StringBuilder builder, InterceptorTarget target, string elementTypeName, string fallbackExpression)
+    private static void AppendFirstArrayParameterExpression(StringBuilder builder, in InterceptorTarget target, string elementTypeName, string fallbackExpression)
     {
         foreach (var parameter in target.Parameters)
         {
@@ -1567,7 +1567,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         return false;
     }
 
-    private static void AppendInvocationCall(StringBuilder builder, InterceptorTarget target, string receiverName)
+    private static void AppendInvocationCall(StringBuilder builder, in InterceptorTarget target, string receiverName)
     {
         if (!string.IsNullOrEmpty(target.ExtensionContainingType))
         {

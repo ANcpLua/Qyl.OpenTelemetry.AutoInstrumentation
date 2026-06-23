@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Quartz" Version="3.18.1" />
+    <PackageReference Include="Quartz" />
     <!-- Quartz instantiates its type-load helper and jobs through Activator.CreateInstance;
          trimming removes those constructors. -->
     <TrimmerRootAssembly Include="Quartz" />

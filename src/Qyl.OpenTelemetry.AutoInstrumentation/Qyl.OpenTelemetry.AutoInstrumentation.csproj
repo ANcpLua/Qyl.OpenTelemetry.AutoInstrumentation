@@ -18,9 +18,9 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Grpc.Core.Api" Version="2.71.0" />
-    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" Version="3.0.1" />
-    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" Version="3.0.1" />
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" />
+    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" />
   </ItemGroup>
 
   <ItemGroup>

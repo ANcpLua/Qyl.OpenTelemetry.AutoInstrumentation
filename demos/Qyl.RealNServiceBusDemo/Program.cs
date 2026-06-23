@@ -49,7 +49,7 @@ serialization.Options(new System.Text.Json.JsonSerializerOptions
 
 var hostBuilder = Host.CreateApplicationBuilder(args);
 hostBuilder.Logging.ClearProviders();
-hostBuilder.UseNServiceBus(configuration);
+hostBuilder.Services.AddNServiceBusEndpoint(configuration);
 
 using (var host = hostBuilder.Build())
 {

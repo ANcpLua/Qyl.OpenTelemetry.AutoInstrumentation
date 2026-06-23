@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / "Directory.Build.props"
+PACKAGES = ROOT / "Directory.Packages.props"
 
 PUBLIC_API_PROJECTS = [
     ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
@@ -32,14 +33,22 @@ def fail(message: str) -> None:
 
 def verify_props() -> None:
     text = PROPS.read_text(encoding="utf-8")
+    packages = PACKAGES.read_text(encoding="utf-8")
     required_tokens = [
-        "<MicrosoftCodeAnalysisPublicApiAnalyzersVersion>3.3.4</MicrosoftCodeAnalysisPublicApiAnalyzersVersion>",
         "Microsoft.CodeAnalysis.PublicApiAnalyzers",
         "QylEnablePublicApiAnalyzers",
     ]
     for token in required_tokens:
         if token not in text:
             fail(f"Directory.Build.props missing PublicAPI token: {token}")
+
+    package_tokens = [
+        '<PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" />',
+        "<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>",
+    ]
+    for token in package_tokens:
+        if token not in packages:
+            fail(f"Directory.Packages.props missing PublicAPI token: {token}")
 
     for project in EXCLUDED_PROJECTS:
         if project in text and project != "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators":

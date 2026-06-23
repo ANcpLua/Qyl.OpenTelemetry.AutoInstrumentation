@@ -244,7 +244,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.AppendLine("();");
         }
 
-        public void AppendRecordDurationStatement(StringBuilder builder, InterceptorTarget target)
+        public void AppendRecordDurationStatement(StringBuilder builder, in InterceptorTarget target)
         {
             builder.Append("                ");
             builder.Append(HelperType);
@@ -255,7 +255,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.AppendLine(");");
         }
 
-        private void AppendRecordDurationArguments(StringBuilder builder, InterceptorTarget target)
+        private void AppendRecordDurationArguments(StringBuilder builder, in InterceptorTarget target)
         {
             switch (RecordDurationArguments)
             {
@@ -277,7 +277,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         TraceActivityEnrichmentArgumentKind Arguments = TraceActivityEnrichmentArgumentKind.None,
         bool IsDefined = true)
     {
-        public void Append(StringBuilder builder, InterceptorTarget target)
+        public void Append(StringBuilder builder, in InterceptorTarget target)
         {
             builder.AppendLine("            if (activity is not null)");
             builder.AppendLine("            {");
@@ -291,7 +291,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.AppendLine("            }");
         }
 
-        private void AppendArguments(StringBuilder builder, InterceptorTarget target)
+        private void AppendArguments(StringBuilder builder, in InterceptorTarget target)
         {
             switch (Arguments)
             {
@@ -314,7 +314,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         TraceAsyncObservationCondition Condition = TraceAsyncObservationCondition.Always,
         bool IsDefined = true)
     {
-        public bool AppliesTo(InterceptorTarget target)
+        public bool AppliesTo(in InterceptorTarget target)
         {
             switch (Condition)
             {
@@ -338,7 +338,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         TraceActivityEnrichmentDescriptor ActivityEnrichment = default,
         TraceAsyncObservationDescriptor AsyncObservation = default)
     {
-        public void AppendStartActivity(StringBuilder builder, InterceptorTarget target)
+        public void AppendStartActivity(StringBuilder builder, in InterceptorTarget target)
         {
             builder.Append(RuntimeHelper.HelperType);
             builder.Append('.');

@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Elastic.Transport" Version="0.17.1" />
+    <PackageReference Include="Elastic.Transport" />
   </ItemGroup>
 
   <ItemGroup>

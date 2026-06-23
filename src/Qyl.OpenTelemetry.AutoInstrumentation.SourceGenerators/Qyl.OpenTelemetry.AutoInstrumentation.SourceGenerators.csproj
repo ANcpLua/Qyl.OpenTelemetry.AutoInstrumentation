@@ -25,8 +25,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.26" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" PrivateAssets="all" />
+    <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <!-- Runtime data-reader helper is irrelevant inside a Roslyn generator and trips this
          repo's stricter ErrorProne.NET gate (ERP022). -->
     <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Data/DataReaderExtensions.cs" />

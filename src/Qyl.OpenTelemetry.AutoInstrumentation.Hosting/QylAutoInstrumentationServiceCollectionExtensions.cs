@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
