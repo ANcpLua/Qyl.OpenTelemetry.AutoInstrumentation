@@ -39,7 +39,8 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
     <!-- One version source of truth across all packed projects. Bump only after validation. -->
-    <Version>0.3.0-pre.1</Version>
+    <!-- Aligned onto the Qyl.OpenTelemetry stack version line (SemConv 3.0.2). -->
+    <Version>3.0.2</Version>
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

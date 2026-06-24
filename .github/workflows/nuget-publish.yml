@@ -50,11 +50,10 @@ jobs:
           if [ -n "${{ github.event.inputs.version }}" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            # Floor when there is no reachable clean-semver v* tag. The existing v0.* tags are
-            # orphaned by the pending history rewrite and carry -pre suffixes the bump regex skips,
-            # so a fresh repo behaves as "no tag" and uses the base. Pass an explicit version input
-            # for the first real release instead of relying on this.
-            BASE="0.3.0-pre.1"
+            # Floor for the version line. Aligned onto the Qyl.OpenTelemetry stack at 3.0.2
+            # (SemConv 3.0.2). The orphaned v0.* -pre tags are skipped by the bump regex, so a
+            # fresh checkout uses this base. Pass an explicit version input for a specific release.
+            BASE="3.0.2"
             LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
             if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
               MAJOR=${BASH_REMATCH[1]}; MINOR=${BASH_REMATCH[2]}; PATCH=${BASH_REMATCH[3]}
