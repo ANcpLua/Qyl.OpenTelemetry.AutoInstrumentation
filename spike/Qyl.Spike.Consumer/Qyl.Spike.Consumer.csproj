@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- COMPILER OVERRIDE: replaces the SDK's in-box csc with the nightly that has the
+         pre-compilation driver phase. Without this the API would not execute at build time. -->
+    <PackageReference Include="Microsoft.Net.Compilers.Toolset" Version="5.9.0-1.26324.7" PrivateAssets="all" />
+    <ProjectReference Include="..\Qyl.Spike.Generator\Qyl.Spike.Generator.csproj"
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="spike.contract.txt" />
+  </ItemGroup>
+
+</Project>
