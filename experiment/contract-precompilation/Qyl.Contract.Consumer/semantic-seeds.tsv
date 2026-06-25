@@ -1,0 +1,5 @@
+# property-name	semantic-convention-attribute  (seed index — pre-compilation input)
+CustomerId	customer.id
+TenantId	tenant.id
+OrderId	order.id
+CorrelationId	correlation.id

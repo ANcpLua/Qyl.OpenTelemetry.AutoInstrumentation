@@ -65,3 +65,123 @@ the control (`main`) builds with the SDK 10.0.301 compiler. Any generator-time /
 output-size delta therefore conflates *compiler version* with *the refactor*. Phase 8 must pin the
 same toolset on the control measurement (or isolate the confound explicitly) or the numbers are not
 science.
+
+---
+
+## What was built (hard scope)
+
+The mission's 8 phases were scoped to the **decisive minimum** that answers the hypothesis with
+real artifacts rather than argument: a full contract-as-symbols ablation on one isolated consumer
+surface, plus one genuine compile-time-only coverage slice. Everything else is documented as
+not-run (below), not silently implied.
+
+- **Built** (`experiment/contract-precompilation/`, isolated like `spike/`, outside the slnx):
+  - Python projects the real resolved contract (`docs/generated/qyl-aot-contract.resolved.yaml`)
+    → a 37-row `qyl-contract.tsv` (this is Phase 1's "Python shrinks to producing resolved data").
+  - `ContractPreCompilationGenerator` (235 lines): **pre-compilation phase** parses the TSV +
+    seed file and emits `Qyl.Generated.Contract.*` symbols (per-item marker types,
+    `InstrumentationCapability` records, `SemanticAttributeDescriptor` records, `ContractRegistry`,
+    `SemanticSeeds`) into the initial compilation; **standard phase** binds them via
+    `GetTypeByMetadataName` and runs Phase-5 inference over user DTOs.
+  - Consumer fixture references both phases' symbols → green build + correct runtime output is
+    end-to-end proof (`tools/verify-precompilation-experiment.py` re-asserts it).
+- **Measured result** (real data): 37 contract capabilities emitted as symbols and bound in the
+  standard phase (`BoundCapabilityCount = 37`); `signals.traces.ASPNET` stays
+  `UnsupportedNativeAot` (the 4 unsupported items stay unsupported); 5 compile-time-only semconv
+  attributes inferred from user DTO properties (`CustomerId→customer.id`, `OrderId→order.id`,
+  `TenantId→tenant.id`, `CorrelationId→correlation.id`).
+- **Not run / scoped out** (honest):
+  - The production `QylAutoInstrumentationGenerator` was **not** refactored in place. H1 is measured
+    against an isolated parallel equivalent, so "generator complexity rises" is an **argued
+    projection** from (the isolated build's added machinery) + (the untouched 4945-line detection
+    core), not an in-place before/after diff.
+  - YAML was **not** wired as AdditionalFiles into the ~40 demos; the ~30-verifier suite,
+    smoketest, and AOT-demo workflows were **not** re-run under the nightly compiler.
+  - Phases 4/6/7 (per-integration `[TelemetryOperation]` types, runtime-ownership trim, AOT roots)
+    not implemented — the listener map already shows their surface is tiny (below).
+
+## Floor status (scoped, not overclaimed)
+
+Production code is unchanged, so the production floor is green **by construction**;
+`verify-package-layout.py` and `verify-contract-invariants.py` were re-run and pass
+(`package-layout-ok`, `contract-invariants-ok`). The `spike/` and `experiment/` dirs sit **outside
+the slnx / production build graph**, so the whole-repo build does not touch them. The full verifier
+suite was **not** re-executed end-to-end. A bounded probe (below) confirms the bare nightly compiler
+does not by itself break the floor.
+
+## Measurements mapped onto the mission's own criteria
+
+| Mission GENIUS conjunct (all required) | Result | Evidence |
+|---|---|---|
+| more semconv from semantic analysis than runtime extraction | **FALSE** | H2 yields ~5 (scales w/ DTO count); runtime listeners extract dozens of *values* (method, route, status, db.namespace, query.text, …) that pre-compilation cannot read. Aggregate: runtime ≫ semantic. |
+| listeners shrink | **FALSE** | Only 3 attributes are static-semantic (`qyl.instrumentation.domain`, `rpc.system=grpc`, `db.system.name=mssql`); the other ~95% are genuine runtime value reads. Listeners essentially unchanged. |
+| interceptor generation simpler | **FALSE** | The 4945-line call-site detection/emission core is untouched; the experiment *adds* a two-phase pipeline + parser + emit→compile→bind round-trip. |
+| coverage matrix gains compile-time-only attributes | **TRUE** | H2 demonstrably adds `customer.id`/`order.id`/`tenant.id`/`correlation.id` — impossible for runtime listeners without (forbidden) reflection. |
+| generator complexity **and** contract maintenance measurably drop | **NO** | Contract *data* maintenance drops (360 baked C# lines → 37 TSV rows). But generator *logic* roughly doubles and gains a hard dependency on an unshipped compiler. Net complexity rises. |
+
+GENIUS is an explicit 5-way AND; only one conjunct holds. Multiple DREAMING triggers fire (below).
+
+### The raw-LOC trap, defused
+Naively: experiment generator 235 + polyfill 6 + TSV 37 = **278 < 360** baked lines — looks
+*simpler*. That reading is wrong. The baseline's 360 lines are mostly **data** (60 item rows +
+key-set arrays + counts + meter consts); its actual **logic** is ~120 lines (record def, `TryGet*`,
+`EmitStringArray`, manifest emitter). The experiment's 235 lines are almost entirely **logic**
+(TSV parser + two emit methods + symbol binder + DTO inference + namespace walk). So **logic roughly
+doubles** while the data compresses into a TSV. The verdict rests on *mechanism*, not line count:
+the experiment trades `static array + dictionary lookup` for `TSV parser + two-phase pipeline +
+emit→compile→bind-back + IsExternalInit polyfill + dependency on a main-only unshipped compiler`.
+
+### The spine: every win is separable from the experimental API
+This is the decisive finding. Neither benefit needs `RegisterPreCompilationSourceOutput`:
+- **H2 coverage** runs entirely in the **standard phase** over `CompilationProvider` + property
+  names; the seed list is an `AdditionalText`, and `AdditionalTextsProvider` is available in the
+  standard phase too. The pre-compilation round-trip for the seeds in this experiment is
+  **demonstrative, not necessary**.
+- **The maintenance win** (deleting the hand-maintained `InstrumentationContract.cs`) is achievable
+  by having `generate-contract-artifacts.py` *emit* that `.cs` at author time — a ~20-line change,
+  no experimental API. (The mission wrongly assumed Python already does this; it does not — the
+  `.cs` is hand-authored and kept in sync by `verify-contract-invariants.py`.)
+
+The API's unique power — emitting symbols into the **initial** compilation, visible to *other*
+generators — solves a problem qyl does not have. qyl's contract has a **single internal consumer**
+(its own generator), for which baked C# is strictly less work than emit→compile→bind-back. This is
+the verbatim mission DREAMING trigger: *"the phase boundary forced so much into the standard phase
+that pre-compilation bought nothing."* It fired.
+
+### Secondary signal: bare-compiler floor probe (confound-aware)
+Pinning the nightly toolset on the core runtime project (full AOT/trim/analyzer stack +
+`TreatWarningsAsErrors`) built **green (0 warnings, 0 errors)** — so Roslyn 5.9.0 nightly does not
+surface new analyzer diagnostics. The real costs are structural, not analyzer breakage:
+`NU1507` forces package-source-mapping config for the extra feed, and — decisively — the API is
+gated by `[Experimental(RSEXPERIMENTAL007)]`, **unshipped and main-only**. Forcing that onto every
+consumer compilation is not viable for a shippable product, independent of any LOC count. Build-time
+delta is left as a soft signal only (the nightly-vs-SDK compiler swap is a confound for it; the
+structural findings above are confound-immune).
+
+---
+
+## VERDICT: **DREAMING** — with a genuine, separable H2 merit
+
+Moving qyl's contract from generator-baked data into compilation-native symbols via
+`RegisterPreCompilationSourceOutput` does **not** simplify the generator and is **not** how
+compile-time-only coverage is unlocked:
+
+- Generator **logic roughly doubles** (parser + two-phase pipeline + emit→compile→bind-back +
+  polyfill) and gains a hard dependency on an **unshipped, main-only compiler** — non-shippable.
+- **Listeners do not shrink**: ~95% of their work is runtime value extraction the API cannot touch;
+  only 3 attributes are static-semantic.
+- The contract has a **single internal consumer**, so the API's defining capability (symbols into
+  the initial compilation / cross-generator visibility) buys qyl nothing. The phase boundary pushed
+  every real win into the standard phase.
+- The contract-maintenance improvement is **real but small** (one auto-synced `.cs` removed) and is
+  obtainable with a 20-line Python change — no experimental API.
+
+**The one real win is separable and worth keeping:** deterministic, reproducible, standard-phase
+**compile-time semantic-convention inference** over user DTOs/routes (`CustomerId → customer.id`)
+produces attributes the runtime path genuinely cannot, and it satisfies the Phase-5 "no guessing,
+no non-reproducible heuristics" bar. Pursue it as an ordinary `IIncrementalGenerator` standard-phase
+feature — **not** behind the experimental pre-compilation API.
+
+"AOT improved" was explicitly not pursued and is not claimed. By the mission's own definition, with
+generator complexity rising and the API buying nothing for qyl's single-consumer contract, this is
+DREAMING with a documented, independently-shippable coverage idea — not GENIUS.
