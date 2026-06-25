@@ -1,0 +1,8 @@
+<Solution>
+  <!-- Isolated GATE-0 spike. Deliberately NOT in the production slnx: these reference the dnceng
+       nightly feed + experimental Microsoft.Net.Compilers.Toolset (spike/nuget.config), which the
+       root nuget.config does not carry. Building them via the whole-repo solution would break the
+       floor (NU1507 single-feed enforcement + unresolved nightly packages). Build from spike/. -->
+  <Project Path="Qyl.Spike.Generator/Qyl.Spike.Generator.csproj" />
+  <Project Path="Qyl.Spike.Consumer/Qyl.Spike.Consumer.csproj" />
+</Solution>

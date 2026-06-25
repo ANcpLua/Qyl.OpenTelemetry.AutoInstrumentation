@@ -1,0 +1,8 @@
+<Solution>
+  <!-- Isolated pre-compilation contract experiment. Deliberately NOT in the production slnx: these
+       reference the dnceng nightly feed + experimental Microsoft.Net.Compilers.Toolset
+       (experiment/contract-precompilation/nuget.config), absent from the root nuget.config.
+       Registering them in the whole-repo solution would break the floor. Build from this dir. -->
+  <Project Path="Qyl.Contract.Generator/Qyl.Contract.Generator.csproj" />
+  <Project Path="Qyl.Contract.Consumer/Qyl.Contract.Consumer.csproj" />
+</Solution>
