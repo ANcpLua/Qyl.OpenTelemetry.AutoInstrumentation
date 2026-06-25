@@ -1,0 +1,38 @@
+# key	signal	lane	qyl_status	evidence_level	required	recommended	opt_in
+signals.traces.ADONET	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.ASPNET	traces	unsupported_nativeaot	unsupported_nativeaot	none			
+signals.traces.ASPNETCORE	traces	runtime_public_telemetry	implemented	verified_nativeaot	http.request.method,http.response.status_code,http.route,qyl.instrumentation.domain		
+signals.traces.AZURE	traces	framework_initialization	implemented	verified_nativeaot	qyl.instrumentation.domain	error.type	
+signals.traces.ELASTICSEARCH	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	
+signals.traces.ELASTICTRANSPORT	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	
+signals.traces.ENTITYFRAMEWORKCORE	traces	runtime_public_telemetry	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain		db.query.text
+signals.traces.GRAPHQL	traces	source_interceptor	implemented	verified_nativeaot	graphql.operation.name,qyl.instrumentation.domain	error.type	graphql.document
+signals.traces.GRPCNETCLIENT	traces	runtime_public_telemetry	implemented	verified_nativeaot	qyl.instrumentation.domain,rpc.grpc.status_code,rpc.method,rpc.service,rpc.system	error.type	
+signals.traces.HTTPCLIENT	traces	runtime_public_telemetry	implemented	verified_nativeaot	http.request.method,http.response.status_code,qyl.instrumentation.domain,server.address,server.port		
+signals.traces.KAFKA	traces	source_interceptor	implemented	verified_nativeaot	messaging.operation.name,messaging.operation.type,messaging.system,qyl.instrumentation.domain	error.type	
+signals.traces.MASSTRANSIT	traces	source_interceptor	implemented	verified_nativeaot	messaging.operation.name,messaging.operation.type,messaging.system,qyl.instrumentation.domain	error.type	
+signals.traces.MONGODB	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	
+signals.traces.MYSQLCONNECTOR	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.MYSQLDATA	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.NPGSQL	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.NSERVICEBUS	traces	source_interceptor	implemented	verified_managed			
+signals.traces.ORACLEMDA	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.RABBITMQ	traces	source_interceptor	implemented	verified_nativeaot	messaging.operation.name,messaging.operation.type,messaging.system,qyl.instrumentation.domain	error.type	
+signals.traces.QUARTZ	traces	source_interceptor	implemented	verified_nativeaot	qyl.instrumentation.domain	error.type	
+signals.traces.SQLCLIENT	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.SQLITE	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.STACKEXCHANGEREDIS	traces	source_interceptor	implemented	verified_nativeaot	db.operation.name,db.query.summary,db.system.name,qyl.instrumentation.domain	error.type	db.query.text
+signals.traces.WCFCLIENT	traces	source_interceptor	implemented	verified_managed			
+signals.traces.WCFCORE	traces	unsupported_nativeaot	unsupported_nativeaot	none			
+signals.traces.WCFSERVICE	traces	unsupported_nativeaot	unsupported_nativeaot	none			
+signals.metrics.ASPNET	metrics	unsupported_nativeaot	unsupported_nativeaot	none			
+signals.metrics.ASPNETCORE	metrics	runtime_public_telemetry	implemented	verified_nativeaot			
+signals.metrics.HTTPCLIENT	metrics	runtime_public_telemetry	implemented	verified_nativeaot	http.request.method	error.type,http.response.status_code	
+signals.metrics.NETRUNTIME	metrics	runtime_public_telemetry	implemented	verified_nativeaot			
+signals.metrics.NPGSQL	metrics	source_interceptor	implemented	verified_nativeaot	db.system.name		
+signals.metrics.NSERVICEBUS	metrics	source_interceptor	implemented	verified_managed			
+signals.metrics.PROCESS	metrics	runtime_public_telemetry	implemented	verified_nativeaot			
+signals.metrics.SQLCLIENT	metrics	source_interceptor	implemented	verified_nativeaot	db.system.name		
+signals.logs.ILOGGER	logs	source_interceptor	implemented	verified_nativeaot	log.severity,qyl.instrumentation.domain	error.type	
+signals.logs.LOG4NET	logs	source_interceptor	implemented	verified_nativeaot	log.severity,qyl.instrumentation.domain		
+signals.logs.NLOG	logs	source_interceptor	implemented	verified_nativeaot	log.severity,qyl.instrumentation.domain		
