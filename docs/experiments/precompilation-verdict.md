@@ -185,3 +185,77 @@ feature — **not** behind the experimental pre-compilation API.
 "AOT improved" was explicitly not pursued and is not claimed. By the mission's own definition, with
 generator complexity rising and the API buying nothing for qyl's single-consumer contract, this is
 DREAMING with a documented, independently-shippable coverage idea — not GENIUS.
+
+---
+
+## Addendum: the 1→N reframe (composition, not AOT) — `experiment/semantic-platform/`
+
+The verdict above evaluated **today's Qyl: 1 producer → 1 consumer**. A second framing was raised:
+*future Qyl as a semantic platform* — `1 producer → N consumers` (OTel, Logging, Metrics, Validation,
+Audit, OpenAPI, …) composing over a shared, compiler-visible semantic contract. In that graph the
+experimental API's value is **composition** (cross-generator type visibility), not AOT. That framing
+is legitimate and changes the scope of the verdict, so I built it.
+
+### Built and proven
+`experiment/semantic-platform/`: one **producer** (`SemanticContractProducer`) reads a domain
+`semantic-contract.tsv` and, via `RegisterPreCompilationSourceOutput`, emits the shared
+`[QylSemanticBinding]` attribute + attribute-decorated `partial`s of the user's types into the
+**initial** compilation. Two **independent consumers** — `OTelConsumerGenerator`,
+`LoggingConsumerGenerator` — **do not reference the producer**; each binds the contract through the
+shared compilation in its standard phase and projects it differently:
+```
+OTel consumer   (keyed by semconv attribute):  activity.SetTag("customer.id", c-1) ...
+Logging consumer (keyed by property name):       scope["CustomerId"] = c-1 ...
+1 producer (pre-compilation contract) -> 2 consumers, neither referencing the producer.
+```
+Green build + that output = cross-generator composition works on the merged API.
+
+### Why this genuinely needs #83088 (not post-init)
+`RegisterPostInitializationOutput` also lands source in the initial compilation visible to other
+generators — but it takes **no inputs**, so it cannot read `semantic-contract.tsv`. The contract here
+is **data-driven from an additional file**, which is exactly `RegisterPreCompilationSourceOutput`'s
+narrow sweet spot (the design doc's "Configurable Post-Initialization", #53632). So the composition
+demo is a real, non-trivial use of #83088.
+
+### The wall, stated precisely (and confirmed empirically)
+The compelling version of the vision is **DTO inference → shared contract → N consumers**. It does
+**not** work on the merged API, because the pre-compilation phase may not read the compilation/syntax
+(`InvalidOperationException`) — so it cannot inspect DTOs. Publishing a **DTO-derived** contract
+cross-generator in one compile is the job of the *other* proposal, `RegisterDeclarationOutput`
+(#81395), which **is not merged**: grepping the nightly `Microsoft.CodeAnalysis.dll` gives
+`RegisterDeclarationOutput` count **0** vs `RegisterPreCompilationSourceOutput` count **1**. The
+platform diagram ("Semantic Model Enrichment → Compilation → Many Generators") is #81395's model.
+
+### Three composition patterns, by what is buildable today
+| Pattern | Shared contract derived from | Cross-gen visibility via | Today |
+|---|---|---|---|
+| **A** | user-authored `[QylSemanticBinding]` annotations (a codefix can apply the inference result) | already in user code — every generator sees it | ✅ no experimental API |
+| **B** (built here) | additional-file / config | `RegisterPreCompilationSourceOutput` (#83088) | ✅ nightly compiler |
+| **C** (the literal vision) | **DTO inference** | `RegisterDeclarationOutput` (#81395) | ❌ unmerged (count 0) |
+
+### Revised verdict, scoped to the platform framing
+- The **composition value is real and demonstrated** — for contracts derived from additional files /
+  config (Pattern B). For that class, `RegisterPreCompilationSourceOutput` is the right tool, and a
+  *hypothetical* multi-consumer Qyl is where it would earn its place. This reframing makes the
+  experiment **interesting rather than pointless** — but not *shippable*: the API is still
+  unshipped/main-only (`RSEXPERIMENTAL007`), so "rehabilitated" means "has a real use case under a
+  future architecture", not "ready to adopt". The single-consumer DREAMING verdict is unchanged for
+  today's Qyl.
+
+> **Known limitations of the demo (scope, not hidden bugs, surfaced by adversarial review):** the
+> producer addresses **top-level** types only (a dotted FQN cannot encode nesting); the two consumers
+> subscribe to `CompilationProvider` directly — the same re-run-per-edit pattern the repo's own
+> `SemConvRegistryGenerator` uses, fine for a demo but not for scale; emitted `value.<Property>` access
+> assumes public, existing properties.
+- The **standard-phase DTO inference is a real, shippable generator** (proven in
+  `experiment/contract-precompilation/`: live DTO inspection → bindings, no experimental API).
+- But the **headline vision — DTO inference feeding N generators in one compile — is blocked on an
+  unmerged API (#81395), not unlocked by #83088.** Today that vision is reachable only via Pattern A
+  (materialize the inferred contract as user-visible annotations; the inference generator becomes an
+  analyzer + codefix), which needs no experimental API at all.
+
+Net: the original `1→1` DREAMING verdict stands for *today's* Qyl. The `1→N` reframe is sound and the
+composition is demonstrated — but the specific, most-exciting capability (compile-time DTO inference
+shared across many generators) waits on `RegisterDeclarationOutput`, while everything achievable today
+is achievable **without** the experimental pre-compilation API (Pattern A) or with it only for
+additional-file-derived contracts (Pattern B).

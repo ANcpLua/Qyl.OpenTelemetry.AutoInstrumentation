@@ -1,0 +1,10 @@
+<Solution>
+  <!-- Isolated 1→N semantic-platform demo. Deliberately NOT in the production slnx: the producer
+       references the dnceng nightly feed + experimental Microsoft.Net.Compilers.Toolset (#83088)
+       via this dir's nuget.config, absent from the root. Registering these in the whole-repo
+       solution would break the floor. Build from this dir. -->
+  <Project Path="Qyl.Semantic.Producer/Qyl.Semantic.Producer.csproj" />
+  <Project Path="Qyl.Consumer.OTel/Qyl.Consumer.OTel.csproj" />
+  <Project Path="Qyl.Consumer.Logging/Qyl.Consumer.Logging.csproj" />
+  <Project Path="Qyl.Platform.Fixture/Qyl.Platform.Fixture.csproj" />
+</Solution>
