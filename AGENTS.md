@@ -2,14 +2,58 @@
 
 ## Mission
 
-This repository is the runtime AOT auto-instrumentation lane for qyl. Keep it separate from:
+This repository is the runtime AOT auto-instrumentation lane for qyl, evolving into a
+**self-describing observability substrate**. The foundation is unchanged: .NET 10
+NativeAOT-compatible zero-code instrumentation through managed build assets, source generation,
+DiagnosticListener consumption, and module-initializer boot. The direction is the North Star
+below.
 
-- semantic-convention package generation,
+Keep this repository separate from:
+
+- semantic-convention package generation (`Qyl.OpenTelemetry.SemanticConventions` is a *referenced*
+  vocabulary package, not generated here),
 - the old CLR-profiler/OpenTelemetry auto-instrumentation substrate,
-- unrelated compile-time tracing experiments.
+- unrelated compile-time tracing experiments (the `experiment/` and `spike/` trees stay outside
+  the `.slnx` / production build graph — see `docs/experiments/`).
 
-The product goal is .NET 10 NativeAOT-compatible zero-code instrumentation through managed
-build assets, source generation, DiagnosticListener consumption, and module-initializer boot.
+## North Star — declare and prove the whole stack
+
+Every observability tool today is **pull-by-observation**: a backend learns what a service emits
+by receiving samples over time, and never knows whether it has seen the whole surface. qyl has a
+capability none of them have — because instrumentation is source-generated interceptors + a static
+contract + a referenced semconv registry + (incrementally) DTO inference, **the complete set of
+telemetry a binary can ever produce is a compile-time-derivable fact, with provenance.**
+
+The substrate goal: every qyl binary ships a complete, machine-readable **Telemetry Capability
+Graph (TCG)** — the full possible OpenTelemetry surface for that exact binary, each capability
+tagged compile-time-owned vs runtime-valued — and *proves* it by self-hosting (instrumenting its
+own pipeline with its own mechanism, zero extra code). Any external entity consumes the TCG to know
+the entire stack before a span is sampled. The contract becomes the shared semantic graph; an OTLP
+backend is just one consumer.
+
+Three pillars:
+
+1. **Self-host (the proof).** qyl instruments qyl with qyl — `QylSelfTelemetry` /
+   `SemConvConformanceProcessor` are the seed; the binary observing itself is how "declared TCG ==
+   runtime reality" is checked.
+2. **Compile-time-complete TCG (the artifact).** A generated, deterministic manifest of every span
+   name / metric / attribute key the binary can produce, with provenance. Only compile-time
+   instrumentation can enumerate this honestly.
+3. **Open exchange (the reach).** The TCG published vendor-neutrally (OTel Resource/Scope + a static
+   artifact + a queryable surface) so a backend can pre-provision, a collector can validate against
+   the declared surface, and CI can treat telemetry as a typed, versioned API.
+
+**Status (current tree — do not overstate):** First-Light step 1 is shipped —
+`TelemetryCapabilityGraphGenerator` bakes the TCG into the core assembly as
+`Qyl.OpenTelemetry.AutoInstrumentation.Internal.QylTelemetryCapabilityGraph.Json` (gated to the core
+assembly, like `SemConvRegistryGenerator`). Next: runtime publication (emit the TCG as an OTel
+resource/log at boot) and the vendor-neutral exchange schema.
+
+**What does NOT change:** runtime DiagnosticListeners stay. `docs/experiments/precompilation-verdict.md`
+measured that ~95% of attribute *values* are runtime-only — listeners are the **runtime lane** of
+the TCG, not a failure to delete. Semantic ownership trends toward compile time; runtime owns
+observations. "Missing values stay missing; never synthesize" still governs every lane, including
+any future inference.
 
 ## Clean slate before work
 
@@ -69,6 +113,10 @@ files left behind.
    flags switch redacted to raw); `db.query.text` sits behind the upstream
    `SET_DBSTATEMENT_FOR_TEXT` flags; the conformance processor behind
    `QYL_CONFORMANCE_ENABLED=1`.
+6. The **Telemetry Capability Graph** (`TelemetryCapabilityGraphGenerator`) bakes the instrumentation
+   contract into the core assembly as `QylTelemetryCapabilityGraph.Json` — the binary's declared,
+   provenance-tagged telemetry surface (North Star pillar 2). Generated from the same contract data,
+   so it is a pure function of its inputs and never drifts from what the lanes above actually emit.
 
 Key gotcha: a bare `ProjectReference` to the runtime project does NOT flow analyzer/build
 assets — `PackageReference` is the supported zero-code path. The dogfood path references the
@@ -79,8 +127,9 @@ runtime project, the generator project as analyzer, and the core targets file ex
 
 The accepted qyl instrumentation mechanisms here are exactly these: ordinary C# compiled into
 the app, source-generated interceptors, build-transitive assets, module-initializer activation,
-BCL telemetry primitives, and public library diagnostic payloads. Build every integration out
-of these.
+BCL telemetry primitives, and public library diagnostic payloads. Build every integration — and
+the entire self-describing surface (the TCG, self-host telemetry, any future inference) — out of
+these and nothing else.
 
 The following are the old substrate this repo deliberately replaced; reintroducing any of them
 into product code or package assets is out of bounds:
@@ -121,6 +170,8 @@ Generated/evidence surfaces include:
 - source-generator verified snapshots,
 - OTLP/verified fixture files,
 - generated coverage matrix,
+- the Telemetry Capability Graph (`QylTelemetryCapabilityGraph.g.cs`, from the instrumentation
+  contract via `TelemetryCapabilityGraphGenerator`),
 - package build/buildTransitive generated assets.
 
 If a generated file is obsolete, delete it only with the generator/input change that makes it
@@ -129,6 +180,8 @@ obsolete.
 ## Documentation rules
 
 - Document current-tree behavior, not old PR state or ceremonial progress claims.
+- The North Star is direction, not a claim of completion — mark what is shipped vs next, and never
+  describe a future pillar as if it already exists.
 - Do not claim a tag or GitHub Release is current without checking its target commit.
 - Keep README user-facing and operational.
 - Keep CHANGELOG synthetic and useful for continuation, not a raw commit dump.
@@ -144,6 +197,7 @@ Use the narrowest verifier that covers the changed surface:
 | ProjectReference behavior | `python3 tools/verify-projectreference-behavior.py` |
 | Source generator snapshots | `python3 tools/verify-generator-snapshots.py` |
 | Source interceptor behavior | `python3 tools/verify-source-interceptor-consumer.py` |
+| Telemetry Capability Graph | `dotnet build src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj` (emits `QylTelemetryCapabilityGraph.g.cs`) |
 | NativeAOT smoke | `bash tools/smoketest.sh` |
 | OTLP fixtures | `python3 tools/verify-otlp-fixtures.py` and `python3 tools/verify-otlp-collector-fixtures.py` |
 | Whole repo handoff | `python3 tools/verify-aot-autoinstrumentation-goal.py` |

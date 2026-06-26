@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/docs/schema/telemetry-capability-graph.schema.json",
+  "title": "Qyl Telemetry Capability Graph (TCG)",
+  "description": "A complete, machine-readable, provenance-tagged manifest of every telemetry capability a qyl-instrumented binary can produce. Generated deterministically from the instrumentation contract — never sampled. Consumers MUST tolerate unknown object properties and unknown enum members (treat the latter as the documented catch-all) for forward compatibility.",
+  "type": "object",
+  "required": ["schemaVersion", "generator", "capabilityCount", "signals", "capabilities"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "description": "Semantic version of THIS document format. Within a major version, changes are additive; consumers tolerate unknown fields. The '-draft' pre-release marks a format that may still change.",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
+    },
+    "generator": {
+      "type": "string",
+      "description": "Fully-qualified type that produced this document (provenance of the manifest itself)."
+    },
+    "capabilityCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of entries in 'capabilities'. MUST equal capabilities.length."
+    },
+    "signals": {
+      "type": "object",
+      "description": "Per-signal capability counts (a fast summary so a consumer can size dashboards before reading the full list).",
+      "required": ["traces", "metrics", "logs"],
+      "additionalProperties": true,
+      "properties": {
+        "traces": { "type": "integer", "minimum": 0 },
+        "metrics": { "type": "integer", "minimum": 0 },
+        "logs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Every telemetry capability the binary can produce, in deterministic contract order.",
+      "items": { "$ref": "#/$defs/capability" }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "required": [
+        "id", "key", "signal", "lane", "status",
+        "payloadAccess", "provenance", "instrumentationId",
+        "supportedVersions", "owner", "libraries", "attributes"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable contract identifier (e.g. OTEL_DOTNET_AUTO_CONTRACT_001). Use this as the join key across TCG versions."
+        },
+        "key": {
+          "type": "string",
+          "description": "Capability key, e.g. signals.traces.ASPNETCORE."
+        },
+        "signal": {
+          "type": "string",
+          "description": "OpenTelemetry signal this capability contributes to.",
+          "enum": ["traces", "metrics", "logs", "none"]
+        },
+        "lane": {
+          "type": "string",
+          "description": "The qyl mechanism lane that owns this capability.",
+          "enum": [
+            "SourceInterceptor",
+            "RuntimePublicTelemetry",
+            "FrameworkInitialization",
+            "OfficialLibraryHook",
+            "EnvironmentControl",
+            "InstrumentationOption",
+            "UnsupportedNativeAot"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "description": "Implementation status of the capability in the current build.",
+          "enum": ["Implemented", "ControlBound", "OptionBound", "ResearchRequired", "UnsupportedNativeAot"]
+        },
+        "payloadAccess": {
+          "type": "string",
+          "description": "How the lane accesses the underlying payload: typed-public (AOT-safe), reflection-required (not AOT-safe), or not-applicable (compile-time only).",
+          "enum": ["TypedPublic", "ReflectionRequired", "NotApplicable"]
+        },
+        "provenance": {
+          "type": "string",
+          "description": "The load-bearing distinction: whether the capability's attribute keys are owned at compile time, carried as runtime payload values, are a control surface (env/option), or unsupported on the AOT substrate. Consumers MUST map unknown members to 'unknown'.",
+          "enum": ["compile-time", "runtime", "control", "unsupported", "unknown"]
+        },
+        "instrumentationId": {
+          "type": "string",
+          "description": "Short integration id (e.g. ASPNETCORE, SQLCLIENT)."
+        },
+        "supportedVersions": {
+          "type": "string",
+          "description": "Human-readable supported version range(s) of the instrumented library, or '*'."
+        },
+        "owner": {
+          "type": "string",
+          "description": "The component that produces this capability (a generator, the public telemetry listeners, etc.)."
+        },
+        "libraries": {
+          "type": "array",
+          "description": "Instrumented library/framework name(s).",
+          "items": { "type": "string" }
+        },
+        "attributes": {
+          "type": "array",
+          "description": "Declared semantic-convention attribute keys this capability sets. Empty until a lane populates the contract's AttributeNames (e.g. the future DTO-inference lane).",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
