@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -316,30 +315,10 @@ internal static class InstrumentationContract
         return builder.ToString();
     }
 
-    public static InstrumentationContractItem? TryGetImplementedSignal(string key)
-        => TryGetSignal(key, static item => item.QylStatus is QylContractStatus.Implemented);
-
-    public static InstrumentationContractItem? TryGetSourceInterceptorSignal(string key)
-        => TryGetSignal(key, static item => item is { QylStatus: QylContractStatus.Implemented, Lane: InstrumentationContractLane.SourceInterceptor });
-
-    public static InstrumentationContractItem? TryGetSupportedSignal(string key)
-        => TryGetSignal(key, static _ => true);
-
-    private static InstrumentationContractItem? TryGetSignal(string key, Func<InstrumentationContractItem, bool> predicate)
-    {
-        foreach (var item in Items)
-        {
-            if (item.Kind is InstrumentationContractKind.SignalSpecificInstrumentationPromise &&
-                predicate(item) &&
-                string.Equals(item.Key, key, StringComparison.Ordinal))
-            {
-                return item;
-            }
-        }
-
-        return null;
-    }
-
+    // The implemented-signal gate is no longer an in-process lookup here. It is emitted as the
+    // pre-compilation QylContractRegistry symbol (RegisterPreCompilationSourceOutput) and bound back
+    // in the standard phase; see QylAutoInstrumentationGenerator. ImplementedSignalKeys above is its
+    // single source.
     private static void EmitStringArray(StringBuilder builder, string name, IEnumerable<string> values)
     {
         builder.Append("    public static string[] ");
