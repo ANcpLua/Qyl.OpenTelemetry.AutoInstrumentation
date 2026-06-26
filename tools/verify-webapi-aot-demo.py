@@ -117,8 +117,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     return project_path
 
 
-def publish_nativeaot(project: Path, output: Path, log: Path, env: dict[str, str]) -> Path:
-    completed = subprocess.run(
+def _publish(project: Path, output: Path, env: dict[str, str], verbosity: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
         [
             "dotnet",
             "publish",
@@ -134,7 +134,7 @@ def publish_nativeaot(project: Path, output: Path, log: Path, env: dict[str, str
             "-o",
             str(output),
             "-v",
-            "quiet",
+            verbosity,
         ],
         cwd=project.parent,
         env=env,
@@ -143,11 +143,21 @@ def publish_nativeaot(project: Path, output: Path, log: Path, env: dict[str, str
         stderr=subprocess.STDOUT,
         check=False,
     )
+
+
+def publish_nativeaot(project: Path, output: Path, log: Path, env: dict[str, str]) -> Path:
+    completed = _publish(project, output, env, "quiet")
     log.write_text(completed.stdout, encoding="utf-8")
     if completed.returncode != 0:
+        # The macOS NativeAOT native-link step has intermittently flaked here with clang exit 1,
+        # and "-v quiet" swallows the linker's (clang/ld) stderr, so the cause is invisible in CI.
+        # Re-publish once at detailed verbosity purely to capture that error for diagnosis. This
+        # does not change the outcome -- the original failure still fails the gate.
+        diagnostic = _publish(project, output, env, "detailed")
+        log.write_text(diagnostic.stdout, encoding="utf-8")
         fail(
             "NativeAOT web API publish failed\n"
-            f"exit={completed.returncode}\nlog={log}\n{completed.stdout}"
+            f"exit={completed.returncode}\nlog={log}\n{diagnostic.stdout}"
         )
 
     qyl_warnings = [
