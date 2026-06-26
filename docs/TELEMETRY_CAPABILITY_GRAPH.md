@@ -15,9 +15,9 @@ vendor-neutral form any external entity can consume. It is generated, never hand
 cannot drift from what the binary actually emits.
 
 The schema is [`schema/telemetry-capability-graph.schema.json`](schema/telemetry-capability-graph.schema.json)
-(JSON Schema 2020-12). The producer is `TelemetryCapabilityGraphGenerator`, which bakes the document
-into the core assembly as the constant
-`Qyl.OpenTelemetry.AutoInstrumentation.Internal.QylTelemetryCapabilityGraph.Json`.
+(JSON Schema 2020-12). The producer is `TelemetryCapabilityGraphGenerator`, which bakes the document into the core assembly
+as the generated constant `Internal.QylTelemetryCapabilityGraphData.Json`, exposed publicly as
+`QylTelemetryCapabilityGraph.Json` (with `.SchemaVersion` and `.CapabilityCount`).
 
 ## Document shape
 
@@ -77,8 +77,9 @@ values are runtime-only).
 
 ## Publication channels (how an external entity gets the TCG)
 
-1. **In-binary constant (shipped).** `QylTelemetryCapabilityGraph.Json`. The authoritative source;
-   every other channel is derived from it.
+1. **In-binary constant + public accessor (shipped).** `QylTelemetryCapabilityGraph.Json` /
+   `.SchemaVersion` / `.CapabilityCount`. The authoritative source; every other channel is derived
+   from it.
 2. **OTel resource log at boot (planned).** Emit the document once at process start as a single OTLP
    `LogRecord` so any collector/backend ingests it through the normal logs pipeline — no qyl-specific
    protocol. Proposed mapping:
@@ -91,8 +92,9 @@ values are runtime-only).
      one log record, not on the resource, to avoid per-batch bloat.
 3. **Static build artifact (planned).** `app.telemetry-manifest.json` written at build time (MSBuild
    step extracting the constant) for CI / compliance / offline consumers.
-4. **Queryable surface (planned).** The constant is in the binary; a diagnostic endpoint or CLI can
-   return it so a running service answers "what is your complete telemetry surface?" authoritatively.
+4. **Queryable surface (partial).** The public accessor above already returns the document in-process;
+   exposing it over the wire (a diagnostic endpoint or CLI) so a running service answers "what is your
+   complete telemetry surface?" remotely is still planned.
 
 ## Consumer patterns (what the TCG unlocks)
 

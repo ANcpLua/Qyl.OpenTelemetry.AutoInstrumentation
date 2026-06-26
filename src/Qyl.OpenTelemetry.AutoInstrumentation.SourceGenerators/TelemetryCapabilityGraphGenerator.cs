@@ -58,12 +58,23 @@ public sealed class TelemetryCapabilityGraphGenerator : IIncrementalGenerator
         builder.AppendLine("namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;");
         builder.AppendLine();
         builder.AppendLine("/// <summary>");
-        builder.AppendLine("/// The qyl Telemetry Capability Graph: the complete, machine-readable manifest of every");
-        builder.AppendLine("/// telemetry capability this build can produce, generated from the instrumentation contract.");
+        builder.AppendLine("/// Generated backing data for the qyl Telemetry Capability Graph (TCG): the complete,");
+        builder.AppendLine("/// machine-readable manifest of every telemetry capability this build can produce.");
+        builder.AppendLine("/// Public access is through <c>Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph</c>.");
         builder.AppendLine("/// </summary>");
-        builder.AppendLine("internal static class QylTelemetryCapabilityGraph");
+        builder.AppendLine("internal static class QylTelemetryCapabilityGraphData");
         builder.AppendLine("{");
-        builder.AppendLine("    /// <summary>The Telemetry Capability Graph serialized as compact JSON (schema " + SchemaVersion + ").</summary>");
+        builder.AppendLine("    /// <summary>Schema version of the emitted manifest.</summary>");
+        builder.Append("    public const string SchemaVersion = ");
+        AppendCSharpStringLiteral(builder, SchemaVersion);
+        builder.AppendLine(";");
+        builder.AppendLine();
+        builder.AppendLine("    /// <summary>Number of capabilities declared in the manifest.</summary>");
+        builder.AppendLine(
+            "    public const int CapabilityCount = " +
+            InstrumentationContract.Items.Length.ToString(CultureInfo.InvariantCulture) + ";");
+        builder.AppendLine();
+        builder.AppendLine("    /// <summary>The Telemetry Capability Graph serialized as compact JSON.</summary>");
         builder.Append("    public const string Json = ");
         AppendCSharpStringLiteral(builder, BuildManifestJson());
         builder.AppendLine(";");

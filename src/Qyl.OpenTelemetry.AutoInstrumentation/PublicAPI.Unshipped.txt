@@ -22,3 +22,7 @@ static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.GetTimestam
 static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedNServiceBus.GetTimestamp() -> long
 static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void
+Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph
+static Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph.CapabilityCount.get -> int
+static Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph.Json.get -> string!
+static Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph.SchemaVersion.get -> string!

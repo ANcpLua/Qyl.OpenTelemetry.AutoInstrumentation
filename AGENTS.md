@@ -43,11 +43,14 @@ Three pillars:
    artifact + a queryable surface) so a backend can pre-provision, a collector can validate against
    the declared surface, and CI can treat telemetry as a typed, versioned API.
 
-**Status (current tree — do not overstate):** First-Light step 1 is shipped —
-`TelemetryCapabilityGraphGenerator` bakes the TCG into the core assembly as
-`Qyl.OpenTelemetry.AutoInstrumentation.Internal.QylTelemetryCapabilityGraph.Json` (gated to the core
-assembly, like `SemConvRegistryGenerator`). Next: runtime publication (emit the TCG as an OTel
-resource/log at boot) and the vendor-neutral exchange schema.
+**Status (current tree — do not overstate):** First-Light steps 1–2 are shipped —
+`TelemetryCapabilityGraphGenerator` bakes the TCG into the core assembly (generated
+`Internal.QylTelemetryCapabilityGraphData`, gated to the core assembly like `SemConvRegistryGenerator`),
+exposed publicly as `QylTelemetryCapabilityGraph.Json` / `.SchemaVersion` / `.CapabilityCount` (the
+queryable surface), with the vendor-neutral exchange schema in
+`docs/schema/telemetry-capability-graph.schema.json` and `docs/TELEMETRY_CAPABILITY_GRAPH.md`. Next:
+the OTLP resource-log publication channel at boot (mapping already specified in the exchange spec) —
+note qyl carries no OTel SDK dependency, so that channel needs a BCL-native emission decision.
 
 **What does NOT change:** runtime DiagnosticListeners stay. `docs/experiments/precompilation-verdict.md`
 measured that ~95% of attribute *values* are runtime-only — listeners are the **runtime lane** of
