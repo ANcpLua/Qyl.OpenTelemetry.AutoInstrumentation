@@ -49,7 +49,11 @@ await using var sqlite = new SqliteConnection("Data Source=:memory:");
 await sqlite.OpenAsync();
 await CreateSchemaAsync(sqlite);
 
-var builder = WebApplication.CreateBuilder(args);
+// CreateSlimBuilder is the NativeAOT-recommended entry point: it wires only the minimal
+// ASP.NET Core feature set (no IIS, HTTPS, static-web-assets, or hosting-startup), which keeps
+// the published native image lean. This demo is HTTP-only minimal-API, so the slim builder is a
+// drop-in. Inline `:int` route constraints stay supported (only regex/alpha constraints are not).
+var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.WebHost.SuppressStatusMessages(true);
 builder.Logging.ClearProviders();

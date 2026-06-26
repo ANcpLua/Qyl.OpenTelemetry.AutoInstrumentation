@@ -126,7 +126,14 @@ def clean_workdir() -> None:
 
 
 def pack_local_packages() -> str:
-    version = f"{read_package_version()}.otlpcollector.{time.time_ns()}"
+    # Build a unique-per-run version so NuGet's global cache never serves a stale local package.
+    # The base <Version> may be stable (3.0.2) or prerelease (0.3.0-pre.1): append the run suffix
+    # as a SemVer prerelease ("-suffix") for a stable base, or extend the existing prerelease label
+    # (".suffix") when one is already present. Appending ".suffix" to a stable core would produce an
+    # invalid version (e.g. "3.0.2.otlpcollector.<ns>") that `dotnet pack` rejects.
+    base = read_package_version()
+    separator = "." if "-" in base else "-"
+    version = f"{base}{separator}otlpcollector.{time.time_ns()}"
     projects = (
         ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj",
         ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj",

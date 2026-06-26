@@ -7,7 +7,7 @@
     <AssemblyName>Qyl.RealGraphQlDemo</AssemblyName>
     <Description>Real zero-code GraphQL source-interceptor proof for qyl.</Description>
     <!-- GraphQL 8.x is not AOT-safe (IL2104/IL3053); its NativeAOT image makes the linux-arm64
-         `objcopy --only-keep-debug` symbol-extraction step exit 1. The demo only needs to run to
+         `objcopy` only-keep-debug symbol-extraction step exit 1. The demo only needs to run to
          prove the source interceptor fires, not ship stripped binaries, so skip the separate
          debug-symbol extraction on AOT publish. Keeps symbols inline; no objcopy call. -->
     <StripSymbols Condition="'$(PublishAot)' == 'true'">false</StripSymbols>
