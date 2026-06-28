@@ -18,10 +18,5 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Opts this fixture into the semantic-contract producer/telemetry-consumer generators. -->
-    <AdditionalFiles Include="app.qyl-semantic-contract.tsv" />
-  </ItemGroup>
-
   <Import Project="../../../src/Qyl.OpenTelemetry.AutoInstrumentation/buildTransitive/Qyl.OpenTelemetry.AutoInstrumentation.targets" />
 </Project>

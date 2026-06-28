@@ -16,8 +16,9 @@ cannot drift from what the binary actually emits.
 
 The schema is [`schema/telemetry-capability-graph.schema.json`](schema/telemetry-capability-graph.schema.json)
 (JSON Schema 2020-12). The producer is `TelemetryCapabilityGraphGenerator`, which bakes the document into the core assembly
-as the generated constant `Internal.QylTelemetryCapabilityGraphData.Json`, exposed publicly as
-`QylTelemetryCapabilityGraph.Json` (with `.SchemaVersion` and `.CapabilityCount`).
+as the public type `QylTelemetryCapabilityGraph` (`.Json` / `.SchemaVersion` / `.CapabilityCount`).
+The generator fills the manifest body via a `partial` method that is elided when it has not run, so
+the public surface always compiles (a normal core build bakes the real manifest).
 
 ## Document shape
 

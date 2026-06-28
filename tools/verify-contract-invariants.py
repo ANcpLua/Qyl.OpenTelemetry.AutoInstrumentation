@@ -1797,12 +1797,8 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "SourceInterceptorSignalKeys",
         "RuntimePublicTelemetrySignalKeys",
         "UnsupportedNativeAotSignalKeys",
-        # The implemented-signal gate is no longer an in-process TryGet* lookup; it is emitted as the
-        # pre-compilation QylContractRegistry symbol and bound back in the standard phase. Assert the
-        # mechanism (in the generator) instead of the deleted helpers.
-        "RegisterPreCompilationSourceOutput",
-        "QylContractRegistry",
-        "GetTypeByMetadataName",
+        "TryGetSourceInterceptorSignal",
+        "TryGetImplementedSignal",
         "InterceptorEmissionDescriptor",
         "InterceptorMethodShape",
         "InterceptorSignalOwnership",

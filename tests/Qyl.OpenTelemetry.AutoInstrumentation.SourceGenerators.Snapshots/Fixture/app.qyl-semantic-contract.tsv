@@ -1,3 +1,0 @@
-# Fully-qualified type	Property	semantic-convention attribute
-Qyl.Snapshot.Domain.OrderRequest	CustomerId	customer.id
-Qyl.Snapshot.Domain.OrderRequest	OrderId	order.id

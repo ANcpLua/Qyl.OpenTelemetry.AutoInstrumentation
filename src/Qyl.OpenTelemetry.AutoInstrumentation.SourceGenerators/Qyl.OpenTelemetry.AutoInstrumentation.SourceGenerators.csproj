@@ -13,9 +13,6 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
-    <!-- EXPERIMENT (precompilation in-place): RegisterPreCompilationSourceOutput is gated by the
-         experimental attribute RSEXPERIMENTAL007; RS2008 is analyzer-release-tracking noise. -->
-    <NoWarn>$(NoWarn);RSEXPERIMENTAL007;RS2008</NoWarn>
 
     <!-- Inherited AOT/trim flags are meaningless on netstandard2.0 — turn them off so the build
          stays warning-free under TreatWarningsAsErrors. -->

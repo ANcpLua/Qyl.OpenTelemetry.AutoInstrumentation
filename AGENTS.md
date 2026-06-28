@@ -44,9 +44,9 @@ Three pillars:
    the declared surface, and CI can treat telemetry as a typed, versioned API.
 
 **Status (current tree — do not overstate):** First-Light steps 1–2 are shipped —
-`TelemetryCapabilityGraphGenerator` bakes the TCG into the core assembly (generated
-`Internal.QylTelemetryCapabilityGraphData`, gated to the core assembly like `SemConvRegistryGenerator`),
-exposed publicly as `QylTelemetryCapabilityGraph.Json` / `.SchemaVersion` / `.CapabilityCount` (the
+`TelemetryCapabilityGraphGenerator` bakes the TCG into the core assembly's public type
+`QylTelemetryCapabilityGraph` (its manifest body filled via a generator `partial`, gated to the core
+assembly like `SemConvRegistryGenerator`) — `.Json` / `.SchemaVersion` / `.CapabilityCount` (the
 queryable surface), with the vendor-neutral exchange schema in
 `docs/schema/telemetry-capability-graph.schema.json` and `docs/TELEMETRY_CAPABILITY_GRAPH.md`. Next:
 the OTLP resource-log publication channel at boot (mapping already specified in the exchange spec) —

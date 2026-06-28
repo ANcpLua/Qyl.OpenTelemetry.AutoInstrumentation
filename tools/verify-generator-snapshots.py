@@ -22,10 +22,6 @@ VERIFIED_ROOT = FIXTURE_DIR.parent / "verified"
 EXPECTED_FILES = {
     "QylAutoInstrumentation.Interceptors.g.verified.cs": "QylAutoInstrumentation.Interceptors.g.cs",
     "QylGeneratedInstrumentationContract.g.verified.cs": "QylGeneratedInstrumentationContract.g.cs",
-    # Semantic-contract producer + telemetry consumer (opt-in via app.qyl-semantic-contract.tsv).
-    "QylSemanticBindingAttribute.g.verified.cs": "QylSemanticBindingAttribute.g.cs",
-    "Qyl_Snapshot_Domain_OrderRequest.SemanticContract.g.verified.cs": "Qyl_Snapshot_Domain_OrderRequest.SemanticContract.g.cs",
-    "QylSemanticTelemetry.g.verified.cs": "QylSemanticTelemetry.g.cs",
 }
 
 REQUIRED_INTERCEPTOR_TOKENS = [
