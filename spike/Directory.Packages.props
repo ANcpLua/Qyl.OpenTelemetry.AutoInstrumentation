@@ -1,0 +1,6 @@
+<Project>
+  <!-- Inheritance stop: disable CPM so the spike pins versions inline. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

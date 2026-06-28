@@ -1,0 +1,7 @@
+# Fully-qualified type	Property	semantic-convention attribute
+# Domain semantic contract (the inference RESULT, materialized as data). A standard-phase analyzer
+# can generate this file from DTO property names × the seed index; the producer publishes it
+# cross-generator via RegisterPreCompilationSourceOutput.
+Qyl.Platform.Fixture.Domain.CreateOrderRequest	CustomerId	customer.id
+Qyl.Platform.Fixture.Domain.CreateOrderRequest	OrderId	order.id
+Qyl.Platform.Fixture.Domain.CreateOrderRequest	TenantId	tenant.id
