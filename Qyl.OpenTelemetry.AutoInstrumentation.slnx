@@ -28,6 +28,7 @@
   <Project Path="demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj" />
   <Project Path="demos/Qyl.RealSqlClientDemo/Qyl.RealSqlClientDemo.csproj" />
   <Project Path="demos/Qyl.RealSqliteDemo/Qyl.RealSqliteDemo.csproj" />
+  <Project Path="demos/Qyl.RealTcgPublishingDemo/Qyl.RealTcgPublishingDemo.csproj" />
   <Project Path="demos/Qyl.RealWcfClientDemo/Qyl.RealWcfClientDemo.csproj" />
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" />
@@ -35,5 +36,6 @@
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj" />
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" />
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.Publishing/Qyl.OpenTelemetry.AutoInstrumentation.Publishing.csproj" />
   <Project Path="tests/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots/Fixture/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots.Fixture.csproj" />
 </Solution>

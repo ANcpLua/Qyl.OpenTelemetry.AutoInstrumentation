@@ -1,8 +1,8 @@
 # Telemetry Capability Graph (TCG) — exchange spec
 
-> Status: **v0.1.0-draft.** The generator (pillar 2) ships; the runtime publication channel and the
-> queryable endpoint below are the next First-Light steps, marked **(planned)**. Document
-> current-tree truth — do not describe a planned channel as if it exists.
+> Status: **v0.1.0-draft.** The generator (pillar 2) and the runtime OTel-`LogRecord` channel ship; the
+> static build artifact and the remote queryable endpoint below are the next steps, marked **(planned)**.
+> Document current-tree truth — do not describe a planned channel as if it exists.
 
 ## Why this exists
 
@@ -81,16 +81,16 @@ values are runtime-only).
 1. **In-binary constant + public accessor (shipped).** `QylTelemetryCapabilityGraph.Json` /
    `.SchemaVersion` / `.CapabilityCount`. The authoritative source; every other channel is derived
    from it.
-2. **OTel resource log at boot (planned).** Emit the document once at process start as a single OTLP
-   `LogRecord` so any collector/backend ingests it through the normal logs pipeline — no qyl-specific
-   protocol. Proposed mapping:
-   - `LogRecord.EventName` = `qyl.telemetry_capability_graph`
-   - `LogRecord.Body` = the TCG JSON (string)
-   - `LogRecord.SeverityNumber` = INFO
+2. **OTel LogRecord at boot (shipped).** The `Qyl.OpenTelemetry.AutoInstrumentation.Publishing` package's
+   `AddQylTelemetryCapabilityGraphPublisher()` registers a hosted service that emits the document once at
+   host startup through `ILogger` — so when the app has OpenTelemetry logging + an OTLP exporter wired, it
+   becomes a true OTLP `LogRecord`, and the exporter stays app-owned (the package takes no OpenTelemetry
+   SDK dependency). Mapping:
+   - `LogRecord.EventId.Name` = `qyl.telemetry_capability_graph`
+   - `LogRecord.Body` = the TCG JSON (string, via the log formatter)
+   - severity = `Information`
    - `LogRecord.Attributes`: `qyl.tcg.schema_version`, `qyl.tcg.capability_count`
-   - **Resource** attributes (so the surface is discoverable on *every* export, cheaply, without the
-     full body): `qyl.tcg.schema_version`, `qyl.tcg.capability_count`. The full body stays on the
-     one log record, not on the resource, to avoid per-batch bloat.
+   - Proven end-to-end by `demos/Qyl.RealTcgPublishingDemo` (`tools/verify-tcg-publishing-demo.py`).
 3. **Static build artifact (planned).** `app.telemetry-manifest.json` written at build time (MSBuild
    step extracting the constant) for CI / compliance / offline consumers.
 4. **Queryable surface (partial).** The public accessor above already returns the document in-process;

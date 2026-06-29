@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.RealTcgPublishingDemo</RootNamespace>
+    <AssemblyName>Qyl.RealTcgPublishingDemo</AssemblyName>
+    <Description>Real proof that the qyl Publishing package emits the Telemetry Capability Graph as a true OpenTelemetry LogRecord at host startup.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.Publishing\Qyl.OpenTelemetry.AutoInstrumentation.Publishing.csproj" />
+  </ItemGroup>
+
+</Project>

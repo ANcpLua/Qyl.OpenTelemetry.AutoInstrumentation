@@ -43,14 +43,16 @@ Three pillars:
    artifact + a queryable surface) so a backend can pre-provision, a collector can validate against
    the declared surface, and CI can treat telemetry as a typed, versioned API.
 
-**Status (current tree — do not overstate):** First-Light steps 1–2 are shipped —
+**Status (current tree — do not overstate):** First-Light steps 1–3 are shipped —
 `TelemetryCapabilityGraphGenerator` bakes the TCG into the core assembly's public type
 `QylTelemetryCapabilityGraph` (its manifest body filled via a generator `partial`, gated to the core
 assembly like `SemConvRegistryGenerator`) — `.Json` / `.SchemaVersion` / `.CapabilityCount` (the
 queryable surface), with the vendor-neutral exchange schema in
-`docs/schema/telemetry-capability-graph.schema.json` and `docs/TELEMETRY_CAPABILITY_GRAPH.md`. Next:
-the OTLP resource-log publication channel at boot (mapping already specified in the exchange spec) —
-note qyl carries no OTel SDK dependency, so that channel needs a BCL-native emission decision.
+`docs/schema/telemetry-capability-graph.schema.json` and `docs/TELEMETRY_CAPABILITY_GRAPH.md`. The
+`Qyl.OpenTelemetry.AutoInstrumentation.Publishing` package adds the runtime open-exchange channel:
+`AddQylTelemetryCapabilityGraphPublisher()` emits the TCG as a true OTel `LogRecord` at host startup
+through `ILogger` (the OTLP exporter stays app-owned; no OTel SDK dependency in qyl), proven by
+`demos/Qyl.RealTcgPublishingDemo`. Next: the static build-artifact channel and a remote queryable endpoint.
 
 **What does NOT change:** runtime DiagnosticListeners stay. `docs/experiments/precompilation-verdict.md`
 measured that ~95% of attribute *values* are runtime-only — listeners are the **runtime lane** of
@@ -154,6 +156,8 @@ Keep dependency-heavy integrations isolated:
 - Microsoft.Data.SqlClient code belongs in `Qyl.OpenTelemetry.AutoInstrumentation.SqlClient`.
 - Generic hosting/bootstrap code belongs in `Qyl.OpenTelemetry.AutoInstrumentation.Hosting`.
 - Core shared runtime helpers belong in `Qyl.OpenTelemetry.AutoInstrumentation`.
+- TCG runtime publishing (the OTel-`LogRecord` exchange channel) belongs in
+  `Qyl.OpenTelemetry.AutoInstrumentation.Publishing` — opt-in, `ILogger`-based, no OTel SDK dependency.
 
 EFCore lives in `Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore` and SqlClient in
 `Qyl.OpenTelemetry.AutoInstrumentation.SqlClient`; their dependencies, build warnings, and app-side NativeAOT
