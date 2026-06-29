@@ -44,6 +44,9 @@ internal sealed class TelemetryCapabilityGraphPublisher : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+            return Task.FromCanceled(cancellationToken);
+
         var attributes = new[]
         {
             new KeyValuePair<string, object?>("qyl.tcg.schema_version", QylTelemetryCapabilityGraph.SchemaVersion),

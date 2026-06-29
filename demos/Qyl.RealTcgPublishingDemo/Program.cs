@@ -84,7 +84,12 @@ internal sealed class CapturingProcessor : BaseProcessor<LogRecord>
         foreach (var attribute in record.Attributes!)
         {
             if (attribute.Key == key)
-                return attribute.Value?.ToString();
+                return attribute.Value switch
+                {
+                    null => null,
+                    IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+                    _ => attribute.Value.ToString(),
+                };
         }
 
         return null;

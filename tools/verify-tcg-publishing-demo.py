@@ -16,14 +16,21 @@ def fail(message: str) -> None:
 
 def main() -> None:
     env = clean_env()
-    completed = subprocess.run(
-        ["dotnet", "run", "--project", str(PROJECT), "-c", "Release", "-v", "quiet"],
-        cwd=ROOT,
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            ["dotnet", "run", "--project", str(PROJECT), "-c", "Release", "-v", "quiet"],
+            cwd=ROOT,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=600,
+        )
+    except subprocess.TimeoutExpired as timed_out:
+        fail(
+            "tcg publishing demo timed out (the run-once host should emit the TCG and exit)\n"
+            f"timeout={timed_out.timeout}s\nstdout={timed_out.stdout}\nstderr={timed_out.stderr}"
+        )
     if completed.returncode != 0:
         fail(
             "tcg publishing demo failed\n"
