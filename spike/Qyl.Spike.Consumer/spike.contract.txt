@@ -1,1 +1,0 @@
-dummy additional file — its only job is to prove the pre-compilation phase reads AdditionalTextsProvider.

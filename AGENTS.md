@@ -12,9 +12,7 @@ Keep this repository separate from:
 
 - semantic-convention package generation (`Qyl.OpenTelemetry.SemanticConventions` is a *referenced*
   vocabulary package, not generated here),
-- the old CLR-profiler/OpenTelemetry auto-instrumentation substrate,
-- unrelated compile-time tracing experiments (the `experiment/` and `spike/` trees stay outside
-  the `.slnx` / production build graph — see `docs/experiments/`).
+- the old CLR-profiler/OpenTelemetry auto-instrumentation substrate.
 
 ## North Star — declare and prove the whole stack
 
@@ -54,9 +52,8 @@ queryable surface), with the vendor-neutral exchange schema in
 through `ILogger` (the OTLP exporter stays app-owned; no OTel SDK dependency in qyl), proven by
 `demos/Qyl.RealTcgPublishingDemo`. Next: the static build-artifact channel and a remote queryable endpoint.
 
-**What does NOT change:** runtime DiagnosticListeners stay. `docs/experiments/precompilation-verdict.md`
-measured that ~95% of attribute *values* are runtime-only — listeners are the **runtime lane** of
-the TCG, not a failure to delete. Semantic ownership trends toward compile time; runtime owns
+**What does NOT change:** runtime DiagnosticListeners stay. ~95% of attribute *values* are
+runtime-only — listeners are the **runtime lane** of the TCG, not a failure to delete. Semantic ownership trends toward compile time; runtime owns
 observations. "Missing values stay missing; never synthesize" still governs every lane, including
 any future inference.
 

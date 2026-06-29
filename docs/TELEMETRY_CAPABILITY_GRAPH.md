@@ -62,8 +62,7 @@ meaning come from?":
 
 Provenance is the bridge between the North Star halves: *semantic ownership trends to compile time,
 runtime owns observations.* `runtime` capabilities are exactly where DiagnosticListeners are
-load-bearing and cannot be deleted (`docs/experiments/precompilation-verdict.md`: ~95% of attribute
-values are runtime-only).
+load-bearing and cannot be deleted (~95% of attribute values are runtime-only).
 
 ## Versioning & compatibility
 

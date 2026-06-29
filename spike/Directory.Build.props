@@ -1,4 +1,0 @@
-<Project>
-  <!-- Inheritance stop: the spike is a throwaway GATE-0 probe and must NOT pull the repo's
-       TreatWarningsAsErrors + AOT/trim/ErrorProne analyzer stack. Empty on purpose. -->
-</Project>

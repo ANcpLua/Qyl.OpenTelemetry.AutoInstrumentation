@@ -1,5 +1,0 @@
-<Project>
-  <!-- Inheritance stop: the experiment is isolated from the repo's production analyzer/TWAE stack,
-       exactly like spike/. It builds with the nightly compiler; the production floor (main + the
-       rest of this branch) is untouched and stays on the SDK compiler as the control. -->
-</Project>
