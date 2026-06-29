@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/docs/schema/telemetry-capability-graph.schema.json",
   "title": "Qyl Telemetry Capability Graph (TCG)",
-  "description": "A complete, machine-readable, provenance-tagged manifest of every telemetry capability a qyl-instrumented binary can produce. Generated deterministically from the instrumentation contract — never sampled. Consumers MUST tolerate unknown object properties and unknown enum members (treat the latter as the documented catch-all) for forward compatibility.",
+  "description": "A complete, machine-readable, provenance-tagged manifest of every telemetry capability a qyl-instrumented binary can produce. Generated deterministically from the instrumentation contract — never sampled. Forward compatibility is handled by version-matched validation and tolerant consumer code, NOT by loosening this schema: the enums below are intentionally closed, so a document is validated strictly against the schema whose version equals its own 'schemaVersion'. A consumer reading a newer document validates it against that newer schema; in code it maps any unrecognized enum member to the documented catch-all and ignores unknown object properties (additionalProperties stays true).",
   "type": "object",
   "required": ["schemaVersion", "generator", "capabilityCount", "signals", "capabilities"],
   "additionalProperties": true,
