@@ -91,7 +91,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             returnType,
             parameters,
             false,
-            AdditionalContractKeys: ContractKeys("signals.metrics.HTTPCLIENT"));
+            AdditionalContractKeys: BuildContractKeys("signals.metrics.HTTPCLIENT"));
 
     private static string GetDbTraceContractKey(string instrumentationId)
         => instrumentationId switch
@@ -109,12 +109,12 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static EquatableArray<string> GetDbMetricContractKeys(string instrumentationId)
         => instrumentationId switch
         {
-            "NPGSQL" => ContractKeys("signals.metrics.NPGSQL"),
-            "SQLCLIENT" => ContractKeys("signals.metrics.SQLCLIENT"),
+            "NPGSQL" => BuildContractKeys("signals.metrics.NPGSQL"),
+            "SQLCLIENT" => BuildContractKeys("signals.metrics.SQLCLIENT"),
             _ => default,
         };
 
-    private static EquatableArray<string> ContractKeys(params string[] contractKeys)
+    private static EquatableArray<string> BuildContractKeys(params string[] contractKeys)
         => contractKeys.ToEquatableArray();
 
     private static ulong InterceptorKinds(params InterceptorKind[] kinds)
@@ -146,7 +146,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         if (symbol.Parameters.Length is 1)
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -155,7 +155,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             if (IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken") ||
                 IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption"))
             {
-                parameters = Parameters(symbol);
+                parameters = BuildParameters(symbol);
                 return true;
             }
         }
@@ -164,7 +164,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption") &&
             IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -184,7 +184,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         if (symbol.Parameters.Length is 1)
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -193,7 +193,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             if (IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken") ||
                 (allowCompletionOption && IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption")))
             {
-                parameters = Parameters(symbol);
+                parameters = BuildParameters(symbol);
                 return true;
             }
         }
@@ -203,7 +203,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption") &&
             IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -226,7 +226,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         if (symbol.Parameters.Length is 2 || IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -255,7 +255,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         if (symbol.Parameters.Length is 1 && IsType(symbol.Parameters[0].Type, "global::System.Threading.CancellationToken"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -276,7 +276,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             if (IsType(symbol.Parameters[0].Type, "global::System.Data.CommandBehavior") ||
                 (allowCancellationToken && IsType(symbol.Parameters[0].Type, "global::System.Threading.CancellationToken")))
             {
-                parameters = Parameters(symbol);
+                parameters = BuildParameters(symbol);
                 return true;
             }
         }
@@ -286,7 +286,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             IsType(symbol.Parameters[0].Type, "global::System.Data.CommandBehavior") &&
             IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -318,7 +318,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             }
         }
 
-        parameters = Parameters(symbol);
+        parameters = BuildParameters(symbol);
         return true;
     }
 
@@ -344,7 +344,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             IsType(symbol.Parameters[0].Type, "global::System.TimeSpan") ||
             symbol.Parameters[0].Type.SpecialType is SpecialType.System_Int32)
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -365,7 +365,7 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return false;
             }
 
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -378,7 +378,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             return false;
         }
 
-        parameters = Parameters(symbol);
+        parameters = BuildParameters(symbol);
         return true;
     }
 
@@ -411,7 +411,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             return false;
         }
 
-        parameters = Parameters(symbol);
+        parameters = BuildParameters(symbol);
         return true;
     }
 
@@ -428,7 +428,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             if (symbol.Parameters[0].Type.SpecialType is SpecialType.System_Boolean ||
                 (allowCancellationToken && IsType(symbol.Parameters[0].Type, "global::System.Threading.CancellationToken")))
             {
-                parameters = Parameters(symbol);
+                parameters = BuildParameters(symbol);
                 return true;
             }
         }
@@ -438,7 +438,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             symbol.Parameters[0].Type.SpecialType is SpecialType.System_Boolean &&
             IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -455,14 +455,14 @@ public sealed partial class QylAutoInstrumentationGenerator
         if (IsType(symbol.Parameters[0].Type, "global::System.String") &&
             IsType(symbol.Parameters[1].Type, "global::System.String"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
         if (symbol.Parameters[0].Type is INamedTypeSymbol publicationAddress &&
             IsTypeByMetadata(publicationAddress, "RabbitMQ.Client", "PublicationAddress"))
         {
-            parameters = Parameters(symbol);
+            parameters = BuildParameters(symbol);
             return true;
         }
 
@@ -642,7 +642,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             : "where " + typeParameter.Name + " : " + string.Join(", ", constraints);
     }
 
-    private static EquatableArray<ParameterSpec> Parameters(IMethodSymbol symbol)
+    private static EquatableArray<ParameterSpec> BuildParameters(IMethodSymbol symbol)
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
         for (var i = 0; i < symbol.Parameters.Length; i++)
@@ -852,23 +852,24 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return typeParameters[i].Name;
         }
 
-        if (symbol is ITypeParameterSymbol typeParameter)
-            return typeParameter.Name;
-
-        if (symbol is IArrayTypeSymbol array)
-            return CleanTypeName(array.ElementType, typeParameters, typeArguments) + "[]";
-
-        if (symbol is INamedTypeSymbol { IsGenericType: true } named && named.TypeArguments.Length > 0)
+        switch (symbol)
         {
-            var constructedName = named.ConstructedFrom.ToDisplayString(s_fullyQualifiedFormat);
-            var genericStart = constructedName.IndexOf('<');
-            var typeName = genericStart < 0 ? constructedName : constructedName.Substring(0, genericStart);
-            var arguments = named.TypeArguments
-                .Select(typeArgument => CleanTypeName(typeArgument, typeParameters, typeArguments));
-            return typeName + "<" + string.Join(", ", arguments) + ">";
+            case ITypeParameterSymbol typeParameter:
+                return typeParameter.Name;
+            case IArrayTypeSymbol array:
+                return CleanTypeName(array.ElementType, typeParameters, typeArguments) + "[]";
+            case INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: > 0 } named:
+            {
+                var constructedName = named.ConstructedFrom.ToDisplayString(s_fullyQualifiedFormat);
+                var genericStart = constructedName.IndexOf('<');
+                var typeName = genericStart < 0 ? constructedName : constructedName.Substring(0, genericStart);
+                var arguments = named.TypeArguments
+                    .Select(typeArgument => CleanTypeName(typeArgument, typeParameters, typeArguments));
+                return typeName + "<" + string.Join(", ", arguments) + ">";
+            }
+            default:
+                return CleanTypeName(symbol);
         }
-
-        return CleanTypeName(symbol);
     }
 
     private static string GetGrpcStreamReaderHelperType(InterceptedInvocation[] invocations)
@@ -901,7 +902,7 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static void AppendStringLiteral(StringBuilder builder, string value)
     {
         builder.Append('"');
-        builder.Append(value.Replace("\\", "\\\\").Replace("\"", "\\\""));
+        builder.Append(value.Replace("\\", @"\\").Replace("\"", "\\\""));
         builder.Append('"');
     }
 }

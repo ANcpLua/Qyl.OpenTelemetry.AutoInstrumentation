@@ -122,7 +122,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             returnType,
             parameters,
             isAsync,
-            AdditionalContractKeys: ContractKeys("signals.metrics.HTTPCLIENT"));
+            AdditionalContractKeys: BuildContractKeys("signals.metrics.HTTPCLIENT"));
         return true;
     }
 
@@ -173,7 +173,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             "Invoke",
             "global::System.Threading.Tasks.Task",
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -197,7 +197,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             "Build",
             "global::Microsoft.AspNetCore.Builder.WebApplication",
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -220,7 +220,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             "global::Microsoft.AspNetCore.Routing.IEndpointRouteBuilder",
             symbol.Name,
             returnType,
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -291,10 +291,10 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(receiverType),
             "AddMeter",
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             false,
             ExtensionContainingType: extensionContainingType,
-            AdditionalContractKeys: ContractKeys(
+            AdditionalContractKeys: BuildContractKeys(
                 "signals.metrics.HTTPCLIENT",
                 "signals.metrics.NETRUNTIME",
                 "signals.metrics.NPGSQL",
@@ -323,7 +323,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             isAsync);
         return true;
     }
@@ -396,7 +396,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             isAsync,
             GetTypeParameterList(symbol),
             GetConstraintClauses(symbol));
@@ -431,7 +431,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(receiverType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             isAsync,
             GetTypeParameterList(symbol),
             GetConstraintClauses(symbol),
@@ -492,7 +492,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
         return true;
     }
@@ -530,7 +530,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -566,7 +566,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -605,7 +605,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(receiverType),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             true,
             GetTypeParameterList(symbol),
             GetConstraintClauses(symbol),
@@ -642,7 +642,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         var typeParameterList = GetTypeParameterList(symbol);
         var receiverTypeName = CleanTypeName(receiverType);
         var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
-        var parameters = Parameters(symbol);
+        var parameters = BuildParameters(symbol);
         if (string.IsNullOrEmpty(typeParameterList))
             typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, receiverType);
         if (string.IsNullOrEmpty(typeParameterList))
@@ -660,7 +660,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             typeParameterList,
             GetConstraintClauses(symbol),
             GetReducedExtensionContainingType(symbol),
-            AdditionalContractKeys: ContractKeys("signals.metrics.NSERVICEBUS"));
+            AdditionalContractKeys: BuildContractKeys("signals.metrics.NSERVICEBUS"));
         return true;
     }
 
@@ -690,7 +690,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             "Execute",
             "global::System.Threading.Tasks.Task",
-            Parameters(symbol),
+            BuildParameters(symbol),
             true);
         return true;
     }
@@ -778,7 +778,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             "ExecuteAsync",
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             true);
         return true;
     }
@@ -803,7 +803,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         var typeParameterList = GetTypeParameterList(symbol);
         var receiverTypeName = CleanTypeName(receiverType);
         var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
-        var parameters = Parameters(symbol);
+        var parameters = BuildParameters(symbol);
         if (string.IsNullOrEmpty(typeParameterList))
             typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, receiverType);
         if (string.IsNullOrEmpty(typeParameterList))
@@ -935,7 +935,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             "Log",
             "void",
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -960,7 +960,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             "global::Microsoft.Extensions.Logging.ILogger",
             symbol.Name,
             "void",
-            Parameters(symbol),
+            BuildParameters(symbol),
             false);
         return true;
     }
@@ -1026,7 +1026,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             "void",
-            Parameters(symbol),
+            BuildParameters(symbol),
             false,
             GetTypeParameterList(symbol),
             GetConstraintClauses(symbol),
@@ -1051,7 +1051,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
             "void",
-            Parameters(symbol),
+            BuildParameters(symbol),
             false,
             GetTypeParameterList(symbol),
             GetConstraintClauses(symbol),
@@ -1262,7 +1262,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             CleanTypeName(original.Parameters[0].Type),
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
-            Parameters(symbol),
+            BuildParameters(symbol),
             true,
             GetTypeParameterList(symbol),
             GetConstraintClauses(symbol),

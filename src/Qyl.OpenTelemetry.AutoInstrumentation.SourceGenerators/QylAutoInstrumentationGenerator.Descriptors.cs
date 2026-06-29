@@ -251,7 +251,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.Append('.');
             builder.Append(RecordDurationMethod);
             builder.Append("(metricStart");
-            AppendRecordDurationArguments(builder, target);
+            AppendRecordDurationArguments(builder, in target);
             builder.AppendLine(");");
         }
 
@@ -286,7 +286,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.Append('.');
             builder.Append(EnrichMethod);
             builder.Append("(activity");
-            AppendArguments(builder, target);
+            AppendArguments(builder, in target);
             builder.AppendLine(");");
             builder.AppendLine("            }");
         }
@@ -299,9 +299,9 @@ public sealed partial class QylAutoInstrumentationGenerator
                     return;
                 case TraceActivityEnrichmentArgumentKind.GraphQlExecutionOptions:
                     builder.Append(", ");
-                    QylAutoInstrumentationGenerator.AppendGraphQlOperationNameExpression(builder, target);
+                    QylAutoInstrumentationGenerator.AppendGraphQlOperationNameExpression(builder, in target);
                     builder.Append(", ");
-                    QylAutoInstrumentationGenerator.AppendGraphQlDocumentCaptureExpression(builder, target);
+                    QylAutoInstrumentationGenerator.AppendGraphQlDocumentCaptureExpression(builder, in target);
                     return;
                 default:
                     throw new InvalidOperationException("Unknown trace activity enrichment argument kind: " + Arguments);
@@ -344,7 +344,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.Append('.');
             builder.Append(RuntimeHelper.StartActivityMethod);
             builder.Append('(');
-            QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(builder, target, RuntimeHelper.StartActivityArguments);
+            QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(builder, in target, RuntimeHelper.StartActivityArguments);
             builder.Append(')');
         }
 
@@ -365,7 +365,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
             SymbolInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
         {
         }
 
@@ -389,7 +389,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
             SymbolInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
         {
         }
 
@@ -422,7 +422,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
             ReceiverInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
         {
         }
 
@@ -446,7 +446,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             InterceptorEmitterFamily family,
             InterceptorMethodShape methodShape,
             ReceiverInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.ContractKeys(contractKey), family, methodShape, matcher)
+            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
         {
         }
 
@@ -512,10 +512,8 @@ public sealed partial class QylAutoInstrumentationGenerator
         string ExtensionContainingType = "",
         EquatableArray<string> AdditionalContractKeys = default,
         string MatcherName = "",
-        string MatcherReceiverTypePattern = "",
         InterceptorEmitterFamily MatcherFamily = default,
-        InterceptorMethodShape MatcherMethodShape = default,
-        EquatableArray<string> MatcherContractKeys = default);
+        InterceptorMethodShape MatcherMethodShape = default);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }
