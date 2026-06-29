@@ -259,3 +259,42 @@ composition is demonstrated — but the specific, most-exciting capability (comp
 shared across many generators) waits on `RegisterDeclarationOutput`, while everything achievable today
 is achievable **without** the experimental pre-compilation API (Pattern A) or with it only for
 additional-file-derived contracts (Pattern B).
+
+---
+
+## Addendum: in-place ablation (production generator) — `experiment/precompilation-contract`
+
+Both addenda above measured **isolated** generators (`experiment/contract-precompilation/`,
+`experiment/semantic-platform/`). The first pass called the in-place rewrite an "argued projection"
+and explicitly scoped it out. This addendum did it **in place, in the shipping build graph**: the
+production `QylAutoInstrumentationGenerator` interceptor gate was destructively rewritten to a real
+`RegisterPreCompilationSourceOutput` call — the pre-compilation phase emits the implemented-signal
+key set as the compilation-native `…Generated.QylContractRegistry` symbol, the standard phase binds it
+via `GetTypeByMetadataName`, and `EmitInterceptors` gates on the bound set. The three in-process
+lookups (`TryGetImplementedSignal` / `TryGetSourceInterceptorSignal` / `TryGetSupportedSignal` + the
+`TryGetSignal` helper) were **deleted** from `InstrumentationContract.cs`.
+
+Each layer was forced by a real build; the error codes are the evidence:
+
+| # | Action | Build result (verbatim code) | What it proves |
+|---|---|---|---|
+| 1 | Production generator references the API at the shipping toolchain (CPM-pinned `Microsoft.CodeAnalysis.CSharp` 5.3.0, latest stable) | **`error CS1061`**: `IncrementalGeneratorInitializationContext` has no `RegisterPreCompilationSourceOutput` | The API is absent from the shipping toolchain — the generator won't compile. |
+| 2 | Bump CSharp → nightly `5.9.0-1.26324.7` (dnceng feed + NU1507 source mapping) | **`error NU1605`** downgrade: nightly CSharp needs `Microsoft.CodeAnalysis.Analyzers >= 5.9.0-1.26319.6` vs CPM's stable `5.3.0` | One nightly pull drags the **whole nightly Roslyn graph** (had to bump Analyzers + Common too). |
+| 3 | Generator compiles on nightly; build a real consumer (core runtime) with the repo's **own** SDK (csc `5.6.0.0`) | **`error CS9057`**: analyzer references compiler `5.9.0.0`, newer than running `5.6.0.0` → analyzer **refused to load** | A hard compiler refusal, not a subtle runtime crash. Every consumer on a compiler `< 5.9.0` — i.e. every shipping SDK — gets **zero interceptors**. |
+| 4 | Force `Microsoft.Net.Compilers.Toolset 5.9.0` (nightly) on every project via `Directory.Build.props` | **`Build succeeded`** | The only green path forces a nightly main-only compiler onto the *entire* build — and would force it onto every consumer. |
+| F | Functional check: AdoNet demo under nightly, `EmitCompilerGeneratedFiles` | `QylContractRegistry.g.cs` emitted (33 keys bound) + `QylAutoInstrumentation.Interceptors.g.cs` gated/emitted | The pre-comp round-trip is **functionally correct on the nightly** — it works, it just can't ship. |
+
+**In-place verdict: DREAMING — confirmed, and sharper.** Non-shippability is no longer an argument; it
+is a hard **`CS9057`** refusal on the repo's own SDK. The rewrite is functionally correct *only* when a
+nightly, main-only, `[RSEXPERIMENTAL007]`-gated compiler is forced onto the whole build graph (and onto
+every consumer). The deleted in-process gate bought nothing: the pre-compilation `QylContractRegistry`
+symbol is **emitted from the same baked `InstrumentationContract.ImplementedSignalKeys` data it
+replaces** — a pure emit→compile→bind-back round-trip over data already present, for a contract with a
+single internal consumer. The original DREAMING trigger, now a compiler error rather than a projection.
+
+Floor breaks are left **red on purpose** as the evidence (this branch is the demonstration, not a
+shippable state): `verify-contract-invariants.py` asserts the deleted `TryGet*` methods exist, and the
+source-generator snapshot now carries the new `QylContractRegistry.g.cs`. The shippable path is `main`
+(untouched). The separable, genuinely-worth-building win is unchanged: deterministic **standard-phase**
+compile-time semantic-convention inference over user DTOs/routes — an ordinary `IIncrementalGenerator`
+feature (Pattern A above), **not** behind the experimental pre-compilation API.
