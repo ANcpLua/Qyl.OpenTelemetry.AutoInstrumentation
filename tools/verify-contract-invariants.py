@@ -707,7 +707,7 @@ def verify_interceptor_emitter_runtime_delegation(generator: str) -> None:
 
     descriptor_delegation_tokens = [
         "descriptor.HelperType",
-        "descriptor.AppendStartActivity(builder, target)",
+        "descriptor.AppendStartActivity(builder, in target)",
         "descriptor.GetRecordExceptionStatement()",
         "descriptor.ObserveAsyncMethod",
         "EmitDirectLoggerInterceptor(",
@@ -1550,14 +1550,14 @@ def verify_interceptor_signal_ownership(generator: str, kinds: set[str]) -> None
 
 def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
     for token in [
-        "ValidateMethodShape(descriptor);",
-        "ValidateSingleBodyDescriptor(descriptor);",
+        "ValidateMethodShape(in descriptor);",
+        "ValidateSingleBodyDescriptor(in descriptor);",
         "Interceptor emission descriptor must define exactly one typed body descriptor",
         "Interceptor emission descriptor method shape mismatch",
         "Trace body descriptor has unsupported method shape",
         "Trace body descriptor must provide a runtime helper",
         "Forwarding body descriptor has unsupported method shape",
-        "ValidateEmissionDescriptorPolicy(descriptor);",
+        "ValidateEmissionDescriptorPolicy(in descriptor);",
         "Runtime metric duration policy requires trace+metric ownership",
         "Trace+metric ownership requires runtime metric duration policy",
         "Trace runtime metric descriptor must provide a duration metric descriptor",
@@ -1710,7 +1710,7 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         "Matcher descriptor catalog declares a duplicate interceptor kind",
         "Emission descriptor catalog declares a duplicate interceptor kind",
         "Matcher and emission descriptor catalogs must declare the same interceptor kind set",
-        "EnsureTargetDeclaredByMatcher(descriptor, target);",
+        "EnsureTargetDeclaredByMatcher(descriptor, in target);",
         "EnsureKindDeclaredByMatcher(descriptor, target.Kind);",
         "public ulong TargetKindMask { get; }",
         "GetInterceptorKindMask(kind)",
@@ -1828,9 +1828,9 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName",
         "descriptor.MethodPrefixKind",
         "descriptor.DurationMetric.AppendMetricStartStatement(builder)",
-        "descriptor.DurationMetric.AppendRecordDurationStatement(builder, target)",
-        "descriptor.ActivityEnrichment.Append(builder, target)",
-        "descriptor.AsyncObservation.AppliesTo(target)",
+        "descriptor.DurationMetric.AppendRecordDurationStatement(builder, in target)",
+        "descriptor.ActivityEnrichment.Append(builder, in target)",
+        "descriptor.AsyncObservation.AppliesTo(in target)",
         "descriptor.AsyncObservation.ObserveAsyncMethod",
     ]:
         if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
