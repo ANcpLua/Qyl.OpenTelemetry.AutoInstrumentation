@@ -1,0 +1,16 @@
+{
+  "solution": {
+    "path": "Qyl.OpenTelemetry.AutoInstrumentation.slnx",
+    "projects": [
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation\\Qyl.OpenTelemetry.AutoInstrumentation.csproj",
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj",
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners\\Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj",
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore\\Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj",
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj",
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient\\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj",
+      "src\\Qyl.OpenTelemetry.AutoInstrumentation.Publishing\\Qyl.OpenTelemetry.AutoInstrumentation.Publishing.csproj",
+      "benchmarks\\Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks\\Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks.csproj",
+      "tests\\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots\\Fixture\\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots.Fixture.csproj"
+    ]
+  }
+}
