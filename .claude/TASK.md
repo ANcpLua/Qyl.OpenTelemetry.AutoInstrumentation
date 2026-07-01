@@ -1,50 +1,60 @@
-# TASK — Root-fix the double `Build()` interceptor (CS9153): delete the coordination layer
+# Task: Descriptor-Metadata Root-Fix — delete self-referential validation via type-system refactor
 
-**Branch:** `claude/drop-build-interceptor-startupfilter` (off `origin/main` @ 5ceee81)
-**Sibling repo:** `../qyl` (the collector consumer) — needs a matching branch/PR.
-**Status:** WIP — external cut in progress.
+**Branch:** `refactor/descriptor-metadata-root-fix` (off `main` @ a70356b)
+**Started:** 2026-07-02
+**Status:** WIP
+**Goal:** Remove the generator's self-referential validation apparatus (~300 lines) by making the
+invariants structural instead of runtime-checked. Generated output must stay **byte-identical**
+(snapshot test is the gate).
 
-## End goal
-`Qyl.OpenTelemetry.AutoInstrumentation` no longer intercepts `WebApplicationBuilder.Build()`.
-The ASP.NET Core server-span **middleware is preserved verbatim** but injected via an
-`IStartupFilter` off a non-colliding seam, so it never fights ServiceDefaults for the `Build()`
-call site. This deletes the entire cross-generator coordination layer (opt-out MSBuild property,
-`QylInterceptedAspNetCore.Build` compose wrapper, and qyl's `IsOtelAutoInstrumentationReferenced`
-reverse-check) in **both** repos. Breaking change, no back-compat → major version bump.
+## Evidence (verified 2026-07-01/02)
 
-## Architecture decision (user-chosen)
-User picked **IStartupFilter (rewire)** over the DiagnosticListener-delete option, to keep the
-exact middleware span attributes (request/response header capture + query string) that the
-`AspNetCoreDiagnosticListener` path does not produce. Registration is **explicit one-liner**
-(`AddQylAspNetCoreInstrumentation()`) — NOT `.Hosting`, because `.Hosting`'s module-init subscribes
-`AspNetCoreDiagnosticListener`, which would double-count server spans alongside the middleware.
-(Fully zero-config via a builder-creation interceptor is a possible follow-up; intentionally not
-built now since it would *add* generator code, against the "delete unnecessary" directive.)
+Every read of these members is in validation code — zero functional use:
+- `InterceptorMatcherDescriptor.TargetKindMask` (3 ctor writes, 3 validator reads)
+- `InterceptorMatcherDescriptor.ContractKeys` (1 read: EnsureContractDeclaredByMatcher)
+- `InterceptorMatcherDescriptor.Family/.MethodShape` (copied to target, compared in validator)
+- `InterceptorTarget.MatcherName/.MatcherFamily/.MatcherMethodShape` (validation payload)
+- `InterceptorEmissionDescriptor.Family/.MethodShape/.SignalOwnership/.ErrorPolicy/.DurationPolicy`
+  (ValidateEmissionDescriptorPolicy itself proves policies are fully determined by body type)
+- `GetDbTraceContractKey` == `"signals.traces." + id` for all 7 ids GetDbInstrumentationId returns
 
-## Cut manifest — external (`Qyl.OpenTelemetry.AutoInstrumentation`)
-- [ ] `QylInterceptedAspNetCore.cs`: delete `Build(WebApplicationBuilder)` (keep InvokeAsync/Observe/Map*/etc.)
-- [ ] ADD `QylAspNetCoreStartupFilter : IStartupFilter` (main pkg) — `app.Use(InvokeAsync)` + next
-- [ ] ADD `AddQylAspNetCoreInstrumentation(IServiceCollection)` (TryAddEnumerable, idempotent)
-- [ ] Generator `Descriptors.cs`: drop enum `AspNetCoreWebApplicationBuilderBuild` + dead `BuilderInitialization` shape
-- [ ] Generator `Detection.cs`: drop `TryGetAspNetCoreWebApplicationBuilderBuildInvocation`
-- [ ] Generator `QylGeneratedSourceInterceptorCatalog.cs`: drop the Build matcher + emission descriptor
-- [ ] Generator `QylAutoInstrumentationGenerator.cs`: drop opt-out property/read + pipeline combine + EmitInterceptors filter param + BuilderInitialization arm
-- [ ] `build/` + `buildTransitive/` `.targets`: drop `CompilerVisibleProperty` opt-out (keep InterceptorsNamespaces)
-- [ ] Build green (0 warn); run `verify.yml`/fixtures; local pack
+`tools/verify-contract-invariants.py` pins the validators as required tokens (lines ~1709-1721)
+and parses the policy enums as data — those checks verify consistency between two representations
+of the same fact; when one representation is deleted, they become obsolete or get rewritten to
+the single surviving source.
 
-## Cut manifest — qyl (`../qyl`)
-- [ ] `GeneratorPipelineHelpers.cs`: drop `QylInterceptedAspNetCoreTypeName` + `IsOtelAutoInstrumentationReferenced`
-- [ ] `ServiceDefaultsSourceGenerator.cs`: drop otel-available pipeline/stage/field/branch → `var app = builder.Build();`
-- [ ] `qyl.collector.csproj`: drop `QylAutoInstrumentationInterceptWebApplicationBuilderBuild=false` knob
-- [ ] `qyl.collector/Program.cs`: add `builder.Services.AddQylAspNetCoreInstrumentation();`
-- [ ] `Directory.Packages.props`: bump OTel pin to new major
-- [ ] Build collector Release (0 warn); **runtime acceptance: run collector, hit endpoint, assert exactly ONE `SPAN_KIND_SERVER`**
+## Plan / Checklist
 
-## Release ordering (irreversible gate)
-External publishes first (major, trusted publishing) → then qyl bumps pin. Do all reversible work
-(edits + local pack + runtime acceptance) BEFORE the breaking publish. Surface the DiagnosticListener-
-vs-IStartupFilter divergence at the publish gate.
+- [x] Evidence pass (all field reads mapped; python harness dependencies mapped)
+- [x] Branch created
+- [ ] **Cut 1 — Descriptors.cs:** body-descriptor hierarchy
+      (`abstract record InterceptorBodyDescriptor` + 8 sealed records, drop `IsDefined` on the 8;
+      `InterceptorEmissionDescriptor(Kind, Body)`; matcher: 8 ctors → 2, drop mask/keys/family/shape;
+      target: drop 3 Matcher* fields; delete enums EmitterFamily/MethodShape/SignalOwnership/
+      ErrorPolicy/DurationPolicy)
+- [ ] **Cut 2 — QylGeneratedSourceInterceptorCatalog.cs:** rewrite 25 matcher rows + 29 emission rows
+      to the slim constructors; keep GetInterceptorReceiverSurface (TCG consumer)
+- [ ] **Cut 3 — QylAutoInstrumentationGenerator.cs:** delete ValidateDescriptorCatalog + Initialize()
+      call, Ensure* trio, EnsureEmissionDescriptorMatchesMatcher, ValidateEmissionDescriptorPolicy,
+      ValidateSingleBodyDescriptor, ValidateMethodShape ×2, ValidatePolicy; dispatch = type switch on
+      `descriptor.Body`; keep GetEmissionDescriptor terminal throw (functional lookup failure)
+- [ ] **Cut 4 — Shapes.cs/Detection.cs:** delete GetDbTraceContractKey (inline `"signals.traces." + id`),
+      delete InterceptorKinds()/GetInterceptorKindMask (mask machinery)
+- [ ] **Cut 5 — tools/verify-contract-invariants.py:** rewrite affected checks — keep real invariants
+      (kind completeness + uniqueness in emission catalog, contract-key coverage; derive DB trace keys
+      from GetDbInstrumentationId), delete redundant-representation checks (ownership consistency,
+      matcher-declared kinds/keys, required-token pins of deleted validators)
+- [ ] Build full solution green (TWAE=true)
+- [ ] `tools/verify-generator-snapshots.py` green (byte-identical output)
+- [ ] `tools/verify-contract-invariants.py` green
+- [ ] Smoke: AspNetCore + ILogger runtime verifiers (same gate the last generator commit used)
+- [ ] Commit increments, push, PR, CodeRabbit loop, merge on green
 
-## Invariants (do not violate)
-- Generators stay `netstandard2.0`; generated code is full .NET 10. Never downgrade emitted code.
-- No new public API contract models in qyl.collector (contracts single-sourced via Qyl.Api.Contracts).
+## Non-goals
+- Keep `GetInterceptorReceiverSurface` / TCG `interceptorReceivers` section (now a consumed feature).
+- Keep nested optional helper structs' `IsDefined` pattern (RuntimeHelper, DurationMetric, etc.).
+- No change to InstrumentationContract counters (verified in sync; separate concern).
+
+## Resume notes
+If interrupted: all design decisions are in this file; the snapshot test defines correctness.
+Verify scripts live in `tools/`. Do not re-add the policy enums — they are derived data.
