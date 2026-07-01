@@ -11,6 +11,13 @@ time.
   emitted span/metric) is now baked from the build `<Version>` via a generated compile-time const
   instead of a hardcoded literal — no reflection. A new `verify-version-sync` gate keeps the props
   floor, the README examples, and that scope version aligned with the latest release tag.
+- Docs: README pins the vocabulary to the official OpenTelemetry glossary (Instrumented Library /
+  Instrumentation Library / Instrumentation Scope / Automatic Instrumentation / Semantic
+  Conventions) and maps each term onto this repository, framing the AOT source-interceptor +
+  `DiagnosticListener` mechanism as OpenTelemetry "Automatic Instrumentation". All three signals
+  (traces, metrics, logs) are contract-covered; AOT-structural items are marked
+  `unsupported_nativeaot`, not hidden (#19).
+- Docs: corrected the stale README install-example package version (`0.3.0-pre.1` → `4.0.0`) (#19).
 
 ## [4.0.0] - 2026-07-01
 
@@ -80,16 +87,6 @@ First release under the canonical name, rebaselining the pre-public `0.x` line (
 - Behavioral verification gates: package layout, ProjectReference behavior, public API baselines,
   XML docs, environment options, conformance, source-generator snapshots, source-interceptor
   behavior, smoke, WebAPI AOT, and OTLP verified/collector fixtures.
-
-### Documentation
-
-- README: pinned the vocabulary to the official OpenTelemetry glossary (Instrumented Library /
-  Instrumentation Library / Instrumentation Scope / Automatic Instrumentation / Semantic
-  Conventions) and mapped each term onto this repository, framing the AOT source-interceptor +
-  `DiagnosticListener` mechanism as OpenTelemetry "Automatic Instrumentation". Stated that all
-  three signals (traces, metrics, logs) are contract-covered and that AOT-structural items are
-  marked `unsupported_nativeaot`, not hidden.
-- README: corrected the stale install-example package version (`0.3.0-pre.1` -> `3.1.2`).
 
 ### Telemetry semantics
 
