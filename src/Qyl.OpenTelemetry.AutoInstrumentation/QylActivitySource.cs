@@ -25,4 +25,21 @@ public static class QylActivitySource
         => Source.HasListeners()
             ? Source.StartActivity(operationName, activityKind)
             : null;
+
+    /// <summary>
+    /// Starts a qyl span stamped to the ambient (framework) <see cref="Activity"/>'s real start time,
+    /// so DiagnosticListener bridges that only observe the completion (<c>*.Stop</c>) event emit the
+    /// operation's TRUE duration instead of a ~0 span. Parents to the current activity to preserve
+    /// trace correlation; falls back to a now-stamped span when there is no ambient activity.
+    /// </summary>
+    internal static Activity? StartAtAmbientStart(string operationName, ActivityKind activityKind)
+    {
+        if (!Source.HasListeners())
+            return null;
+
+        var ambient = Activity.Current;
+        return ambient is null
+            ? Source.StartActivity(operationName, activityKind)
+            : Source.StartActivity(operationName, activityKind, ambient.Context, tags: null, links: null, startTime: ambient.StartTimeUtc);
+    }
 }
