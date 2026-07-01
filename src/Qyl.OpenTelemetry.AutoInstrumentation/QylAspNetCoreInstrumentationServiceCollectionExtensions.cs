@@ -10,10 +10,11 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 /// <remarks>
 /// Adds a middleware-based server span (via <see cref="IStartupFilter"/>) that captures request and
-/// response headers plus the query string. Prefer this when you want the richer middleware attributes;
-/// the zero-config <c>Qyl.OpenTelemetry.AutoInstrumentation.Hosting</c> module-init path produces server
-/// spans via the ASP.NET Core <c>DiagnosticListener</c> instead and must not be combined with this one
-/// (doing so would emit two server spans per request).
+/// response headers plus the query string. Prefer this when you want the richer middleware attributes.
+/// Combining it with the zero-config <c>Qyl.OpenTelemetry.AutoInstrumentation.Hosting</c> module-init
+/// path is safe: the single-owner signal registry lets the higher-priority middleware lane claim the
+/// ASP.NET Core signal and the <c>DiagnosticListener</c> lane defer, so exactly one server span is
+/// emitted per request either way.
 /// </remarks>
 public static class QylAspNetCoreInstrumentationServiceCollectionExtensions
 {
@@ -29,6 +30,8 @@ public static class QylAspNetCoreInstrumentationServiceCollectionExtensions
         // Claim the ASP.NET Core signal for the middleware lane so the DiagnosticListener lane (if the
         // Hosting package is also referenced) defers and the server span is emitted exactly once.
         QylSignalOwnership.Register(QylAutoInstrumentationIds.AspNetCore, QylSignalOwnership.GeneratedMiddleware);
+        // IStartupFilters compose in registration order and this one must stay outermost so the server
+        // span wraps the whole pipeline — call this before registering other pipeline-wrapping filters.
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IStartupFilter, QylAspNetCoreStartupFilter>());
         return services;
     }
