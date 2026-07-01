@@ -111,6 +111,9 @@ public static class QylInterceptedAspNetCore
         if (activity is null)
             return;
 
+        // The server-span middleware can run outside routing (registered via IStartupFilter); the route
+        // template is only known once the pipeline has resolved the endpoint, so backfill it here.
+        QylHttpActivityPolicy.BackfillServerRoute(activity, QylHttpMethod.Normalize(context.Request.Method), GetRoute(context));
         QylHttpActivityPolicy.SetResponseStatus(activity, context.Response.StatusCode, 500);
         QylCaptureHelpers.SetRequestHeaders(
             activity,
