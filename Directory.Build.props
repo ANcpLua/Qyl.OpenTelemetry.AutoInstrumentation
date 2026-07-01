@@ -38,12 +38,9 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-    <!-- Local-build version floor, aligned onto the Qyl.OpenTelemetry stack line. This is the
-         value baked into local builds (and into QylInstrumentation.Version via the assembly's
-         informational version). Releases are CI-owned: nuget-publish.yml overrides -p:Version from
-         the latest v* tag at pack time. Keep this floor >= the latest release tag — the
-         verify-version-sync.py gate enforces it, so it can never fall behind again. -->
-    <Version>4.0.0</Version>
+    <!-- One version source of truth across all packed projects. Bump only after validation. -->
+    <!-- Aligned onto the Qyl.OpenTelemetry stack version line (SemConv 3.0.2). -->
+    <Version>3.0.2</Version>
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
