@@ -63,4 +63,36 @@ public sealed partial class QylAutoInstrumentationGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.ILoggerLog, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.RuntimeDelegate, InterceptorDurationPolicy.None, LoggerBody: new LoggerBodyDescriptor(LoggerInterceptorBodyKind.ILoggerLog, "ILogger_Log", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedLogger")),
             new InterceptorEmissionDescriptor(InterceptorKind.NLogLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedExternalLogger", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.LogNLog")),
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, InterceptorEmitterFamily.Logging, InterceptorMethodShape.Void, InterceptorSignalOwnership.Log, InterceptorErrorPolicy.Exception, InterceptorDurationPolicy.None, ExternalLoggerBody: new ExternalLoggerBodyDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedExternalLogger", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")));
+
+    /// <summary>A single interceptor matcher projected to its receiver-type surface.</summary>
+    internal readonly struct InterceptorReceiverSurfaceEntry
+    {
+        public InterceptorReceiverSurfaceEntry(string name, string receiverType)
+        {
+            Name = name;
+            ReceiverType = receiverType;
+        }
+
+        /// <summary>The matcher name (e.g. <c>"Kafka"</c>).</summary>
+        public string Name { get; }
+
+        /// <summary>The receiver type or wildcard/pipe pattern the matcher targets.</summary>
+        public string ReceiverType { get; }
+    }
+
+    /// <summary>
+    /// Projects every interceptor matcher to its receiver-type surface for the Telemetry Capability
+    /// Graph. Reading <see cref="InterceptorMatcherDescriptor.ReceiverTypePattern"/> here makes the
+    /// curated receiver registry a live, machine-readable output instead of dead metadata: the
+    /// wildcard/pipe patterns (e.g. Azure, Elastic, Kafka) are not recoverable from the matcher
+    /// delegates, so surfacing them documents the exact receiver surface qyl intercepts.
+    /// </summary>
+    internal static ImmutableArray<InterceptorReceiverSurfaceEntry> GetInterceptorReceiverSurface()
+    {
+        var builder = ImmutableArray.CreateBuilder<InterceptorReceiverSurfaceEntry>(s_matcherDescriptors.Length);
+        foreach (var descriptor in s_matcherDescriptors)
+            builder.Add(new InterceptorReceiverSurfaceEntry(descriptor.Name, descriptor.ReceiverTypePattern));
+
+        return builder.MoveToImmutable();
+    }
 }
