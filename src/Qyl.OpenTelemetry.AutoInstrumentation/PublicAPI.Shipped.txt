@@ -96,7 +96,7 @@ const Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationIds.StackExcha
 const Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationIds.WcfClient = "WCFCLIENT" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationIds.WcfCore = "WCFCORE" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationIds.WcfService = "WCFSERVICE" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentation.Version = "0.3.0-pre.1" -> string!
+static readonly Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentation.Version -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.AspNetCoreServer = "aspnetcore.server" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.AzureSdk = "azure.sdk" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.DbClient = "db.client" -> string!

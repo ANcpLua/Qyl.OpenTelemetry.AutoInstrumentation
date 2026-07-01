@@ -9,8 +9,15 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 public static class QylInstrumentation
 {
-    /// <summary>Library version, baked at build time by the root <c>Directory.Build.props</c>.</summary>
-    public const string Version = "0.3.0-pre.1";
+    /// <summary>
+    /// Instrumentation-scope version stamped on every qyl-emitted span/metric (via
+    /// <see cref="QylActivitySource"/>). Baked at build time from the root
+    /// <c>Directory.Build.props</c> <c>&lt;Version&gt;</c> — which CI overrides from the release
+    /// <c>v*</c> tag at pack time — via the generated <c>QylVersionInfo</c> const (see the
+    /// <c>GenerateQylVersionInfo</c> target in the core project). No reflection; it always matches
+    /// the shipped package and is never hand-maintained.
+    /// </summary>
+    public static readonly string Version = QylVersionInfo.Version;
 
     private static int _activated;
 
