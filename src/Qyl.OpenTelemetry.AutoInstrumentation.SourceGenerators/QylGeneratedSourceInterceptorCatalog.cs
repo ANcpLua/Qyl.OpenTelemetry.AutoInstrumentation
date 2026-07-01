@@ -8,7 +8,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         => ImmutableArray.Create(
             new InterceptorMatcherDescriptor("HttpClient", "global::System.Net.Http.HttpClient", TryGetHttpClientInvocation),
             new InterceptorMatcherDescriptor("HttpWebRequest", "global::System.Net.HttpWebRequest", TryGetHttpWebRequestInvocation),
-            new InterceptorMatcherDescriptor("AspNetCoreRequestDelegate", "global::Microsoft.AspNetCore.Http.RequestDelegate", TryGetAspNetCoreRequestDelegateInvocation),
             new InterceptorMatcherDescriptor("AspNetCoreEndpointMap", "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions", TryGetAspNetCoreEndpointMapInvocation),
             new InterceptorMatcherDescriptor("MeterProviderBuilderAddMeter", "global::OpenTelemetry.Metrics.MeterProviderBuilder", TryGetMeterProviderBuilderAddMeterInvocation),
             new InterceptorMatcherDescriptor("AzureClient", "Azure.*Client", TryGetAzureClientInvocation),
@@ -20,7 +19,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             new InterceptorMatcherDescriptor("MassTransit", "MassTransit.IPublishEndpoint|MassTransit.ISendEndpoint|MassTransit.ISendEndpointProvider", TryGetMassTransitInvocation),
             new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IMessageHandlerContext", TryGetNServiceBusInvocation),
             new InterceptorMatcherDescriptor("Quartz", "Quartz.IJob", TryGetQuartzInvocation),
-            new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabase", TryGetStackExchangeRedisInvocation),
+            new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabaseAsync", TryGetStackExchangeRedisInvocation),
             new InterceptorMatcherDescriptor("GraphQL", "GraphQL.IDocumentExecuter", TryGetGraphQlInvocation),
             new InterceptorMatcherDescriptor("EntityFrameworkCoreDbContext", "global::Microsoft.EntityFrameworkCore.DbContext", TryGetEntityFrameworkCoreDbContextInvocation),
             new InterceptorMatcherDescriptor("EntityFrameworkCoreQueryable", "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions", TryGetEntityFrameworkCoreQueryableInvocation),
@@ -36,7 +35,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         => ImmutableArray.Create(
             new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, new ForwardingInterceptorBodyDescriptor("HttpClient", "client", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedHttpClient", ReceiverTypeOverride: "global::System.Net.Http.HttpClient")),
             new InterceptorEmissionDescriptor(InterceptorKind.HttpWebRequest, new HttpWebRequestBodyDescriptor("HttpWebRequest", "request", "global::System.Net.HttpWebRequest", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedHttpWebRequest", "GetStartTimeUtc", "StartActivity", "RecordResult", "RecordException")),
-            new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreRequestDelegate, new ForwardingInterceptorBodyDescriptor("AspNetCoreRequestDelegate", "requestDelegate", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedAspNetCore", HelperMethodName: "InvokeAsync")),
             new InterceptorEmissionDescriptor(InterceptorKind.AspNetCoreEndpointMap, new ForwardingInterceptorBodyDescriptor("AspNetCoreEndpointMap", "endpoints", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedAspNetCore")),
             new InterceptorEmissionDescriptor(InterceptorKind.MeterProviderBuilderAddMeter, new MeterProviderBuilderBodyDescriptor("MeterProviderBuilder", "builder", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()")),
             new InterceptorEmissionDescriptor(InterceptorKind.AzureClient, new TraceInterceptorBodyDescriptor("AzureClient", "client", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedAzure", "StartActivity", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),

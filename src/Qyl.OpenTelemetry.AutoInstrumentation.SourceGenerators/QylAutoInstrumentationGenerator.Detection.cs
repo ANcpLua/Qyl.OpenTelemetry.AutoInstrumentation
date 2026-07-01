@@ -154,38 +154,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return true;
     }
 
-    private static bool TryGetAspNetCoreRequestDelegateInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        // `next(context)` / `_next(context)` middleware hops resolve to RequestDelegate.Invoke,
-        // whose MethodKind is DelegateInvoke. The C# interceptors feature can only intercept
-        // ordinary member methods, so emitting an interceptor for a delegate invocation is rejected
-        // with CS9207. Guard on MethodKind (as the HttpClient/Db/Azure/Elastic matchers already do):
-        // RequestDelegate.Invoke is never Ordinary, so hand-written middleware no longer breaks the
-        // consumer build. Trace coverage for the request pipeline already comes from the ASP.NET Core
-        // hosting instrumentation, not from wrapping each middleware hop.
-        if (symbol.MethodKind is not MethodKind.Ordinary ||
-            !string.Equals(symbol.Name, "Invoke", StringComparison.Ordinal) ||
-            !IsType(symbol.ContainingType, "global::Microsoft.AspNetCore.Http.RequestDelegate") ||
-            !IsTask(symbol.ReturnType) ||
-            symbol.Parameters.Length is not 1 ||
-            !IsType(symbol.Parameters[0].Type, "global::Microsoft.AspNetCore.Http.HttpContext"))
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            InterceptorKind.AspNetCoreRequestDelegate,
-            "signals.traces.ASPNETCORE",
-            "ASPNETCORE",
-            CleanTypeName(symbol.ContainingType),
-            "Invoke",
-            "global::System.Threading.Tasks.Task",
-            BuildParameters(symbol),
-            false);
-        return true;
-    }
-
     private static bool TryGetAspNetCoreEndpointMapInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;

@@ -11,7 +11,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         HttpClient,
         HttpWebRequest,
-        AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         MeterProviderBuilderAddMeter,
         AzureClient,
