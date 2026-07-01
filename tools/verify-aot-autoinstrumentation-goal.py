@@ -18,6 +18,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("package layout", [sys.executable, "tools/verify-package-layout.py"]),
     ("projectreference behavior", [sys.executable, "tools/verify-projectreference-behavior.py"]),
     ("public api baseline", [sys.executable, "tools/verify-public-api-baseline.py"]),
+    ("version sync", [sys.executable, "tools/verify-version-sync.py"]),
     ("xml doc enforcement", [sys.executable, "tools/verify-xml-doc-enforcement.py"]),
     ("environment options behavior", [sys.executable, "tools/verify-environment-options-behavior.py"]),
     ("instrumentation disabled behavior", [sys.executable, "tools/verify-instrumentation-disabled-behavior.py"]),
