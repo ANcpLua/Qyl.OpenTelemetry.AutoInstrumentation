@@ -7,6 +7,24 @@ The current product is pure managed code. It uses Roslyn source generators,
 `[ModuleInitializer]` bootstrapping. It does not use a CLR profiler, startup hook,
 runtime IL rewrite, attach tool, plugin store, or reflection-based dispatch.
 
+## OpenTelemetry terminology
+
+This repository maps precisely onto the [OpenTelemetry glossary](https://opentelemetry.io/docs/concepts/glossary/):
+
+| OpenTelemetry term | Definition | In this repository |
+|---|---|---|
+| **Instrumented Library** | The library for which telemetry (traces, metrics, logs) is gathered. | The libraries in the 60-item contract: HttpClient, ASP.NET Core, EF Core, `Microsoft.Data.SqlClient`, `Grpc.Net.Client`, Confluent.Kafka, RabbitMQ.Client, MongoDB.Driver, StackExchange.Redis, Quartz, MassTransit, NServiceBus, MySqlConnector/MySql.Data, Npgsql, SQLite, Oracle MDA, Elasticsearch, GraphQL, Azure SDK. See [`docs/coverage-matrix.md`](docs/coverage-matrix.md). |
+| **Instrumentation Library** *(a.k.a. Instrumenting Library)* | The library that provides instrumentation for an Instrumented Library. | **This package family** — `Qyl.OpenTelemetry.AutoInstrumentation` (+ `.Hosting`/`.EntityFrameworkCore`/`.SqlClient`). It emits the OpenTelemetry API calls on the Instrumented Libraries' behalf. |
+| **Instrumentation Scope** | The `name` (+ optional `version`) given when obtaining a Tracer / Meter / Logger; identifies the scope emitting telemetry. | The `ActivitySource` / `Meter` names carried by the generated semantic registry (`QylActivitySource` / `QylActivityNames`), qualified with the package version. |
+| **Automatic Instrumentation** | Telemetry collection that does **not** require modifying application source code (via compile-time/runtime code manipulation, monkey-patching, or eBPF). | qyl's method is the **NativeAOT-safe** form: build-time Roslyn `[InterceptsLocation]` source interceptors + `DiagnosticListener` consumption + `[ModuleInitializer]` bootstrap — zero app-code changes via `PackageReference`. Explicitly **not** a CLR profiler, IL rewrite, startup hook, or reflection dispatch (those are not AOT-compatible). |
+| **Semantic Conventions** | The shared attribute/metric/span vocabulary telemetry follows. | Emitted against the referenced `Qyl.OpenTelemetry.SemanticConventions` package (a *vocabulary* dependency, not generated here). |
+
+All three OpenTelemetry signals are covered by the contract: **traces**, **metrics**, and
+**logs** (`ILogger`, log4net, NLog). Per-item lane, status, call-site visibility, and evidence
+are tracked in the generated coverage matrix; items that are structurally impossible under the
+NativeAOT / source-generator substrate (classic ASP.NET, WCF, ASP.NET metrics — all
+reflection-required) are marked `unsupported_nativeaot` rather than hidden.
+
 ## What this repository ships
 
 | Package project | Purpose |
@@ -29,7 +47,7 @@ instrumentation.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="0.3.0-pre.1" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="3.1.2" />
 </ItemGroup>
 ```
 
@@ -37,8 +55,8 @@ Add package-specific references only when the app uses those libraries:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="0.3.0-pre.1" />
-  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="0.3.0-pre.1" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="3.1.2" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="3.1.2" />
 </ItemGroup>
 ```
 

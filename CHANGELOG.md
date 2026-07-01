@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Documentation
+
+- README: pinned the vocabulary to the official OpenTelemetry glossary (Instrumented Library /
+  Instrumentation Library / Instrumentation Scope / Automatic Instrumentation / Semantic
+  Conventions) and mapped each term onto this repository, framing the AOT source-interceptor +
+  `DiagnosticListener` mechanism as OpenTelemetry "Automatic Instrumentation". Stated that all
+  three signals (traces, metrics, logs) are contract-covered and that AOT-structural items are
+  marked `unsupported_nativeaot`, not hidden.
+- README: corrected the stale install-example package version (`0.3.0-pre.1` -> `3.1.2`).
+
 ### Telemetry semantics
 
 - Expanded the metrics registration surface with the useful part of the superseded
