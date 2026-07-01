@@ -1,19 +1,23 @@
 name: qyl-aot-publish-gate
 
 # Pins the NativeAOT warning-cleanliness classification of the demo matrix (tools/verify-aot-publish-gate.py):
-#   * PR + push: the CLEAN set must AOT-publish warning-clean under strict TreatWarningsAsErrors
-#     (catches a qyl regression that introduces reflection / breaks AOT — the primary signal).
-#   * push to main: additionally publish the VENDOR_WARNED set with warnings relaxed to catch a hard
-#     AOT break, and detect a "promotion" (an upstream library that shipped AOT annotations and is now
-#     warning-clean, so it can move into the CLEAN set).
-# No containers required — this is the fast AOT gate; the container-backed runtime verifiers stay in
-# verify-real-demos.yml (post-merge). Run locally: python3 tools/verify-aot-publish-gate.py --set all
+#   * CLEAN set must AOT-publish warning-clean under strict TreatWarningsAsErrors (catches a qyl
+#     regression that introduces reflection / breaks AOT — the primary signal).
+#   * VENDOR_WARNED set must still AOT-publish with warnings relaxed (hard-break detection), and a
+#     "promotion" is flagged when an upstream library shipped AOT annotations and is now warning-clean.
+#
+# Heavy (up to 30 NativeAOT publishes x 2 OS), so — like verify-real-demos.yml — it runs post-merge on
+# main, nightly, and on demand, NOT on every PR. Each publish isolates its build output
+# (--artifacts-path + --disable-build-servers) so it never contends with other jobs on a shared
+# self-hosted runner. Run locally: python3 tools/verify-aot-publish-gate.py --set all
 
 on:
-  pull_request:
   push:
     branches:
       - main
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
 
 jobs:
   aot-publish-gate:
@@ -37,9 +41,5 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
-      - name: AOT warning-clean regression gate (CLEAN set)
-        run: python3 tools/verify-aot-publish-gate.py --set clean
-
-      - name: AOT hard-break + promotion detection (VENDOR_WARNED set)
-        if: github.event_name == 'push'
-        run: python3 tools/verify-aot-publish-gate.py --set warned
+      - name: AOT-publish warning-cleanliness gate (CLEAN regression + VENDOR_WARNED hard-break/promotion)
+        run: python3 tools/verify-aot-publish-gate.py --set all

@@ -35,8 +35,9 @@ import argparse
 import os
 import platform
 import re
+import shutil
 import subprocess
-import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,7 +104,11 @@ def runtime_identifier() -> str:
     raise SystemExit(f"unsupported platform for the AOT gate: {system}/{machine}")
 
 
-def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str]) -> tuple[int, list[str], list[str]]:
+ERROR_LINE = re.compile(r": error |\berror IL\d|\berror CS\d|\berror MSB\d|\berror NETSDK\d")
+
+
+def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str],
+            artifacts: Path) -> tuple[int, list[str], list[str], str]:
     project = DEMOS_DIR / demo / f"{demo}.csproj"
     if not project.exists():
         raise SystemExit(f"demo project not found: {project}")
@@ -114,6 +119,10 @@ def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str]) -> tuple[
         "-p:PublishAot=true",
         "--self-contained", "true",
         f"-p:TreatWarningsAsErrors={'true' if strict else 'false'}",
+        # Isolate build output + disable shared build servers so the gate never contends with other
+        # dotnet jobs over the repo's shared artifacts/ directory on a single (self-hosted) runner.
+        "--artifacts-path", str(artifacts),
+        "--disable-build-servers",
         "-clp:NoSummary",
         "-v", "minimal",
         *EXTRA_PROPS.get(demo, []),
@@ -123,22 +132,25 @@ def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str]) -> tuple[
     lines = proc.stdout.splitlines()
     il = [ln.strip() for ln in lines if IL_LINE.search(ln)]
     asms = sorted({m.group(1) for ln in lines for m in [ASM_WARNED.search(ln)] if m})
-    return proc.returncode, il, asms
+    # Surface the real failure reason instead of swallowing it.
+    err = [ln.strip() for ln in lines if ERROR_LINE.search(ln)]
+    tail = err[-1] if err else next((ln.strip() for ln in reversed(lines) if ln.strip()), "(no output)")
+    return proc.returncode, il, asms, tail[:240]
 
 
-def check_clean(demo: str, rid: str, env: dict[str, str]) -> tuple[str, str]:
+def check_clean(demo: str, rid: str, env: dict[str, str], artifacts: Path) -> tuple[str, str]:
     # Strict: any IL warning becomes an error, so exit 0 <=> warning-clean.
-    code, il, _ = publish(demo, strict=True, rid=rid, env=env)
+    code, il, _, tail = publish(demo, strict=True, rid=rid, env=env, artifacts=artifacts)
     if code == 0:
         return "ok", "warning-clean"
-    return "regression", f"exit={code}; " + (il[0] if il else "no IL line captured (see log)")
+    return "regression", f"exit={code}; " + (il[0] if il else tail)
 
 
-def check_warned(demo: str, rid: str, env: dict[str, str]) -> tuple[str, str]:
+def check_warned(demo: str, rid: str, env: dict[str, str], artifacts: Path) -> tuple[str, str]:
     # Relaxed: must still produce a binary; vendor IL warnings are expected & tolerated.
-    code, il, asms = publish(demo, strict=False, rid=rid, env=env)
+    code, il, asms, tail = publish(demo, strict=False, rid=rid, env=env, artifacts=artifacts)
     if code != 0:
-        return "hard-break", f"exit={code} even with warnings relaxed; " + (il[0] if il else "see log")
+        return "hard-break", f"exit={code} even with warnings relaxed; " + (il[0] if il else tail)
     if not il:
         return "promotion", "now warning-clean upstream — move to CLEAN_DEMOS"
     return "ok", "vendor-warned: " + (", ".join(asms) if asms else VENDOR_WARNED_DEMOS.get(demo, "?"))
@@ -177,21 +189,27 @@ def main() -> None:
         if not plan:
             raise SystemExit(f"none of {sorted(wanted)} are in the gate classification")
 
-    print(f"AOT-publish gate | rid={rid} | {len(plan)} demo(s) | set={args.set}", flush=True)
+    artifacts = Path(tempfile.mkdtemp(prefix="qyl-aot-gate-"))
+    print(f"AOT-publish gate | rid={rid} | {len(plan)} demo(s) | set={args.set} | artifacts={artifacts}",
+          flush=True)
     rows: list[tuple[str, str, str, str]] = []
     failures = 0
     promotions = 0
-    for demo, kind in plan:
-        verdict, detail = check_clean(demo, rid, env) if kind == "clean" else check_warned(demo, rid, env)
-        icon = {"ok": "PASS", "regression": "FAIL", "hard-break": "FAIL", "promotion": "PROMO"}[verdict]
-        print(f"  [{icon}] {kind:6} {demo}  {detail}", flush=True)
-        rows.append((icon, kind, demo, detail))
-        if verdict in ("regression", "hard-break"):
-            failures += 1
-        elif verdict == "promotion":
-            promotions += 1
-            if args.strict_promotion:
+    try:
+        for demo, kind in plan:
+            verdict, detail = (check_clean(demo, rid, env, artifacts) if kind == "clean"
+                               else check_warned(demo, rid, env, artifacts))
+            icon = {"ok": "PASS", "regression": "FAIL", "hard-break": "FAIL", "promotion": "PROMO"}[verdict]
+            print(f"  [{icon}] {kind:6} {demo}  {detail}", flush=True)
+            rows.append((icon, kind, demo, detail))
+            if verdict in ("regression", "hard-break"):
                 failures += 1
+            elif verdict == "promotion":
+                promotions += 1
+                if args.strict_promotion:
+                    failures += 1
+    finally:
+        shutil.rmtree(artifacts, ignore_errors=True)
 
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
