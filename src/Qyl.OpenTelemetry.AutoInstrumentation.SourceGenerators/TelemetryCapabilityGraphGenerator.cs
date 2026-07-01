@@ -117,6 +117,20 @@ public sealed class TelemetryCapabilityGraphGenerator : IIncrementalGenerator
         }
 
         json.Append(']');
+        json.Append(",\"interceptorReceivers\":[");
+        var receivers = QylAutoInstrumentationGenerator.GetInterceptorReceiverSurface();
+        for (var i = 0; i < receivers.Length; i++)
+        {
+            if (i > 0)
+                json.Append(',');
+            json.Append('{');
+            AppendProperty(json, "name", receivers[i].Name);
+            json.Append(',');
+            AppendProperty(json, "receiverType", receivers[i].ReceiverType);
+            json.Append('}');
+        }
+
+        json.Append(']');
         json.Append('}');
         return json.ToString();
     }
