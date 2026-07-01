@@ -11,18 +11,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// <example><code>var apiType = typeof(QylInterceptedAspNetCore);</code></example>
 public static class QylInterceptedAspNetCore
 {
-
-    /// <summary>Runs the Build runtime helper used by source-generated qyl interceptors.</summary>
-    public static WebApplication Build(WebApplicationBuilder builder)
-    {
-        if (builder is null)
-            throw new NullReferenceException();
-
-        var app = builder.Build();
-        app.Use(static (context, next) => InvokeAsync(next, context));
-        return app;
-    }
-
     /// <summary>Runs the Map Get runtime helper used by source-generated qyl interceptors.</summary>
     public static IEndpointConventionBuilder MapGet(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
         => endpoints.MapGet(pattern, Observe(requestDelegate));

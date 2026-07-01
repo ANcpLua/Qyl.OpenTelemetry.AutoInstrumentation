@@ -23,7 +23,6 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("instrumentation disabled behavior", [sys.executable, "tools/verify-instrumentation-disabled-behavior.py"]),
     ("conformance opt-in", [sys.executable, "tools/verify-conformance-opt-in.py"]),
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
-    ("build interceptor opt-out", [sys.executable, "tools/verify-build-interceptor-optout.py"]),
     ("aspnetcore middleware delegate", [sys.executable, "tools/verify-aspnetcore-middleware-delegate.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
     ("real adonet demo", [sys.executable, "tools/verify-real-adonet-demo.py"]),

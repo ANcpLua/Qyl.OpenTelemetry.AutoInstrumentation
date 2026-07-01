@@ -11,7 +11,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         HttpClient,
         HttpWebRequest,
-        AspNetCoreWebApplicationBuilderBuild,
         AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         MeterProviderBuilderAddMeter,
@@ -64,7 +63,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         AsyncOrSyncVoid,
         AsyncTask,
         AsyncValue,
-        BuilderInitialization,
         BuilderRegistration,
         EndpointRegistration,
         GrpcStreaming,
