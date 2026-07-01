@@ -11,18 +11,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// <example><code>var apiType = typeof(QylInterceptedAspNetCore);</code></example>
 public static class QylInterceptedAspNetCore
 {
-
-    /// <summary>Runs the Build runtime helper used by source-generated qyl interceptors.</summary>
-    public static WebApplication Build(WebApplicationBuilder builder)
-    {
-        if (builder is null)
-            throw new NullReferenceException();
-
-        var app = builder.Build();
-        app.Use(static (context, next) => InvokeAsync(next, context));
-        return app;
-    }
-
     /// <summary>Runs the Map Get runtime helper used by source-generated qyl interceptors.</summary>
     public static IEndpointConventionBuilder MapGet(IEndpointRouteBuilder endpoints, string pattern, RequestDelegate requestDelegate)
         => endpoints.MapGet(pattern, Observe(requestDelegate));
@@ -123,6 +111,9 @@ public static class QylInterceptedAspNetCore
         if (activity is null)
             return;
 
+        // The server-span middleware can run outside routing (registered via IStartupFilter); the route
+        // template is only known once the pipeline has resolved the endpoint, so backfill it here.
+        QylHttpActivityPolicy.BackfillServerRoute(activity, QylHttpMethod.Normalize(context.Request.Method), GetRoute(context));
         QylHttpActivityPolicy.SetResponseStatus(activity, context.Response.StatusCode, 500);
         QylCaptureHelpers.SetRequestHeaders(
             activity,
@@ -131,7 +122,14 @@ public static class QylInterceptedAspNetCore
     }
 
     private static RequestDelegate Observe(RequestDelegate requestDelegate)
-        => requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
+    {
+        // The endpoint interceptor lane owns the ASP.NET Core server signal (priority 95). Registered here
+        // at endpoint-mapping time (before requests) so the middleware (90) and DiagnosticListener (70)
+        // lanes defer — exactly one server span per request. Registration is NOT done from InvokeAsync,
+        // which the middleware also calls; only actually-intercepted endpoints claim the interceptor lane.
+        QylSignalOwnership.Register(QylAutoInstrumentationIds.AspNetCore, QylSignalOwnership.Interceptor);
+        return requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
+    }
 
     private static string? GetRoute(HttpContext context)
         => context.GetEndpoint() is RouteEndpoint routeEndpoint

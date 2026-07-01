@@ -50,6 +50,19 @@ internal static class QylHttpActivityPolicy
         return activity;
     }
 
+    // Backfills the route template and refines the span name once routing has resolved the endpoint. The
+    // server-span middleware can run outside routing (registered via IStartupFilter), where the endpoint is
+    // not yet available at activity start; call this after the pipeline has run. No-op when the route is
+    // unknown or was already captured (the per-endpoint interceptor path sets it at start).
+    public static void BackfillServerRoute(Activity activity, string method, string? route)
+    {
+        if (string.IsNullOrEmpty(route) || activity.GetTagItem(QylSemanticAttributes.HttpRoute) is not null)
+            return;
+
+        activity.SetTag(QylSemanticAttributes.HttpRoute, route);
+        activity.DisplayName = QylActivityNames.HttpServer(method, route);
+    }
+
     public static void SetResponseStatus(Activity activity, int statusCode, int errorStatusCodeFloor)
     {
         SetResponseStatus(activity, statusCode);

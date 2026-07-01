@@ -186,30 +186,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return true;
     }
 
-    private static bool TryGetAspNetCoreWebApplicationBuilderBuildInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        if (symbol.IsStatic ||
-            !string.Equals(symbol.Name, "Build", StringComparison.Ordinal) ||
-            !IsType(symbol.ContainingType, "global::Microsoft.AspNetCore.Builder.WebApplicationBuilder") ||
-            !IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.WebApplication") ||
-            symbol.Parameters.Length is not 0)
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            InterceptorKind.AspNetCoreWebApplicationBuilderBuild,
-            "signals.traces.ASPNETCORE",
-            "ASPNETCORE",
-            CleanTypeName(symbol.ContainingType),
-            "Build",
-            "global::Microsoft.AspNetCore.Builder.WebApplication",
-            BuildParameters(symbol),
-            false);
-        return true;
-    }
-
     private static bool TryGetAspNetCoreEndpointMapInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;

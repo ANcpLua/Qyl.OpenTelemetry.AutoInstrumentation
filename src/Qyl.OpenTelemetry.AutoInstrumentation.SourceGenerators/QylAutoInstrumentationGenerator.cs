@@ -81,28 +81,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             .Where(static invocation => invocation is not null)
             .Collect();
 
-        // A consumer can hand WebApplicationBuilder.Build() interception to another generator
-        // (e.g. qyl's ServiceDefaults generator, which composes our QylInterceptedAspNetCore.Build)
-        // by setting <QylAutoInstrumentationInterceptWebApplicationBuilderBuild>false</...>. C#
-        // forbids two interceptors on one call site, so this opt-out is how the package boundary
-        // stays clean instead of colliding (CS9153). Default keeps full auto-instrumentation.
-        var interceptWebApplicationBuilderBuild = context.AnalyzerConfigOptionsProvider
-            .Select(static (provider, _) => ReadInterceptWebApplicationBuilderBuild(provider));
-
         context.RegisterSourceOutput(
-            interceptedInvocations.Combine(interceptWebApplicationBuilderBuild),
-            static (productionContext, input) =>
-                EmitInterceptors(productionContext, input.Left, input.Right));
+            interceptedInvocations,
+            static (productionContext, invocations) =>
+                EmitInterceptors(productionContext, invocations));
     }
-
-    private const string InterceptWebApplicationBuilderBuildProperty =
-        "build_property.QylAutoInstrumentationInterceptWebApplicationBuilderBuild";
-
-    // Default (property absent or any value other than "false") keeps intercepting Build(). Only an
-    // explicit "false" yields the call site so a cooperating generator can own it.
-    private static bool ReadInterceptWebApplicationBuilderBuild(AnalyzerConfigOptionsProvider provider) =>
-        !provider.GlobalOptions.TryGetValue(InterceptWebApplicationBuilderBuildProperty, out var value)
-        || !string.Equals(value, "false", System.StringComparison.OrdinalIgnoreCase);
 
     private static InterceptedInvocation? TryCreateInterceptedInvocation(
         GeneratorSyntaxContext context,
@@ -219,8 +202,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitInterceptors(
         SourceProductionContext context,
-        ImmutableArray<InterceptedInvocation?> nullableInvocations,
-        bool interceptWebApplicationBuilderBuild)
+        ImmutableArray<InterceptedInvocation?> nullableInvocations)
     {
         if (nullableInvocations.IsDefaultOrEmpty)
             return;
@@ -228,9 +210,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         var invocations = nullableInvocations
             .Where(static invocation => invocation is not null)
             .Select(static invocation => invocation!.Value)
-            .Where(invocation =>
-                interceptWebApplicationBuilderBuild ||
-                invocation.Target.Kind != InterceptorKind.AspNetCoreWebApplicationBuilderBuild)
             .Distinct()
             // Stable, content-based ordering so the emission order and the _N interceptor-name indices
             // are a pure function of the matched call sites — independent of Roslyn's cross-tree syntax
@@ -619,7 +598,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             if (descriptor.MethodShape is not (
                 InterceptorMethodShape.AsyncValue or
                 InterceptorMethodShape.AsyncTask or
-                InterceptorMethodShape.BuilderInitialization or
                 InterceptorMethodShape.EndpointRegistration))
             {
                 throw new InvalidOperationException("Forwarding body descriptor has unsupported method shape: " +

@@ -26,3 +26,6 @@ Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph
 static Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph.CapabilityCount.get -> int
 static Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph.Json.get -> string!
 static Qyl.OpenTelemetry.AutoInstrumentation.QylTelemetryCapabilityGraph.SchemaVersion.get -> string!
+Qyl.OpenTelemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions
+static Qyl.OpenTelemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+*REMOVED*static Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedAspNetCore.Build(Microsoft.AspNetCore.Builder.WebApplicationBuilder! builder) -> Microsoft.AspNetCore.Builder.WebApplication!

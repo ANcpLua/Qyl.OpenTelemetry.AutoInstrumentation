@@ -9,6 +9,10 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// <example><code>var apiType = typeof(QylInterceptedGrpcNetClient);</code></example>
 public static class QylInterceptedGrpcNetClient
 {
+    // Registered on first use (inside an intercepted gRPC call, before the underlying call raises the
+    // Grpc.Net.Client DiagnosticListener event) so the listener lane defers — no double-count.
+    static QylInterceptedGrpcNetClient()
+        => QylSignalOwnership.Register(QylAutoInstrumentationIds.GrpcNetClient, QylSignalOwnership.Interceptor);
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string clientTypeName, string methodName, Metadata? requestMetadata)
