@@ -36,6 +36,33 @@
           Visible="false" />
   </ItemGroup>
 
+  <!-- Bake <Version> into a generated internal const so QylInstrumentation.Version (the OTel scope
+       version stamped on every span/metric) is a pure compile-time value with ZERO reflection —
+       reflection in product code is banned by verify-contract-invariants.py. Always runs (no
+       Inputs/Outputs) so a CI `-p:Version` override is honoured; writes only on change to avoid
+       needless recompiles. Emitted into obj/, never committed. -->
+  <Target Name="GenerateQylVersionInfo" BeforeTargets="BeforeCompile;CoreCompile">
+    <PropertyGroup>
+      <_QylVersionInfoFile>$(IntermediateOutputPath)QylVersionInfo.g.cs</_QylVersionInfoFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <_QylVersionInfoLine Include="// &lt;auto-generated /&gt;" />
+      <_QylVersionInfoLine Include="namespace Qyl.OpenTelemetry.AutoInstrumentation%3B" />
+      <_QylVersionInfoLine Include="internal static class QylVersionInfo" />
+      <_QylVersionInfoLine Include="{" />
+      <_QylVersionInfoLine Include="    public const string Version = &quot;$(Version)&quot;%3B" />
+      <_QylVersionInfoLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(_QylVersionInfoFile)"
+                      Lines="@(_QylVersionInfoLine)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(_QylVersionInfoFile)" />
+      <FileWrites Include="$(_QylVersionInfoFile)" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup Condition="'$(PublishAot)' != 'true'">
     <!-- Source generator referenced as analyzer: emits the semconv FrozenSet at compile time so the
          runtime conformance check needs zero reflection (the substrate-era reflection path was JIT-only).
