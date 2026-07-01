@@ -18,7 +18,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             new InterceptorMatcherDescriptor("GrpcNetClientStreaming", "global::Grpc.Core.ClientBase<T>", TryGetGrpcNetClientStreamingInvocation),
             new InterceptorMatcherDescriptor("Kafka", "Confluent.Kafka.IProducer<TKey,TValue>|Confluent.Kafka.IConsumer<TKey,TValue>", TryGetKafkaInvocation),
             new InterceptorMatcherDescriptor("MassTransit", "MassTransit.IPublishEndpoint|MassTransit.ISendEndpoint|MassTransit.ISendEndpointProvider", TryGetMassTransitInvocation),
-            new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IEndpointInstance|NServiceBus.IPipelineContext", TryGetNServiceBusInvocation),
+            new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IMessageHandlerContext", TryGetNServiceBusInvocation),
             new InterceptorMatcherDescriptor("Quartz", "Quartz.IJob", TryGetQuartzInvocation),
             new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabase", TryGetStackExchangeRedisInvocation),
             new InterceptorMatcherDescriptor("GraphQL", "GraphQL.IDocumentExecuter", TryGetGraphQlInvocation),

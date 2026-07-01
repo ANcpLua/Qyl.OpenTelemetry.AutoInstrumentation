@@ -51,10 +51,12 @@ the single surviving source.
 - [ ] Push, PR, CodeRabbit loop, merge on green
 
 ## Non-goals
+
 - Keep `GetInterceptorReceiverSurface` / TCG `interceptorReceivers` section (now a consumed feature).
 - Keep nested optional helper structs' `IsDefined` pattern (RuntimeHelper, DurationMetric, etc.).
 - No change to InstrumentationContract counters (verified in sync; separate concern).
 
 ## Resume notes
+
 If interrupted: all design decisions are in this file; the snapshot test defines correctness.
 Verify scripts live in `tools/`. Do not re-add the policy enums — they are derived data.
