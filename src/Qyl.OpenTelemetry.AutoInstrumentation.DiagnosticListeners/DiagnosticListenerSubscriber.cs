@@ -10,8 +10,11 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners;
 /// Pre-swap: each library (HttpClient, EFCore, …) was instrumented by an IL-rewriting CallTarget
 /// integration injected by the substrate's CLR profiler. Post-swap: we subscribe to the same
 /// libraries' built-in <see cref="DiagnosticListener"/> events. DiagnosticSource is a managed BCL
-/// primitive that's been AOT-safe since .NET 8, so this layer publishes the same span shapes
-/// without any IL rewriting or runtime code generation.
+/// primitive that's been AOT-safe since .NET 8, so this layer emits spans without any IL rewriting
+/// or runtime code generation. Concrete subscribers react on the completion (<c>*.Stop</c>) event and
+/// stamp the span to the ambient framework activity's start (via
+/// <c>QylActivitySource.StartAtAmbientStart</c>) so the emitted duration reflects the real operation,
+/// not a ~0 span.
 /// </para>
 /// </summary>
 public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<string, object?>>, IDisposable
@@ -36,6 +39,10 @@ public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<stri
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
             return;
 
+        // Claim the DiagnosticListener lane for this signal. If a higher-priority lane (interceptor /
+        // generated middleware) also covers it, this subscriber defers in OnNext so the operation is
+        // instrumented exactly once. See QylSignalOwnership.
+        QylSignalOwnership.Register(InstrumentationId, QylSignalOwnership.DiagnosticListener);
         _allListenersSubscription ??= DiagnosticListener.AllListeners.Subscribe(new AllListenersObserver(this));
     }
 
@@ -44,7 +51,8 @@ public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<stri
 
     void IObserver<KeyValuePair<string, object?>>.OnNext(KeyValuePair<string, object?> value)
     {
-        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
+        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId)
+            && QylSignalOwnership.ShouldEmit(InstrumentationId, QylSignalOwnership.DiagnosticListener))
             OnEvent(value.Key, value.Value);
     }
 

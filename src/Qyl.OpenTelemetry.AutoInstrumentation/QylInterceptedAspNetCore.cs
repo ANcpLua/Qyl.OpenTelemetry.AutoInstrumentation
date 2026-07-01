@@ -122,7 +122,14 @@ public static class QylInterceptedAspNetCore
     }
 
     private static RequestDelegate Observe(RequestDelegate requestDelegate)
-        => requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
+    {
+        // The endpoint interceptor lane owns the ASP.NET Core server signal (priority 95). Registered here
+        // at endpoint-mapping time (before requests) so the middleware (90) and DiagnosticListener (70)
+        // lanes defer — exactly one server span per request. Registration is NOT done from InvokeAsync,
+        // which the middleware also calls; only actually-intercepted endpoints claim the interceptor lane.
+        QylSignalOwnership.Register(QylAutoInstrumentationIds.AspNetCore, QylSignalOwnership.Interceptor);
+        return requestDelegate is null ? null! : context => InvokeAsync(requestDelegate, context);
+    }
 
     private static string? GetRoute(HttpContext context)
         => context.GetEndpoint() is RouteEndpoint routeEndpoint

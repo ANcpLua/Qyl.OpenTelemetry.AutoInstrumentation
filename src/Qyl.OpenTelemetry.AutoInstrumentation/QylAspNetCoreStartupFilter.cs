@@ -17,7 +17,13 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
         app =>
         {
-            app.Use(static (context, requestDelegate) => QylInterceptedAspNetCore.InvokeAsync(requestDelegate, context));
+            // Middleware lane (priority 90). Defers to the endpoint interceptor lane (95) when it owns the
+            // ASP.NET Core signal, so a consumer that has both intercepted endpoints and this middleware
+            // still emits exactly one server span. Wins over the DiagnosticListener lane (70).
+            app.Use(static (context, requestDelegate) =>
+                QylSignalOwnership.ShouldEmit(QylAutoInstrumentationIds.AspNetCore, QylSignalOwnership.GeneratedMiddleware)
+                    ? QylInterceptedAspNetCore.InvokeAsync(requestDelegate, context)
+                    : requestDelegate(context));
             next(app);
         };
 }

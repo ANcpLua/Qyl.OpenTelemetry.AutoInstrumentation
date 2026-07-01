@@ -47,9 +47,12 @@ internal static class QylRuntimeProcessMetrics
             QylMetricNames.ProcessRuntimeDotnetGcObjectsSize,
             static () => GC.GetTotalMemory(false),
             "By");
-        private static readonly ObservableGauge<int> ThreadPoolThreads = Meter.CreateObservableGauge(
+        // OTel semconv: dotnet.thread_pool.thread.count is an (Observable)UpDownCounter with unit {thread},
+        // not a unitless gauge — the pool size goes up and down, and UCUM units are required.
+        private static readonly ObservableUpDownCounter<int> ThreadPoolThreads = Meter.CreateObservableUpDownCounter(
             QylMetricNames.ProcessRuntimeDotnetThreadPoolThreadsCount,
-            static () => ThreadPool.ThreadCount);
+            static () => ThreadPool.ThreadCount,
+            unit: "{thread}");
         private static readonly ObservableGauge<long> ThreadPoolQueueLength = Meter.CreateObservableGauge(
             QylMetricNames.ProcessRuntimeDotnetThreadPoolQueueLength,
             static () => ThreadPool.PendingWorkItemCount);

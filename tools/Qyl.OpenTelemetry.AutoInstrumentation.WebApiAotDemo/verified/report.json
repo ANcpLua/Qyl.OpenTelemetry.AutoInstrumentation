@@ -59,19 +59,6 @@
         "http.request.method": "GET",
         "http.response.status_code": "204",
         "qyl.instrumentation.domain": "http.client",
-        "server.address": "127.0.0.1",
-        "server.port": "<port>"
-      }
-    },
-    {
-      "Kind": "Client",
-      "Name": "GET",
-      "Signal": "activity",
-      "Status": "Unset",
-      "Tags": {
-        "http.request.method": "GET",
-        "http.response.status_code": "204",
-        "qyl.instrumentation.domain": "http.client",
         "server.address": "qyl-webapi.invalid"
       }
     },
@@ -85,18 +72,6 @@
         "http.response.status_code": "204",
         "http.route": "/probe/{id:int}",
         "qyl.instrumentation.domain": "aspnetcore.server"
-      }
-    },
-    {
-      "Kind": "Server",
-      "Name": "GET /probe/{id:int}",
-      "Signal": "activity",
-      "Status": "Unset",
-      "Tags": {
-        "http.request.method": "GET",
-        "http.response.status_code": "204",
-        "http.route": "/probe/{id:int}",
-        "qyl.instrumentation.domain": "http.server"
       }
     },
     {
@@ -126,7 +101,7 @@
         "http.request.method": "GET",
         "http.response.status_code": "204",
         "http.route": "/probe/{id:int}",
-        "qyl.instrumentation.domain": "http.server"
+        "qyl.instrumentation.domain": "aspnetcore.server"
       }
     },
     {

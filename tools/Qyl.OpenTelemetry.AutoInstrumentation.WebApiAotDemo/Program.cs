@@ -148,8 +148,11 @@ internal sealed record WebApiAotReport(
         var failures = new List<string>();
         var signals = new List<MatchedSignal>();
 
+        // Server span is owned by the generated-middleware lane (priority 90) which wins over the
+        // DiagnosticListener lane (70) via QylSignalOwnership, so exactly one server span is emitted and
+        // it carries the aspnetcore.server domain (with the route backfilled after routing).
         AddRequired(signals, failures, "aspnetcore.server", activities.FirstOrDefault(static activity =>
-            HasTag(activity, "qyl.instrumentation.domain", "http.server") &&
+            HasTag(activity, "qyl.instrumentation.domain", "aspnetcore.server") &&
             HasTag(activity, "http.route", "/probe/{id:int}")));
 
         AddRequired(signals, failures, "httpclient.self", activities.FirstOrDefault(static activity =>
