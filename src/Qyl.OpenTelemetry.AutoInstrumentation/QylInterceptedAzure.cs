@@ -12,11 +12,17 @@ public static class QylInterceptedAzure
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string methodName)
     {
-        return QylActivityFactory.StartTraceActivity(
+        var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.Azure,
             QylActivityNames.AzureSdk,
             ActivityKind.Client,
             QylInstrumentationDomains.AzureSdk);
+        // Record the intercepted operation so Azure spans are distinguishable. The span name stays the
+        // stable low-cardinality "Azure SDK"; the specific method goes on code.function.name (CODE RED #9:
+        // the methodName parameter was previously received and dropped).
+        if (activity is not null && !string.IsNullOrEmpty(methodName))
+            activity.SetTag(QylSemanticAttributes.CodeFunctionName, methodName);
+        return activity;
     }
 
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>

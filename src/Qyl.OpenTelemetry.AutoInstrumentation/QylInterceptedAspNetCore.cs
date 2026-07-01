@@ -63,13 +63,15 @@ public static class QylInterceptedAspNetCore
         if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.AspNetCore))
             return null;
 
-        var method = QylHttpMethod.Normalize(context.Request.Method);
+        var method = QylHttpMethod.Normalize(context.Request.Method, out var methodOriginal);
         var route = GetRoute(context);
         var activity = QylHttpActivityPolicy.StartServerActivity(
             method,
+            methodOriginal,
             route,
             context.Request.Path.Value,
-            context.Request.QueryString.HasValue ? context.Request.QueryString.Value![1..] : null);
+            context.Request.QueryString.HasValue ? context.Request.QueryString.Value![1..] : null,
+            context.Request.Scheme);
         if (activity is null)
             return null;
 

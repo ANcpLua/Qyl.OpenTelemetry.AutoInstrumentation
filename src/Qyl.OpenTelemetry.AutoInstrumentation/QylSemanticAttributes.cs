@@ -62,6 +62,10 @@ public static class QylSemanticAttributes
     public const string UrlQuery = UrlAttributes.Query;
     /// <summary>Well-known Url Full value used by qyl auto-instrumentation.</summary>
     public const string UrlFull = UrlAttributes.Full;
+    /// <summary>Well-known Url Scheme value used by qyl auto-instrumentation.</summary>
+    public const string UrlScheme = "url.scheme";
+    /// <summary>Well-known Code Function Name value used by qyl auto-instrumentation.</summary>
+    public const string CodeFunctionName = "code.function.name";
 
     /// <summary>Well-known Dotnet Gc Heap Generation value used by qyl auto-instrumentation.</summary>
     public const string DotnetGcHeapGeneration = DotnetAttributes.GcHeapGeneration;

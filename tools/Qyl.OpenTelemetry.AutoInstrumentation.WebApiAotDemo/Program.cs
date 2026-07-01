@@ -218,6 +218,7 @@ internal sealed record WebApiAotReport(
             "qyl.instrumentation.domain",
             "http.request.method",
             "http.route",
+            "url.scheme",
             "http.response.status_code",
             "server.address",
             "server.port",

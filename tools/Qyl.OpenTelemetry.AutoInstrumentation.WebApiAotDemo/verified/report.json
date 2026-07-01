@@ -71,7 +71,8 @@
         "http.request.method": "GET",
         "http.response.status_code": "204",
         "http.route": "/probe/{id:int}",
-        "qyl.instrumentation.domain": "aspnetcore.server"
+        "qyl.instrumentation.domain": "aspnetcore.server",
+        "url.scheme": "http"
       }
     },
     {
@@ -101,7 +102,8 @@
         "http.request.method": "GET",
         "http.response.status_code": "204",
         "http.route": "/probe/{id:int}",
-        "qyl.instrumentation.domain": "aspnetcore.server"
+        "qyl.instrumentation.domain": "aspnetcore.server",
+        "url.scheme": "http"
       }
     },
     {
