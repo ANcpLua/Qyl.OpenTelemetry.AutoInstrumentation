@@ -93,19 +93,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             false,
             AdditionalContractKeys: BuildContractKeys("signals.metrics.HTTPCLIENT"));
 
-    private static string GetDbTraceContractKey(string instrumentationId)
-        => instrumentationId switch
-        {
-            "ADONET" => "signals.traces.ADONET",
-            "MYSQLCONNECTOR" => "signals.traces.MYSQLCONNECTOR",
-            "MYSQLDATA" => "signals.traces.MYSQLDATA",
-            "NPGSQL" => "signals.traces.NPGSQL",
-            "ORACLEMDA" => "signals.traces.ORACLEMDA",
-            "SQLCLIENT" => "signals.traces.SQLCLIENT",
-            "SQLITE" => "signals.traces.SQLITE",
-            _ => throw new InvalidOperationException("Unknown database instrumentation id: " + instrumentationId),
-        };
-
     private static EquatableArray<string> GetDbMetricContractKeys(string instrumentationId)
         => instrumentationId switch
         {
@@ -116,24 +103,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static EquatableArray<string> BuildContractKeys(params string[] contractKeys)
         => contractKeys.ToEquatableArray();
-
-    private static ulong InterceptorKinds(params InterceptorKind[] kinds)
-    {
-        var mask = 0UL;
-        foreach (var kind in kinds)
-            mask |= GetInterceptorKindMask(kind);
-
-        return mask;
-    }
-
-    private static ulong GetInterceptorKindMask(InterceptorKind kind)
-    {
-        var ordinal = (int)kind;
-        if ((uint)ordinal >= 64)
-            throw new InvalidOperationException("InterceptorKind ordinal is outside the descriptor bitmask range: " + kind);
-
-        return 1UL << ordinal;
-    }
 
     private static bool TryGetSendShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
@@ -883,8 +852,7 @@ public sealed partial class QylAutoInstrumentationGenerator
                 continue;
             }
 
-            var descriptor = GetEmissionDescriptor(invocation.Target).GrpcClientBody;
-            if (!descriptor.IsDefined)
+            if (GetEmissionDescriptor(invocation.Target).Body is not GrpcClientBodyDescriptor descriptor)
                 throw new InvalidOperationException("gRPC streaming interceptor kind has no gRPC body descriptor: " + invocation.Target.Kind);
             if (string.IsNullOrEmpty(helperType))
             {

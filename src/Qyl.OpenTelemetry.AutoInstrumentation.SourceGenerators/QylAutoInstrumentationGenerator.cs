@@ -64,8 +64,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     /// <param name="context">Roslyn initialization context supplied by the compiler host.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        ValidateDescriptorCatalog();
-
         context.RegisterPostInitializationOutput(static output =>
         {
             output.AddSource(
@@ -146,58 +144,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         foreach (var descriptor in s_matcherDescriptors)
         {
             if (descriptor.TryMatch(symbol, receiverType, out target))
-            {
-                EnsureTargetDeclaredByMatcher(descriptor, in target);
-                target = target with
-                {
-                    MatcherName = descriptor.Name,
-                    MatcherFamily = descriptor.Family,
-                    MatcherMethodShape = descriptor.MethodShape,
-                };
                 return true;
-            }
         }
 
         target = default;
         return false;
-    }
-
-    private static void EnsureTargetDeclaredByMatcher(InterceptorMatcherDescriptor descriptor,
-        in InterceptorTarget target)
-    {
-        EnsureKindDeclaredByMatcher(descriptor, target.Kind);
-        EnsureContractDeclaredByMatcher(descriptor, target.ContractKey, target.Kind);
-
-        if (target.AdditionalContractKeys is not { Length: > 0 } additionalContractKeys)
-            return;
-
-        foreach (var contractKey in additionalContractKeys)
-            EnsureContractDeclaredByMatcher(descriptor, contractKey, target.Kind);
-    }
-
-    private static void EnsureKindDeclaredByMatcher(InterceptorMatcherDescriptor descriptor, InterceptorKind kind)
-    {
-        if ((descriptor.TargetKindMask & GetInterceptorKindMask(kind)) is not 0)
-            return;
-
-        throw new InvalidOperationException(
-            "Matcher descriptor '" + descriptor.Name + "' produced undeclared interceptor kind '" + kind + "'.");
-    }
-
-    private static void EnsureContractDeclaredByMatcher(
-        InterceptorMatcherDescriptor descriptor,
-        string contractKey,
-        InterceptorKind kind)
-    {
-        foreach (var declaredContractKey in descriptor.ContractKeys)
-        {
-            if (string.Equals(declaredContractKey, contractKey, StringComparison.Ordinal))
-                return;
-        }
-
-        throw new InvalidOperationException(
-            "Matcher descriptor '" + descriptor.Name + "' produced interceptor kind '" + kind +
-            "' for undeclared contract key '" + contractKey + "'.");
     }
 
     private static void EmitInterceptors(
@@ -240,56 +191,36 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             context.CancellationToken.ThrowIfCancellationRequested();
             var invocation = invocations[index];
             var descriptor = GetEmissionDescriptor(invocation.Target);
-            if (descriptor.TraceBody.IsDefined)
+            switch (descriptor.Body)
             {
-                EmitTraceInterceptor(builder, in invocation, index, descriptor.TraceBody);
-                continue;
+                case TraceInterceptorBodyDescriptor body:
+                    EmitTraceInterceptor(builder, in invocation, index, body);
+                    break;
+                case ForwardingInterceptorBodyDescriptor body:
+                    EmitForwardingInterceptor(builder, in invocation, index, body);
+                    break;
+                case HttpWebRequestBodyDescriptor body:
+                    EmitHttpWebRequestInterceptor(builder, in invocation, index, body);
+                    break;
+                case DbCommandBodyDescriptor body:
+                    EmitDbCommandInterceptor(builder, in invocation, index, body);
+                    break;
+                case GrpcClientBodyDescriptor body:
+                    EmitGrpcNetClientInterceptor(builder, in invocation, index, body);
+                    break;
+                case MeterProviderBuilderBodyDescriptor body:
+                    EmitMeterProviderBuilderAddMeterInterceptor(builder, in invocation, index, body);
+                    break;
+                case LoggerBodyDescriptor body:
+                    EmitLoggerInterceptor(builder, in invocation, index, body);
+                    break;
+                case ExternalLoggerBodyDescriptor body:
+                    EmitExternalLoggerInterceptor(builder, in invocation, index, body);
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        "Interceptor emission descriptor has no supported body: " + descriptor.Kind);
             }
-
-            if (descriptor.ForwardingBody.IsDefined)
-            {
-                EmitForwardingInterceptor(builder, in invocation, index, descriptor.ForwardingBody);
-                continue;
-            }
-
-            if (descriptor.HttpWebRequestBody.IsDefined)
-            {
-                EmitHttpWebRequestInterceptor(builder, in invocation, index, descriptor.HttpWebRequestBody);
-                continue;
-            }
-
-            if (descriptor.DbCommandBody.IsDefined)
-            {
-                EmitDbCommandInterceptor(builder, in invocation, index, descriptor.DbCommandBody);
-                continue;
-            }
-
-            if (descriptor.GrpcClientBody.IsDefined)
-            {
-                EmitGrpcNetClientInterceptor(builder, in invocation, index, descriptor.GrpcClientBody);
-                continue;
-            }
-
-            if (descriptor.MeterProviderBuilderBody.IsDefined)
-            {
-                EmitMeterProviderBuilderAddMeterInterceptor(builder, in invocation, index,
-                    descriptor.MeterProviderBuilderBody);
-                continue;
-            }
-
-            if (descriptor.LoggerBody.IsDefined)
-            {
-                EmitLoggerInterceptor(builder, in invocation, index, descriptor.LoggerBody);
-                continue;
-            }
-
-            if (descriptor.ExternalLoggerBody.IsDefined)
-            {
-                EmitExternalLoggerInterceptor(builder, in invocation, index, descriptor.ExternalLoggerBody);
-                continue;
-            }
-
-            throw new InvalidOperationException("Interceptor emission descriptor has no body: " + descriptor.Kind);
         }
 
         builder.AppendLine("    }");
@@ -323,316 +254,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     {
         foreach (var descriptor in s_emissionDescriptors)
         {
-            if (descriptor.Kind != target.Kind)
-                continue;
-
-            EnsureEmissionDescriptorMatchesMatcher(in target, in descriptor);
-            ValidateEmissionDescriptorPolicy(in descriptor);
-            return descriptor;
+            if (descriptor.Kind == target.Kind)
+                return descriptor;
         }
 
         throw new InvalidOperationException("Unsupported interceptor kind: " + target.Kind);
-    }
-
-    private static void ValidateDescriptorCatalog()
-    {
-        var matcherKindMask = 0UL;
-        foreach (var descriptor in s_matcherDescriptors)
-        {
-            if ((matcherKindMask & descriptor.TargetKindMask) is not 0)
-                throw new InvalidOperationException(
-                    "Matcher descriptor catalog declares a duplicate interceptor kind: " + descriptor.Name);
-
-            matcherKindMask |= descriptor.TargetKindMask;
-        }
-
-        var emissionKindMask = 0UL;
-        foreach (var descriptor in s_emissionDescriptors)
-        {
-            var kindMask = GetInterceptorKindMask(descriptor.Kind);
-            if ((emissionKindMask & kindMask) is not 0)
-                throw new InvalidOperationException(
-                    "Emission descriptor catalog declares a duplicate interceptor kind: " + descriptor.Kind);
-
-            emissionKindMask |= kindMask;
-            ValidateEmissionDescriptorPolicy(in descriptor);
-        }
-
-        if (matcherKindMask != emissionKindMask)
-            throw new InvalidOperationException(
-                "Matcher and emission descriptor catalogs must declare the same interceptor kind set.");
-    }
-
-    private static void EnsureEmissionDescriptorMatchesMatcher(
-        in InterceptorTarget target,
-        in InterceptorEmissionDescriptor descriptor)
-    {
-        if (string.IsNullOrEmpty(target.MatcherName))
-            throw new InvalidOperationException("Interceptor kind '" + target.Kind + "' has no matcher descriptor.");
-
-        if (target.MatcherFamily != descriptor.Family)
-        {
-            throw new InvalidOperationException(
-                "Matcher descriptor '" + target.MatcherName + "' and emission descriptor '" + descriptor.Kind +
-                "' disagree on emitter family.");
-        }
-
-        if (target.MatcherMethodShape != descriptor.MethodShape)
-        {
-            throw new InvalidOperationException(
-                "Matcher descriptor '" + target.MatcherName + "' and emission descriptor '" + descriptor.Kind +
-                "' disagree on method shape.");
-        }
-    }
-
-    private static void ValidateEmissionDescriptorPolicy(in InterceptorEmissionDescriptor descriptor)
-    {
-        ValidateSingleBodyDescriptor(in descriptor);
-        ValidateMethodShape(in descriptor);
-
-        if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
-            descriptor.SignalOwnership is not InterceptorSignalOwnership.TraceAndMetric)
-        {
-            throw new InvalidOperationException("Runtime metric duration policy requires trace+metric ownership: " +
-                                                descriptor.Kind);
-        }
-
-        if (descriptor.SignalOwnership is InterceptorSignalOwnership.TraceAndMetric &&
-            descriptor.DurationPolicy is not InterceptorDurationPolicy.RuntimeMetric)
-        {
-            throw new InvalidOperationException("Trace+metric ownership requires runtime metric duration policy: " +
-                                                descriptor.Kind);
-        }
-
-        if (descriptor.HttpWebRequestBody.IsDefined)
-        {
-            ValidatePolicy(
-                in descriptor,
-                InterceptorSignalOwnership.TraceAndMetric,
-                InterceptorErrorPolicy.HttpStatusAndException,
-                InterceptorDurationPolicy.RuntimeMetric);
-            return;
-        }
-
-        if (descriptor.DbCommandBody.IsDefined)
-        {
-            ValidatePolicy(
-                in descriptor,
-                InterceptorSignalOwnership.TraceAndMetric,
-                InterceptorErrorPolicy.Exception,
-                InterceptorDurationPolicy.RuntimeMetric);
-            return;
-        }
-
-        if (descriptor.GrpcClientBody.IsDefined)
-        {
-            ValidatePolicy(
-                in descriptor,
-                InterceptorSignalOwnership.Trace,
-                InterceptorErrorPolicy.GrpcStatusAndException,
-                InterceptorDurationPolicy.None);
-            return;
-        }
-
-        if (descriptor.MeterProviderBuilderBody.IsDefined)
-        {
-            ValidatePolicy(
-                in descriptor,
-                InterceptorSignalOwnership.Metric,
-                InterceptorErrorPolicy.None,
-                InterceptorDurationPolicy.None);
-            return;
-        }
-
-        if (descriptor.LoggerBody.IsDefined)
-        {
-            ValidatePolicy(
-                in descriptor,
-                InterceptorSignalOwnership.Log,
-                InterceptorErrorPolicy.RuntimeDelegate,
-                InterceptorDurationPolicy.None);
-            return;
-        }
-
-        if (descriptor.ExternalLoggerBody.IsDefined)
-        {
-            ValidatePolicy(
-                in descriptor,
-                InterceptorSignalOwnership.Log,
-                InterceptorErrorPolicy.Exception,
-                InterceptorDurationPolicy.None);
-            return;
-        }
-
-        if (descriptor.TraceBody.IsDefined)
-        {
-            if (descriptor.SignalOwnership is not (InterceptorSignalOwnership.Trace
-                or InterceptorSignalOwnership.TraceAndMetric))
-                throw new InvalidOperationException("Trace body descriptor must own traces: " + descriptor.Kind);
-            if (descriptor.ErrorPolicy is not InterceptorErrorPolicy.Exception)
-                throw new InvalidOperationException("Trace body descriptor must use exception error policy: " +
-                                                    descriptor.Kind);
-            if (!descriptor.TraceBody.RuntimeHelper.IsDefined)
-                throw new InvalidOperationException("Trace body descriptor must provide a runtime helper: " +
-                                                    descriptor.Kind);
-            if (descriptor.DurationPolicy is InterceptorDurationPolicy.RuntimeMetric &&
-                !descriptor.TraceBody.DurationMetric.IsDefined)
-            {
-                throw new InvalidOperationException(
-                    "Trace runtime metric descriptor must provide a duration metric descriptor: " + descriptor.Kind);
-            }
-
-            return;
-        }
-
-        if (descriptor.ForwardingBody.IsDefined)
-        {
-            if (descriptor.SignalOwnership is InterceptorSignalOwnership.TraceAndMetric)
-            {
-                ValidatePolicy(
-                    in descriptor,
-                    InterceptorSignalOwnership.TraceAndMetric,
-                    InterceptorErrorPolicy.HttpStatusAndException,
-                    InterceptorDurationPolicy.RuntimeMetric);
-                return;
-            }
-
-            if (descriptor.SignalOwnership is InterceptorSignalOwnership.Trace &&
-                descriptor.ErrorPolicy is InterceptorErrorPolicy.Exception or InterceptorErrorPolicy.RuntimeDelegate &&
-                descriptor.DurationPolicy is InterceptorDurationPolicy.None)
-            {
-                return;
-            }
-        }
-
-        throw new InvalidOperationException("Unsupported interceptor emission policy shape: " + descriptor.Kind);
-    }
-
-    private static void ValidateSingleBodyDescriptor(in InterceptorEmissionDescriptor descriptor)
-    {
-        var bodyCount = 0;
-        if (descriptor.TraceBody.IsDefined)
-            bodyCount++;
-        if (descriptor.ForwardingBody.IsDefined)
-            bodyCount++;
-        if (descriptor.HttpWebRequestBody.IsDefined)
-            bodyCount++;
-        if (descriptor.DbCommandBody.IsDefined)
-            bodyCount++;
-        if (descriptor.GrpcClientBody.IsDefined)
-            bodyCount++;
-        if (descriptor.MeterProviderBuilderBody.IsDefined)
-            bodyCount++;
-        if (descriptor.LoggerBody.IsDefined)
-            bodyCount++;
-        if (descriptor.ExternalLoggerBody.IsDefined)
-            bodyCount++;
-
-        if (bodyCount != 1)
-            throw new InvalidOperationException(
-                "Interceptor emission descriptor must define exactly one typed body descriptor: " + descriptor.Kind);
-    }
-
-    private static void ValidateMethodShape(in InterceptorEmissionDescriptor descriptor)
-    {
-        if (descriptor.HttpWebRequestBody.IsDefined)
-        {
-            ValidateMethodShape(in descriptor, InterceptorMethodShape.AsyncOrSyncValue);
-            return;
-        }
-
-        if (descriptor.DbCommandBody.IsDefined)
-        {
-            ValidateMethodShape(in descriptor, InterceptorMethodShape.AsyncOrSyncValue);
-            return;
-        }
-
-        if (descriptor.GrpcClientBody.IsDefined)
-        {
-            if (descriptor.GrpcClientBody.Shape is GrpcClientCallShape.Unary)
-            {
-                ValidateMethodShape(in descriptor, InterceptorMethodShape.GrpcUnary);
-                return;
-            }
-
-            if (descriptor.GrpcClientBody.Shape is GrpcClientCallShape.ServerStreaming or
-                GrpcClientCallShape.ClientStreaming or
-                GrpcClientCallShape.DuplexStreaming)
-            {
-                ValidateMethodShape(in descriptor, InterceptorMethodShape.GrpcStreaming);
-                return;
-            }
-
-            throw new InvalidOperationException("gRPC client body descriptor has no call shape: " + descriptor.Kind);
-        }
-
-        if (descriptor.MeterProviderBuilderBody.IsDefined)
-        {
-            ValidateMethodShape(in descriptor, InterceptorMethodShape.BuilderRegistration);
-            return;
-        }
-
-        if (descriptor.LoggerBody.IsDefined || descriptor.ExternalLoggerBody.IsDefined)
-        {
-            ValidateMethodShape(in descriptor, InterceptorMethodShape.Void);
-            return;
-        }
-
-        if (descriptor.TraceBody.IsDefined)
-        {
-            if (descriptor.MethodShape is not (
-                InterceptorMethodShape.AsyncOrSyncValue or
-                InterceptorMethodShape.AsyncOrSyncVoid or
-                InterceptorMethodShape.AsyncTask or
-                InterceptorMethodShape.AsyncValue))
-            {
-                throw new InvalidOperationException("Trace body descriptor has unsupported method shape: " +
-                                                    descriptor.Kind);
-            }
-
-            return;
-        }
-
-        if (descriptor.ForwardingBody.IsDefined)
-        {
-            if (descriptor.MethodShape is not (
-                InterceptorMethodShape.AsyncValue or
-                InterceptorMethodShape.AsyncTask or
-                InterceptorMethodShape.EndpointRegistration))
-            {
-                throw new InvalidOperationException("Forwarding body descriptor has unsupported method shape: " +
-                                                    descriptor.Kind);
-            }
-
-            return;
-        }
-
-        throw new InvalidOperationException("Interceptor emission descriptor has no typed body descriptor: " +
-                                            descriptor.Kind);
-    }
-
-    private static void ValidateMethodShape(
-        in InterceptorEmissionDescriptor descriptor,
-        InterceptorMethodShape methodShape)
-    {
-        if (descriptor.MethodShape != methodShape)
-            throw new InvalidOperationException("Interceptor emission descriptor method shape mismatch: " +
-                                                descriptor.Kind);
-    }
-
-    private static void ValidatePolicy(
-        in InterceptorEmissionDescriptor descriptor,
-        InterceptorSignalOwnership signalOwnership,
-        InterceptorErrorPolicy errorPolicy,
-        InterceptorDurationPolicy durationPolicy)
-    {
-        if (descriptor.SignalOwnership != signalOwnership ||
-            descriptor.ErrorPolicy != errorPolicy ||
-            descriptor.DurationPolicy != durationPolicy)
-        {
-            throw new InvalidOperationException(
-                "Interceptor emission descriptor policy mismatch: " + descriptor.Kind);
-        }
     }
 
     private static void EmitActivityDisposeFinally(StringBuilder builder)
@@ -684,16 +310,16 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         StringBuilder builder,
         in InterceptedInvocation invocation,
         int index,
-        in TraceInterceptorBodyDescriptor descriptor)
+        TraceInterceptorBodyDescriptor descriptor)
     {
         var target = invocation.Target;
-        var runtimeObservesAsync = ShouldRuntimeObserveAsync(in target, in descriptor);
+        var runtimeObservesAsync = ShouldRuntimeObserveAsync(in target, descriptor);
         var signatureIsAsync = target.IsAsync && !runtimeObservesAsync;
         EmitAttributeAndSignature(
             builder,
             invocation.Location,
             target.ReturnType,
-            GetTraceMethodPrefix(in target, in descriptor),
+            GetTraceMethodPrefix(in target, descriptor),
             index,
             target.ReceiverType,
             descriptor.ReceiverName,
@@ -712,7 +338,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("            try");
         builder.AppendLine("            {");
 
-        EmitTraceInvocation(builder, in target, in descriptor);
+        EmitTraceInvocation(builder, in target, descriptor);
 
         builder.AppendLine("            }");
         builder.AppendLine("            catch (global::System.Exception exception)");
@@ -733,7 +359,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static string GetTraceMethodPrefix(
         in InterceptorTarget target,
-        in TraceInterceptorBodyDescriptor descriptor)
+        TraceInterceptorBodyDescriptor descriptor)
     {
         switch (descriptor.MethodPrefixKind)
         {
@@ -748,16 +374,16 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static bool ShouldRuntimeObserveAsync(
         in InterceptorTarget target,
-        in TraceInterceptorBodyDescriptor descriptor)
+        TraceInterceptorBodyDescriptor descriptor)
         => descriptor.AsyncObservation.IsDefined &&
            descriptor.AsyncObservation.AppliesTo(in target);
 
     private static void EmitTraceInvocation(
         StringBuilder builder,
         in InterceptorTarget target,
-        in TraceInterceptorBodyDescriptor descriptor)
+        TraceInterceptorBodyDescriptor descriptor)
     {
-        if (target.IsAsync && ShouldRuntimeObserveAsync(in target, in descriptor))
+        if (target.IsAsync && ShouldRuntimeObserveAsync(in target, descriptor))
         {
             builder.Append("                var resultTask = ");
             AppendInvocationCall(builder, in target, descriptor.ReceiverName);
@@ -775,14 +401,14 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 builder.Append("                await ");
                 AppendInvocationCall(builder, in target, descriptor.ReceiverName);
                 builder.AppendLine(".ConfigureAwait(false);");
-                EmitTraceSuccessDurationMetric(builder, in target, in descriptor);
+                EmitTraceSuccessDurationMetric(builder, in target, descriptor);
                 return;
             }
 
             builder.Append("                var result = await ");
             AppendInvocationCall(builder, in target, descriptor.ReceiverName);
             builder.AppendLine(".ConfigureAwait(false);");
-            EmitTraceSuccessDurationMetric(builder, in target, in descriptor);
+            EmitTraceSuccessDurationMetric(builder, in target, descriptor);
             builder.AppendLine("                return result;");
             return;
         }
@@ -792,21 +418,21 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             builder.Append("                ");
             AppendInvocationCall(builder, in target, descriptor.ReceiverName);
             builder.AppendLine(";");
-            EmitTraceSuccessDurationMetric(builder, in target, in descriptor);
+            EmitTraceSuccessDurationMetric(builder, in target, descriptor);
             return;
         }
 
         builder.Append("                var result = ");
         AppendInvocationCall(builder, in target, descriptor.ReceiverName);
         builder.AppendLine(";");
-        EmitTraceSuccessDurationMetric(builder, in target, in descriptor);
+        EmitTraceSuccessDurationMetric(builder, in target, descriptor);
         builder.AppendLine("                return result;");
     }
 
     private static void EmitTraceSuccessDurationMetric(
         StringBuilder builder,
         in InterceptorTarget target,
-        in TraceInterceptorBodyDescriptor descriptor)
+        TraceInterceptorBodyDescriptor descriptor)
     {
         if (descriptor.DurationMetric.IsDefined)
             descriptor.DurationMetric.AppendRecordDurationStatement(builder, in target);
@@ -926,7 +552,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         StringBuilder builder,
         in InterceptedInvocation invocation,
         int index,
-        in DbCommandBodyDescriptor descriptor)
+        DbCommandBodyDescriptor descriptor)
     {
         var target = invocation.Target;
         EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType,

@@ -143,7 +143,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         var instrumentationId = GetDbInstrumentationId(symbol.ContainingType);
         target = new InterceptorTarget(
             InterceptorKind.DbCommand,
-            GetDbTraceContractKey(instrumentationId),
+            "signals.traces." + instrumentationId,
             instrumentationId,
             CleanTypeName(symbol.ContainingType),
             methodName,
