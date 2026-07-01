@@ -2,7 +2,7 @@
 
 **Branch:** `refactor/descriptor-metadata-root-fix` (off `main` @ a70356b)
 **Started:** 2026-07-02
-**Status:** WIP
+**Status:** implementation complete + verified; PR review loop
 **Goal:** Remove the generator's self-referential validation apparatus (~300 lines) by making the
 invariants structural instead of runtime-checked. Generated output must stay **byte-identical**
 (snapshot test is the gate).
@@ -27,28 +27,28 @@ the single surviving source.
 
 - [x] Evidence pass (all field reads mapped; python harness dependencies mapped)
 - [x] Branch created
-- [ ] **Cut 1 — Descriptors.cs:** body-descriptor hierarchy
+- [x] **Cut 1 — Descriptors.cs:** body-descriptor hierarchy
       (`abstract record InterceptorBodyDescriptor` + 8 sealed records, drop `IsDefined` on the 8;
       `InterceptorEmissionDescriptor(Kind, Body)`; matcher: 8 ctors → 2, drop mask/keys/family/shape;
       target: drop 3 Matcher* fields; delete enums EmitterFamily/MethodShape/SignalOwnership/
       ErrorPolicy/DurationPolicy)
-- [ ] **Cut 2 — QylGeneratedSourceInterceptorCatalog.cs:** rewrite 25 matcher rows + 29 emission rows
+- [x] **Cut 2 — QylGeneratedSourceInterceptorCatalog.cs:** rewrite 25 matcher rows + 29 emission rows
       to the slim constructors; keep GetInterceptorReceiverSurface (TCG consumer)
-- [ ] **Cut 3 — QylAutoInstrumentationGenerator.cs:** delete ValidateDescriptorCatalog + Initialize()
+- [x] **Cut 3 — QylAutoInstrumentationGenerator.cs:** delete ValidateDescriptorCatalog + Initialize()
       call, Ensure* trio, EnsureEmissionDescriptorMatchesMatcher, ValidateEmissionDescriptorPolicy,
       ValidateSingleBodyDescriptor, ValidateMethodShape ×2, ValidatePolicy; dispatch = type switch on
       `descriptor.Body`; keep GetEmissionDescriptor terminal throw (functional lookup failure)
-- [ ] **Cut 4 — Shapes.cs/Detection.cs:** delete GetDbTraceContractKey (inline `"signals.traces." + id`),
+- [x] **Cut 4 — Shapes.cs/Detection.cs:** delete GetDbTraceContractKey (inline `"signals.traces." + id`),
       delete InterceptorKinds()/GetInterceptorKindMask (mask machinery)
-- [ ] **Cut 5 — tools/verify-contract-invariants.py:** rewrite affected checks — keep real invariants
+- [x] **Cut 5 — tools/verify-contract-invariants.py:** rewrite affected checks — keep real invariants
       (kind completeness + uniqueness in emission catalog, contract-key coverage; derive DB trace keys
       from GetDbInstrumentationId), delete redundant-representation checks (ownership consistency,
       matcher-declared kinds/keys, required-token pins of deleted validators)
-- [ ] Build full solution green (TWAE=true)
-- [ ] `tools/verify-generator-snapshots.py` green (byte-identical output)
-- [ ] `tools/verify-contract-invariants.py` green
-- [ ] Smoke: AspNetCore + ILogger runtime verifiers (same gate the last generator commit used)
-- [ ] Commit increments, push, PR, CodeRabbit loop, merge on green
+- [x] Build full solution green (TWAE=true) — 0 warnings / 0 errors
+- [x] `tools/verify-generator-snapshots.py` — generator-snapshots-ok (byte-identical output)
+- [x] `tools/verify-contract-invariants.py` — contract-invariants-ok
+- [x] Smoke: real-aspnetcore-demo-ok + real-ilogger-demo-ok
+- [ ] Push, PR, CodeRabbit loop, merge on green
 
 ## Non-goals
 - Keep `GetInterceptorReceiverSurface` / TCG `interceptorReceivers` section (now a consumed feature).
