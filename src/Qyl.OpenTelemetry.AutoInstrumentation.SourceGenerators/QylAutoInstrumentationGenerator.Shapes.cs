@@ -103,7 +103,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             "ORACLEMDA" => "signals.traces.ORACLEMDA",
             "SQLCLIENT" => "signals.traces.SQLCLIENT",
             "SQLITE" => "signals.traces.SQLITE",
-            _ => "signals.traces.ADONET",
+            _ => throw new InvalidOperationException("Unknown database instrumentation id: " + instrumentationId),
         };
 
     private static EquatableArray<string> GetDbMetricContractKeys(string instrumentationId)
