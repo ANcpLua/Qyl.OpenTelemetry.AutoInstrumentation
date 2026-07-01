@@ -584,7 +584,7 @@ public static class QylInterceptedHttpClient
         Uri? requestUri,
         string? rawRequestUri)
     {
-        method = QylHttpMethod.Normalize(method);
+        method = QylHttpMethod.Normalize(method, out var methodOriginal);
         var startTimeUtc = QylDurationMetrics.GetHttpClientStartTimeUtc(metricsEnabled);
         Activity? activity = null;
 
@@ -594,6 +594,7 @@ public static class QylInterceptedHttpClient
             activity = QylHttpActivityPolicy.StartClientActivity(
                 QylInstrumentationDomains.HttpClient,
                 method,
+                methodOriginal,
                 requestUri,
                 rawRequestUri);
         }

@@ -7,6 +7,7 @@ internal static class QylHttpActivityPolicy
     public static Activity? StartClientActivity(
         string instrumentationDomain,
         string method,
+        string? methodOriginal,
         Uri? requestUri,
         string? rawRequestUri)
     {
@@ -18,7 +19,7 @@ internal static class QylHttpActivityPolicy
         if (activity is null)
             return null;
 
-        SetRequestMethod(activity, method);
+        SetRequestMethod(activity, method, methodOriginal);
         if (requestUri is not null)
             SetClientUrl(activity, requestUri, rawRequestUri);
 
@@ -27,9 +28,11 @@ internal static class QylHttpActivityPolicy
 
     public static Activity? StartServerActivity(
         string method,
+        string? methodOriginal,
         string? route,
         string? path,
-        string? query)
+        string? query,
+        string? scheme)
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.AspNetCore,
@@ -39,7 +42,9 @@ internal static class QylHttpActivityPolicy
         if (activity is null)
             return null;
 
-        SetRequestMethod(activity, method);
+        SetRequestMethod(activity, method, methodOriginal);
+        if (!string.IsNullOrEmpty(scheme))
+            activity.SetTag(QylSemanticAttributes.UrlScheme, scheme);
         if (path is not null)
             activity.SetTag(QylSemanticAttributes.UrlPath, path);
         if (!string.IsNullOrEmpty(query))
@@ -73,8 +78,12 @@ internal static class QylHttpActivityPolicy
     public static void SetResponseStatus(Activity activity, int statusCode)
         => activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
 
-    private static void SetRequestMethod(Activity activity, string method)
-        => activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
+    private static void SetRequestMethod(Activity activity, string method, string? methodOriginal)
+    {
+        activity.SetTag(QylSemanticAttributes.HttpRequestMethod, method);
+        if (!string.IsNullOrEmpty(methodOriginal))
+            activity.SetTag(QylSemanticAttributes.HttpRequestMethodOriginal, methodOriginal);
+    }
 
     private static void SetClientUrl(Activity activity, Uri requestUri, string? rawRequestUri)
     {

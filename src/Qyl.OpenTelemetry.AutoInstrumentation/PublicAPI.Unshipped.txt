@@ -1,4 +1,6 @@
 #nullable enable
+const Qyl.OpenTelemetry.AutoInstrumentation.QylSemanticAttributes.CodeFunctionName = "code.function.name" -> string!
+const Qyl.OpenTelemetry.AutoInstrumentation.QylSemanticAttributes.UrlScheme = "url.scheme" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization" -> string!
 const Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics" -> string!

@@ -21,10 +21,11 @@ public static class QylInterceptedHttpWebRequest
         if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient))
             return null;
 
-        var method = QylHttpMethod.Normalize(request.Method);
+        var method = QylHttpMethod.Normalize(request.Method, out var methodOriginal);
         var activity = QylHttpActivityPolicy.StartClientActivity(
             QylInstrumentationDomains.HttpWebRequest,
             method,
+            methodOriginal,
             request.RequestUri,
             request.RequestUri?.ToString());
         if (activity is null)
