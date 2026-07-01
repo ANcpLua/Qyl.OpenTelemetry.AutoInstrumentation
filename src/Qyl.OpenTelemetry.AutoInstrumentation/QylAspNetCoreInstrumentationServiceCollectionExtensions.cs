@@ -26,6 +26,9 @@ public static class QylAspNetCoreInstrumentationServiceCollectionExtensions
     public static IServiceCollection AddQylAspNetCoreInstrumentation(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        // Claim the ASP.NET Core signal for the middleware lane so the DiagnosticListener lane (if the
+        // Hosting package is also referenced) defers and the server span is emitted exactly once.
+        QylSignalOwnership.Register(QylAutoInstrumentationIds.AspNetCore, QylSignalOwnership.GeneratedMiddleware);
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IStartupFilter, QylAspNetCoreStartupFilter>());
         return services;
     }

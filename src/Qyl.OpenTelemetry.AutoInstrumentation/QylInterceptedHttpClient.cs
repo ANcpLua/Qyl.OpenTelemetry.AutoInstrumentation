@@ -11,6 +11,10 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 public static class QylInterceptedHttpClient
 {
+    // Registered on first use — which is inside an intercepted HttpClient call, before that call reaches
+    // the BCL that raises the HttpClient DiagnosticListener event — so the listener lane defers (no double).
+    static QylInterceptedHttpClient()
+        => QylSignalOwnership.Register(QylAutoInstrumentationIds.HttpClient, QylSignalOwnership.Interceptor);
 
     /// <summary>Runs the Send runtime helper used by source-generated qyl interceptors.</summary>
     public static HttpResponseMessage Send(HttpClient client, HttpRequestMessage request)
