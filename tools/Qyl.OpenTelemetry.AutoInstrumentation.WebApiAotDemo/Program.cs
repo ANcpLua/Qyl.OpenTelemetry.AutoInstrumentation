@@ -57,6 +57,7 @@ var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.WebHost.SuppressStatusMessages(true);
 builder.Logging.ClearProviders();
+builder.Services.AddQylAspNetCoreInstrumentation();
 var app = builder.Build();
 
 app.MapGet("/probe/{id:int}", async () =>

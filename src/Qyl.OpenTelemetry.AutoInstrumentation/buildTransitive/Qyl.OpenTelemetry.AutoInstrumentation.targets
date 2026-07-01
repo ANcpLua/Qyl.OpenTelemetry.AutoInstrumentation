@@ -7,11 +7,4 @@
   <PropertyGroup Condition="'$(_QylAutoInstrumentationCoreBuildAssetsAlreadyImported)' != 'true'">
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.OpenTelemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
   </PropertyGroup>
-
-  <!-- Lets a consumer hand WebApplicationBuilder.Build() interception to a cooperating generator by
-       setting <QylAutoInstrumentationInterceptWebApplicationBuilderBuild>false</...>; the qyl source
-       generator reads this as build_property.* to avoid a CS9153 interceptor collision. -->
-  <ItemGroup Condition="'$(_QylAutoInstrumentationCoreBuildAssetsAlreadyImported)' != 'true'">
-    <CompilerVisibleProperty Include="QylAutoInstrumentationInterceptWebApplicationBuilderBuild" />
-  </ItemGroup>
 </Project>
