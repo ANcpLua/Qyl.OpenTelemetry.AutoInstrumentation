@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 # One live run per ref: superseded pushes cancel their queued/running predecessors,
-# so the serial self-hosted runners never pile up obsolete work.
+# so superseded work never wastes runner minutes.
 concurrency:
   group: qyl-verify-real-demos-${{ github.ref }}
   cancel-in-progress: true
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   real-demos:
     name: real demos
-    runs-on: qyl-linux
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 90
 
     steps:

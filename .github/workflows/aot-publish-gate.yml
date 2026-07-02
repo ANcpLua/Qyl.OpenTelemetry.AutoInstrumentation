@@ -9,8 +9,7 @@ name: qyl-aot-publish-gate
 # Heavy (up to 30 NativeAOT publishes x 2 OS), so — like verify-real-demos.yml — it runs post-merge on
 # main, nightly, and on demand, NOT on every PR. The gate prebuilds the source generator into the
 # standard artifacts/ layout (the PublishAot demos consume it as a prebuilt Analyzer DLL from there)
-# and publishes with --disable-build-servers; cross-job isolation comes from the serial self-hosted
-# runners plus per-ref workflow concurrency. Run locally: python3 tools/verify-aot-publish-gate.py --set all
+# and publishes with --disable-build-servers; per-ref workflow concurrency cancels superseded runs. Run locally: python3 tools/verify-aot-publish-gate.py --set all
 
 on:
   push:
@@ -28,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - qyl-linux
-          - qyl-macos
+          - ubuntu-24.04-arm
+          - macos-latest
 
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6

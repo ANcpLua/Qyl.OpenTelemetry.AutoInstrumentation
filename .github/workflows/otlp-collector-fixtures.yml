@@ -10,7 +10,7 @@ on:
   pull_request:
 
 # One live run per ref: superseded pushes cancel their queued/running predecessors,
-# so the serial self-hosted runners never pile up obsolete work.
+# so superseded work never wastes runner minutes.
 concurrency:
   group: qyl-otlp-collector-fixtures-${{ github.ref }}
   cancel-in-progress: true
@@ -18,7 +18,7 @@ concurrency:
 jobs:
   otlp-collector-fixtures:
     name: otlp collector fixtures
-    runs-on: qyl-linux
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
 
     steps:

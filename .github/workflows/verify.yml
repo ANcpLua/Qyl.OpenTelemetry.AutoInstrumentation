@@ -13,7 +13,7 @@ on:
   pull_request:
 
 # One live run per ref: superseded pushes cancel their queued/running predecessors,
-# so the serial self-hosted runners never pile up obsolete work.
+# so superseded work never wastes runner minutes.
 concurrency:
   group: qyl-verify-${{ github.ref }}
   cancel-in-progress: true
@@ -27,8 +27,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - qyl-linux
-          - qyl-macos
+          - ubuntu-24.04-arm
+          - macos-latest
 
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
