@@ -35,13 +35,13 @@ import argparse
 import os
 import platform
 import re
-import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMOS_DIR = ROOT / "demos"
+GENERATOR_PROJECT = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
+                     / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj")
 
 # Demos that NativeAOT-publish warning-clean under strict TreatWarningsAsErrors.
 CLEAN_DEMOS: list[str] = [
@@ -107,8 +107,8 @@ def runtime_identifier() -> str:
 ERROR_LINE = re.compile(r": error |\berror IL\d|\berror CS\d|\berror MSB\d|\berror NETSDK\d")
 
 
-def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str],
-            artifacts: Path) -> tuple[int, list[str], list[str], str]:
+def publish(demo: str, *, strict: bool, rid: str,
+            env: dict[str, str]) -> tuple[int, list[str], list[str], str]:
     project = DEMOS_DIR / demo / f"{demo}.csproj"
     if not project.exists():
         raise SystemExit(f"demo project not found: {project}")
@@ -119,9 +119,12 @@ def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str],
         "-p:PublishAot=true",
         "--self-contained", "true",
         f"-p:TreatWarningsAsErrors={'true' if strict else 'false'}",
-        # Isolate build output + disable shared build servers so the gate never contends with other
-        # dotnet jobs over the repo's shared artifacts/ directory on a single (self-hosted) runner.
-        "--artifacts-path", str(artifacts),
+        # Publishes write into the repo's standard artifacts/ layout ON PURPOSE: under PublishAot the
+        # demos swap their generator ProjectReference for a literal
+        # artifacts/bin/...SourceGenerators/release Analyzer path, so redirecting the output
+        # (--artifacts-path) breaks every demo with CS0006 on a fresh workspace. Cross-job isolation
+        # comes from the serial runner + per-ref workflow concurrency; --disable-build-servers kills
+        # the one genuine leak (persistent MSBuild/Roslyn servers holding state across jobs).
         "--disable-build-servers",
         "-clp:NoSummary",
         "-v", "minimal",
@@ -138,17 +141,36 @@ def publish(demo: str, *, strict: bool, rid: str, env: dict[str, str],
     return proc.returncode, il, asms, tail[:240]
 
 
-def check_clean(demo: str, rid: str, env: dict[str, str], artifacts: Path) -> tuple[str, str]:
+def prebuild_generator(env: dict[str, str]) -> None:
+    """Build the source generator into the standard artifacts/ layout before any publish.
+
+    Under PublishAot the demos consume the generator as a prebuilt Analyzer DLL from
+    artifacts/bin/...SourceGenerators/release — a contract every other workflow satisfies
+    incidentally via a prior full-solution build. On a fresh workspace the gate must satisfy
+    it explicitly or all 30 publishes die with CS0006.
+    """
+    proc = subprocess.run(
+        ["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release",
+         "--disable-build-servers", "-clp:NoSummary", "-v", "minimal"],
+        cwd=str(ROOT), env=env, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if proc.returncode != 0:
+        tail = "\n".join(proc.stdout.splitlines()[-15:])
+        raise SystemExit(f"generator prebuild failed (exit={proc.returncode}):\n{tail}")
+    print("  generator prebuilt into artifacts/ (analyzer contract for PublishAot demos)", flush=True)
+
+
+def check_clean(demo: str, rid: str, env: dict[str, str]) -> tuple[str, str]:
     # Strict: any IL warning becomes an error, so exit 0 <=> warning-clean.
-    code, il, _, tail = publish(demo, strict=True, rid=rid, env=env, artifacts=artifacts)
+    code, il, _, tail = publish(demo, strict=True, rid=rid, env=env)
     if code == 0:
         return "ok", "warning-clean"
     return "regression", f"exit={code}; " + (il[0] if il else tail)
 
 
-def check_warned(demo: str, rid: str, env: dict[str, str], artifacts: Path) -> tuple[str, str]:
+def check_warned(demo: str, rid: str, env: dict[str, str]) -> tuple[str, str]:
     # Relaxed: must still produce a binary; vendor IL warnings are expected & tolerated.
-    code, il, asms, tail = publish(demo, strict=False, rid=rid, env=env, artifacts=artifacts)
+    code, il, asms, tail = publish(demo, strict=False, rid=rid, env=env)
     if code != 0:
         return "hard-break", f"exit={code} even with warnings relaxed; " + (il[0] if il else tail)
     if not il:
@@ -189,27 +211,23 @@ def main() -> None:
         if not plan:
             raise SystemExit(f"none of {sorted(wanted)} are in the gate classification")
 
-    artifacts = Path(tempfile.mkdtemp(prefix="qyl-aot-gate-"))
-    print(f"AOT-publish gate | rid={rid} | {len(plan)} demo(s) | set={args.set} | artifacts={artifacts}",
-          flush=True)
+    print(f"AOT-publish gate | rid={rid} | {len(plan)} demo(s) | set={args.set}", flush=True)
+    prebuild_generator(env)
     rows: list[tuple[str, str, str, str]] = []
     failures = 0
     promotions = 0
-    try:
-        for demo, kind in plan:
-            verdict, detail = (check_clean(demo, rid, env, artifacts) if kind == "clean"
-                               else check_warned(demo, rid, env, artifacts))
-            icon = {"ok": "PASS", "regression": "FAIL", "hard-break": "FAIL", "promotion": "PROMO"}[verdict]
-            print(f"  [{icon}] {kind:6} {demo}  {detail}", flush=True)
-            rows.append((icon, kind, demo, detail))
-            if verdict in ("regression", "hard-break"):
+    for demo, kind in plan:
+        verdict, detail = (check_clean(demo, rid, env) if kind == "clean"
+                           else check_warned(demo, rid, env))
+        icon = {"ok": "PASS", "regression": "FAIL", "hard-break": "FAIL", "promotion": "PROMO"}[verdict]
+        print(f"  [{icon}] {kind:6} {demo}  {detail}", flush=True)
+        rows.append((icon, kind, demo, detail))
+        if verdict in ("regression", "hard-break"):
+            failures += 1
+        elif verdict == "promotion":
+            promotions += 1
+            if args.strict_promotion:
                 failures += 1
-            elif verdict == "promotion":
-                promotions += 1
-                if args.strict_promotion:
-                    failures += 1
-    finally:
-        shutil.rmtree(artifacts, ignore_errors=True)
 
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:

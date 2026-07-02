@@ -7,9 +7,10 @@ name: qyl-aot-publish-gate
 #     "promotion" is flagged when an upstream library shipped AOT annotations and is now warning-clean.
 #
 # Heavy (up to 30 NativeAOT publishes x 2 OS), so — like verify-real-demos.yml — it runs post-merge on
-# main, nightly, and on demand, NOT on every PR. Each publish isolates its build output
-# (--artifacts-path + --disable-build-servers) so it never contends with other jobs on a shared
-# self-hosted runner. Run locally: python3 tools/verify-aot-publish-gate.py --set all
+# main, nightly, and on demand, NOT on every PR. The gate prebuilds the source generator into the
+# standard artifacts/ layout (the PublishAot demos consume it as a prebuilt Analyzer DLL from there)
+# and publishes with --disable-build-servers; cross-job isolation comes from the serial self-hosted
+# runners plus per-ref workflow concurrency. Run locally: python3 tools/verify-aot-publish-gate.py --set all
 
 on:
   push:
