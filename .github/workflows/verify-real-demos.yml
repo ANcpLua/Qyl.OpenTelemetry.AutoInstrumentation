@@ -22,7 +22,10 @@ concurrency:
 jobs:
   real-demos:
     name: real demos
-    runs-on: ubuntu-24.04-arm
+    # x64 on purpose: mcr.microsoft.com/mssql/server ships no arm64 image (the old
+    # OrbStack VM hid that via Rosetta emulation). This lane verifies container-backed
+    # runtime behavior, not ARM coverage — verify/smoke/gate keep the ARM legs.
+    runs-on: ubuntu-latest
     timeout-minutes: 90
 
     steps:
