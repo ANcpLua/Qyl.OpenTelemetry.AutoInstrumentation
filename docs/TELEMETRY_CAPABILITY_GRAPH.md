@@ -113,7 +113,7 @@ load-bearing and cannot be deleted (~95% of attribute values are runtime-only).
 
 ## Relationship to the generator
 
-The TCG is generated output (see AGENTS.md → *Generated and evidence files*): its single source of
+The TCG is generated output (see CLAUDE.md → *Generated and evidence files*): its single source of
 truth is `TelemetryCapabilityGraphGenerator` + `InstrumentationContract`. To change the TCG, change
 the contract or the generator and rebuild — never hand-edit the emitted constant. Validate with:
 

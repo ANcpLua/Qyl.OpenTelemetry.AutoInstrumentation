@@ -11,7 +11,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         HttpClient,
         HttpWebRequest,
-        AspNetCoreRequestDelegate,
         AspNetCoreEndpointMap,
         MeterProviderBuilderAddMeter,
         AzureClient,
@@ -38,60 +37,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         EntityFrameworkCoreDbContext,
         EntityFrameworkCoreQueryable,
         DbCommand,
-    }
-
-    private enum InterceptorEmitterFamily
-    {
-        AspNetCore,
-        Azure,
-        Cache,
-        Database,
-        GraphQl,
-        Grpc,
-        HttpClient,
-        Logging,
-        Messaging,
-        Meter,
-        Scheduler,
-        Search,
-        Wcf,
-    }
-
-    private enum InterceptorMethodShape
-    {
-        AsyncOrSyncValue,
-        AsyncOrSyncVoid,
-        AsyncTask,
-        AsyncValue,
-        BuilderRegistration,
-        EndpointRegistration,
-        GrpcStreaming,
-        GrpcUnary,
-        SyncValue,
-        Void,
-    }
-
-    private enum InterceptorSignalOwnership
-    {
-        Trace,
-        Metric,
-        Log,
-        TraceAndMetric,
-    }
-
-    private enum InterceptorErrorPolicy
-    {
-        None,
-        Exception,
-        GrpcStatusAndException,
-        HttpStatusAndException,
-        RuntimeDelegate,
-    }
-
-    private enum InterceptorDurationPolicy
-    {
-        None,
-        RuntimeMetric,
     }
 
     private enum LoggerInterceptorBodyKind
@@ -146,28 +91,22 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private readonly record struct InterceptorEmissionDescriptor(
         InterceptorKind Kind,
-        InterceptorEmitterFamily Family,
-        InterceptorMethodShape MethodShape,
-        InterceptorSignalOwnership SignalOwnership,
-        InterceptorErrorPolicy ErrorPolicy,
-        InterceptorDurationPolicy DurationPolicy,
-        TraceInterceptorBodyDescriptor TraceBody = default,
-        ForwardingInterceptorBodyDescriptor ForwardingBody = default,
-        HttpWebRequestBodyDescriptor HttpWebRequestBody = default,
-        DbCommandBodyDescriptor DbCommandBody = default,
-        GrpcClientBodyDescriptor GrpcClientBody = default,
-        MeterProviderBuilderBodyDescriptor MeterProviderBuilderBody = default,
-        LoggerBodyDescriptor LoggerBody = default,
-        ExternalLoggerBodyDescriptor ExternalLoggerBody = default);
+        InterceptorBodyDescriptor Body);
 
-    private readonly record struct GrpcClientBodyDescriptor(
+    /// <summary>
+    /// Closed set of interceptor body shapes. Exactly-one-body-per-descriptor is structural:
+    /// an emission descriptor holds a single <see cref="InterceptorBodyDescriptor"/> and the
+    /// emitter dispatches on its concrete type.
+    /// </summary>
+    private abstract record InterceptorBodyDescriptor;
+
+    private sealed record GrpcClientBodyDescriptor(
         GrpcClientCallShape Shape,
         string MethodPrefix,
         string ReceiverName,
-        string HelperType,
-        bool IsDefined = true);
+        string HelperType) : InterceptorBodyDescriptor;
 
-    private readonly record struct DbCommandBodyDescriptor(
+    private sealed record DbCommandBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
         string HelperType,
@@ -176,10 +115,9 @@ public sealed partial class QylAutoInstrumentationGenerator
         string StartActivityMethod,
         string ObserveAsyncMethod,
         string RecordExceptionMethod,
-        string RecordDurationMethod,
-        bool IsDefined = true);
+        string RecordDurationMethod) : InterceptorBodyDescriptor;
 
-    private readonly record struct HttpWebRequestBodyDescriptor(
+    private sealed record HttpWebRequestBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
         string RequestType,
@@ -187,33 +125,28 @@ public sealed partial class QylAutoInstrumentationGenerator
         string GetStartTimeUtcMethod,
         string StartActivityMethod,
         string RecordResultMethod,
-        string RecordExceptionMethod,
-        bool IsDefined = true);
+        string RecordExceptionMethod) : InterceptorBodyDescriptor;
 
-    private readonly record struct MeterProviderBuilderBodyDescriptor(
+    private sealed record MeterProviderBuilderBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
-        string EnabledMeterNamesExpression,
-        bool IsDefined = true);
+        string EnabledMeterNamesExpression) : InterceptorBodyDescriptor;
 
-    private readonly record struct LoggerBodyDescriptor(
+    private sealed record LoggerBodyDescriptor(
         LoggerInterceptorBodyKind Kind,
         string MethodPrefix,
-        string HelperType,
-        bool IsDefined = true);
+        string HelperType) : InterceptorBodyDescriptor;
 
-    private readonly record struct ExternalLoggerBodyDescriptor(
+    private sealed record ExternalLoggerBodyDescriptor(
         string HelperType,
-        string DomainExpression,
-        bool IsDefined = true);
+        string DomainExpression) : InterceptorBodyDescriptor;
 
-    private readonly record struct ForwardingInterceptorBodyDescriptor(
+    private sealed record ForwardingInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
         string HelperType,
         string HelperMethodName = "",
-        string ReceiverTypeOverride = "",
-        bool IsDefined = true);
+        string ReceiverTypeOverride = "") : InterceptorBodyDescriptor;
 
     private readonly record struct TraceRuntimeHelperDescriptor(
         string HelperType,
@@ -326,15 +259,14 @@ public sealed partial class QylAutoInstrumentationGenerator
         }
     }
 
-    private readonly record struct TraceInterceptorBodyDescriptor(
+    private sealed record TraceInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
         TraceMethodPrefixKind MethodPrefixKind = TraceMethodPrefixKind.Default,
-        bool IsDefined = true,
         TraceRuntimeHelperDescriptor RuntimeHelper = default,
         TraceDurationMetricDescriptor DurationMetric = default,
         TraceActivityEnrichmentDescriptor ActivityEnrichment = default,
-        TraceAsyncObservationDescriptor AsyncObservation = default)
+        TraceAsyncObservationDescriptor AsyncObservation = default) : InterceptorBodyDescriptor
     {
         public void AppendStartActivity(StringBuilder builder, in InterceptorTarget target)
         {
@@ -358,56 +290,10 @@ public sealed partial class QylAutoInstrumentationGenerator
         public InterceptorMatcherDescriptor(
             string name,
             string receiverTypePattern,
-            InterceptorKind targetKind,
-            string contractKey,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
-            SymbolInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
-        {
-        }
-
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            InterceptorKind targetKind,
-            EquatableArray<string> contractKeys,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
-            SymbolInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), contractKeys, family, methodShape, matcher)
-        {
-        }
-
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            ulong targetKindMask,
-            string contractKey,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
-            SymbolInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
-        {
-        }
-
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            ulong targetKindMask,
-            EquatableArray<string> contractKeys,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
             SymbolInterceptorMatcher matcher)
         {
             Name = name;
             ReceiverTypePattern = receiverTypePattern;
-            TargetKindMask = targetKindMask is 0
-                ? throw new InvalidOperationException("Matcher descriptor '" + name + "' must declare at least one interceptor kind.")
-                : targetKindMask;
-            ContractKeys = contractKeys;
-            Family = family;
-            MethodShape = methodShape;
             _symbolMatcher = matcher;
             _receiverMatcher = null;
         }
@@ -415,56 +301,10 @@ public sealed partial class QylAutoInstrumentationGenerator
         public InterceptorMatcherDescriptor(
             string name,
             string receiverTypePattern,
-            InterceptorKind targetKind,
-            string contractKey,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
-            ReceiverInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
-        {
-        }
-
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            InterceptorKind targetKind,
-            EquatableArray<string> contractKeys,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
-            ReceiverInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, QylAutoInstrumentationGenerator.InterceptorKinds(targetKind), contractKeys, family, methodShape, matcher)
-        {
-        }
-
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            ulong targetKindMask,
-            string contractKey,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
-            ReceiverInterceptorMatcher matcher)
-            : this(name, receiverTypePattern, targetKindMask, QylAutoInstrumentationGenerator.BuildContractKeys(contractKey), family, methodShape, matcher)
-        {
-        }
-
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            ulong targetKindMask,
-            EquatableArray<string> contractKeys,
-            InterceptorEmitterFamily family,
-            InterceptorMethodShape methodShape,
             ReceiverInterceptorMatcher matcher)
         {
             Name = name;
             ReceiverTypePattern = receiverTypePattern;
-            TargetKindMask = targetKindMask is 0
-                ? throw new InvalidOperationException("Matcher descriptor '" + name + "' must declare at least one interceptor kind.")
-                : targetKindMask;
-            ContractKeys = contractKeys;
-            Family = family;
-            MethodShape = methodShape;
             _symbolMatcher = null;
             _receiverMatcher = matcher;
         }
@@ -472,14 +312,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         public string Name { get; }
 
         public string ReceiverTypePattern { get; }
-
-        public ulong TargetKindMask { get; }
-
-        public EquatableArray<string> ContractKeys { get; }
-
-        public InterceptorEmitterFamily Family { get; }
-
-        public InterceptorMethodShape MethodShape { get; }
 
         public bool TryMatch(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
         {
@@ -508,10 +340,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         string TypeParameterList = "",
         string ConstraintClauses = "",
         string ExtensionContainingType = "",
-        EquatableArray<string> AdditionalContractKeys = default,
-        string MatcherName = "",
-        InterceptorEmitterFamily MatcherFamily = default,
-        InterceptorMethodShape MatcherMethodShape = default);
+        EquatableArray<string> AdditionalContractKeys = default);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }

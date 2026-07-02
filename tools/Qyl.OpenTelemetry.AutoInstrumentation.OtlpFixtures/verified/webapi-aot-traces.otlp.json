@@ -53,7 +53,13 @@
                 {
                   "key": "qyl.instrumentation.domain",
                   "value": {
-                    "stringValue": "http.server"
+                    "stringValue": "aspnetcore.server"
+                  }
+                },
+                {
+                  "key": "url.scheme",
+                  "value": {
+                    "stringValue": "http"
                   }
                 }
               ],

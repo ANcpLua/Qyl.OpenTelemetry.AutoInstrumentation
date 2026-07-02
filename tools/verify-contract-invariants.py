@@ -1349,95 +1349,51 @@ def parse_emission_descriptor_kinds(generator: str) -> set[str]:
     return descriptor_kinds
 
 
-def parse_emission_descriptor_ownership(generator: str) -> dict[str, str]:
-    ownership_by_kind: dict[str, str] = {}
-    for match in re.finditer(
-        r"new\s+InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+).*?InterceptorSignalOwnership\.([A-Za-z0-9]+)",
-        generator,
-        re.DOTALL,
-    ):
-        kind = match.group(1)
-        ownership = match.group(2)
-        if kind in ownership_by_kind:
-            fail(f"duplicate emission descriptor ownership for InterceptorKind.{kind}")
-        ownership_by_kind[kind] = ownership
-
-    if not ownership_by_kind:
-        fail("s_emissionDescriptors must declare signal ownership")
-
-    return ownership_by_kind
-
-
-def parse_emission_descriptor_policies(generator: str) -> dict[str, tuple[str, str, str, str, str]]:
-    policies_by_kind: dict[str, tuple[str, str, str, str, str]] = {}
+def parse_emission_descriptor_bodies(generator: str) -> dict[str, str]:
+    bodies_by_kind: dict[str, str] = {}
     for line in generator.splitlines():
         if "new InterceptorEmissionDescriptor(" not in line:
             continue
 
         match = re.search(
-            r"InterceptorKind\.([A-Za-z0-9]+).*?"
-            r"InterceptorMethodShape\.([A-Za-z0-9]+),\s*"
-            r"InterceptorSignalOwnership\.([A-Za-z0-9]+),\s*"
-            r"InterceptorErrorPolicy\.([A-Za-z0-9]+),\s*"
-            r"InterceptorDurationPolicy\.([A-Za-z0-9]+)",
+            r"new InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+),\s*new ([A-Za-z0-9]+BodyDescriptor)\(",
             line,
         )
         if match is None:
-            fail(f"emission descriptor missing signal/error/duration policies: {line.strip()}")
-
-        body_tokens = [
-            "TraceBody",
-            "ForwardingBody",
-            "HttpWebRequestBody",
-            "DbCommandBody",
-            "GrpcClientBody",
-            "MeterProviderBuilderBody",
-            "LoggerBody",
-            "ExternalLoggerBody",
-        ]
-        body_matches = [token for token in body_tokens if re.search(rf"\b{token}:", line)]
-        if len(body_matches) != 1:
-            fail(f"emission descriptor must declare exactly one typed body descriptor: {line.strip()}")
+            fail(f"emission descriptor must construct exactly one typed body descriptor: {line.strip()}")
 
         kind = match.group(1)
-        if kind in policies_by_kind:
-            fail(f"duplicate emission descriptor policy for InterceptorKind.{kind}")
-        policies_by_kind[kind] = (match.group(2), match.group(3), match.group(4), match.group(5), body_matches[0])
+        if kind in bodies_by_kind:
+            fail(f"duplicate emission descriptor for InterceptorKind.{kind}")
+        bodies_by_kind[kind] = match.group(2)
 
-    if not policies_by_kind:
-        fail("s_emissionDescriptors must declare signal/error/duration policies")
+    if not bodies_by_kind:
+        fail("s_emissionDescriptors must map every InterceptorKind to a typed body descriptor")
 
-    return policies_by_kind
-
-
-def parse_matcher_descriptor_contract_keys(generator: str) -> set[str]:
-    matcher_keys = set()
-    for block in extract_parenthesized_blocks(generator, "new InterceptorMatcherDescriptor"):
-        matcher_keys.update(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', block))
-
-    if not matcher_keys:
-        fail("s_matcherDescriptors must describe source-visible matcher contract keys")
-
-    return matcher_keys
+    return bodies_by_kind
 
 
-def parse_matcher_descriptor_kinds(generator: str) -> set[str]:
-    descriptor_lines = [
-        line.strip()
-        for line in generator.splitlines()
-        if "new InterceptorMatcherDescriptor(" in line
-    ]
-    if not descriptor_lines:
-        fail("s_matcherDescriptors must declare source-visible matcher descriptors")
+def parse_db_instrumentation_ids(generator: str) -> set[str]:
+    match = re.search(
+        r"private static string GetDbInstrumentationId\([^)]*\)\s*\{(?P<body>.*?)\n    \}",
+        generator,
+        re.DOTALL,
+    )
+    if match is None:
+        fail("GetDbInstrumentationId helper missing from generator")
 
-    matcher_kinds: set[str] = set()
-    for line in descriptor_lines:
-        declared_kinds = set(re.findall(r"InterceptorKind\.([A-Za-z0-9]+)", line))
-        if not declared_kinds:
-            fail(f"matcher descriptor must declare target InterceptorKind values: {line}")
-        matcher_kinds.update(declared_kinds)
+    ids = set(re.findall(r'return "([A-Z0-9]+)";', match.group("body")))
+    if not ids:
+        fail("GetDbInstrumentationId must return database instrumentation ids")
 
-    return matcher_kinds
+    return ids
+
+
+def parse_db_trace_contract_keys(generator: str) -> set[str]:
+    if '"signals.traces." + instrumentationId' not in generator:
+        fail("DbCommand target must derive its trace contract key from GetDbInstrumentationId")
+
+    return {f"signals.traces.{db_id}" for db_id in parse_db_instrumentation_ids(generator)}
 
 
 def parse_contract_keys_call_keys(generator: str) -> set[str]:
@@ -1487,162 +1443,19 @@ def extract_parenthesized_blocks(text: str, token: str) -> list[str]:
             fail(f"unterminated parenthesized block after {token}")
 
 
-def collect_generator_target_contract_keys_by_kind(generator: str) -> dict[str, set[str]]:
-    keys_by_kind: dict[str, set[str]] = {}
-    for block in [
-        *extract_parenthesized_blocks(generator, "new InterceptorTarget"),
-        *extract_parenthesized_blocks(generator, "=> new"),
-    ]:
-        kind_match = re.search(r"InterceptorKind\.([A-Za-z0-9]+)", block)
-        if kind_match is None:
-            continue
+def verify_interceptor_emission_bodies(generator: str, kinds: set[str]) -> None:
+    bodies_by_kind = parse_emission_descriptor_bodies(generator)
+    missing_bodies = kinds - set(bodies_by_kind)
+    if missing_bodies:
+        fail(f"InterceptorKind values missing emission body descriptors: {sorted(missing_bodies)}")
 
-        kind = kind_match.group(1)
-        keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', block))
-        if "GetDbTraceContractKey(instrumentationId)" in block:
-            keys.update(parse_switch_helper_keys(generator, "GetDbTraceContractKey"))
-        if "GetDbMetricContractKeys(instrumentationId)" in block:
-            keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
-        if keys:
-            keys_by_kind.setdefault(kind, set()).update(keys)
-
-    for method_match in re.finditer(
-        r"private static bool [^{]+\{(?P<body>.*?target\s*=\s*new\s+InterceptorTarget\(\s*kind\s*,\s*\"(?P<key>signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\".*?return true;)",
-        generator,
-        re.DOTALL,
-    ):
-        key = method_match.group("key")
-        for kind in re.findall(r"kind\s*=\s*InterceptorKind\.([A-Za-z0-9]+)", method_match.group("body")):
-            keys_by_kind.setdefault(kind, set()).add(key)
-
-    return keys_by_kind
-
-
-def verify_interceptor_signal_ownership(generator: str, kinds: set[str]) -> None:
-    ownership_by_kind = parse_emission_descriptor_ownership(generator)
-    target_keys_by_kind = collect_generator_target_contract_keys_by_kind(generator)
-    missing_ownership = kinds - set(ownership_by_kind)
-    if missing_ownership:
-        fail(f"InterceptorKind values missing signal ownership descriptors: {sorted(missing_ownership)}")
-
-    missing_target_keys = set(ownership_by_kind) - set(target_keys_by_kind)
-    if missing_target_keys:
-        fail(f"InterceptorKind values missing target contract keys for ownership verification: {sorted(missing_target_keys)}")
-
-    for kind, ownership in sorted(ownership_by_kind.items()):
-        keys = target_keys_by_kind.get(kind, set())
-        has_trace = any(key.startswith("signals.traces.") for key in keys)
-        has_metric = any(key.startswith("signals.metrics.") for key in keys)
-        has_log = any(key.startswith("signals.logs.") for key in keys)
-        allowed = {
-            "TraceAndMetric" if has_trace and has_metric and not has_log else "",
-            "Trace" if has_trace and not has_metric and not has_log else "",
-            "Metric" if has_metric and not has_trace and not has_log else "",
-            "Log" if has_log and not has_trace and not has_metric else "",
-        }
-        allowed.discard("")
-        if ownership not in allowed:
-            fail(
-                f"InterceptorKind.{kind} ownership {ownership} does not match target contract keys "
-                f"{sorted(keys)}; expected one of {sorted(allowed)}"
-            )
-
-
-def verify_interceptor_policy_shapes(generator: str, kinds: set[str]) -> None:
     for token in [
-        "ValidateMethodShape(in descriptor);",
-        "ValidateSingleBodyDescriptor(in descriptor);",
-        "Interceptor emission descriptor must define exactly one typed body descriptor",
-        "Interceptor emission descriptor method shape mismatch",
-        "Trace body descriptor has unsupported method shape",
-        "Trace body descriptor must provide a runtime helper",
-        "Forwarding body descriptor has unsupported method shape",
-        "ValidateEmissionDescriptorPolicy(in descriptor);",
-        "Runtime metric duration policy requires trace+metric ownership",
-        "Trace+metric ownership requires runtime metric duration policy",
-        "Trace runtime metric descriptor must provide a duration metric descriptor",
-        "Unsupported interceptor emission policy shape",
+        "private abstract record InterceptorBodyDescriptor;",
+        "InterceptorBodyDescriptor Body",
+        "Unsupported interceptor kind: ",
     ]:
         if token not in generator:
-            fail(f"generator must validate descriptor signal/error/duration policy token: {token}")
-
-    policies_by_kind = parse_emission_descriptor_policies(generator)
-    missing_policies = kinds - set(policies_by_kind)
-    if missing_policies:
-        fail(f"InterceptorKind values missing signal/error/duration policies: {sorted(missing_policies)}")
-
-    for body_name in [
-        "TraceBody",
-        "ForwardingBody",
-        "HttpWebRequestBody",
-        "DbCommandBody",
-        "GrpcClientBody",
-        "MeterProviderBuilderBody",
-        "LoggerBody",
-        "ExternalLoggerBody",
-    ]:
-        token = f"descriptor.{body_name}.IsDefined"
-        if token not in generator:
-            fail(f"generator single-body descriptor validation missing {token}")
-
-    for kind, (method_shape, ownership, error_policy, duration_policy, body) in sorted(policies_by_kind.items()):
-        if duration_policy == "RuntimeMetric" and ownership != "TraceAndMetric":
-            fail(f"RuntimeMetric duration policy requires TraceAndMetric ownership: {kind}")
-        if ownership == "TraceAndMetric" and duration_policy != "RuntimeMetric":
-            fail(f"TraceAndMetric ownership requires RuntimeMetric duration policy: {kind}")
-
-        expected: tuple[str, str, str, str] | None = None
-        if body == "HttpWebRequestBody":
-            expected = ("AsyncOrSyncValue", "TraceAndMetric", "HttpStatusAndException", "RuntimeMetric")
-        elif body == "DbCommandBody":
-            expected = ("AsyncOrSyncValue", "TraceAndMetric", "Exception", "RuntimeMetric")
-        elif body == "GrpcClientBody":
-            expected = (
-                "GrpcUnary" if "GrpcNetClientAsyncUnaryCall" == kind else "GrpcStreaming",
-                "Trace",
-                "GrpcStatusAndException",
-                "None",
-            )
-        elif body == "MeterProviderBuilderBody":
-            expected = ("BuilderRegistration", "Metric", "None", "None")
-        elif body == "LoggerBody":
-            expected = ("Void", "Log", "RuntimeDelegate", "None")
-        elif body == "ExternalLoggerBody":
-            expected = ("Void", "Log", "Exception", "None")
-
-        if expected is not None and (method_shape, ownership, error_policy, duration_policy) != expected:
-            fail(
-                f"InterceptorKind.{kind} {body} policy mismatch: "
-                f"actual={(method_shape, ownership, error_policy, duration_policy)} expected={expected}"
-            )
-
-        if body == "TraceBody":
-            if method_shape not in {"AsyncOrSyncValue", "AsyncOrSyncVoid", "AsyncTask", "AsyncValue"}:
-                fail(f"TraceBody descriptor has unsupported method shape: {kind} {method_shape}")
-            if ownership not in {"Trace", "TraceAndMetric"}:
-                fail(f"TraceBody descriptor must own traces: {kind}")
-            if error_policy != "Exception":
-                fail(f"TraceBody descriptor must use Exception policy: {kind}")
-            if duration_policy == "RuntimeMetric" and f"InterceptorKind.{kind}" in generator:
-                descriptor_line = next(
-                    line
-                    for line in generator.splitlines()
-                    if f"InterceptorKind.{kind}" in line and "new InterceptorEmissionDescriptor(" in line
-                )
-                if "DurationMetric:" not in descriptor_line:
-                    fail(f"TraceBody RuntimeMetric descriptor missing DurationMetric descriptor: {kind}")
-
-        if body == "ForwardingBody":
-            if method_shape not in {"AsyncValue", "AsyncTask", "BuilderInitialization", "EndpointRegistration"}:
-                fail(f"ForwardingBody descriptor has unsupported method shape: {kind} {method_shape}")
-            if ownership == "TraceAndMetric":
-                if (error_policy, duration_policy) != ("HttpStatusAndException", "RuntimeMetric"):
-                    fail(f"TraceAndMetric ForwardingBody must use HTTP status and runtime metric policy: {kind}")
-            elif ownership == "Trace":
-                if error_policy not in {"Exception", "RuntimeDelegate"} or duration_policy != "None":
-                    fail(f"Trace ForwardingBody must delegate exception/runtime policy without duration: {kind}")
-            else:
-                fail(f"ForwardingBody descriptor has unsupported ownership: {kind} {ownership}")
+            fail(f"generator must model emission bodies as a closed descriptor hierarchy: {token}")
 
 
 def collect_generator_target_contract_keys(generator: str) -> set[str]:
@@ -1651,10 +1464,7 @@ def collect_generator_target_contract_keys(generator: str) -> set[str]:
         generator,
     ))
     target_contract_keys.update(parse_contract_keys_call_keys(generator))
-
-    if "GetDbTraceContractKey(instrumentationId)" not in generator:
-        fail("DbCommand target must route trace contract keys through GetDbTraceContractKey")
-    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbTraceContractKey"))
+    target_contract_keys.update(parse_db_trace_contract_keys(generator))
 
     if "GetDbMetricContractKeys(instrumentationId)" not in generator:
         fail("DbCommand target must route metric contract keys through GetDbMetricContractKeys")
@@ -1678,18 +1488,20 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail("emitter dispatch must use the descriptor table")
     if "private delegate void InterceptorEmitter" in generator or "InterceptorEmitter? Emitter" in generator or "descriptor.Emitter" in dispatch_block:
         fail("emitter dispatch must not use generic emitter delegates")
+    if "switch (descriptor.Body)" not in dispatch_block:
+        fail("emitter dispatch must switch on the typed body descriptor")
     for token in [
-        "descriptor.TraceBody.IsDefined",
-        "descriptor.ForwardingBody.IsDefined",
-        "descriptor.HttpWebRequestBody.IsDefined",
-        "descriptor.DbCommandBody.IsDefined",
-        "descriptor.GrpcClientBody.IsDefined",
-        "descriptor.MeterProviderBuilderBody.IsDefined",
-        "descriptor.LoggerBody.IsDefined",
-        "descriptor.ExternalLoggerBody.IsDefined",
+        "case TraceInterceptorBodyDescriptor body:",
+        "case ForwardingInterceptorBodyDescriptor body:",
+        "case HttpWebRequestBodyDescriptor body:",
+        "case DbCommandBodyDescriptor body:",
+        "case GrpcClientBodyDescriptor body:",
+        "case MeterProviderBuilderBodyDescriptor body:",
+        "case LoggerBodyDescriptor body:",
+        "case ExternalLoggerBodyDescriptor body:",
     ]:
         if token not in dispatch_block:
-            fail(f"emitter dispatch missing typed body descriptor: {token}")
+            fail(f"emitter dispatch missing typed body descriptor case: {token}")
 
     try:
         matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(
@@ -1705,20 +1517,6 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail("matcher dispatch must invoke descriptor.TryMatch")
     if re.search(r"if\s*\(\s*TryGet[A-Za-z0-9]+Invocation\(", matcher_dispatch_block) is not None:
         fail("matcher dispatch must not reintroduce hand-coded TryGet*Invocation sequencing")
-    for token in [
-        "ValidateDescriptorCatalog();",
-        "Matcher descriptor catalog declares a duplicate interceptor kind",
-        "Emission descriptor catalog declares a duplicate interceptor kind",
-        "Matcher and emission descriptor catalogs must declare the same interceptor kind set",
-        "EnsureTargetDeclaredByMatcher(descriptor, in target);",
-        "EnsureKindDeclaredByMatcher(descriptor, target.Kind);",
-        "public ulong TargetKindMask { get; }",
-        "GetInterceptorKindMask(kind)",
-        "Matcher descriptor '",
-        "produced undeclared interceptor kind",
-    ]:
-        if token not in generator:
-            fail(f"matcher dispatch must validate descriptor-declared InterceptorKind values: {token}")
 
     descriptor_kinds = parse_emission_descriptor_kinds(generator)
     descriptor_missing = kinds - descriptor_kinds
@@ -1729,15 +1527,6 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
             f"missing={sorted(descriptor_missing)} extra={sorted(descriptor_extra)}"
         )
 
-    matcher_kinds = parse_matcher_descriptor_kinds(generator)
-    matcher_missing = descriptor_kinds - matcher_kinds
-    matcher_extra = matcher_kinds - descriptor_kinds
-    if matcher_missing or matcher_extra:
-        fail(
-            "InterceptorKind matcher descriptor mismatch: "
-            f"missing={sorted(matcher_missing)} extra={sorted(matcher_extra)}"
-        )
-
     target_missing = {
         kind
         for kind in kinds
@@ -1746,15 +1535,9 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     if target_missing:
         fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
 
-    verify_interceptor_signal_ownership(generator, kinds)
-    verify_interceptor_policy_shapes(generator, kinds)
+    verify_interceptor_emission_bodies(generator, kinds)
 
     target_contract_keys = collect_generator_target_contract_keys(generator)
-    matcher_contract_keys = parse_matcher_descriptor_contract_keys(generator)
-    missing_matcher_contract_keys = target_contract_keys - matcher_contract_keys
-    if missing_matcher_contract_keys:
-        fail(f"generator target contract keys missing matcher descriptors: {sorted(missing_matcher_contract_keys)}")
-
     missing_contract_keys = implemented_signal_keys - target_contract_keys
     extra_contract_keys = target_contract_keys - implemented_signal_keys
     if missing_contract_keys or extra_contract_keys:
@@ -1768,6 +1551,7 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     generator = read_generator_sources()
     contract_source = CONTRACT_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
+    generator_keys.update(parse_db_trace_contract_keys(generator))
     implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
     source_interceptor_signal_keys = {
         str(item["key"])
@@ -1800,10 +1584,7 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TryGetSourceInterceptorSignal",
         "TryGetImplementedSignal",
         "InterceptorEmissionDescriptor",
-        "InterceptorMethodShape",
-        "InterceptorSignalOwnership",
-        "InterceptorErrorPolicy",
-        "InterceptorDurationPolicy",
+        "InterceptorBodyDescriptor",
         "TraceRuntimeHelperDescriptor",
         "TraceStartActivityArgumentKind",
         "TraceDurationMetricDescriptor",
