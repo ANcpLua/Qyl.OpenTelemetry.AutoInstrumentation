@@ -6,10 +6,17 @@ on:
     branches:
       - main
 
+# One live run per ref: superseded pushes cancel their queued/running predecessors,
+# so the serial self-hosted runners never pile up obsolete work.
+concurrency:
+  group: qyl-webapi-aot-demo-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   webapi-aot-demo:
     name: webapi-aot-demo (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
