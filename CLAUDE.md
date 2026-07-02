@@ -87,18 +87,14 @@ files left behind.
   baselines next to each packaged project (`python3 tools/verify-public-api-baseline.py`).
 - CI runs `tools/smoketest.sh` on pull requests and pushes to `main`, plus the OTLP collector
   fixture and WebAPI AOT demo workflows under `.github/workflows/`.
-- CI runs on **self-hosted runners** — `qyl-linux` (ARM64 Linux, inside the OrbStack `qyl-ci`
-  VM) and `qyl-macos` (ARM64 macOS, native launchd) — on pull requests and pushes to `main`:
-  the smoketest, the `verify` validation floor, the OTLP collector fixtures, the WebAPI AOT
-  demo, and the container-backed real-demo verifiers (these use the `qyl-ci` VM's Docker). Linux
-  legs install the NativeAOT prerequisites (`clang`, `zlib1g-dev`); the whole gate is
-  `tools/verify-aot-autoinstrumentation-goal.py`. Linux jobs queue while the `qyl-ci` VM is
-  stopped — run `ci up` before pushing CI that needs Linux legs. Only `nuget-publish.yml` stays
-  on a GitHub-hosted `ubuntu-latest` runner: it is manual (`workflow_dispatch`) and infrequent,
-  keeping reliable OIDC + `gh` for NuGet Trusted Publishing.
-- Local verifier runs and CI share the same self-hosted machines: while a PR's jobs are running,
-  do not run the demo/fixture verifiers locally on the same host — the runtime fixtures bind
-  ports/endpoints and the runs corrupt each other.
+- CI runs entirely on **GitHub-hosted runners** (the repo is public, so they are free):
+  `ubuntu-24.04-arm` and `macos-latest` — both ARM64 to match the NativeAOT target matrix. On
+  pull requests and pushes to `main`: the smoketest, the `verify` validation floor, the OTLP
+  collector fixtures, and the WebAPI AOT demo; post-merge/nightly: the AOT-publish gate and the
+  container-backed real-demo verifiers (Docker is preinstalled on the hosted Ubuntu images).
+  Linux legs install the NativeAOT prerequisites (`clang`, `zlib1g-dev`); the whole gate is
+  `tools/verify-aot-autoinstrumentation-goal.py`. There are no self-hosted runners — nothing to
+  start, babysit, or avoid colliding with locally.
 
 ## Mechanism flow (big picture)
 
