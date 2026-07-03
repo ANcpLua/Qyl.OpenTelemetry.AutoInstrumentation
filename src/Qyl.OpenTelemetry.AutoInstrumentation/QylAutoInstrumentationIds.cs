@@ -2,7 +2,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Auto Instrumentation Signal.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylAutoInstrumentationSignal);</code></example>
 public enum QylAutoInstrumentationSignal
 {
     /// <summary>Represents the Traces qyl auto-instrumentation signal.</summary>
@@ -15,7 +14,6 @@ public enum QylAutoInstrumentationSignal
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Auto Instrumentation Ids.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylAutoInstrumentationIds);</code></example>
 public static class QylAutoInstrumentationIds
 {
     /// <summary>Well-known Ado Net value used by qyl auto-instrumentation.</summary>

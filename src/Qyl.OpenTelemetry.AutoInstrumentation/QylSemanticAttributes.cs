@@ -15,7 +15,6 @@ using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAt
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Semantic Attributes.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylSemanticAttributes);</code></example>
 public static class QylSemanticAttributes
 {
     /// <summary>Well-known qyl Instrumentation Domain value used by qyl auto-instrumentation.</summary>
