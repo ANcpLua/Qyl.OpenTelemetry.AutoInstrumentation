@@ -6,10 +6,9 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 /// The qyl semconv registry — the set of attribute keys recognised by the active semconv version.
 ///
 /// <para>
-/// The previous substrate built this registry with runtime assembly scanning
-/// over the <c>Qyl.OpenTelemetry.SemanticConventions</c> packages at process startup. That path is
+/// Runtime assembly scanning over the <c>Qyl.OpenTelemetry.SemanticConventions</c> packages is
 /// NOT AOT-safe (the trim/AOT analyzers reject <c>Assembly.GetTypes()</c>), so the build-time
-/// source generator now emits a <c>FrozenSet&lt;string&gt;</c> partial from the
+/// source generator emits a <c>FrozenSet&lt;string&gt;</c> partial from the
 /// <c>Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators</c> assembly. The fallback below keeps the file
 /// compile-clean before the generator runs in a fresh checkout.
 /// </para>

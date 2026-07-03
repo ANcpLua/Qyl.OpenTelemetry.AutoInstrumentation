@@ -4,7 +4,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl database Client Metrics.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylDbClientMetrics);</code></example>
 public static class QylDbClientMetrics
 {
     private static readonly Meter Meter = new(QylMetricMeters.DatabaseMeterName);

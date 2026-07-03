@@ -5,7 +5,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Azure.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylInterceptedAzure);</code></example>
 public static class QylInterceptedAzure
 {
 
@@ -17,9 +16,8 @@ public static class QylInterceptedAzure
             QylActivityNames.AzureSdk,
             ActivityKind.Client,
             QylInstrumentationDomains.AzureSdk);
-        // Record the intercepted operation so Azure spans are distinguishable. The span name stays the
-        // stable low-cardinality "Azure SDK"; the specific method goes on code.function.name (CODE RED #9:
-        // the methodName parameter was previously received and dropped).
+        // The span name stays the stable low-cardinality "Azure SDK"; the specific method goes
+        // on code.function.name.
         if (activity is not null && !string.IsNullOrEmpty(methodName))
             activity.SetTag(QylSemanticAttributes.CodeFunctionName, methodName);
         return activity;

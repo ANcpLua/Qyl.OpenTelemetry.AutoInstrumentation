@@ -5,7 +5,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Entity Framework Core.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylInterceptedEntityFrameworkCore);</code></example>
 public static class QylInterceptedEntityFrameworkCore
 {
 

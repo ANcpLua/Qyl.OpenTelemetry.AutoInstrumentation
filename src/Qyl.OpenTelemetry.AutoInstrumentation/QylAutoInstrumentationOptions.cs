@@ -6,7 +6,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Auto Instrumentation Options.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-/// <example><code>var apiType = typeof(QylAutoInstrumentationOptions);</code></example>
 public sealed class QylAutoInstrumentationOptions
 {
     private const string GlobalEnabledVariable = "OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED";
