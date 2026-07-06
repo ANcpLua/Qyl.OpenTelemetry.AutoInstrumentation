@@ -38,6 +38,8 @@ import re
 import subprocess
 from pathlib import Path
 
+from verify_helpers import remove_publish_outputs
+
 ROOT = Path(__file__).resolve().parents[1]
 DEMOS_DIR = ROOT / "demos"
 GENERATOR_PROJECT = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
@@ -186,6 +188,9 @@ def main() -> None:
     parser.add_argument("--strict-promotion", action="store_true",
                         help="treat a promotion (vendor demo gone warning-clean) as a gate failure")
     parser.add_argument("--list", action="store_true", help="print the classification and exit")
+    parser.add_argument("--keep-publish", action="store_true",
+                        help="keep artifacts/publish after a passing gate (default: removed — "
+                             "pure verification byproduct, multiple GB over the full matrix)")
     args = parser.parse_args()
 
     if args.list:
@@ -239,7 +244,10 @@ def main() -> None:
             fh.write(f"\n**{failures} failure(s), {promotions} promotion(s)** over {len(rows)} demo(s).\n")
 
     if failures:
+        # Keep artifacts/publish on failure so the offending binaries stay inspectable.
         raise SystemExit(f"aot-publish-gate FAILED: {failures} failure(s), {promotions} promotion(s)")
+    if not args.keep_publish:
+        print(remove_publish_outputs())
     print(f"aot-publish-gate-ok ({len(rows)} demos, {promotions} promotion notice(s))")
 
 
