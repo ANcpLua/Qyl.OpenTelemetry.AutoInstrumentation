@@ -59,6 +59,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("real wcf client demo", [sys.executable, "tools/verify-real-wcf-client-demo.py"]),
     ("smoketest", ["bash", "tools/smoketest.sh"]),
     ("webapi aot demo", [sys.executable, "tools/verify-webapi-aot-demo.py"]),
+    ("tcg publishing demo", [sys.executable, "tools/verify-tcg-publishing-demo.py"]),
     ("otlp verified fixtures", [sys.executable, "tools/verify-otlp-fixtures.py"]),
     ("otlp collector fixtures", [sys.executable, "tools/verify-otlp-collector-fixtures.py"]),
     ("consumer behavior", [sys.executable, "tools/verify-consumer-behavior.py"]),
