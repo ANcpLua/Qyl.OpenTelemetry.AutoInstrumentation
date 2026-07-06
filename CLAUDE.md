@@ -76,7 +76,11 @@ files left behind.
 ## Build and test reality
 
 - SDK is pinned by `global.json` (10.0.300, `rollForward: latestFeature`).
-- Build everything: `dotnet build Qyl.OpenTelemetry.AutoInstrumentation.slnx`.
+- Build the libraries: `dotnet build Qyl.OpenTelemetry.AutoInstrumentation.slnx` (src + tests + benchmarks, 9 projects).
+- Build the demo matrix: `dotnet build Qyl.OpenTelemetry.AutoInstrumentation.Demos.slnx` (30 `Qyl.Real*Demo` apps).
+  The split keeps the day-to-day IDE solution lean — every demo wires the source-interceptor
+  generator as an analyzer, so loading all 30 in the IDE runs 30 generator pipelines on edits.
+  The verify gate builds both solutions.
 - `TreatWarningsAsErrors` is on repo-wide with a heavy analyzer stack (trim/AOT/single-file
   analyzers, ErrorProne.NET, Roslynator, PublicApiAnalyzers on packaged projects). A clean
   build is the validation floor; analyzer regressions fail the build by design.
