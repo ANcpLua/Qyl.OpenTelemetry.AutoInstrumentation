@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from verify_helpers import remove_publish_outputs
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -125,6 +127,11 @@ def main() -> None:
         action="store_true",
         help='Run only the container-backed "real * demo" verifiers.',
     )
+    parser.add_argument(
+        "--keep-publish",
+        action="store_true",
+        help="Keep artifacts/publish after a successful run (default: removed — pure verification byproduct, multiple GB over the full demo matrix).",
+    )
     args = parser.parse_args()
 
     if args.list:
@@ -149,6 +156,11 @@ def main() -> None:
         completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
         if completed.returncode != 0:
             raise SystemExit(f"{name} failed with exit code {completed.returncode}")
+
+    # Only reached when every selected verifier passed; failures SystemExit above and
+    # keep artifacts/publish around for inspection.
+    if not args.keep_publish:
+        print(remove_publish_outputs())
 
     if commands == COMMANDS:
         print("aot-autoinstrumentation-goal-ok")

@@ -1,12 +1,32 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS_PATH = ROOT / "Directory.Build.props"
+
+
+def remove_publish_outputs() -> str:
+    """Delete artifacts/publish and return a one-line summary of what was freed.
+
+    The AOT demos must publish into the repo's standard artifacts/ layout (redirecting
+    via --artifacts-path breaks the prebuilt-Analyzer path contract — see
+    verify-aot-publish-gate.py publish()), so every demo run regrows ~50-150 MB there
+    and a full matrix leaves multiple GB behind. The publish tree is a pure verification
+    byproduct — each verifier executes the binary and asserts within the same run — so
+    successful gates drop it; failed gates keep it for inspection.
+    """
+    publish_root = ROOT / "artifacts" / "publish"
+    if not publish_root.exists():
+        return "artifacts/publish absent — nothing to remove"
+
+    size_bytes = sum(f.stat().st_size for f in publish_root.rglob("*") if f.is_file())
+    shutil.rmtree(publish_root)
+    return f"removed artifacts/publish ({size_bytes / (1024 * 1024):.0f} MB)"
 
 
 def clean_env() -> dict[str, str]:
