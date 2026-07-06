@@ -24,8 +24,15 @@ def remove_publish_outputs() -> str:
     if not publish_root.exists():
         return "artifacts/publish absent — nothing to remove"
 
-    size_bytes = sum(f.stat().st_size for f in publish_root.rglob("*") if f.is_file())
-    shutil.rmtree(publish_root)
+    try:
+        size_bytes = sum(f.stat().st_size for f in publish_root.rglob("*") if f.is_file())
+        shutil.rmtree(publish_root)
+    except OSError as error:
+        # Best-effort hygiene: a locked file (AV scanner, IDE indexer, Windows handle)
+        # must not flip a passing gate into a false failure. Leave the remainder for
+        # the next run to sweep.
+        return f"artifacts/publish cleanup skipped: {error}"
+
     return f"removed artifacts/publish ({size_bytes / (1024 * 1024):.0f} MB)"
 
 
