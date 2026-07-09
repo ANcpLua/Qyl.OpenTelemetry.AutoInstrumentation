@@ -1,5 +1,20 @@
 # Qyl.OpenTelemetry.AutoInstrumentation agent rules
 
+## ⚠️ Start from `main` HEAD — never a stale branch or older base
+
+This repo carries several **pushed feature branches that sit behind `main`** (open PRs,
+comment-sweeps, version-syncs — each ~15–19 commits behind, 1–2 ahead). They live on `origin`,
+so nothing is lost — but every one of them is a **stale base**. Before doing any work:
+
+1. `git checkout main && git fetch origin && git pull --ff-only` — start from the **latest**
+   `main`. Never begin from an older commit, a detached HEAD, or a behind-`main` branch tip.
+2. Need work off an open branch? **Rebase it onto `main` or cherry-pick** the commit — do not
+   branch off its stale tip and re-diverge (that is how the tree ends up "one step behind" again).
+3. If the working tree is ever reset/cleaned, resume from `main` HEAD (the pushed latest) — not
+   from an earlier snapshot or stash.
+4. Delete a local branch only after `git cherry -v main <branch>` shows its commits are already
+   in `main`; until then it holds **unmerged** work (safe on `origin`, but not yet integrated).
+
 ## Mission
 
 This repository is the runtime AOT auto-instrumentation lane for qyl, evolving into a
