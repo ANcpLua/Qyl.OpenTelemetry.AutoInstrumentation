@@ -47,15 +47,15 @@ instrumentation.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="4.0.0" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="4.1.0" />
 </ItemGroup>
 ```
 Add package-specific references only when the app uses those libraries:
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="4.0.0" />
-  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="4.0.0" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="4.1.0" />
+  <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="4.1.0" />
 </ItemGroup>
 ```
 

@@ -43,7 +43,7 @@
          informational version). Releases are CI-owned: nuget-publish.yml overrides -p:Version from
          the latest v* tag at pack time. Keep this floor >= the latest release tag — the
          verify-version-sync.py gate enforces it, so it can never fall behind again. -->
-    <Version>4.0.0</Version>
+    <Version>4.1.0</Version>
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

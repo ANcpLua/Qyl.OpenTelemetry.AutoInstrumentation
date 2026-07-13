@@ -1,6 +1,7 @@
 namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 using CpuAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Cpu.CpuAttributes;
 using DotnetAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Dotnet.DotnetAttributes;
 using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
@@ -93,23 +94,23 @@ public static class QylSemanticAttributes
     /// <summary>Well-known database Query Text value used by qyl auto-instrumentation.</summary>
     public const string DbQueryText = DbAttributes.QueryText;
     /// <summary>Well-known database System Elasticsearch value used by qyl auto-instrumentation.</summary>
-    public const string DbSystemElasticsearch = DbAttributes.SystemNameValues.Elasticsearch;
+    public const string DbSystemElasticsearch = DbIncubatingAttributes.SystemNameValues.Elasticsearch;
     /// <summary>Well-known database System Microsoft Sql Server value used by qyl auto-instrumentation.</summary>
     public const string DbSystemMicrosoftSqlServer = DbAttributes.SystemNameValues.MicrosoftSqlServer;
     /// <summary>Well-known database System Mongodb value used by qyl auto-instrumentation.</summary>
-    public const string DbSystemMongodb = DbAttributes.SystemNameValues.Mongodb;
+    public const string DbSystemMongodb = DbIncubatingAttributes.SystemNameValues.Mongodb;
     /// <summary>Well-known database System Mysql value used by qyl auto-instrumentation.</summary>
     public const string DbSystemMysql = DbAttributes.SystemNameValues.Mysql;
     /// <summary>Well-known database System Oracle Db value used by qyl auto-instrumentation.</summary>
-    public const string DbSystemOracleDb = DbAttributes.SystemNameValues.OracleDb;
+    public const string DbSystemOracleDb = DbIncubatingAttributes.SystemNameValues.OracleDb;
     /// <summary>Well-known database System Other Sql value used by qyl auto-instrumentation.</summary>
-    public const string DbSystemOtherSql = DbAttributes.SystemNameValues.OtherSql;
+    public const string DbSystemOtherSql = DbIncubatingAttributes.SystemNameValues.OtherSql;
     /// <summary>Well-known database System Postgresql value used by qyl auto-instrumentation.</summary>
     public const string DbSystemPostgresql = DbAttributes.SystemNameValues.Postgresql;
     /// <summary>Well-known database System Redis value used by qyl auto-instrumentation.</summary>
-    public const string DbSystemRedis = DbAttributes.SystemNameValues.Redis;
+    public const string DbSystemRedis = DbIncubatingAttributes.SystemNameValues.Redis;
     /// <summary>Well-known database System Sqlite value used by qyl auto-instrumentation.</summary>
-    public const string DbSystemSqlite = DbAttributes.SystemNameValues.Sqlite;
+    public const string DbSystemSqlite = DbIncubatingAttributes.SystemNameValues.Sqlite;
 
     /// <summary>Well-known Rpc System value used by qyl auto-instrumentation.</summary>
     public const string RpcSystem = RpcAttributes.SystemName;

@@ -7,17 +7,59 @@ time.
 
 ## [Unreleased]
 
+### Changed
+
+- Deps: `Qyl.OpenTelemetry.SemanticConventions` (+`.Incubating`) bumped 3.0.2 → 3.4.0 (registry
+  1.41-era → **1.43.0**), restoring the workspace-wide version lockstep. Six `db.system.name`
+  well-known values (`Elasticsearch`, `Mongodb`, `OracleDb`, `OtherSql`, `Redis`, `Sqlite`)
+  repointed to the `.Incubating` assembly — semconv 3.3.0 removed the non-registry-stable enum
+  members from the stable assembly. Wire values are unchanged; no emitted telemetry differs.
+- **BREAKING (generator internals):** structural descriptor invariants — the self-referential
+  validation apparatus is deleted (#28).
+- Build: 30-demo matrix split into `Demos.slnx` (#36); SDK pinned to 10.0.301 with the MTP test
+  runner.
+- CI: all workflows on GitHub-hosted runners (#31); one live run per ref + job timeouts (#29);
+  NativeAOT-publish warning-cleanliness gate (17 clean / 13 vendor-warned) (#27); aot-gate
+  satisfies the `PublishAot` analyzer contract instead of redirecting artifacts (#30); real-demos
+  on x64 — mssql/server ships no arm64 image (#32).
+- Tools: orphaned TCG-publishing verifier registered in the goal gate (#37); `artifacts/publish`
+  dropped after passing verify gates (#35).
+- Docs/chore: comment truth sweep (#33); agent-state purge (#34).
+
+## [4.0.3] - 2026-07-01
+
+### Fixed
+
+- Semconv completeness: `url.scheme`, `http.request.method_original`, Azure operation
+  (CODE RED #6/#7/#9) (#25).
 - Build: `QylInstrumentation.Version` (the OTel instrumentation-scope version stamped on every
   emitted span/metric) is now baked from the build `<Version>` via a generated compile-time const
   instead of a hardcoded literal — no reflection. A new `verify-version-sync` gate keeps the props
-  floor, the README examples, and that scope version aligned with the latest release tag.
-- Docs: README pins the vocabulary to the official OpenTelemetry glossary (Instrumented Library /
+  floor, the README examples, and that scope version aligned with the latest release tag (#21).
+
+### Docs
+
+- README pins the vocabulary to the official OpenTelemetry glossary (Instrumented Library /
   Instrumentation Library / Instrumentation Scope / Automatic Instrumentation / Semantic
   Conventions) and maps each term onto this repository, framing the AOT source-interceptor +
   `DiagnosticListener` mechanism as OpenTelemetry "Automatic Instrumentation". All three signals
   (traces, metrics, logs) are contract-covered; AOT-structural items are marked
   `unsupported_nativeaot`, not hidden (#19).
-- Docs: corrected the stale README install-example package version (`0.3.0-pre.1` → `4.0.0`) (#19).
+- Corrected the stale README install-example package version (`0.3.0-pre.1` → `4.0.0`) (#19).
+
+## [4.0.2] - 2026-07-01
+
+### Changed
+
+- **BREAKING:** single-owner-per-signal registry — ends double instrumentation when multiple
+  registration paths cover the same signal (CODE RED #3) (#23).
+
+## [4.0.1] - 2026-07-01
+
+### Fixed
+
+- Real span duration, honest doc, and the correct thread-count instrument
+  (CODE RED #1/#2/#10) (#22).
 
 ## [4.0.0] - 2026-07-01
 

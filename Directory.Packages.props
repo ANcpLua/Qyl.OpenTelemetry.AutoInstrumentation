@@ -44,8 +44,8 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.200" />
     <PackageVersion Include="Quartz" Version="3.18.1" />
-    <PackageVersion Include="Qyl.OpenTelemetry.SemanticConventions" Version="3.0.2" />
-    <PackageVersion Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" Version="3.0.2" />
+    <PackageVersion Include="Qyl.OpenTelemetry.SemanticConventions" Version="3.4.0" />
+    <PackageVersion Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" Version="3.4.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
     <!-- Patched native SQLite lib. Referenced directly by the Sqlite/EfCore demos to override the
