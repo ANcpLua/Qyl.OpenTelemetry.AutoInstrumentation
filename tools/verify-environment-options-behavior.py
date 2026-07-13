@@ -29,7 +29,6 @@ Console.WriteLine("global=" + options.GlobalEnabled);
 Console.WriteLine("traces=" + options.TracesEnabled);
 Console.WriteLine("metrics=" + options.MetricsEnabled);
 Console.WriteLine("logs=" + options.LogsEnabled);
-Console.WriteLine("conformance=" + options.ConformanceProcessorEnabled);
 Console.WriteLine("trace.http=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient));
 Console.WriteLine("trace.sql=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.SqlClient));
 Console.WriteLine("metric.http=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient));
@@ -40,8 +39,6 @@ Console.WriteLine("ef.text=" + options.EntityFrameworkCoreSetDbStatementForText)
 Console.WriteLine("graphql.document=" + options.GraphQlSetDocument);
 Console.WriteLine("oracle.text=" + options.OracleMdaSetDbStatementForText);
 Console.WriteLine("sql.text=" + options.SqlClientSetDbStatementForText);
-Console.WriteLine("aspnet.req=" + string.Join("|", options.AspNetCapturedRequestHeaders));
-Console.WriteLine("aspnet.res=" + string.Join("|", options.AspNetCapturedResponseHeaders));
 Console.WriteLine("aspnetcore.req=" + string.Join("|", options.AspNetCoreCapturedRequestHeaders));
 Console.WriteLine("aspnetcore.res=" + string.Join("|", options.AspNetCoreCapturedResponseHeaders));
 Console.WriteLine("grpc.req=" + string.Join("|", options.GrpcNetClientCapturedRequestMetadata));
@@ -50,9 +47,6 @@ Console.WriteLine("http.req=" + string.Join("|", options.HttpClientCapturedReque
 Console.WriteLine("http.res=" + string.Join("|", options.HttpClientCapturedResponseHeaders));
 Console.WriteLine("aspnetcore.query.unredacted=" + options.AspNetCoreUrlQueryRedactionDisabled);
 Console.WriteLine("http.query.unredacted=" + options.HttpClientUrlQueryRedactionDisabled);
-Console.WriteLine("aspnet.query.unredacted=" + options.AspNetUrlQueryRedactionDisabled);
-Console.WriteLine("sql.ilrewrite.requested=" + options.SqlClientNetFxIlRewriteRequested);
-Console.WriteLine("sql.ilrewrite.enabled=" + options.SqlClientNetFxIlRewriteEnabled);
 '''
 
 
@@ -60,7 +54,6 @@ DEFAULT_EXPECTED = """global=True
 traces=True
 metrics=True
 logs=True
-conformance=False
 trace.http=True
 trace.sql=True
 metric.http=True
@@ -71,8 +64,6 @@ ef.text=False
 graphql.document=False
 oracle.text=False
 sql.text=False
-aspnet.req=
-aspnet.res=
 aspnetcore.req=
 aspnetcore.res=
 grpc.req=
@@ -81,16 +72,12 @@ http.req=
 http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
-aspnet.query.unredacted=False
-sql.ilrewrite.requested=False
-sql.ilrewrite.enabled=False
 """
 
 GLOBAL_DISABLED_HTTP_TRACE_ENABLED_EXPECTED = """global=False
 traces=False
 metrics=False
 logs=False
-conformance=False
 trace.http=True
 trace.sql=False
 metric.http=False
@@ -101,8 +88,6 @@ ef.text=False
 graphql.document=False
 oracle.text=False
 sql.text=False
-aspnet.req=
-aspnet.res=
 aspnetcore.req=
 aspnetcore.res=
 grpc.req=
@@ -111,16 +96,12 @@ http.req=
 http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
-aspnet.query.unredacted=False
-sql.ilrewrite.requested=False
-sql.ilrewrite.enabled=False
 """
 
 SIGNAL_AND_SPECIFIC_OVERRIDES_EXPECTED = """global=False
 traces=True
 metrics=True
 logs=True
-conformance=False
 trace.http=True
 trace.sql=False
 metric.http=True
@@ -131,8 +112,6 @@ ef.text=False
 graphql.document=False
 oracle.text=False
 sql.text=False
-aspnet.req=
-aspnet.res=
 aspnetcore.req=
 aspnetcore.res=
 grpc.req=
@@ -141,16 +120,12 @@ http.req=
 http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
-aspnet.query.unredacted=False
-sql.ilrewrite.requested=False
-sql.ilrewrite.enabled=False
 """
 
 OPTIONS_EXPECTED = """global=True
 traces=True
 metrics=True
 logs=True
-conformance=True
 trace.http=True
 trace.sql=True
 metric.http=True
@@ -161,8 +136,6 @@ ef.text=True
 graphql.document=True
 oracle.text=True
 sql.text=True
-aspnet.req=x-request|user
-aspnet.res=x-response|cache
 aspnetcore.req=x-core-request|tenant
 aspnetcore.res=x-core-response|etag
 grpc.req=traceparent|authorization
@@ -171,16 +144,12 @@ http.req=authorization|x-client
 http.res=set-cookie|server
 aspnetcore.query.unredacted=True
 http.query.unredacted=True
-aspnet.query.unredacted=True
-sql.ilrewrite.requested=True
-sql.ilrewrite.enabled=False
 """
 
 ADDITIONAL_METRIC_SOURCES_EXPECTED = """global=True
 traces=True
 metrics=True
 logs=True
-conformance=False
 trace.http=True
 trace.sql=True
 metric.http=True
@@ -191,8 +160,6 @@ ef.text=False
 graphql.document=False
 oracle.text=False
 sql.text=False
-aspnet.req=
-aspnet.res=
 aspnetcore.req=
 aspnetcore.res=
 grpc.req=
@@ -201,9 +168,6 @@ http.req=
 http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
-aspnet.query.unredacted=False
-sql.ilrewrite.requested=False
-sql.ilrewrite.enabled=False
 """
 
 
@@ -330,8 +294,6 @@ def main() -> None:
                     "OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT": "true",
                     "OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT": "true",
                     "OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT": "true",
-                    "OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Request, User, x-request",
-                    "OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Response, Cache",
                     "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Core-Request,Tenant",
                     "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Core-Response,ETag",
                     "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA": "TraceParent, Authorization",
@@ -340,9 +302,6 @@ def main() -> None:
                     "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "Set-Cookie, Server",
                     "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION": "true",
                     "OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION": "true",
-                    "OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION": "true",
-                    "OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED": "true",
-                    "QYL_CONFORMANCE_ENABLED": "true",
                 },
             ),
             OPTIONS_EXPECTED,

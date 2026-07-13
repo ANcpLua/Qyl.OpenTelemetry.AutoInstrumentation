@@ -18,7 +18,6 @@ PUBLIC_API_PROJECTS = [
 
 EXCLUDED_PROJECTS = [
     "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators",
-    "Qyl.LiveInstrumentationDemo",
     "Qyl.RealAspNetCoreDemo",
     "Qyl.RealEfCoreDemo",
     "Qyl.RealGrpcClientDemo",

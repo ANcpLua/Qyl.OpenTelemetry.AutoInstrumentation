@@ -59,18 +59,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     };
 
     /// <summary>
-    /// Registers the incremental syntax pipeline and post-initialization contract manifest output.
+    /// Registers the incremental syntax pipeline.
     /// </summary>
     /// <param name="context">Roslyn initialization context supplied by the compiler host.</param>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        context.RegisterPostInitializationOutput(static output =>
-        {
-            output.AddSource(
-                "QylGeneratedInstrumentationContract.g.cs",
-                SourceText.From(InstrumentationContract.EmitGeneratedManifestSource(), Encoding.UTF8));
-        });
-
         var interceptedInvocations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 static (node, _) => node is InvocationExpressionSyntax,
@@ -104,31 +97,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (!TryGetInvocation(symbol, receiverType, out var target))
             return null;
 
-        if (!IsSupportedTarget(in target))
-            return null;
-
         var interceptableLocation = context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken);
         if (interceptableLocation is null)
             return null;
 
         return new InterceptedInvocation(target, interceptableLocation);
-    }
-
-    private static bool IsSupportedTarget(in InterceptorTarget target)
-    {
-        if (InstrumentationContract.TryGetImplementedSignal(target.ContractKey) is null)
-            return false;
-
-        if (target.AdditionalContractKeys is not { Length: > 0 } additionalContractKeys)
-            return true;
-
-        foreach (var contractKey in additionalContractKeys)
-        {
-            if (InstrumentationContract.TryGetImplementedSignal(contractKey) is null)
-                return false;
-        }
-
-        return true;
     }
 
     private static ITypeSymbol? GetInvocationReceiverType(

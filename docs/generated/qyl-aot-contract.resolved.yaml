@@ -127,7 +127,6 @@ contract_items:
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreDemo
   - tools/verify-real-aspnetcore-demo.py
   conformance_signals:
@@ -292,7 +291,6 @@ contract_items:
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealEfCoreDemo
   - tools/verify-real-efcore-demo.py
   conformance_signals:
@@ -422,6 +420,7 @@ contract_items:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - demos/Qyl.RealHttpClientDemo
   - tools/verify-real-http-client-demo.py
+  - tools/verify-otlp-receiver.py
   conformance_signals:
   - kind: span
     name: httpclient.downstream
@@ -1159,7 +1158,6 @@ contract_items:
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreMetricsDemo
   - tools/verify-real-aspnetcore-metrics-demo.py
   conformance_signals:
@@ -1903,15 +1901,13 @@ contract_items:
   upstream_sources:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L265
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1931,15 +1927,13 @@ contract_items:
   upstream_sources:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L266
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -2162,15 +2156,13 @@ contract_items:
   upstream_sources:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L275
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
@@ -2194,12 +2186,10 @@ contract_items:
   upstream_sources:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L276-L284
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []

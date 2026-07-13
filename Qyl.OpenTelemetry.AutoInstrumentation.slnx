@@ -6,6 +6,5 @@
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj" />
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
   <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" />
-  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.Publishing/Qyl.OpenTelemetry.AutoInstrumentation.Publishing.csproj" />
   <Project Path="tests/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots/Fixture/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots.Fixture.csproj" />
 </Solution>

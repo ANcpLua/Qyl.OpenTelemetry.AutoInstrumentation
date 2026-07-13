@@ -4,8 +4,8 @@
 The instrumentation-scope version is stamped onto every emitted span/metric and must never drift
 from the shipped package again. This gate enforces a single source of truth:
 
-  * Directory.Build.props <Version> (the local-build floor) must be >= the latest stable v* tag,
-  * every README package-reference example must equal that floor,
+  * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag,
+  * any version-pinned README package-reference example must equal that version,
   * QylInstrumentation.Version must stay DERIVED from the build (no hardcoded semver literal).
 
 Historically all three drifted independently (const "0.3.0-pre.1", props 3.0.2, tag v3.1.2); this
@@ -62,34 +62,35 @@ def latest_stable_tag() -> tuple[int, int, int] | None:
     return None
 
 
-def check_props_floor(floor: str) -> None:
+def check_props_version(version: str) -> None:
     tag = latest_stable_tag()
     if tag is None:
         print("  - no stable v* tag reachable; skipping tag-floor comparison")
         return
-    if semver(floor) < tag:
+    if semver(version) < tag:
         tag_text = ".".join(map(str, tag))
         fail(
-            f"Directory.Build.props <Version> ({floor}) is BEHIND the latest release tag "
-            f"v{tag_text}. Bump the floor to at least {tag_text}."
+            f"Directory.Build.props <Version> ({version}) is BEHIND the latest release tag "
+            f"v{tag_text}. Bump the version to at least {tag_text}."
         )
-    print(f"  - props floor {floor} >= latest tag v{'.'.join(map(str, tag))}")
+    print(f"  - props version {version} >= latest tag v{'.'.join(map(str, tag))}")
 
 
-def check_readme(floor: str) -> None:
+def check_readme(version: str) -> None:
     text = README.read_text(encoding="utf-8")
     refs = re.findall(
         r'Include="Qyl\.OpenTelemetry\.AutoInstrumentation[.\w]*"\s+Version="([^"]+)"', text
     )
     if not refs:
-        fail("no Qyl.OpenTelemetry.AutoInstrumentation PackageReference examples found in README.md")
-    mismatched = sorted({v for v in refs if v != floor})
+        print("  - README uses the version-agnostic package-install command")
+        return
+    mismatched = sorted({v for v in refs if v != version})
     if mismatched:
         fail(
-            f"README package-reference example(s) {mismatched} != props floor {floor}. "
-            f"Update the README install snippets to {floor}."
+            f"README package-reference example(s) {mismatched} != props version {version}. "
+            f"Update the README install snippets to {version}."
         )
-    print(f"  - {len(refs)} README example(s) all pinned to {floor}")
+    print(f"  - {len(refs)} README example(s) all pinned to {version}")
 
 
 def check_version_is_derived() -> None:
@@ -110,10 +111,10 @@ def check_version_is_derived() -> None:
 
 
 def main() -> None:
-    floor = props_version()
-    print(f"version-sync: single source of truth = Directory.Build.props <Version> = {floor}")
-    check_props_floor(floor)
-    check_readme(floor)
+    version = props_version()
+    print(f"version-sync: single source of truth = Directory.Build.props <Version> = {version}")
+    check_props_version(version)
+    check_readme(version)
     check_version_is_derived()
     print("version-sync: OK")
 

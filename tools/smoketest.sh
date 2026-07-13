@@ -6,7 +6,23 @@ WORK="${TMPDIR:-/tmp}/qyl-smoke"
 FEED="$WORK/feed"
 PACKAGES="$WORK/packages"
 NUGET_ORG="https://api.nuget.org/v3/index.json"
+MODE="local"
 VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -n 1)"
+if [[ "${1:-}" == "--published" ]]; then
+  if [[ $# -ne 2 || -z "${2:-}" ]]; then
+    echo "usage: $0 [--published VERSION]" >&2
+    exit 2
+  fi
+  MODE="published"
+  VERSION="$2"
+elif [[ $# -ne 0 ]]; then
+  echo "usage: $0 [--published VERSION]" >&2
+  exit 2
+fi
+PACKAGE_SOURCES="$FEED;$NUGET_ORG"
+if [[ "$MODE" == "published" ]]; then
+  PACKAGE_SOURCES="$NUGET_ORG"
+fi
 VERIFIED="$ROOT/tools/Qyl.OpenTelemetry.AutoInstrumentation.SmokeTest/verified/stdout.txt"
 GENERATOR_DLL="$ROOT/artifacts/bin/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/release/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
 
@@ -29,16 +45,20 @@ fi
 rm -rf "$WORK"
 mkdir -p "$FEED" "$PACKAGES"
 
-dotnet build "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
-dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
-dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
-dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
+if [[ "$MODE" == "local" ]]; then
+  dotnet build "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
+  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
+fi
 
 write_program() {
   local dir="$1"
   cat > "$dir/Program.cs" <<'EOF'
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 
@@ -52,12 +72,10 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
-using var http = new HttpClient(new StubHandler())
-{
-    BaseAddress = new Uri("https://qyl-smoke.invalid"),
-};
-
-var response = await http.GetAsync("/probe?secret=redacted");
+await using var server = LoopbackHttpServer.Start();
+using var http = new HttpClient();
+var response = await http.GetAsync(server.Uri + "probe?secret=redacted");
+await server.RequestCompleted;
 Console.WriteLine("http.status=" + ((int)response.StatusCode).ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 var concreteLogger = new CapturingLogger();
@@ -91,13 +109,53 @@ Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalizati
 
 return captured.Count == 2 ? 0 : 3;
 
-internal sealed class StubHandler : HttpMessageHandler
+internal sealed class LoopbackHttpServer : IAsyncDisposable
 {
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent)
+    private readonly TcpListener _listener;
+
+    private LoopbackHttpServer(TcpListener listener)
+    {
+        _listener = listener;
+        Uri = new Uri($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/", UriKind.Absolute);
+        RequestCompleted = ServeOnceAsync(listener);
+    }
+
+    public Uri Uri { get; }
+
+    public Task RequestCompleted { get; }
+
+    public static LoopbackHttpServer Start()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start(1);
+        return new LoopbackHttpServer(listener);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _listener.Stop();
+        return ValueTask.CompletedTask;
+    }
+
+    private static async Task ServeOnceAsync(TcpListener listener)
+    {
+        using var client = await listener.AcceptTcpClientAsync();
+        await using var stream = client.GetStream();
+        var buffer = new byte[4096];
+        var received = new List<byte>();
+        while (true)
         {
-            RequestMessage = request,
-        });
+            var count = await stream.ReadAsync(buffer);
+            if (count == 0)
+                throw new InvalidOperationException("Loopback client closed before sending HTTP headers.");
+            received.AddRange(buffer.AsSpan(0, count).ToArray());
+            if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0)
+                break;
+        }
+
+        var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        await stream.WriteAsync(response);
+    }
 }
 
 internal sealed class CapturingLogger : ILogger
@@ -134,7 +192,7 @@ write_package_consumer() {
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RestoreSources>$FEED;$NUGET_ORG</RestoreSources>
+    <RestoreSources>$PACKAGE_SOURCES</RestoreSources>
     <RestorePackagesPath>$PACKAGES/pkg</RestorePackagesPath>
     <RestoreNoCache>true</RestoreNoCache>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
@@ -219,7 +277,8 @@ run_managed_consumer() {
   local dir="$1"
   local managed_out="$2"
 
-  dotnet build "$dir/Consumer.csproj" -c Release -v quiet
+  dotnet restore "$dir/Consumer.csproj" --no-cache --force-evaluate -v quiet
+  dotnet build "$dir/Consumer.csproj" -c Release --no-restore -v quiet
   assert_generated_interceptor "$dir"
   dotnet "$dir/bin/Release/net10.0/Consumer.dll" > "$managed_out"
   diff -u "$VERIFIED" "$managed_out"
@@ -230,6 +289,13 @@ publish_nativeaot_consumer() {
   local dir="$2"
   local publish_log="$3"
 
+  dotnet restore "$dir/Consumer.csproj" \
+    -r "$RID" \
+    -p:PublishAot=true \
+    --no-cache \
+    --force-evaluate \
+    -v quiet
+
   dotnet publish "$dir/Consumer.csproj" \
     -c Release \
     -r "$RID" \
@@ -237,6 +303,7 @@ publish_nativeaot_consumer() {
     -p:SelfContained=true \
     -p:InvariantGlobalization=true \
     -p:TreatWarningsAsErrors=true \
+    --no-restore \
     -v quiet 2>&1 | tee "$publish_log"
   assert_no_aot_warnings "$publish_log" "$name"
 }
@@ -259,9 +326,10 @@ run_consumer() {
 }
 
 write_package_consumer "$WORK/pkg-consumer"
-write_projectreference_consumer "$WORK/projref-consumer"
-
 run_consumer "package-reference" "$WORK/pkg-consumer"
-run_consumer "project-reference" "$WORK/projref-consumer"
+if [[ "$MODE" == "local" ]]; then
+  write_projectreference_consumer "$WORK/projref-consumer"
+  run_consumer "project-reference" "$WORK/projref-consumer"
+fi
 
-echo "smoketest-ok rid=$RID"
+echo "smoketest-ok mode=$MODE version=$VERSION rid=$RID"

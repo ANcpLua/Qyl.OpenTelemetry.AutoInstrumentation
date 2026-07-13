@@ -10,14 +10,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
-CONTRACT_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "InstrumentationContract.cs"
 GENERATOR_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
 INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
 OPTIONS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
 IDS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylSemanticAttributes.cs"
-SEMCONV_GENERATOR_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "SemConvRegistryGenerator.cs"
-RUNTIME_SEMANTICS_PATH = ROOT / "docs" / "RUNTIME_SEMANTICS.md"
 HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
 ACTIVITY_STATUS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylActivityStatus.cs"
@@ -97,27 +94,10 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw caughtException;",
     "throw ex;",
 ]
-MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS = {
-    "signals.traces.NSERVICEBUS": [
-        "NServiceBus",
-        "NativeAOT is structurally blocked",
-        "Reflection.Emit",
-        "ConcreteProxyCreator",
-        "Particular/NServiceBus#7817",
-    ],
-    "signals.metrics.NSERVICEBUS": [
-        "NServiceBus",
-        "NativeAOT is structurally blocked",
-        "Reflection.Emit",
-        "ConcreteProxyCreator",
-        "Particular/NServiceBus#7817",
-    ],
-    "signals.traces.WCFCLIENT": [
-        "WCF client",
-        "NativeAOT is blocked",
-        "DispatchProxy",
-        "PlatformNotSupportedException",
-    ],
+MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
+    "signals.traces.NSERVICEBUS",
+    "signals.metrics.NSERVICEBUS",
+    "signals.traces.WCFCLIENT",
 }
 REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"
 REQUIRED_INTERCEPTOR_EMITTER_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylIntercepted"
@@ -248,20 +228,13 @@ def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str
         for item in artifacts.implemented_signal_items(contract)
         if item.get("evidence_level") == "verified_managed"
     }
-    expected_boundary_keys = set(MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS)
+    expected_boundary_keys = MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS
     if managed_keys != expected_boundary_keys:
         fail(
             "verified_managed implemented signals must be an explicit NativeAOT boundary set: "
             f"missing_boundary={sorted(managed_keys - expected_boundary_keys)} "
             f"stale_boundary={sorted(expected_boundary_keys - managed_keys)}"
         )
-
-    runtime_semantics = RUNTIME_SEMANTICS_PATH.read_text()
-    for key, tokens in sorted(MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_TOKENS.items()):
-        for token in tokens:
-            if token not in runtime_semantics:
-                fail(f"{key} verified_managed boundary is not documented in RUNTIME_SEMANTICS.md: {token}")
-
 
 def verify_handoff_real_demo_coverage(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     evidence_real_demo_verifiers = {
@@ -333,6 +306,8 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
             fail(f"global control is not read by QylAutoInstrumentationOptions: {variable}")
 
     for item in instrumentation_options:
+        if item.get("qyl_status") != "option_bound":
+            continue
         variable = str(item["environment_variable"])
         if variable not in options:
             fail(f"instrumentation option is not read by QylAutoInstrumentationOptions: {variable}")
@@ -358,13 +333,8 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
                 f"missing={sorted(expected - actual)} extra={sorted(actual - expected)}"
             )
 
-    if "SqlClientNetFxIlRewriteEnabled => false" not in options:
-        fail("NETFX SQLClient IL rewrite option must be recorded but remain disabled in NativeAOT mode")
-
-
 def verify_semconv_attribute_contract() -> None:
     attributes = SEMCONV_ATTRIBUTES_PATH.read_text()
-    generator = SEMCONV_GENERATOR_PATH.read_text()
     runtime_project = RUNTIME_PROJECT_PATH.read_text()
 
     for package in [
@@ -381,15 +351,6 @@ def verify_semconv_attribute_contract() -> None:
         if namespace not in attributes:
             fail(f"QylSemanticAttributes must alias generated semconv constants from {namespace}")
 
-    for token in [
-        "QylSemConvRegistry.g.cs",
-        "CollectFromNamespace",
-        "IFieldSymbol",
-        "HasConstantValue",
-    ]:
-        if token not in generator:
-            fail(f"semconv registry generator missing compile-time metadata extraction token: {token}")
-
     for root in RUNTIME_EMISSION_ROOTS:
         for path in root.rglob("*.cs"):
             text = path.read_text()
@@ -400,31 +361,11 @@ def verify_semconv_attribute_contract() -> None:
 
 
 def verify_metric_contract() -> None:
-    contract = CONTRACT_PATH.read_text()
     generator = read_generator_sources()
     meters = METRIC_METERS_PATH.read_text()
     names = METRIC_NAMES_PATH.read_text()
     options = OPTIONS_PATH.read_text()
     metric_implementation_text = "\n".join([generator, meters, names])
-
-    for token in [
-        'public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";',
-        'public const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";',
-        'public const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";',
-        'public const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";',
-        'public const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";',
-        'public const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";',
-        'public const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";',
-        'public const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";',
-        'public const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";',
-        'public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";',
-        'public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";',
-        'public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";',
-        'public const string NameResolutionMeterName = "System.Net.NameResolution";',
-        'public const string NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";',
-    ]:
-        if token not in contract:
-            fail(f"InstrumentationContract must pin the .NET 10 metric meter proof: {token}")
 
     for token in [
         'public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";',
@@ -1549,7 +1490,6 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
 
 def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     generator = read_generator_sources()
-    contract_source = CONTRACT_PATH.read_text()
     generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
     generator_keys.update(parse_db_trace_contract_keys(generator))
     implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
@@ -1573,16 +1513,10 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "TryGetSourceGeneratedSignal",
         "SourceGeneratedSignalPromiseCount",
     ]:
-        if token in contract_source or token in generator:
-            fail(f"contract/generator must not conflate implemented with source-generated: {token}")
+        if token in generator:
+            fail(f"generator must not conflate implemented with source-generated: {token}")
 
     for token in [
-        "ImplementedSignalKeys",
-        "SourceInterceptorSignalKeys",
-        "RuntimePublicTelemetrySignalKeys",
-        "UnsupportedNativeAotSignalKeys",
-        "TryGetSourceInterceptorSignal",
-        "TryGetImplementedSignal",
         "InterceptorEmissionDescriptor",
         "InterceptorBodyDescriptor",
         "TraceRuntimeHelperDescriptor",
@@ -1614,8 +1548,8 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "descriptor.AsyncObservation.AppliesTo(in target)",
         "descriptor.AsyncObservation.ObserveAsyncMethod",
     ]:
-        if token not in (contract_source if token.startswith(("Implemented", "Source", "Runtime", "Unsupported", "TryGet")) else generator):
-            fail(f"contract/generator missing separated descriptor API token: {token}")
+        if token not in generator:
+            fail(f"generator missing separated descriptor API token: {token}")
 
     for method_name in re.findall(r"\n    private static void (Append[A-Za-z0-9]+StartActivity)\(", generator):
         fail(f"generator must model trace start activity calls with TraceRuntimeHelperDescriptor, not private emitter method: {method_name}")

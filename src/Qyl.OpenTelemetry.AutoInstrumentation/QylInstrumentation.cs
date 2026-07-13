@@ -12,8 +12,8 @@ public static class QylInstrumentation
     /// <summary>
     /// Instrumentation-scope version stamped on every qyl-emitted span/metric (via
     /// <see cref="QylActivitySource"/>). Baked at build time from the root
-    /// <c>Directory.Build.props</c> <c>&lt;Version&gt;</c> — which CI overrides from the release
-    /// <c>v*</c> tag at pack time — via the generated <c>QylVersionInfo</c> const (see the
+    /// <c>Directory.Build.props</c> <c>&lt;Version&gt;</c> — which CI packs unchanged and uses for the
+    /// post-verification <c>v*</c> tag — via the generated <c>QylVersionInfo</c> const (see the
     /// <c>GenerateQylVersionInfo</c> target in the core project). No reflection; it always matches
     /// the shipped package and is never hand-maintained.
     /// </summary>
@@ -22,8 +22,7 @@ public static class QylInstrumentation
     private static int _activated;
 
     /// <summary>
-    /// Activate qyl runtime metrics and the development-only semconv conformance listener when it
-    /// is explicitly opted in.
+    /// Activate qyl runtime metrics.
     /// </summary>
     /// <returns><c>true</c> on the first activation, <c>false</c> on subsequent calls.</returns>
     public static bool Activate()
@@ -36,8 +35,6 @@ public static class QylInstrumentation
         // "key=Redacted" redaction, raw only behind the upstream redaction-disable flag). qyl
         // owns telemetry in a zero-code app, so take the raw URI and redact it itself.
         AppContext.SetSwitch("System.Net.Http.DisableUriRedaction", true);
-
-        SemConvConformanceProcessor.EnsureListenerRegisteredIfEnabled();
 
         QylRuntimeProcessMetrics.Initialize();
 

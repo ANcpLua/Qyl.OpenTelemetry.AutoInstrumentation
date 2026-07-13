@@ -47,7 +47,6 @@ GENERATOR_PROJECT = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Sourc
 
 # Demos that NativeAOT-publish warning-clean under strict TreatWarningsAsErrors.
 CLEAN_DEMOS: list[str] = [
-    "Qyl.LiveInstrumentationDemo",
     "Qyl.RealAdoNetDemo",
     "Qyl.RealAspNetCoreDemo",
     "Qyl.RealAzureDemo",
@@ -63,7 +62,6 @@ CLEAN_DEMOS: list[str] = [
     "Qyl.RealRabbitMqDemo",
     "Qyl.RealRedisDemo",
     "Qyl.RealSqliteDemo",
-    "Qyl.RealTcgPublishingDemo",
 ]
 
 # Demos that AOT-publish (working binary) but whose third-party dependency emits tolerated

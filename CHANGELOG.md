@@ -1,11 +1,30 @@
 # Changelog
 
 Notable changes to `Qyl.OpenTelemetry.AutoInstrumentation`. Versions track the Qyl.OpenTelemetry
-stack line; releases are tag-driven (`v*`) and CI-published. The `<Version>` in
-`Directory.Build.props` is the local-build floor and is CI-overridden from the release tag at pack
-time.
+stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs that exact version,
+proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
+matching `v*` tag and GitHub release.
 
-## [Unreleased]
+## [5.0.0] - 2026-07-13
+
+### Changed
+
+- **BREAKING:** removed the Telemetry Capability Graph API that leaked through the 4.1.0 core
+  package, along with its never-published `.Publishing` companion project. A library-wide catalog
+  was not evidence of the telemetry emitted by a particular consumer binary.
+- **BREAKING:** removed the development conformance listener and its hosting/options surface; it
+  changed sampling and had no product consumer.
+- **BREAKING:** stopped binding ASP.NET classic capture/redaction and SQLClient .NET Framework IL
+  rewrite options that this managed .NET 10/NativeAOT implementation cannot apply.
+- Removed the unused 60-row contract manifest that the analyzer emitted into every consumer and
+  the receiver-pattern projection that only fed the deleted graph; repository verification now
+  compares actual generator target keys directly with the owned YAML.
+- Replaced the generic ADO.NET demo's hand-written command double with a real in-memory SQLite
+  database invoked through the provider-neutral `DbConnection`/`DbCommand` surface.
+- Replaced hand-shaped OTLP JSON and protobuf substring scanning with a loopback receiver that
+  decodes `ExportTraceServiceRequest` using the official OpenTelemetry protobuf package.
+
+## [4.1.0] - 2026-07-13
 
 ### Changed
 
@@ -22,7 +41,7 @@ time.
   NativeAOT-publish warning-cleanliness gate (17 clean / 13 vendor-warned) (#27); aot-gate
   satisfies the `PublishAot` analyzer contract instead of redirecting artifacts (#30); real-demos
   on x64 — mssql/server ships no arm64 image (#32).
-- Tools: orphaned TCG-publishing verifier registered in the goal gate (#37); `artifacts/publish`
+- Tools: local TCG-publishing verifier registered in the goal gate (#37); `artifacts/publish`
   dropped after passing verify gates (#35).
 - Docs/chore: comment truth sweep (#33); agent-state purge (#34).
 
@@ -90,12 +109,10 @@ time.
 
 ### Added
 
-- **Telemetry Capability Graph (First-Light, steps 1–3).** `TelemetryCapabilityGraphGenerator`
-  bakes the compile-time TCG into the core assembly as `QylTelemetryCapabilityGraph`
-  (`.Json` / `.SchemaVersion` / `.CapabilityCount`), and the
-  `Qyl.OpenTelemetry.AutoInstrumentation.Publishing` package emits it as a true OTel `LogRecord` at
-  host startup via `ILogger` (no OTel SDK dependency), proven by `demos/Qyl.RealTcgPublishingDemo`
-  (#12, #13, #14).
+- **Telemetry Capability Graph experiment.** `TelemetryCapabilityGraphGenerator` bakes the
+  library contract into the core assembly as `QylTelemetryCapabilityGraph`. The repository also
+  added an unpublished `Qyl.OpenTelemetry.AutoInstrumentation.Publishing` experiment and local
+  demo; that package was not part of the five-package NuGet release (#12, #13, #14).
 
 ### Fixed
 
@@ -147,18 +164,3 @@ First release under the canonical name, rebaselining the pre-public `0.x` line (
 - Span names are OTel-semconv-shaped low-cardinality values composed by `QylActivityNames`
   (`{method}` / `{method} {route}` / `{rpc.service}/{rpc.method}` / `DB {operation}`), not fixed
   literals.
-
----
-
-## Continuation notes
-
-Useful-for-continuation direction, not a commit dump:
-
-- Finish an OTLP export normalizer so the verified-OTLP gate validates real exported telemetry
-  end-to-end, not only OTLP-shaped committed fixtures.
-- Turn BenchmarkDotNet evidence into stable allocation/latency budgets once CI runner noise is
-  characterized.
-- Add a single update path for the OpenTelemetry .NET auto-instrumentation contract that regenerates
-  the coverage matrix, generator contract data, and snapshots together.
-- Expand source-generator interception only for source-visible, semantically stable call-sites — do
-  not chase hidden binary internals with reflection or runtime patching.

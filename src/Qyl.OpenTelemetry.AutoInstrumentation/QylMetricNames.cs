@@ -44,8 +44,4 @@ public static class QylMetricNames
     /// <summary>Well-known Process Runtime Dotnet Thread Pool Threads Count value used by qyl auto-instrumentation.</summary>
     public const string ProcessRuntimeDotnetThreadPoolThreadsCount = "dotnet.thread_pool.thread.count";
 
-    /// <summary>Well-known qyl Sem Conv Attribute Checks value used by qyl auto-instrumentation.</summary>
-    public const string QylSemConvAttributeChecks = "qyl.semconv.attribute.checks";
-    /// <summary>Well-known qyl Sem Conv Processor Failures value used by qyl auto-instrumentation.</summary>
-    public const string QylSemConvProcessorFailures = "qyl.semconv.processor.failures";
 }

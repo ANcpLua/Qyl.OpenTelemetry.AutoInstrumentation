@@ -59,7 +59,8 @@
         "http.request.method": "GET",
         "http.response.status_code": "204",
         "qyl.instrumentation.domain": "http.client",
-        "server.address": "qyl-webapi.invalid"
+        "server.address": "127.0.0.1",
+        "server.port": "<port>"
       }
     },
     {
@@ -127,7 +128,8 @@
         "http.request.method": "GET",
         "http.response.status_code": "204",
         "qyl.instrumentation.domain": "http.client",
-        "server.address": "qyl-webapi.invalid"
+        "server.address": "127.0.0.1",
+        "server.port": "<port>"
       }
     },
     {

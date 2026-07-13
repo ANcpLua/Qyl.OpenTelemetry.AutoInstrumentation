@@ -48,7 +48,6 @@ ownership_items:
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreDemo
   - tools/verify-real-aspnetcore-demo.py
   conformance_signals:
@@ -141,7 +140,6 @@ ownership_items:
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealEfCoreDemo
   - tools/verify-real-efcore-demo.py
   conformance_signals:
@@ -214,6 +212,7 @@ ownership_items:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - demos/Qyl.RealHttpClientDemo
   - tools/verify-real-http-client-demo.py
+  - tools/verify-otlp-receiver.py
   conformance_signals:
   - kind: span
     name: httpclient.downstream
@@ -593,7 +592,6 @@ ownership_items:
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs
-  - tools/verify-otlp-collector-fixtures.py
   - demos/Qyl.RealAspNetCoreMetricsDemo
   - tools/verify-real-aspnetcore-metrics-demo.py
   conformance_signals:
@@ -936,26 +934,22 @@ ownership_items:
   - tools/verify-contract-invariants.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_050
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_051
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   lane: instrumentation_option
@@ -1046,23 +1040,19 @@ ownership_items:
   - tools/verify-contract-invariants.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_059
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_060
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: unsupported_nativeaot
+  qyl_status: unsupported_nativeaot
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  evidence_level: none
+  primary_owner: not_applicable
+  evidence: []

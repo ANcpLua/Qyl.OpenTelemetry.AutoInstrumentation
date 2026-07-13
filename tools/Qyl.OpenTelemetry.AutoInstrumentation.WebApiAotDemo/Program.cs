@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
@@ -24,13 +26,12 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
-using var downstream = new HttpClient(new StubHandler())
-{
-    BaseAddress = new Uri("https://qyl-webapi.invalid"),
-};
-using (await downstream.GetAsync("/downstream?secret=redacted"))
+await using var downstreamServer = LoopbackHttpServer.Start();
+using var downstream = new HttpClient();
+using (await downstream.GetAsync(downstreamServer.Uri + "downstream?secret=redacted"))
 {
 }
+await downstreamServer.RequestCompleted;
 
 await using (var sqlConnection = new SqlConnection())
 {
@@ -85,7 +86,7 @@ finally
     await app.StopAsync();
 }
 
-var report = WebApiAotReport.Create(captured.ToArray());
+var report = WebApiAotReport.Create(captured.ToArray(), downstreamServer.Port);
 var json = JsonSerializer.Serialize(report, WebApiAotJsonContext.Default.WebApiAotReport);
 Console.WriteLine(json);
 
@@ -103,13 +104,56 @@ static async Task CreateSchemaAsync(SqliteConnection connection)
     await command.ExecuteNonQueryAsync();
 }
 
-internal sealed class StubHandler : HttpMessageHandler
+internal sealed class LoopbackHttpServer : IAsyncDisposable
 {
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent)
+    private readonly TcpListener _listener;
+
+    private LoopbackHttpServer(TcpListener listener)
+    {
+        _listener = listener;
+        Port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        Uri = new Uri($"http://127.0.0.1:{Port}/", UriKind.Absolute);
+        RequestCompleted = ServeOnceAsync(listener);
+    }
+
+    public int Port { get; }
+
+    public Uri Uri { get; }
+
+    public Task RequestCompleted { get; }
+
+    public static LoopbackHttpServer Start()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start(1);
+        return new LoopbackHttpServer(listener);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _listener.Stop();
+        return ValueTask.CompletedTask;
+    }
+
+    private static async Task ServeOnceAsync(TcpListener listener)
+    {
+        using var client = await listener.AcceptTcpClientAsync();
+        await using var stream = client.GetStream();
+        var buffer = new byte[4096];
+        var received = new List<byte>();
+        while (true)
         {
-            RequestMessage = request,
-        });
+            var count = await stream.ReadAsync(buffer);
+            if (count == 0)
+                throw new InvalidOperationException("Loopback client closed before sending HTTP headers.");
+            received.AddRange(buffer.AsSpan(0, count).ToArray());
+            if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0)
+                break;
+        }
+
+        var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        await stream.WriteAsync(response);
+    }
 }
 
 internal sealed record CapturedActivity(
@@ -143,7 +187,7 @@ internal sealed record WebApiAotReport(
     MatchedSignal[] Signals,
     MatchedSignal[] Activities)
 {
-    public static WebApiAotReport Create(CapturedActivity[] activities)
+    public static WebApiAotReport Create(CapturedActivity[] activities, int downstreamPort)
     {
         var failures = new List<string>();
         var signals = new List<MatchedSignal>();
@@ -159,11 +203,14 @@ internal sealed record WebApiAotReport(
             HasTag(activity, "qyl.instrumentation.domain", "http.client") &&
             HasTag(activity, "server.address", "127.0.0.1")));
 
-        AddRequired(signals, failures, "httpclient.downstream", activities.FirstOrDefault(static activity =>
+        AddRequired(signals, failures, "httpclient.downstream", activities.FirstOrDefault(activity =>
             HasTag(activity, "qyl.instrumentation.domain", "http.client") &&
             HasTag(activity, "http.request.method", "GET") &&
             HasTag(activity, "http.response.status_code", "204") &&
-            HasTag(activity, "server.address", "qyl-webapi.invalid")));
+            HasTag(activity, "server.address", "127.0.0.1") &&
+            activity.Tags.TryGetValue("server.port", out var port) &&
+            int.TryParse(port, CultureInfo.InvariantCulture, out var parsedPort) &&
+            parsedPort == downstreamPort));
 
         AddRequired(signals, failures, "efcore.sqlite", activities.FirstOrDefault(static activity =>
             HasTag(activity, "qyl.instrumentation.domain", "db.efcore")));

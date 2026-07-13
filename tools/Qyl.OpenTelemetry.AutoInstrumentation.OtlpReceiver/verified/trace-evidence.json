@@ -1,0 +1,33 @@
+{
+  "downstream": {
+    "method": "GET",
+    "path": "/probe?access_token=super-secret"
+  },
+  "otlp": {
+    "contentType": "application/x-protobuf",
+    "method": "POST",
+    "path": "/v1/traces",
+    "wireType": "ExportTraceServiceRequest"
+  },
+  "span": {
+    "attributes": {
+      "http.request.method": "GET",
+      "http.response.status_code": 204,
+      "qyl.instrumentation.domain": "http.client",
+      "server.address": "127.0.0.1",
+      "server.port": "<port>",
+      "url.full": "http://127.0.0.1:<port>/probe?access_token=Redacted"
+    },
+    "idBytes": {
+      "span": 8,
+      "trace": 16
+    },
+    "kind": "SPAN_KIND_CLIENT",
+    "name": "GET",
+    "scope": {
+      "name": "Qyl.OpenTelemetry.AutoInstrumentation",
+      "version": "5.0.0-otlpreceiver"
+    },
+    "timestampsValid": true
+  }
+}

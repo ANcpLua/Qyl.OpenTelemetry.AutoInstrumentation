@@ -58,7 +58,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
 
     for token in [
         "adonet-value=alpha",
-        "expected-adonet-error=InvalidOperationException",
+        "expected-adonet-error=SqliteException",
     ]:
         if token not in completed.stdout:
             fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")

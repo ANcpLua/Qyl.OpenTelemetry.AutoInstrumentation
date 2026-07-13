@@ -21,7 +21,6 @@ VERIFIED_ROOT = FIXTURE_DIR.parent / "verified"
 
 EXPECTED_FILES = {
     "QylAutoInstrumentation.Interceptors.g.verified.cs": "QylAutoInstrumentation.Interceptors.g.cs",
-    "QylGeneratedInstrumentationContract.g.verified.cs": "QylGeneratedInstrumentationContract.g.cs",
 }
 
 REQUIRED_INTERCEPTOR_TOKENS = [
@@ -51,8 +50,19 @@ def fail(message: str) -> None:
 
 
 def run_build() -> None:
+    if GENERATED_ROOT.exists():
+        shutil.rmtree(GENERATED_ROOT)
     completed = subprocess.run(
-        ["dotnet", "build", str(FIXTURE_PROJECT), "-c", "Release", "-v", "quiet"],
+        [
+            "dotnet",
+            "build",
+            str(FIXTURE_PROJECT),
+            "-c",
+            "Release",
+            "--no-incremental",
+            "-v",
+            "quiet",
+        ],
         cwd=ROOT,
         text=True,
         stdout=subprocess.PIPE,
@@ -70,11 +80,10 @@ def generated_files_by_name() -> dict[str, Path]:
     if not GENERATED_ROOT.exists():
         fail(f"missing generated output directory: {GENERATED_ROOT}")
 
-    expected = set(EXPECTED_FILES.values())
     files = {
         path.name: path
         for path in GENERATED_ROOT.rglob("*.g.cs")
-        if path.name in expected
+        if "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" in path.parts
     }
     return files
 

@@ -5,7 +5,7 @@
     <RootNamespace>Qyl.OpenTelemetry.AutoInstrumentation</RootNamespace>
     <AssemblyName>Qyl.OpenTelemetry.AutoInstrumentation</AssemblyName>
     <PackageId>Qyl.OpenTelemetry.AutoInstrumentation</PackageId>
-    <Description>AOT-native zero-code .NET instrumentation core. Source-generated semconv registry + Activity/Meter primitives. NO IL rewriting, NO CLR profiler attach.</Description>
+    <Description>Managed .NET 10 and NativeAOT instrumentation using Roslyn interceptors, Activity/Meter primitives, and public runtime hooks. No CLR profiler or runtime IL rewriting.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.OpenTelemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
@@ -39,7 +39,7 @@
   <!-- Bake <Version> into a generated internal const so QylInstrumentation.Version (the OTel scope
        version stamped on every span/metric) is a pure compile-time value with ZERO reflection —
        reflection in product code is banned by verify-contract-invariants.py. Always runs (no
-       Inputs/Outputs) so a CI `-p:Version` override is honoured; writes only on change to avoid
+       Inputs/Outputs) so the repository-owned version passed by CI is honoured; writes only on change to avoid
        needless recompiles. Emitted into obj/, never committed. -->
   <Target Name="GenerateQylVersionInfo" BeforeTargets="BeforeCompile;CoreCompile">
     <PropertyGroup>
@@ -64,9 +64,8 @@
   </Target>
 
   <ItemGroup Condition="'$(PublishAot)' != 'true'">
-    <!-- Source generator referenced as analyzer: emits the semconv FrozenSet at compile time so the
-         runtime conformance check needs zero reflection (the substrate-era reflection path was JIT-only).
-         It is build-time-only; NativeAOT publish must not try to publish the netstandard2.0 generator. -->
+    <!-- The source generator is build-time-only; NativeAOT publish must not try to publish the
+         netstandard2.0 generator. -->
     <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"

@@ -52,4 +52,4 @@ jobs:
         run: >-
           python3 tools/verify-aot-autoinstrumentation-goal.py
           --no-demos
-          --skip "smoketest,webapi aot demo,otlp collector fixtures"
+          --skip "smoketest,webapi aot demo,otlp receiver evidence"

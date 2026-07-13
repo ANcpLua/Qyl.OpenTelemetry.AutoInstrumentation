@@ -48,7 +48,7 @@
     <PackageVersion Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" Version="3.4.0" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.1" />
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
-    <!-- Patched native SQLite lib. Referenced directly by the Sqlite/EfCore demos to override the
+    <!-- Patched native SQLite lib. Referenced directly by the ADO.NET/Sqlite/EF Core demos to override the
          transitive 2.1.11 (NU1903, GHSA-2m69-gcr7-jv3q) pulled via Microsoft.Data.Sqlite. -->
     <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />
     <PackageVersion Include="StackExchange.Redis" Version="3.0.0" />

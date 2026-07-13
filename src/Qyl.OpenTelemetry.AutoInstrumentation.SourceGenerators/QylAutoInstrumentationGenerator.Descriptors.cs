@@ -287,31 +287,17 @@ public sealed partial class QylAutoInstrumentationGenerator
         private readonly SymbolInterceptorMatcher? _symbolMatcher;
         private readonly ReceiverInterceptorMatcher? _receiverMatcher;
 
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            SymbolInterceptorMatcher matcher)
+        public InterceptorMatcherDescriptor(SymbolInterceptorMatcher matcher)
         {
-            Name = name;
-            ReceiverTypePattern = receiverTypePattern;
             _symbolMatcher = matcher;
             _receiverMatcher = null;
         }
 
-        public InterceptorMatcherDescriptor(
-            string name,
-            string receiverTypePattern,
-            ReceiverInterceptorMatcher matcher)
+        public InterceptorMatcherDescriptor(ReceiverInterceptorMatcher matcher)
         {
-            Name = name;
-            ReceiverTypePattern = receiverTypePattern;
             _symbolMatcher = null;
             _receiverMatcher = matcher;
         }
-
-        public string Name { get; }
-
-        public string ReceiverTypePattern { get; }
 
         public bool TryMatch(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
         {

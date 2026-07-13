@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="demos/Qyl.LiveInstrumentationDemo/Qyl.LiveInstrumentationDemo.csproj" />
   <Project Path="demos/Qyl.RealAdoNetDemo/Qyl.RealAdoNetDemo.csproj" />
   <Project Path="demos/Qyl.RealAspNetCoreDemo/Qyl.RealAspNetCoreDemo.csproj" />
   <Project Path="demos/Qyl.RealAspNetCoreMetricsDemo/Qyl.RealAspNetCoreMetricsDemo.csproj" />
@@ -27,6 +26,5 @@
   <Project Path="demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj" />
   <Project Path="demos/Qyl.RealSqlClientDemo/Qyl.RealSqlClientDemo.csproj" />
   <Project Path="demos/Qyl.RealSqliteDemo/Qyl.RealSqliteDemo.csproj" />
-  <Project Path="demos/Qyl.RealTcgPublishingDemo/Qyl.RealTcgPublishingDemo.csproj" />
   <Project Path="demos/Qyl.RealWcfClientDemo/Qyl.RealWcfClientDemo.csproj" />
 </Solution>

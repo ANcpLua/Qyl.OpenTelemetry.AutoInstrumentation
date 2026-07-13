@@ -93,8 +93,8 @@ reviews:
         exception messages) explodes at scale; (3) Activity/Meter lifecycle — undisposed
         listeners, leaked subscriptions, double-Start/Stop; (4) thread safety of shared
         listener state. PublicAPI.Shipped/Unshipped.txt are analyzer-managed: edits must
-        come from the analyzer flow, and API breaks are fine (internal product, no
-        compatibility contract).
+        come from the analyzer flow. These packages are public; breaking changes require
+        a deliberate new major and migration of known consumers.
     - path: "src/**/Semantics/**"
       instructions: |
         OTel semantic conventions surface. Attribute names, stability levels, and units
@@ -102,10 +102,9 @@ reviews:
         spec, never from memory. Flag invented attribute names.
     - path: "tests/**"
       instructions: |
-        Deterministic only: no Task.Delay/sleep-based synchronization, no wall-clock
-        assertions, no external services. A test asserts observable telemetry output
-        (exported activities/metrics), not implementation internals. COVERAGE_LEDGER.md
-        must move with coverage-relevant changes.
+        Deterministic synchronization and assertions only. Container-backed integration
+        tests may use real external services; unit and snapshot tests must not depend on
+        ambient services. Assert observable telemetry output, not implementation internals.
     - path: "benchmarks/**"
       instructions: |
         BenchmarkDotNet projects. Flag benchmarks that measure nothing (dead code paths,
@@ -273,10 +272,7 @@ knowledge_base:
   code_guidelines:
     enabled: true
     filePatterns:
-      - 'CLAUDE.md'
       - 'AGENTS.md'
-      - 'COVERAGE_LEDGER.md'
-      - '**/CLAUDE.md'
       - '**/AGENTS.md'
       - '.editorconfig'
   # Cross-repo context (Pro Plus): related ANcpLua repos inform reviews here.

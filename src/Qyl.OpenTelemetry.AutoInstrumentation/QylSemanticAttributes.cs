@@ -20,9 +20,6 @@ public static class QylSemanticAttributes
 {
     /// <summary>Well-known qyl Instrumentation Domain value used by qyl auto-instrumentation.</summary>
     public const string QylInstrumentationDomain = "qyl.instrumentation.domain";
-    /// <summary>Well-known qyl Conformance Verdict value used by qyl auto-instrumentation.</summary>
-    public const string QylConformanceVerdict = "qyl.conformance.verdict";
-
     /// <summary>Well-known HTTP Request Method value used by qyl auto-instrumentation.</summary>
     public const string HttpRequestMethod = HttpAttributes.RequestMethod;
     /// <summary>Well-known HTTP Request Method Original value used by qyl auto-instrumentation.</summary>

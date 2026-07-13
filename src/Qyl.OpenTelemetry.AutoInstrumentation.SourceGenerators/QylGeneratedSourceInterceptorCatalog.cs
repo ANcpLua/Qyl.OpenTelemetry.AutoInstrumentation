@@ -6,30 +6,30 @@ public sealed partial class QylAutoInstrumentationGenerator
 {
     private static ImmutableArray<InterceptorMatcherDescriptor> CreateGeneratedMatcherDescriptors()
         => ImmutableArray.Create(
-            new InterceptorMatcherDescriptor("HttpClient", "global::System.Net.Http.HttpClient", TryGetHttpClientInvocation),
-            new InterceptorMatcherDescriptor("HttpWebRequest", "global::System.Net.HttpWebRequest", TryGetHttpWebRequestInvocation),
-            new InterceptorMatcherDescriptor("AspNetCoreEndpointMap", "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions", TryGetAspNetCoreEndpointMapInvocation),
-            new InterceptorMatcherDescriptor("MeterProviderBuilderAddMeter", "global::OpenTelemetry.Metrics.MeterProviderBuilder", TryGetMeterProviderBuilderAddMeterInvocation),
-            new InterceptorMatcherDescriptor("AzureClient", "Azure.*Client", TryGetAzureClientInvocation),
-            new InterceptorMatcherDescriptor("Elastic", "Elastic.Clients.Elasticsearch.*Client|Elastic.Transport.ITransport", TryGetElasticInvocation),
-            new InterceptorMatcherDescriptor("WcfClient", "global::System.ServiceModel.ClientBase<TChannel>", TryGetWcfClientInvocation),
-            new InterceptorMatcherDescriptor("GrpcNetClientUnary", "global::Grpc.Core.ClientBase<T>", TryGetGrpcNetClientAsyncUnaryInvocation),
-            new InterceptorMatcherDescriptor("GrpcNetClientStreaming", "global::Grpc.Core.ClientBase<T>", TryGetGrpcNetClientStreamingInvocation),
-            new InterceptorMatcherDescriptor("Kafka", "Confluent.Kafka.IProducer<TKey,TValue>|Confluent.Kafka.IConsumer<TKey,TValue>", TryGetKafkaInvocation),
-            new InterceptorMatcherDescriptor("MassTransit", "MassTransit.IPublishEndpoint|MassTransit.ISendEndpoint|MassTransit.ISendEndpointProvider", TryGetMassTransitInvocation),
-            new InterceptorMatcherDescriptor("NServiceBus", "NServiceBus.IMessageSession|NServiceBus.IMessageHandlerContext", TryGetNServiceBusInvocation),
-            new InterceptorMatcherDescriptor("Quartz", "Quartz.IJob", TryGetQuartzInvocation),
-            new InterceptorMatcherDescriptor("StackExchangeRedis", "StackExchange.Redis.IDatabaseAsync", TryGetStackExchangeRedisInvocation),
-            new InterceptorMatcherDescriptor("GraphQL", "GraphQL.IDocumentExecuter", TryGetGraphQlInvocation),
-            new InterceptorMatcherDescriptor("EntityFrameworkCoreDbContext", "global::Microsoft.EntityFrameworkCore.DbContext", TryGetEntityFrameworkCoreDbContextInvocation),
-            new InterceptorMatcherDescriptor("EntityFrameworkCoreQueryable", "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions", TryGetEntityFrameworkCoreQueryableInvocation),
-            new InterceptorMatcherDescriptor("MongoDb", "MongoDB.Driver.IMongoCollection<TDocument>", TryGetMongoDbInvocation),
-            new InterceptorMatcherDescriptor("DbCommand", "global::System.Data.Common.DbCommand", TryGetDbCommandInvocation),
-            new InterceptorMatcherDescriptor("RabbitMq", "RabbitMQ.Client.IModel|RabbitMQ.Client.IChannel", TryGetRabbitMqInvocation),
-            new InterceptorMatcherDescriptor("LoggerExtensions", "global::Microsoft.Extensions.Logging.LoggerExtensions", TryGetLoggerExtensionInvocation),
-            new InterceptorMatcherDescriptor("ILogger", "global::Microsoft.Extensions.Logging.ILogger", TryGetLoggerInvocation),
-            new InterceptorMatcherDescriptor("NLog", "NLog.Logger", TryGetNLogInvocation),
-            new InterceptorMatcherDescriptor("Log4Net", "log4net.ILog|log4net.Core.ILogger", TryGetLog4NetInvocation));
+            new InterceptorMatcherDescriptor(TryGetHttpClientInvocation),
+            new InterceptorMatcherDescriptor(TryGetHttpWebRequestInvocation),
+            new InterceptorMatcherDescriptor(TryGetAspNetCoreEndpointMapInvocation),
+            new InterceptorMatcherDescriptor(TryGetMeterProviderBuilderAddMeterInvocation),
+            new InterceptorMatcherDescriptor(TryGetAzureClientInvocation),
+            new InterceptorMatcherDescriptor(TryGetElasticInvocation),
+            new InterceptorMatcherDescriptor(TryGetWcfClientInvocation),
+            new InterceptorMatcherDescriptor(TryGetGrpcNetClientAsyncUnaryInvocation),
+            new InterceptorMatcherDescriptor(TryGetGrpcNetClientStreamingInvocation),
+            new InterceptorMatcherDescriptor(TryGetKafkaInvocation),
+            new InterceptorMatcherDescriptor(TryGetMassTransitInvocation),
+            new InterceptorMatcherDescriptor(TryGetNServiceBusInvocation),
+            new InterceptorMatcherDescriptor(TryGetQuartzInvocation),
+            new InterceptorMatcherDescriptor(TryGetStackExchangeRedisInvocation),
+            new InterceptorMatcherDescriptor(TryGetGraphQlInvocation),
+            new InterceptorMatcherDescriptor(TryGetEntityFrameworkCoreDbContextInvocation),
+            new InterceptorMatcherDescriptor(TryGetEntityFrameworkCoreQueryableInvocation),
+            new InterceptorMatcherDescriptor(TryGetMongoDbInvocation),
+            new InterceptorMatcherDescriptor(TryGetDbCommandInvocation),
+            new InterceptorMatcherDescriptor(TryGetRabbitMqInvocation),
+            new InterceptorMatcherDescriptor(TryGetLoggerExtensionInvocation),
+            new InterceptorMatcherDescriptor(TryGetLoggerInvocation),
+            new InterceptorMatcherDescriptor(TryGetNLogInvocation),
+            new InterceptorMatcherDescriptor(TryGetLog4NetInvocation));
 
     private static ImmutableArray<InterceptorEmissionDescriptor> CreateGeneratedEmissionDescriptors()
         => ImmutableArray.Create(
@@ -62,35 +62,4 @@ public sealed partial class QylAutoInstrumentationGenerator
             new InterceptorEmissionDescriptor(InterceptorKind.NLogLogger, new ExternalLoggerBodyDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedExternalLogger", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.LogNLog")),
             new InterceptorEmissionDescriptor(InterceptorKind.Log4NetLogger, new ExternalLoggerBodyDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedExternalLogger", "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInstrumentationDomains.LogLog4Net")));
 
-    /// <summary>A single interceptor matcher projected to its receiver-type surface.</summary>
-    internal readonly struct InterceptorReceiverSurfaceEntry
-    {
-        public InterceptorReceiverSurfaceEntry(string name, string receiverType)
-        {
-            Name = name;
-            ReceiverType = receiverType;
-        }
-
-        /// <summary>The matcher name (e.g. <c>"Kafka"</c>).</summary>
-        public string Name { get; }
-
-        /// <summary>The receiver type or wildcard/pipe pattern the matcher targets.</summary>
-        public string ReceiverType { get; }
-    }
-
-    /// <summary>
-    /// Projects every interceptor matcher to its receiver-type surface for the Telemetry Capability
-    /// Graph. Reading <see cref="InterceptorMatcherDescriptor.ReceiverTypePattern"/> here makes the
-    /// curated receiver registry a live, machine-readable output instead of dead metadata: the
-    /// wildcard/pipe patterns (e.g. Azure, Elastic, Kafka) are not recoverable from the matcher
-    /// delegates, so surfacing them documents the exact receiver surface qyl intercepts.
-    /// </summary>
-    internal static ImmutableArray<InterceptorReceiverSurfaceEntry> GetInterceptorReceiverSurface()
-    {
-        var builder = ImmutableArray.CreateBuilder<InterceptorReceiverSurfaceEntry>(s_matcherDescriptors.Length);
-        foreach (var descriptor in s_matcherDescriptors)
-            builder.Add(new InterceptorReceiverSurfaceEntry(descriptor.Name, descriptor.ReceiverTypePattern));
-
-        return builder.MoveToImmutable();
-    }
 }

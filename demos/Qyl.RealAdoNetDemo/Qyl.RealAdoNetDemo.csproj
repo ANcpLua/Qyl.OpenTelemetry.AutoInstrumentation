@@ -9,6 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <!-- Override the vulnerable transitive 2.1.11 native library. -->
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
     <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
                       Condition="'$(PublishAot)' != 'true'"

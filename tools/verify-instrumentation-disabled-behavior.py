@@ -28,6 +28,8 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 PROGRAM = r'''
 using System.Diagnostics;
 using System.Net;
+using System.Net.Sockets;
+using System.Text;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
@@ -39,13 +41,12 @@ using var listener = new ActivityListener
 };
 ActivitySource.AddActivityListener(listener);
 
-using var http = new HttpClient(new StubHandler())
-{
-    BaseAddress = new Uri("https://qyl-disabled.invalid"),
-};
-using (await http.GetAsync("/probe"))
+await using var server = LoopbackHttpServer.Start();
+using var http = new HttpClient();
+using (await http.GetAsync(server.Uri + "probe"))
 {
 }
+await server.RequestCompleted;
 
 var httpClientSpans = captured.Count(static activity =>
     activity.TagObjects.Any(static tag =>
@@ -58,13 +59,53 @@ var httpClientSpans = captured.Count(static activity =>
 Console.WriteLine("httpclient.spans=" + httpClientSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
 return 0;
 
-internal sealed class StubHandler : HttpMessageHandler
+internal sealed class LoopbackHttpServer : IAsyncDisposable
 {
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        => Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent)
+    private readonly TcpListener _listener;
+
+    private LoopbackHttpServer(TcpListener listener)
+    {
+        _listener = listener;
+        Uri = new Uri($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/", UriKind.Absolute);
+        RequestCompleted = ServeOnceAsync(listener);
+    }
+
+    public Uri Uri { get; }
+
+    public Task RequestCompleted { get; }
+
+    public static LoopbackHttpServer Start()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start(1);
+        return new LoopbackHttpServer(listener);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _listener.Stop();
+        return ValueTask.CompletedTask;
+    }
+
+    private static async Task ServeOnceAsync(TcpListener listener)
+    {
+        using var client = await listener.AcceptTcpClientAsync();
+        await using var stream = client.GetStream();
+        var buffer = new byte[4096];
+        var received = new List<byte>();
+        while (true)
         {
-            RequestMessage = request,
-        });
+            var count = await stream.ReadAsync(buffer);
+            if (count == 0)
+                throw new InvalidOperationException("Loopback client closed before sending HTTP headers.");
+            received.AddRange(buffer.AsSpan(0, count).ToArray());
+            if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0)
+                break;
+        }
+
+        var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        await stream.WriteAsync(response);
+    }
 }
 '''
 

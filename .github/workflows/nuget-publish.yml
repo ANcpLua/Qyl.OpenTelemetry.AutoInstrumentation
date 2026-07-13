@@ -1,30 +1,10 @@
 name: nuget-publish
 
-# Keyless NuGet Trusted Publishing (GitHub OIDC -> nuget.org). No stored secret, no API key:
-# NuGet/login exchanges a GitHub-signed OIDC token for a 1-hour single-use key at push time.
-#
-# EXPLICIT only. This runs ONLY on manual workflow_dispatch, never on push — the repo stays
-# private and the packages stay unreleased until the deliberate history overhaul. Pushing to
-# main does NOT publish; you publish by running this workflow when you decide to.
-#
-# ONE-TIME setup before the first successful run (still zero API keys):
-#   1. Repo Settings -> Environments -> create an environment named `nuget`.
-#   2. nuget.org -> your account -> Trusted Publishing -> Add a policy:
-#        Owner:         ANcpLua
-#        Repository:    ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation
-#        Workflow File: nuget-publish.yml     (file NAME only — no .github/workflows/ prefix)
-#        Environment:   nuget
-#      (The form has NO package field; that is by design.)
-#   3. Actions -> nuget-publish -> Run workflow. The first success pins the policy to the
-#      repo's immutable owner/repo IDs.
-# Before the policy exists the publish job fails loudly at "Authenticate to NuGet" — that
-# proves the gate works; it is never a missing-key problem.
-
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (no v prefix), e.g. 3.1.3. Empty = auto patch-bump from the latest reachable v* tag.'
+        description: "Optional safety check; must equal Directory.Build.props"
         required: false
 
 concurrency:
@@ -38,107 +18,250 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.ver.outputs.version }}
+      version: ${{ steps.version.outputs.value }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-      - id: ver
+      - id: version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            # Floor for the version line. Aligned onto the Qyl.OpenTelemetry stack at 3.0.2
-            # (SemConv 3.0.2). The orphaned v0.* -pre tags are skipped by the bump regex, so a
-            # fresh checkout uses this base. Pass an explicit version input for a specific release.
-            BASE="3.0.2"
-            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-            if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              MAJOR=${BASH_REMATCH[1]}; MINOR=${BASH_REMATCH[2]}; PATCH=${BASH_REMATCH[3]}
-              if git tag --points-at HEAD | grep -qFx "$LATEST_TAG"; then
-                VERSION="$MAJOR.$MINOR.$PATCH"
-              else
-                VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
-              fi
-            else
-              VERSION="$BASE"
-            fi
+          VERSION=$(python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          value = ET.parse("Directory.Build.props").findtext(".//Version")
+          if not value:
+              raise SystemExit("Directory.Build.props has no Version")
+          print(value)
+          PY
+          )
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "invalid repository-owned version: $VERSION" >&2
+            exit 1
           fi
-          echo "Publishing version: $VERSION"
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ -n "$REQUESTED_VERSION" && "$REQUESTED_VERSION" != "$VERSION" ]]; then
+            echo "requested version $REQUESTED_VERSION does not equal Directory.Build.props $VERSION" >&2
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
   verify:
     needs: version
     runs-on: ubuntu-latest
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
         with:
-          dotnet-version: '10.0.x'
-      - name: Pre-publish gate (NativeAOT smoke, package + project reference)
-        run: bash tools/smoketest.sh
-      - name: Pack the five qyl packages
+          global-json-file: global.json
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: python -m pip install -r tools/requirements.txt
+      - name: Full managed, real-integration, and NativeAOT gate
+        run: python tools/verify-aot-autoinstrumentation-goal.py
+      - name: Pack release artifacts
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
-          for proj in \
+          mkdir -p artifacts/release
+          for project in \
             src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj; do
-            dotnet pack "$proj" -c Release -o artifacts -p:Version="${{ needs.version.outputs.version }}"
+            dotnet pack "$project" -c Release --no-restore -o artifacts/release -p:Version="$VERSION"
           done
-      - name: Upload packages
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+          test "$(find artifacts/release -maxdepth 1 -name '*.nupkg' | wc -l)" -eq 5
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: packages
-          path: artifacts/*.nupkg
+          path: artifacts/release/*.nupkg
           if-no-files-found: error
 
-  publish:
-    needs: [version, verify]
+  aot-publish:
+    needs: version
     runs-on: ubuntu-latest
-    environment: nuget          # must match the nuget.org Trusted Publishing policy's Environment field
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
+        with:
+          global-json-file: global.json
+      - name: NativeAOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+      - name: NativeAOT publish matrix
+        run: python3 tools/verify-aot-publish-gate.py --set all
+
+  publish:
+    needs: [version, verify, aot-publish]
+    runs-on: ubuntu-latest
+    environment: nuget
     permissions:
-      contents: write           # for the git tag + GitHub release
-      id-token: write           # REQUIRED for the OIDC exchange; without it NuGet/login fails
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: artifacts/release
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
+        with:
+          dotnet-version: "10.0.x"
+      - id: nuget-login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        with:
+          user: ANcpLua
+      - name: Push through NuGet trusted publishing
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          for package in artifacts/release/*.nupkg; do
+            dotnet nuget push "$package" \
+              --source https://api.nuget.org/v3/index.json \
+              --api-key "$NUGET_API_KEY" \
+              --skip-duplicate
+          done
+
+  verify-published:
+    needs: [version, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: python -m pip install -r tools/requirements.txt
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: packages
+          path: artifacts/packed
+      - name: Wait for every package to reach the NuGet V3 index
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          packages=(
+            qyl.opentelemetry.autoinstrumentation
+            qyl.opentelemetry.autoinstrumentation.diagnosticlisteners
+            qyl.opentelemetry.autoinstrumentation.hosting
+            qyl.opentelemetry.autoinstrumentation.entityframeworkcore
+            qyl.opentelemetry.autoinstrumentation.sqlclient
+          )
+          mkdir -p artifacts/indexed
+          deadline=$((SECONDS + 1200))
+          for package in "${packages[@]}"; do
+            url="https://api.nuget.org/v3-flatcontainer/$package/$VERSION/$package.$VERSION.nupkg"
+            until curl --fail --silent --show-error --head "$url" >/dev/null; do
+              if (( SECONDS >= deadline )); then
+                echo "NuGet indexing timeout: $package $VERSION" >&2
+                exit 1
+              fi
+              sleep 15
+            done
+            curl --fail --silent --show-error "$url" \
+              --output "artifacts/indexed/$package.$VERSION.nupkg"
+          done
+      - name: Prove the indexed payloads came from this workflow commit
+        env:
+          EXPECTED_REPOSITORY: ${{ github.server_url }}/${{ github.repository }}
+          EXPECTED_SHA: ${{ github.sha }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          python3 - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+          from zipfile import ZipFile
+          import os
+          import xml.etree.ElementTree as ET
+
+          def payload(path):
+              with ZipFile(path) as archive:
+                  return {
+                      item.filename: sha256(archive.read(item)).hexdigest()
+                      for item in archive.infolist()
+                      if item.filename not in {
+                          ".signature.p7s",
+                          "[Content_Types].xml",
+                          "_rels/.rels",
+                      }
+                      and not item.filename.startswith("package/services/metadata/")
+                  }
+
+          packed = {path.name.lower(): path for path in Path("artifacts/packed").glob("*.nupkg")}
+          indexed = {path.name.lower(): path for path in Path("artifacts/indexed").glob("*.nupkg")}
+          if packed.keys() != indexed.keys() or len(packed) != 5:
+              raise SystemExit(
+                  f"package set mismatch: packed={sorted(packed)} indexed={sorted(indexed)}"
+              )
+
+          expected_sha = os.environ["EXPECTED_SHA"]
+          expected_repository = os.environ["EXPECTED_REPOSITORY"].rstrip("/")
+          expected_version = os.environ["VERSION"]
+          namespace = {"n": "http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd"}
+          for name, packed_path in sorted(packed.items()):
+              indexed_path = indexed[name]
+              if payload(packed_path) != payload(indexed_path):
+                  raise SystemExit(f"indexed package payload differs from workflow artifact: {name}")
+              with ZipFile(indexed_path) as archive:
+                  nuspec_name = next(item for item in archive.namelist() if item.endswith(".nuspec"))
+                  metadata = ET.fromstring(archive.read(nuspec_name)).find("n:metadata", namespace)
+              if metadata is None:
+                  raise SystemExit(f"package has no nuspec metadata: {name}")
+              package_id = metadata.findtext("n:id", namespaces=namespace)
+              version = metadata.findtext("n:version", namespaces=namespace)
+              repository = metadata.find("n:repository", namespace)
+              if package_id is None or name != f"{package_id}.{expected_version}.nupkg".lower():
+                  raise SystemExit(f"package id mismatch: file={name} nuspec={package_id!r}")
+              if version != expected_version:
+                  raise SystemExit(f"package version mismatch: {name} has {version!r}")
+              if repository is None or repository.get("commit") != expected_sha:
+                  actual = None if repository is None else repository.get("commit")
+                  raise SystemExit(
+                      f"package commit mismatch: {name} has {actual!r}, expected {expected_sha!r}"
+                  )
+              repository_url = repository.get("url", "").removesuffix(".git").rstrip("/")
+              if repository.get("type") != "git" or repository_url != expected_repository:
+                  raise SystemExit(
+                      f"package repository mismatch: {name} has {repository.attrib!r}"
+                  )
+          print("indexed package payloads and repository commits match the workflow artifacts")
+          PY
+          dotnet nuget verify --all artifacts/indexed/*.nupkg
+      - name: Restore and run a clean managed and NativeAOT consumer from nuget.org
+        run: bash tools/smoketest.sh --published "${{ needs.version.outputs.version }}"
+      - name: Export typed OTLP from the indexed runtime package
+        run: python tools/verify-otlp-receiver.py --published "${{ needs.version.outputs.version }}"
+
+  release:
+    needs: [version, verify-published]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
-          fetch-tags: true
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: packages
-          path: artifacts/
-      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5
-        with:
-          dotnet-version: '10.0.x'
-      - name: Authenticate to NuGet
-        id: nuget-login
-        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
-        with:
-          user: ANcpLua
-      - name: Push to NuGet
-        run: |
-          set -euo pipefail
-          for pkg in artifacts/*.nupkg; do
-            dotnet nuget push "$pkg" \
-              --source https://api.nuget.org/v3/index.json \
-              --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" \
-              --skip-duplicate
-          done
-      - name: Tag + GitHub release
+      - name: Tag and create the GitHub release after published-consumer proof
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
-          TAG="v${VERSION}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists, skipping."
+          tag="v$VERSION"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag already exists"
           else
-            gh release create "$TAG" --generate-notes --title "$TAG"
+            gh release create "$tag" \
+              --target "${{ github.sha }}" \
+              --generate-notes \
+              --title "$tag"
           fi

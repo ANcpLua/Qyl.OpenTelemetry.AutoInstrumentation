@@ -13,17 +13,12 @@ public sealed class QylAutoInstrumentationOptions
     private const string MetricsEnabledVariable = "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED";
     private const string MetricsAdditionalSourcesVariable = "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES";
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
-    private const string ConformanceEnabledVariable = "QYL_CONFORMANCE_ENABLED";
     private const string EntityFrameworkCoreDbStatementVariable =
         "OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT";
     private const string GraphQlSetDocumentVariable = "OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT";
     private const string OracleMdaSetDbStatementVariable =
         "OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT";
     private const string SqlClientSetDbStatementVariable = "OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT";
-    private const string AspNetRequestHeadersVariable =
-        "OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
-    private const string AspNetResponseHeadersVariable =
-        "OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
     private const string AspNetCoreRequestHeadersVariable =
         "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
     private const string AspNetCoreResponseHeadersVariable =
@@ -40,10 +35,6 @@ public sealed class QylAutoInstrumentationOptions
         "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION";
     private const string HttpClientUrlQueryRedactionDisabledVariable =
         "OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION";
-    private const string AspNetUrlQueryRedactionDisabledVariable =
-        "OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION";
-    private const string SqlClientNetFxIlRewriteRequestedVariable =
-        "OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED";
 
     /// <summary>Well-known Current value used by qyl auto-instrumentation.</summary>
     public static QylAutoInstrumentationOptions Current => CurrentHolder.Value;
@@ -55,14 +46,11 @@ public sealed class QylAutoInstrumentationOptions
         bool tracesEnabled,
         bool metricsEnabled,
         bool logsEnabled,
-        bool conformanceProcessorEnabled,
         IReadOnlyDictionary<InstrumentationLookupKey, bool> instrumentationEnabled,
         bool entityFrameworkCoreSetDbStatementForText,
         bool graphQlSetDocument,
         bool oracleMdaSetDbStatementForText,
         bool sqlClientSetDbStatementForText,
-        string[] aspNetCapturedRequestHeaders,
-        string[] aspNetCapturedResponseHeaders,
         string[] aspNetCoreCapturedRequestHeaders,
         string[] aspNetCoreCapturedResponseHeaders,
         string[] grpcNetClientCapturedRequestMetadata,
@@ -71,22 +59,17 @@ public sealed class QylAutoInstrumentationOptions
         string[] httpClientCapturedResponseHeaders,
         string[] additionalMetricMeterNames,
         bool aspNetCoreUrlQueryRedactionDisabled,
-        bool httpClientUrlQueryRedactionDisabled,
-        bool aspNetUrlQueryRedactionDisabled,
-        bool sqlClientNetFxIlRewriteRequested)
+        bool httpClientUrlQueryRedactionDisabled)
     {
         GlobalEnabled = globalEnabled;
         TracesEnabled = tracesEnabled;
         MetricsEnabled = metricsEnabled;
         LogsEnabled = logsEnabled;
-        ConformanceProcessorEnabled = conformanceProcessorEnabled;
         _instrumentationEnabled = instrumentationEnabled;
         EntityFrameworkCoreSetDbStatementForText = entityFrameworkCoreSetDbStatementForText;
         GraphQlSetDocument = graphQlSetDocument;
         OracleMdaSetDbStatementForText = oracleMdaSetDbStatementForText;
         SqlClientSetDbStatementForText = sqlClientSetDbStatementForText;
-        AspNetCapturedRequestHeaders = aspNetCapturedRequestHeaders;
-        AspNetCapturedResponseHeaders = aspNetCapturedResponseHeaders;
         AspNetCoreCapturedRequestHeaders = aspNetCoreCapturedRequestHeaders;
         AspNetCoreCapturedResponseHeaders = aspNetCoreCapturedResponseHeaders;
         GrpcNetClientCapturedRequestMetadata = grpcNetClientCapturedRequestMetadata;
@@ -102,8 +85,6 @@ public sealed class QylAutoInstrumentationOptions
         AdditionalMetricMeterNames = additionalMetricMeterNames;
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
-        AspNetUrlQueryRedactionDisabled = aspNetUrlQueryRedactionDisabled;
-        SqlClientNetFxIlRewriteRequested = sqlClientNetFxIlRewriteRequested;
     }
 
     /// <summary>Gets the configured Global Enabled value for the current qyl auto-instrumentation runtime.</summary>
@@ -118,9 +99,6 @@ public sealed class QylAutoInstrumentationOptions
     /// <summary>Gets the configured Logs Enabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool LogsEnabled { get; }
 
-    /// <summary>Gets the configured Conformance Processor Enabled value for the current qyl auto-instrumentation runtime.</summary>
-    public bool ConformanceProcessorEnabled { get; }
-
     /// <summary>Gets the configured Entity Framework Core Set database Statement For Text value for the current qyl auto-instrumentation runtime.</summary>
     public bool EntityFrameworkCoreSetDbStatementForText { get; }
 
@@ -132,12 +110,6 @@ public sealed class QylAutoInstrumentationOptions
 
     /// <summary>Gets the configured Sql Client Set database Statement For Text value for the current qyl auto-instrumentation runtime.</summary>
     public bool SqlClientSetDbStatementForText { get; }
-
-    /// <summary>Gets the configured ASP.NET Captured Request Headers value for the current qyl auto-instrumentation runtime.</summary>
-    public string[] AspNetCapturedRequestHeaders { get; }
-
-    /// <summary>Gets the configured ASP.NET Captured Response Headers value for the current qyl auto-instrumentation runtime.</summary>
-    public string[] AspNetCapturedResponseHeaders { get; }
 
     /// <summary>Gets the configured ASP.NET Core Captured Request Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] AspNetCoreCapturedRequestHeaders { get; }
@@ -176,15 +148,6 @@ public sealed class QylAutoInstrumentationOptions
 
     /// <summary>Gets the configured HTTP Client Url Query Redaction Disabled value for the current qyl auto-instrumentation runtime.</summary>
     public bool HttpClientUrlQueryRedactionDisabled { get; }
-
-    /// <summary>Gets the configured ASP.NET Url Query Redaction Disabled value for the current qyl auto-instrumentation runtime.</summary>
-    public bool AspNetUrlQueryRedactionDisabled { get; }
-
-    /// <summary>Gets the configured Sql Client Net Fx Il Rewrite Requested value for the current qyl auto-instrumentation runtime.</summary>
-    public bool SqlClientNetFxIlRewriteRequested { get; }
-
-    /// <summary>Well-known Sql Client Net Fx Il Rewrite Enabled value used by qyl auto-instrumentation.</summary>
-    public bool SqlClientNetFxIlRewriteEnabled => false;
 
     /// <summary>Runs the Is Instrumentation Enabled runtime helper used by source-generated qyl interceptors.</summary>
     public bool IsInstrumentationEnabled(QylAutoInstrumentationSignal signal, string instrumentationId)
@@ -272,14 +235,11 @@ public sealed class QylAutoInstrumentationOptions
             tracesEnabled,
             metricsEnabled,
             logsEnabled,
-            EnvironmentOptions.ReadBoolean(ConformanceEnabledVariable) ?? false,
             new ReadOnlyDictionary<InstrumentationLookupKey, bool>(instrumentationEnabled),
             EnvironmentOptions.ReadBoolean(EntityFrameworkCoreDbStatementVariable) ?? false,
             EnvironmentOptions.ReadBoolean(GraphQlSetDocumentVariable) ?? false,
             EnvironmentOptions.ReadBoolean(OracleMdaSetDbStatementVariable) ?? false,
             EnvironmentOptions.ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
-            EnvironmentOptions.ReadList(AspNetRequestHeadersVariable),
-            EnvironmentOptions.ReadList(AspNetResponseHeadersVariable),
             EnvironmentOptions.ReadList(AspNetCoreRequestHeadersVariable),
             EnvironmentOptions.ReadList(AspNetCoreResponseHeadersVariable),
             EnvironmentOptions.ReadList(GrpcClientRequestMetadataVariable),
@@ -288,9 +248,7 @@ public sealed class QylAutoInstrumentationOptions
             EnvironmentOptions.ReadList(HttpClientResponseHeadersVariable),
             EnvironmentOptions.ReadCaseSensitiveList(MetricsAdditionalSourcesVariable),
             EnvironmentOptions.ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
-            EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false,
-            EnvironmentOptions.ReadBoolean(AspNetUrlQueryRedactionDisabledVariable) ?? false,
-            EnvironmentOptions.ReadBoolean(SqlClientNetFxIlRewriteRequestedVariable) ?? false);
+            EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false);
     }
 
     private static void AddSignalInstrumentations(
