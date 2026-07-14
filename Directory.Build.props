@@ -21,7 +21,7 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-    <Version>5.0.0</Version>
+    <Version>5.1.0</Version>
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient'">true</QylEnablePublicApiAnalyzers>
+    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient' or '$(MSBuildProjectName)' == 'Qyl.Sdk'">true</QylEnablePublicApiAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>

@@ -14,6 +14,7 @@ PUBLIC_API_PROJECTS = [
     ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting",
     ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
     ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.Sdk",
 ]
 
 EXCLUDED_PROJECTS = [

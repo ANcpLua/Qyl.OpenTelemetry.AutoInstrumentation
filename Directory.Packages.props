@@ -41,6 +41,8 @@
     <PackageVersion Include="NServiceBus" Version="10.2.5" />
     <PackageVersion Include="OpenTelemetry" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.16.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.16.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.200" />
     <PackageVersion Include="Quartz" Version="3.18.1" />

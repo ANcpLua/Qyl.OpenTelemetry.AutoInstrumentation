@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl</RootNamespace>
+    <AssemblyName>Qyl.Sdk</AssemblyName>
+    <PackageId>Qyl.Sdk</PackageId>
+    <Description>One-line qyl onboarding for .NET applications: builder.AddQyl() wires the OpenTelemetry SDK, the qyl auto-instrumentation listeners, GenAI sources, OTLP export with local collector auto-discovery, and session propagation.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
+  </ItemGroup>
+
+</Project>
