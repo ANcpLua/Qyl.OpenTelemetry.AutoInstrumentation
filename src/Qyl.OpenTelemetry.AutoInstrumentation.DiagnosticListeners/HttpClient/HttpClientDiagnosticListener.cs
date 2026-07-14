@@ -5,10 +5,9 @@ using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
 
 /// <summary>
-/// Subscribes to <c>HttpHandlerDiagnosticListener</c> — the listener emitted by
-/// <c>System.Net.Http.HttpClient</c>'s <see cref="System.Diagnostics.DiagnosticSource"/> integration.
-/// AOT-native replacement for substrate's HttpClient CallTarget integration (M1 walking skeleton
-/// in the substrate era was this exact span; the new M1 will re-prove it through this path).
+/// Subscribes to <c>HttpHandlerDiagnosticListener</c>, the listener emitted by
+/// <c>System.Net.Http.HttpClient</c>'s <see cref="System.Diagnostics.DiagnosticSource"/> integration,
+/// and emits bounded HttpClient telemetry through the managed AOT-compatible path.
 /// </summary>
 public sealed class HttpClientDiagnosticListener : DiagnosticListenerSubscriber
 {

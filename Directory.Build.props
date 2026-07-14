@@ -3,9 +3,7 @@
   <!--
     Root-of-repo MSBuild defaults shared by every project under src/.
 
-    Rationale:
-    The runtime used to be the OpenTelemetry .NET auto-instrumentation native CLR profiler;
-    we now ship a pure-managed runtime that runs under NativeAOT-published apps. Runtime
+    Runtime packages are pure managed and execute in NativeAOT-published apps. Runtime
     projects MUST stay AOT-clean: trim analyzer, AOT analyzer, and single-file analyzer are
     turned on at the repo root so a regression fails the build, not the deployment. Build-time
     Roslyn components opt out locally and must stay isolated from the runtime publish graph.

@@ -7,14 +7,10 @@ which the C# semantic model resolves to `RequestDelegate.Invoke`. That symbol ha
 member methods — intercepting a delegate invocation is rejected with CS9207
 ("Cannot intercept 'next' because it is not an invocation of an ordinary member method").
 
-So the generator must NOT emit an `AspNetCoreRequestDelegate` interceptor for these call
-sites. It used to (the matcher had no MethodKind guard), which compiled fine for the OTel
-package's own demos — none of which hand-write middleware — but broke every real consumer
-that does (e.g. qyl.collector's OtlpApiKeyMiddleware / OtlpCorsMiddleware).
-
-  consumer with `next(context)` middleware -> build SUCCEEDS, and no RequestDelegate
-  interceptor is emitted, while an unrelated control interceptor (HttpClient) still is —
-  proving the generator stayed selective rather than going silent.
+The generator must not emit an `AspNetCoreRequestDelegate` interceptor for these call sites.
+The verifier builds a consumer with `next(context)` middleware and an unrelated HttpClient
+control, proving the generator skips delegate invocations while still emitting supported
+interceptors.
 """
 from __future__ import annotations
 

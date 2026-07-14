@@ -14,7 +14,7 @@ public diagnostic hooks, and module-initializer activation. It does not use a CL
 profiler, startup hook, ReJIT, runtime IL rewriting, dynamic plugin loading, or
 reflection-based instrumentation dispatch.
 
-The package family is already public. Existing NuGet artifacts are immutable. Make
+The package family is public. Existing NuGet artifacts are immutable. Make
 intentional breaking convergence in a new major version, migrate known consumers,
 and do not add compatibility shims without a proven external requirement.
 
@@ -32,8 +32,8 @@ in `qyl-api-schema`, not in this instrumentation repository.
 ## Interceptor architecture
 
 The repository uses .NET SDK `10.0.301` with `latestFeature`. Roslyn interceptors are
-stable from SDK 9.0.2xx onward; do not revive preview-only or unsupported claims.
-Use `SemanticModel.GetInterceptableLocation(...)` and ordinary generated C#.
+supported on this SDK. Use `SemanticModel.GetInterceptableLocation(...)` and ordinary
+generated C#.
 
 Authoritative references:
 

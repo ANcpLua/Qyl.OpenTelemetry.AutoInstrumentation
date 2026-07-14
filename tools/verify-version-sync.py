@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Version-truth gate.
 
-The instrumentation-scope version is stamped onto every emitted span/metric and must never drift
-from the shipped package again. This gate enforces a single source of truth:
+The instrumentation-scope version is stamped onto every emitted span and metric and must match
+the shipped package. This gate enforces a single source of truth:
 
   * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag,
   * any version-pinned README package-reference example must equal that version,
   * QylInstrumentation.Version must stay DERIVED from the build (no hardcoded semver literal).
 
-Historically all three drifted independently (const "0.3.0-pre.1", props 3.0.2, tag v3.1.2); this
-gate makes that state a hard build failure.
+Any mismatch is a hard build failure.
 """
 from __future__ import annotations
 

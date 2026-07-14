@@ -77,11 +77,11 @@ reviews:
            no open or ambiguous questions back to the author. If you cannot decide a point
            from the diff plus repo context, stay silent on it. Never cite a source, API, or
            version you have not verified; an unverifiable claim is a dropped claim.
-        2. IMPATIENT: never stall a PR. There are no compatibility obligations here — internal
-           and dogfooding code has NO public-API contract; removing shims, breaking signatures,
-           and deleting dead paths are normal, desirable changes. Do not flag backward
-           compatibility, deprecation ceremony, or migration paths. (SemVer applies only to
-           commercially sold libraries — this repo has none.)
+        2. IMPATIENT: never stall a PR. Internal and dogfooding-only surfaces converge directly;
+           removing shims, breaking internal signatures, and deleting dead paths are normal.
+           Published NuGet APIs follow SemVer: breaking changes require a deliberate new major
+           and migration of known consumers. Do not request compatibility layers without a
+           proven consumer.
         3. EGO: hold the bar of the best reviewer on the market — flag real correctness,
            security, data-loss, and structural problems precisely; produce zero noise.
     - path: "src/**/*.cs"

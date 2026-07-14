@@ -42,13 +42,9 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         CreateGeneratedEmissionDescriptors();
 
-    // The qyl runtime packages hold the QylIntercepted* forwarding helpers, whose own framework
-    // calls would self-intercept (e.g. QylInterceptedHttpClient.SendAsync calls client.SendAsync).
-    // A compilation that IS one of these packages is never instrumented. Today only the core package
-    // carries self-forwarding helpers and only it gets the analyzer, but matching the whole set keeps
-    // the guard correct under the documented package-boundary moves (a helper relocating to a sibling
-    // that later gains the analyzer). Keep in sync with the runtime packages under /src — a consumer,
-    // demo, or test fixture is deliberately NOT in this set and stays instrumented.
+    // Runtime packages are excluded so QylIntercepted* forwarding helpers cannot self-intercept
+    // (for example, QylInterceptedHttpClient.SendAsync calls client.SendAsync). Keep this set aligned
+    // with runtime packages under /src; consumers, demos, and test fixtures remain instrumented.
     private static readonly HashSet<string> s_qylRuntimeAssemblies = new(StringComparer.Ordinal)
     {
         "Qyl.OpenTelemetry.AutoInstrumentation",

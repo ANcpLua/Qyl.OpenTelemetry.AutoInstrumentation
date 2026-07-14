@@ -12,8 +12,8 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// Each lane <see cref="Register"/>s a priority for a signal; only the highest-priority registered lane
 /// <see cref="ShouldEmit"/>s, every other lane defers — so exactly one span is produced per operation.
 /// Priorities follow the qyl instrumentation-mechanism ranking (higher = more precise, lower overhead,
-/// more AOT-native): compiler-generated &gt; interceptor &gt; generated middleware &gt; native
-/// ActivitySource &gt; DiagnosticListener.
+/// more AOT-native): interceptor &gt; generated middleware &gt; native ActivitySource &gt;
+/// DiagnosticListener.
 /// </para>
 ///
 /// <para>
@@ -26,9 +26,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// </summary>
 internal static class QylSignalOwnership
 {
-    /// <summary>Compiler-generated AOP (reserved for a future lane).</summary>
-    public const int CompilerGenerated = 100;
-
     /// <summary>Source-generated call-site interceptor — the qyl-preferred lane.</summary>
     public const int Interceptor = 95;
 

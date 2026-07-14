@@ -6,8 +6,7 @@ BCL telemetry primitives, public diagnostic hooks, and module-initializer bootst
 It does not use a CLR profiler, startup hooks, ReJIT, runtime IL rewriting, or dynamic
 plugin loading.
 
-Roslyn interceptors are a stable .NET SDK feature from 9.0.2xx onward; this repository
-builds with SDK 10.0.301. See the official
+Roslyn interceptors are supported by this repository's .NET SDK 10.0.301. See the official
 [`interceptors.md`](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md)
 contract.
 
