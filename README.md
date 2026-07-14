@@ -41,6 +41,36 @@ Where a framework exposes a first-class DI or runtime hook, the package uses tha
 hook. Interception is reserved for source-visible calls that require compile-time
 ownership.
 
+## Exporting to a collector
+
+These packages emit `Activity` and `Meter` telemetry; they ship no exporter. The
+consuming application wires the OpenTelemetry SDK and chooses where the telemetry
+goes. A working setup against the qyl collector adds
+`OpenTelemetry.Extensions.Hosting` and `OpenTelemetry.Exporter.OpenTelemetryProtocol`
+alongside `Qyl.OpenTelemetry.AutoInstrumentation.Hosting`, then registers the sources:
+
+```csharp
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("my-service"))
+    .WithTracing(t => t
+        .AddSource("Qyl.OpenTelemetry.AutoInstrumentation") // qyl listeners
+        .AddSource("Microsoft.AspNetCore")                   // BCL incoming HTTP
+        .AddSource("System.Net.Http")                        // BCL outgoing HttpClient
+        .AddOtlpExporter());
+builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
+```
+
+Configure the exporter through the standard environment variables:
+`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`,
+`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, and `OTEL_SERVICE_NAME`.
+
+GenAI applications using `Microsoft.Agents.AI` additionally opt in with
+`agent.AsBuilder().UseOpenTelemetry().Build()` and register
+`AddSource("Experimental.Microsoft.Agents.AI")` and
+`AddSource("Experimental.Microsoft.Extensions.AI")`. The qyl collector ingests the
+resulting `gen_ai.*` spans, including sessions, token usage, and cost. The Anthropic
+.NET SDK itself emits no telemetry.
+
 ## Coverage and evidence
 
 The generated [`coverage matrix`](docs/coverage-matrix.md) is the detailed contract
