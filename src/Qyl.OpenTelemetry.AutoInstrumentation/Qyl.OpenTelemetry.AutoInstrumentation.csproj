@@ -36,11 +36,7 @@
           Visible="false" />
   </ItemGroup>
 
-  <!-- Bake <Version> into a generated internal const so QylInstrumentation.Version (the OTel scope
-       version stamped on every span/metric) is a pure compile-time value with ZERO reflection —
-       reflection in product code is banned by verify-contract-invariants.py. Always runs (no
-       Inputs/Outputs) so the repository-owned version passed by CI is honoured; writes only on change to avoid
-       needless recompiles. Emitted into obj/, never committed. -->
+  <!-- Emit the instrumentation-scope version without runtime reflection. -->
   <Target Name="GenerateQylVersionInfo" BeforeTargets="BeforeCompile;CoreCompile">
     <PropertyGroup>
       <_QylVersionInfoFile>$(IntermediateOutputPath)QylVersionInfo.g.cs</_QylVersionInfoFile>
@@ -64,8 +60,7 @@
   </Target>
 
   <ItemGroup Condition="'$(PublishAot)' != 'true'">
-    <!-- The source generator is build-time-only; NativeAOT publish must not try to publish the
-         netstandard2.0 generator. -->
+    <!-- NativeAOT publishes only the generated runtime code. -->
     <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"

@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Roslyn analyzers/source generators must load in the host compiler, which targets
-         netstandard2.0. This is the ONLY project that escapes the net10.0 / AOT baseline. -->
+    <!-- Compiler-host compatibility requires netstandard2.0. -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators</RootNamespace>
     <AssemblyName>Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators</AssemblyName>
@@ -14,8 +13,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
 
-    <!-- Inherited AOT/trim flags are meaningless on netstandard2.0 — turn them off so the build
-         stays warning-free under TreatWarningsAsErrors. -->
     <IsAotCompatible>false</IsAotCompatible>
     <IsTrimmable>false</IsTrimmable>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
@@ -27,8 +24,7 @@
   <ItemGroup>
     <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
-    <!-- Runtime data-reader helper is irrelevant inside a Roslyn generator and trips this
-         repo's stricter ErrorProne.NET gate (ERP022). -->
+    <!-- Exclude the runtime-only helper from the compiler-host assembly. -->
     <Compile Remove="$(NuGetPackageRoot)ancplua.roslyn.utilities.sources/**/Data/DataReaderExtensions.cs" />
   </ItemGroup>
 
