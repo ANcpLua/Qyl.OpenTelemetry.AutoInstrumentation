@@ -75,7 +75,7 @@ jobs:
             src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj; do
             dotnet pack "$project" -c Release --no-restore -o artifacts/release -p:Version="$VERSION"
           done
-          test "$(find artifacts/release -maxdepth 1 -name '*.nupkg' | wc -l)" -eq 5
+          test "$(find artifacts/release -maxdepth 1 -name '*.nupkg' | wc -l)" -eq 6
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: packages
@@ -154,6 +154,7 @@ jobs:
             qyl.opentelemetry.autoinstrumentation
             qyl.opentelemetry.autoinstrumentation.diagnosticlisteners
             qyl.opentelemetry.autoinstrumentation.hosting
+            qyl.sdk
             qyl.opentelemetry.autoinstrumentation.entityframeworkcore
             qyl.opentelemetry.autoinstrumentation.sqlclient
           )
@@ -199,7 +200,7 @@ jobs:
 
           packed = {path.name.lower(): path for path in Path("artifacts/packed").glob("*.nupkg")}
           indexed = {path.name.lower(): path for path in Path("artifacts/indexed").glob("*.nupkg")}
-          if packed.keys() != indexed.keys() or len(packed) != 5:
+          if packed.keys() != indexed.keys() or len(packed) != 6:
               raise SystemExit(
                   f"package set mismatch: packed={sorted(packed)} indexed={sorted(indexed)}"
               )
