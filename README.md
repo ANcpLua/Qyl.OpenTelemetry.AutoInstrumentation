@@ -50,11 +50,14 @@ The shortest path is `Qyl.Sdk`, which owns all of the wiring below as one call:
 builder.AddQyl();
 ```
 
-That activates the qyl listeners, registers the qyl/ASP.NET Core/HttpClient/GenAI
-sources, propagates `session.id` across each trace, and exports over OTLP — to
-`OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to a qyl collector discovered on
-localhost (4318/4317). GenAI spans still require the one-line agent opt-in described
-below.
+That activates the qyl listeners, registers the qyl/ASP.NET Core/HttpClient/GenAI/MCP
+sources and the full qyl meter inventory (ASP.NET Core, HttpClient, DNS, database,
+messaging, runtime, plus the GenAI meters such as `gen_ai.client.token.usage`),
+copies `session.id` from the nearest tagged in-process ancestor to descendant spans
+(remote parents and unrelated trace branches are not propagated), and exports traces, metrics, and logs over
+OTLP — to `OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to a qyl collector
+discovered on localhost (4318/4317). GenAI telemetry still requires the one-line agent
+opt-in described below.
 
 The rest of this section is the manual wiring for apps that want to own it.
 
@@ -83,8 +86,9 @@ GenAI applications using `Microsoft.Agents.AI` additionally opt in with
 `agent.AsBuilder().UseOpenTelemetry().Build()` and register
 `AddSource("Experimental.Microsoft.Agents.AI")` and
 `AddSource("Experimental.Microsoft.Extensions.AI")`. The qyl collector ingests the
-resulting `gen_ai.*` spans, including sessions, token usage, and cost. The Anthropic
-.NET SDK itself emits no telemetry.
+resulting `gen_ai.*` spans, including sessions and token usage; billed costs come
+from provider APIs and model-catalog estimates on the collector side, not from
+span attributes. The Anthropic .NET SDK itself emits no telemetry.
 
 ## Coverage and evidence
 
