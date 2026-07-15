@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Qyl.OpenTelemetry.AutoInstrumentation;
@@ -13,9 +14,12 @@ namespace Qyl;
 /// <summary>
 /// The one-line qyl onboarding surface: <c>builder.AddQyl()</c> activates the qyl
 /// auto-instrumentation listeners, wires the OpenTelemetry SDK with the qyl, ASP.NET Core,
-/// HttpClient, and GenAI sources, propagates <c>session.id</c> across traces, and exports over
-/// OTLP — to <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl
-/// collector.
+/// HttpClient, GenAI, and MCP sources plus the full qyl meter inventory, propagates
+/// <c>session.id</c> across traces, and exports traces, metrics, and logs over OTLP — to
+/// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl collector.
+/// The qyl DiagnosticListeners emit EF Core, SqlClient, and gRPC-client spans under the single
+/// qyl ActivitySource, so those integrations need no extra source registration here (and adding
+/// the libraries' native sources would double-report them).
 /// </summary>
 public static class QylSdkHostApplicationBuilderExtensions
 {
@@ -62,7 +66,8 @@ public static class QylSdkHostApplicationBuilderExtensions
                     "Microsoft.AspNetCore",
                     "System.Net.Http",
                     "Experimental.Microsoft.Agents.AI",
-                    "Experimental.Microsoft.Extensions.AI");
+                    "Experimental.Microsoft.Extensions.AI",
+                    "Experimental.ModelContextProtocol");
 
                 foreach (var source in options.AdditionalSources)
                     tracing.AddSource(source);
@@ -73,11 +78,33 @@ public static class QylSdkHostApplicationBuilderExtensions
                 tracing.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/traces"));
             });
 
+        if (options.EnableMetricsExport)
+        {
+            builder.Services.AddOpenTelemetry().WithMetrics(metrics =>
+            {
+                // The full qyl meter inventory (ASP.NET Core, HttpClient, DNS, database,
+                // messaging, runtime — honoring per-signal instrumentation options) plus the
+                // GenAI meters, which are emitted by the same UseOpenTelemetry() opt-in that
+                // produces the gen_ai spans.
+                metrics.AddMeter(QylMetricMeters.GetEnabledMeterNames());
+                metrics.AddMeter(
+                    "Experimental.Microsoft.Extensions.AI",
+                    "Experimental.Microsoft.Agents.AI",
+                    "Experimental.ModelContextProtocol");
+
+                foreach (var meter in options.AdditionalMeters)
+                    metrics.AddMeter(meter);
+
+                metrics.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/metrics"));
+            });
+        }
+
         if (options.EnableLogExport)
         {
             builder.Logging.AddOpenTelemetry(logging =>
             {
                 logging.IncludeFormattedMessage = true;
+                logging.IncludeScopes = true;
                 logging.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/logs"));
             });
         }

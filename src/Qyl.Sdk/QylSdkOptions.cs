@@ -29,6 +29,13 @@ public sealed class QylSdkOptions
     public bool EnableLogExport { get; set; } = true;
 
     /// <summary>
+    /// Register a MeterProvider covering the qyl auto-instrumentation meter inventory (ASP.NET
+    /// Core, HttpClient, DNS, database, messaging, runtime) plus the GenAI meters, and export it
+    /// over OTLP alongside traces. Defaults to true.
+    /// </summary>
+    public bool EnableMetricsExport { get; set; } = true;
+
+    /// <summary>
     /// Copy a <c>session.id</c> tag from the nearest in-process ancestor span onto spans that lack
     /// one, so stamping a single request-level span groups its whole trace into a qyl session.
     /// Defaults to true.
@@ -40,4 +47,10 @@ public sealed class QylSdkOptions
     /// qyl defaults (qyl listeners, ASP.NET Core, HttpClient, and the GenAI sources).
     /// </summary>
     public IList<string> AdditionalSources { get; } = [];
+
+    /// <summary>
+    /// Additional <see cref="System.Diagnostics.Metrics.Meter"/> names to subscribe beyond the
+    /// qyl defaults (the auto-instrumentation meter inventory and the GenAI meters).
+    /// </summary>
+    public IList<string> AdditionalMeters { get; } = [];
 }

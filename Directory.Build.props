@@ -21,7 +21,7 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-    <Version>5.1.0</Version>
+    <Version>5.2.0</Version>
     <Authors>qyl</Authors>
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

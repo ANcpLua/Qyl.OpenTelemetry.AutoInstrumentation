@@ -1,6 +1,7 @@
 #nullable enable
 Qyl.QylSdkHostApplicationBuilderExtensions
 Qyl.QylSdkOptions
+Qyl.QylSdkOptions.AdditionalMeters.get -> System.Collections.Generic.IList<string!>!
 Qyl.QylSdkOptions.AdditionalSources.get -> System.Collections.Generic.IList<string!>!
 Qyl.QylSdkOptions.CollectorEndpoint.get -> System.Uri?
 Qyl.QylSdkOptions.CollectorEndpoint.set -> void
@@ -8,6 +9,8 @@ Qyl.QylSdkOptions.EnableCollectorDiscovery.get -> bool
 Qyl.QylSdkOptions.EnableCollectorDiscovery.set -> void
 Qyl.QylSdkOptions.EnableLogExport.get -> bool
 Qyl.QylSdkOptions.EnableLogExport.set -> void
+Qyl.QylSdkOptions.EnableMetricsExport.get -> bool
+Qyl.QylSdkOptions.EnableMetricsExport.set -> void
 Qyl.QylSdkOptions.EnableSessionPropagation.get -> bool
 Qyl.QylSdkOptions.EnableSessionPropagation.set -> void
 Qyl.QylSdkOptions.QylSdkOptions() -> void
