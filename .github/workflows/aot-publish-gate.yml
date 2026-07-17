@@ -6,10 +6,10 @@ name: qyl-aot-publish-gate
 #   * VENDOR_WARNED set must still AOT-publish with warnings relaxed (hard-break detection), and a
 #     "promotion" is flagged when an upstream library shipped AOT annotations and is now warning-clean.
 #
-# Heavy (up to 30 NativeAOT publishes x 2 OS), so — like verify-real-demos.yml — it runs post-merge on
+# Heavy (24 NativeAOT publishes x 2 OS), so — like verify-real-demos.yml — it runs post-merge on
 # main, nightly, and on demand, NOT on every PR. The gate prebuilds the source generator into the
 # standard artifacts/ layout (the PublishAot demos consume it as a prebuilt Analyzer DLL from there)
-# and publishes with --disable-build-servers; per-ref workflow concurrency cancels superseded runs. Run locally: python3 tools/verify-aot-publish-gate.py --set all
+# and publishes with --disable-build-servers; per-ref workflow concurrency cancels superseded runs. Run locally: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion
 
 on:
   push:
@@ -49,4 +49,4 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
       - name: AOT-publish warning-cleanliness gate (CLEAN regression + VENDOR_WARNED hard-break/promotion)
-        run: python3 tools/verify-aot-publish-gate.py --set all
+        run: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion

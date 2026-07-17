@@ -11,6 +11,7 @@ from verify_helpers import remove_publish_outputs
 
 
 ROOT = Path(__file__).resolve().parents[1]
+AOT_GATE_NAME = "nativeaot publish gate"
 
 
 COMMANDS: list[tuple[str, list[str]]] = [
@@ -28,6 +29,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
     ("aspnetcore middleware delegate", [sys.executable, "tools/verify-aspnetcore-middleware-delegate.py"]),
     ("source interceptor consumer", [sys.executable, "tools/verify-source-interceptor-consumer.py"]),
+    (AOT_GATE_NAME, []),
     ("real adonet demo", [sys.executable, "tools/verify-real-adonet-demo.py"]),
     ("real aspnetcore demo", [sys.executable, "tools/verify-real-aspnetcore-demo.py"]),
     ("real aspnetcore metrics demo", [sys.executable, "tools/verify-real-aspnetcore-metrics-demo.py"]),
@@ -127,6 +129,12 @@ def main() -> None:
         help='Run only the container-backed "real * demo" verifiers.',
     )
     parser.add_argument(
+        "--aot-set",
+        choices=["clean", "warned", "all"],
+        default="all",
+        help="Select the central NativeAOT publish classification (always strict-promotion).",
+    )
+    parser.add_argument(
         "--keep-publish",
         action="store_true",
         help="Keep artifacts/publish after a successful run (default: removed — pure verification byproduct, multiple GB over the full demo matrix).",
@@ -148,6 +156,12 @@ def main() -> None:
     if args.no_demos:
         skip |= demo_names
     commands = select_commands(only, skip)
+    full_gate = commands == COMMANDS
+    commands = [
+        (name, [sys.executable, "tools/verify-aot-publish-gate.py", "--set", args.aot_set,
+                "--strict-promotion", "--keep-publish"] if name == AOT_GATE_NAME else command)
+        for name, command in commands
+    ]
     env = dict(os.environ)
     env["MSBUILDDISABLENODEREUSE"] = "1"
     for name, command in commands:
@@ -155,13 +169,15 @@ def main() -> None:
         completed = subprocess.run(command, cwd=ROOT, env=env, check=False)
         if completed.returncode != 0:
             raise SystemExit(f"{name} failed with exit code {completed.returncode}")
+        if name == AOT_GATE_NAME:
+            env["AOT_PUBLISH_GATE_SET"] = args.aot_set
 
     # Only reached when every selected verifier passed; failures SystemExit above and
     # keep artifacts/publish around for inspection.
     if not args.keep_publish:
         print(remove_publish_outputs())
 
-    if commands == COMMANDS:
+    if full_gate:
         print("aot-autoinstrumentation-goal-ok")
     else:
         print("aot-autoinstrumentation-goal-partial-ok selected=" + ",".join(name for name, _ in commands))

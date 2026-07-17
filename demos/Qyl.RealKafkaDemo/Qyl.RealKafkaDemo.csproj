@@ -10,9 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="Confluent.Kafka" />
-    <!-- Confluent.Kafka binds librdkafka exports through reflection over its own
-         NativeMethods classes; trimming removes them and breaks delegate wiring. -->
-    <TrimmerRootAssembly Include="Confluent.Kafka" />
   </ItemGroup>
 
   <ItemGroup>

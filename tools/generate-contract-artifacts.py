@@ -38,7 +38,6 @@ CONFORMANCE_PROFILES = [
         "signal_names": [
             "adonet.command",
             "efcore.sqlite",
-            "mongodb.command",
             "mysqlconnector.command",
             "mysqldata.command",
             "npgsql.command",
@@ -80,7 +79,6 @@ CONFORMANCE_PROFILES = [
         "service_name": "qyl-messaging-aot-demo",
         "profile_id": "qyl-aot-messaging",
         "signal_names": [
-            "kafka.message",
             "masstransit.message",
             "rabbitmq.publish",
         ],
@@ -93,18 +91,10 @@ CONFORMANCE_PROFILES = [
         ],
     },
     {
-        "service_name": "qyl-scheduler-aot-demo",
-        "profile_id": "qyl-aot-scheduler",
-        "signal_names": [
-            "quartz.execute",
-        ],
-    },
-    {
         "service_name": "qyl-logging-aot-demo",
         "profile_id": "qyl-aot-logging",
         "signal_names": [
             "ilogger.log",
-            "log4net.log",
             "nlog.log",
         ],
     },
@@ -140,7 +130,6 @@ REQUIRED_CONFORMANCE_PROFILE_IDS = {
     "qyl-aot-logging",
     "qyl-aot-messaging",
     "qyl-aot-metrics",
-    "qyl-aot-scheduler",
     "qyl-aot-search",
     "qyl-aot-unsupported-nativeaot",
     "qyl-aot-webapi",
@@ -170,9 +159,13 @@ PAYLOAD_ACCESS_VALUES = {"typed_public", "reflection_required", "not_applicable"
 EVIDENCE_LEVELS = {"none", "verified_nativeaot", "verified_managed", "compile_binding_only", "option_bound"}
 CONFORMANCE_KINDS = {"span", "metric", "log"}
 MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
-    "signals.traces.NSERVICEBUS",
-    "signals.traces.WCFCLIENT",
+    "signals.logs.LOG4NET",
     "signals.metrics.NSERVICEBUS",
+    "signals.traces.KAFKA",
+    "signals.traces.MONGODB",
+    "signals.traces.NSERVICEBUS",
+    "signals.traces.QUARTZ",
+    "signals.traces.WCFCLIENT",
 }
 IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST: set[str] = set()
 GENERATED_INTERCEPTOR_CATALOG_REQUIRED_SIGNAL_KEYS = {

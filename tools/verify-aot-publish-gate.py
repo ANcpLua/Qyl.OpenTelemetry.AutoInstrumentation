@@ -1,51 +1,27 @@
 #!/usr/bin/env python3
-"""NativeAOT-publish gate: pins the AOT warning-cleanliness classification of the demo matrix.
+"""NativeAOT publish gate for warning-clean demos and exact third-party exceptions.
 
-Every demo NativeAOT-publishes to a working binary. The load-bearing, easy-to-silently-break
-distinction this gate protects is *warning cleanliness* under the repo's strict
-``TreatWarningsAsErrors``:
-
-* ``CLEAN_DEMOS``          — publish **warning-clean**. qyl's own assemblies never emit trim/AOT
-                             warnings, and neither do these demos' dependencies.
-* ``VENDOR_WARNED_DEMOS``  — publish to a working native binary, but a **third-party** dependency
-                             emits tolerated trim/AOT warnings (IL2104/IL3053/IL3002). These are the
-                             libraries that are not themselves AOT/trim-annotated upstream; the real
-                             ``verify-real-*-demo.py`` scripts publish them with
-                             ``-p:TreatWarningsAsErrors=false`` and runtime-verify telemetry via
-                             testcontainers. The value mapped to each demo is the warning source.
-
-The gate fails on:
-
-* **REGRESSION** — a ``CLEAN_DEMOS`` entry that no longer publishes warning-clean (e.g. qyl code
-  started using reflection, or a dependency began emitting IL warnings). This is the primary signal.
-* **HARD BREAK** — a ``VENDOR_WARNED_DEMOS`` entry that fails to AOT-publish even with warnings
-  relaxed (a genuine error, not a tolerated warning).
-* **PROMOTION**  — a ``VENDOR_WARNED_DEMOS`` entry that is now warning-clean (the upstream library
-  shipped AOT annotations). Non-fatal by default (printed as an actionable "move it to CLEAN_DEMOS"
-  notice); made fatal with ``--strict-promotion`` so the classification cannot drift silently.
-
-Single source of truth for the classification lives in this file. Run locally:
-    python3 tools/verify-aot-publish-gate.py --set clean          # fast regression gate
-    python3 tools/verify-aot-publish-gate.py --set all            # + hard-break + promotion detection
-    python3 tools/verify-aot-publish-gate.py --demo Qyl.RealHttpClientDemo
+The relaxed publish exists only here. Each tolerated diagnostic is pinned by ID, owning assembly,
+resolved package version, marker, and count; every native binary is executed by its real verifier.
 """
 from __future__ import annotations
 
 import argparse
+from collections import Counter
+import json
 import os
 import platform
 import re
 import subprocess
 from pathlib import Path
 
-from verify_helpers import remove_publish_outputs
+from verify_helpers import artifacts_publish_dir, remove_publish_outputs
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMOS_DIR = ROOT / "demos"
 GENERATOR_PROJECT = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
                      / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj")
 
-# Demos that NativeAOT-publish warning-clean under strict TreatWarningsAsErrors.
 CLEAN_DEMOS: list[str] = [
     "Qyl.RealAdoNetDemo",
     "Qyl.RealAspNetCoreDemo",
@@ -64,22 +40,76 @@ CLEAN_DEMOS: list[str] = [
     "Qyl.RealSqliteDemo",
 ]
 
-# Demos that AOT-publish (working binary) but whose third-party dependency emits tolerated
-# trim/AOT warnings. Value = the warning-source assembly(ies). Published with warnings relaxed.
-VENDOR_WARNED_DEMOS: dict[str, str] = {
-    "Qyl.RealAspNetCoreMetricsDemo": "Microsoft.AspNetCore.Components(.Endpoints)",
-    "Qyl.RealEfCoreDemo": "Microsoft.EntityFrameworkCore(.Relational/.Sqlite)",
-    "Qyl.RealGraphQlDemo": "GraphQL",
-    "Qyl.RealKafkaDemo": "Confluent.Kafka",
-    "Qyl.RealLog4NetDemo": "log4net, System.Configuration.ConfigurationManager",
-    "Qyl.RealMassTransitDemo": "MassTransit(.Abstractions)",
-    "Qyl.RealMongoDbDemo": "MongoDB.Driver, MongoDB.Bson",
-    "Qyl.RealMySqlDataDemo": "MySql.Data, System.Configuration.ConfigurationManager",
-    "Qyl.RealNServiceBusDemo": "NServiceBus.Core",
-    "Qyl.RealOracleMdaDemo": "Oracle.ManagedDataAccess",
-    "Qyl.RealQuartzDemo": "Quartz",
-    "Qyl.RealSqlClientDemo": "Microsoft.Data.SqlClient, System.Configuration.ConfigurationManager",
-    "Qyl.RealWcfClientDemo": "System.ServiceModel.Primitives, System.Reflection.DispatchProxy",
+Approval = tuple[str, str, str, str, str, int]
+
+
+def approved(diagnostic: str, assembly: str, package: str, version: str,
+             count: int = 1, marker: str | None = None) -> Approval:
+    return diagnostic, assembly, package.lower(), version, marker or f"Assembly '{assembly}' produced", count
+
+
+VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
+    "Qyl.RealAspNetCoreMetricsDemo": (
+        approved("IL3053", "Microsoft.AspNetCore.Components.Endpoints", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.9"),
+        approved("IL2104", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.9"),
+        approved("IL3053", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.9"),
+    ),
+    "Qyl.RealEfCoreDemo": (
+        approved("IL2104", "Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore", "10.0.9"),
+        approved("IL3053", "Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore", "10.0.9"),
+        approved("IL2104", "Microsoft.EntityFrameworkCore.Relational", "Microsoft.EntityFrameworkCore.Relational", "10.0.9"),
+        approved("IL3053", "Microsoft.EntityFrameworkCore.Relational", "Microsoft.EntityFrameworkCore.Relational", "10.0.9"),
+        approved("IL2104", "Microsoft.EntityFrameworkCore.Sqlite", "Microsoft.EntityFrameworkCore.Sqlite.Core", "10.0.9"),
+        approved("IL3053", "Microsoft.EntityFrameworkCore.Sqlite", "Microsoft.EntityFrameworkCore.Sqlite.Core", "10.0.9"),
+        approved("IL3002", "Microsoft.EntityFrameworkCore.Sqlite", "Microsoft.EntityFrameworkCore.Sqlite.Core", "10.0.9", 3, "Microsoft.EntityFrameworkCore.Infrastructure.SpatialiteLoader.FindExtension()"),
+        approved("IL3002", "Microsoft.Extensions.DependencyModel", "Microsoft.Extensions.DependencyModel", "10.0.9", marker="Microsoft.Extensions.DependencyModel.DependencyContext..cctor()"),
+    ),
+    "Qyl.RealGraphQlDemo": (
+        approved("IL2104", "GraphQL", "GraphQL", "8.8.4"),
+        approved("IL3053", "GraphQL", "GraphQL", "8.8.4"),
+    ),
+    "Qyl.RealMassTransitDemo": (
+        approved("IL2104", "MassTransit", "MassTransit", "8.5.10"),
+        approved("IL3053", "MassTransit", "MassTransit", "8.5.10"),
+        approved("IL2104", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10"),
+        approved("IL3053", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10"),
+        approved("IL3000", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10", marker="MassTransit.Metadata.BusHostInfo."),
+    ),
+    "Qyl.RealMySqlDataDemo": (
+        approved("IL2104", "MySql.Data", "MySql.Data", "9.7.0"),
+        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "8.0.0"),
+    ),
+    "Qyl.RealNServiceBusDemo": (
+        approved("IL2104", "NServiceBus.Core", "NServiceBus", "10.2.5"),
+        approved("IL3053", "NServiceBus.Core", "NServiceBus", "10.2.5"),
+        approved("IL3000", "NServiceBus.Core", "NServiceBus", "10.2.5", 2, "NServiceBus.FileVersionRetriever."),
+    ),
+    "Qyl.RealOracleMdaDemo": (
+        approved("IL2104", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.200"),
+        approved("IL3053", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.200"),
+        approved("IL3000", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.200", 5, "Oracle"),
+    ),
+    "Qyl.RealSqlClientDemo": (
+        approved("IL2104", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.1"),
+        approved("IL3053", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.1"),
+        approved("IL2104", "Microsoft.Data.SqlClient.Internal.Logging", "Microsoft.Data.SqlClient.Internal.Logging", "1.0.0"),
+        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "9.0.13"),
+    ),
+    "Qyl.RealWcfClientDemo": (
+        approved("IL2104", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
+        approved("IL3053", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
+        approved("IL3053", "System.Reflection.DispatchProxy", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.9"),
+        approved("IL3053", "System.Private.DataContractSerialization", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.9"),
+    ),
+}
+
+EXTERNAL_WARNED_PROJECTS = {
+    "WebApiAotDemo": VENDOR_WARNED_DEMOS["Qyl.RealEfCoreDemo"] + (
+        approved("IL2104", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.1"),
+        approved("IL3053", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.1"),
+        approved("IL2104", "Microsoft.Data.SqlClient.Internal.Logging", "Microsoft.Data.SqlClient.Internal.Logging", "1.0.0"),
+        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "9.0.13"),
+    ),
 }
 
 # Extra publish properties that mirror the per-demo verify-real-*-demo.py recipes.
@@ -87,8 +117,8 @@ EXTRA_PROPS: dict[str, list[str]] = {
     "Qyl.RealEfCoreDemo": ["-p:QylEfCoreUseCompiledModel=true"],
 }
 
-IL_LINE = re.compile(r"(?:warning|error)\s+IL\d{4}")
-ASM_WARNED = re.compile(r"Assembly '([^']+)' produced (?:trim|AOT)")
+DIAGNOSTIC_LINE = re.compile(r"\b(?:warning|error)\s+([A-Z]+\d+)\b", re.IGNORECASE)
+PACKAGE_PATH = re.compile(r"/(?:\.nuget/packages|packages)/([^/]+)/([^/]+)/", re.IGNORECASE)
 
 
 def runtime_identifier() -> str:
@@ -107,38 +137,92 @@ def runtime_identifier() -> str:
 ERROR_LINE = re.compile(r": error |\berror IL\d|\berror CS\d|\berror MSB\d|\berror NETSDK\d")
 
 
-def publish(demo: str, *, strict: bool, rid: str,
-            env: dict[str, str]) -> tuple[int, list[str], list[str], str]:
+def publish(project: Path, output: Path, *, strict: bool, rid: str,
+            env: dict[str, str], extra_props: list[str] | None = None) -> tuple[int, list[str], str]:
+    common = ["-c", "Release", "-r", rid, "-p:PublishAot=true", "--disable-build-servers"]
+    commands = [
+        ["dotnet", "build", str(project), "--no-incremental", *common,
+         "-p:SelfContained=true", "-p:TreatWarningsAsErrors=true", "-v", "quiet", *(extra_props or [])],
+        ["dotnet", "publish", str(project), *common, "--self-contained", "true",
+         f"-p:TreatWarningsAsErrors={'true' if strict else 'false'}", "-o", str(output),
+         "-clp:NoSummary", "-v", "minimal", *(extra_props or [])],
+    ]
+    for command in commands:
+        proc = subprocess.run(command, cwd=str(ROOT), env=env, text=True,
+                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        if proc.returncode:
+            break
+    lines = proc.stdout.splitlines()
+    diagnostics = [ln.strip() for ln in lines if DIAGNOSTIC_LINE.search(ln)]
+    err = [ln.strip() for ln in lines if ERROR_LINE.search(ln)]
+    tail = err[-1] if err else next((ln.strip() for ln in reversed(lines) if ln.strip()), "(no output)")
+    return proc.returncode, diagnostics, tail[:240]
+
+
+def publish_demo(demo: str, *, strict: bool, rid: str,
+                 env: dict[str, str]) -> tuple[int, list[str], str, Path]:
     project = DEMOS_DIR / demo / f"{demo}.csproj"
     if not project.exists():
         raise SystemExit(f"demo project not found: {project}")
-    cmd = [
-        "dotnet", "publish", str(project),
-        "-c", "Release",
-        "-r", rid,
-        "-p:PublishAot=true",
-        "--self-contained", "true",
-        f"-p:TreatWarningsAsErrors={'true' if strict else 'false'}",
-        # Publishes write into the repo's standard artifacts/ layout ON PURPOSE: under PublishAot the
-        # demos swap their generator ProjectReference for a literal
-        # artifacts/bin/...SourceGenerators/release Analyzer path, so redirecting the output
-        # (--artifacts-path) breaks every demo with CS0006 on a fresh workspace. Cross-job isolation
-        # comes from the serial runner + per-ref workflow concurrency; --disable-build-servers kills
-        # the one genuine leak (persistent MSBuild/Roslyn servers holding state across jobs).
-        "--disable-build-servers",
-        "-clp:NoSummary",
-        "-v", "minimal",
-        *EXTRA_PROPS.get(demo, []),
-    ]
-    proc = subprocess.run(cmd, cwd=str(ROOT), env=env, text=True,
-                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    lines = proc.stdout.splitlines()
-    il = [ln.strip() for ln in lines if IL_LINE.search(ln)]
-    asms = sorted({m.group(1) for ln in lines for m in [ASM_WARNED.search(ln)] if m})
-    # Surface the real failure reason instead of swallowing it.
-    err = [ln.strip() for ln in lines if ERROR_LINE.search(ln)]
-    tail = err[-1] if err else next((ln.strip() for ln in reversed(lines) if ln.strip()), "(no output)")
-    return proc.returncode, il, asms, tail[:240]
+    result = publish(project, artifacts_publish_dir(project, "nativeaot"), strict=strict, rid=rid,
+                     env=env, extra_props=EXTRA_PROPS.get(demo))
+    return *result, project
+
+
+def resolved_packages(project: Path, diagnostics: list[str]) -> set[tuple[str, str]]:
+    packages: set[tuple[str, str]] = set()
+    candidates = [ROOT / "artifacts" / "obj" / project.stem / "project.assets.json",
+                  project.parent / "obj" / "project.assets.json"]
+    assets = next((candidate for candidate in candidates if candidate.exists()), None)
+    if assets is not None:
+        data = json.loads(assets.read_text(encoding="utf-8"))
+        packages.update(
+            (name.lower(), version)
+            for library, metadata in data.get("libraries", {}).items()
+            if metadata.get("type") == "package"
+            for name, version in [library.rsplit("/", 1)]
+        )
+    for line in diagnostics:
+        match = PACKAGE_PATH.search(line.replace("\\", "/"))
+        if match:
+            packages.add((match.group(1).lower(), match.group(2)))
+    return packages
+
+
+def validate_warning_policy(name: str, project: Path, diagnostics: list[str], rid: str) -> tuple[bool, str]:
+    policy = VENDOR_WARNED_DEMOS.get(name) or EXTERNAL_WARNED_PROJECTS.get(name)
+    if policy is None:
+        return False, f"no vendor-warning policy for {name}"
+
+    expected: Counter[tuple[str, str, str, str]] = Counter()
+    for diagnostic, assembly, package, version, _, count in policy:
+        expected[(diagnostic, assembly, package.format(rid=rid), version)] += count
+
+    actual: Counter[tuple[str, str, str, str]] = Counter()
+    resolved = resolved_packages(project, diagnostics)
+    for line in diagnostics:
+        match = DIAGNOSTIC_LINE.search(line)
+        diagnostic = match.group(1).upper() if match else "UNKNOWN"
+        if "Assembly 'Qyl.OpenTelemetry." in line or "/src/qyl.opentelemetry." in line.lower().replace("\\", "/"):
+            return False, f"qyl-owned diagnostic is never allowed: {line}"
+        matches = [entry for entry in policy if entry[0] == diagnostic and entry[4] in line]
+        if len(matches) != 1:
+            return False, f"unapproved or ambiguous diagnostic: {line}"
+        _, assembly, package, version, _, _ = matches[0]
+        package = package.format(rid=rid)
+        path_match = PACKAGE_PATH.search(line.replace("\\", "/"))
+        if path_match and (path_match.group(1).lower(), path_match.group(2)) != (package, version):
+            return False, (f"package drift for {diagnostic}/{assembly}: "
+                           f"{path_match.group(1)}@{path_match.group(2)} != {package}@{version}")
+        actual[(diagnostic, assembly, package, version)] += 1
+
+    missing_packages = sorted({(package, version) for _, _, package, version in expected} - resolved)
+    if missing_packages:
+        return False, f"approved package/version not resolved: {missing_packages}"
+    if actual != expected:
+        return False, f"warning policy drift: missing={dict(expected - actual)} extra={dict(actual - expected)}"
+    assemblies = sorted({assembly for _, assembly, _, _ in actual})
+    return True, f"{sum(actual.values())} approved diagnostic(s) from {', '.join(assemblies)}"
 
 
 def prebuild_generator(env: dict[str, str]) -> None:
@@ -147,7 +231,7 @@ def prebuild_generator(env: dict[str, str]) -> None:
     Under PublishAot the demos consume the generator as a prebuilt Analyzer DLL from
     artifacts/bin/...SourceGenerators/release — a contract every other workflow satisfies
     incidentally via a prior full-solution build. On a fresh workspace the gate must satisfy
-    it explicitly or all 30 publishes die with CS0006.
+    it explicitly or every demo publish dies with CS0006.
     """
     proc = subprocess.run(
         ["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release",
@@ -161,21 +245,20 @@ def prebuild_generator(env: dict[str, str]) -> None:
 
 
 def check_clean(demo: str, rid: str, env: dict[str, str]) -> tuple[str, str]:
-    # Strict: any IL warning becomes an error, so exit 0 <=> warning-clean.
-    code, il, _, tail = publish(demo, strict=True, rid=rid, env=env)
-    if code == 0:
+    code, diagnostics, tail, _ = publish_demo(demo, strict=True, rid=rid, env=env)
+    if code == 0 and not diagnostics:
         return "ok", "warning-clean"
-    return "regression", f"exit={code}; " + (il[0] if il else tail)
+    return "regression", f"exit={code}; " + (diagnostics[0] if diagnostics else tail)
 
 
 def check_warned(demo: str, rid: str, env: dict[str, str]) -> tuple[str, str]:
-    # Relaxed: must still produce a binary; vendor IL warnings are expected & tolerated.
-    code, il, asms, tail = publish(demo, strict=False, rid=rid, env=env)
+    code, diagnostics, tail, project = publish_demo(demo, strict=False, rid=rid, env=env)
     if code != 0:
-        return "hard-break", f"exit={code} even with warnings relaxed; " + (il[0] if il else tail)
-    if not il:
+        return "hard-break", f"exit={code} even with warnings relaxed; " + (diagnostics[0] if diagnostics else tail)
+    if not diagnostics:
         return "promotion", "now warning-clean upstream — move to CLEAN_DEMOS"
-    return "ok", "vendor-warned: " + (", ".join(asms) if asms else VENDOR_WARNED_DEMOS.get(demo, "?"))
+    valid, detail = validate_warning_policy(demo, project, diagnostics, rid)
+    return ("ok" if valid else "policy-drift"), detail
 
 
 def main() -> None:
@@ -186,6 +269,9 @@ def main() -> None:
     parser.add_argument("--strict-promotion", action="store_true",
                         help="treat a promotion (vendor demo gone warning-clean) as a gate failure")
     parser.add_argument("--list", action="store_true", help="print the classification and exit")
+    parser.add_argument("--project", type=Path, help=argparse.SUPPRESS)
+    parser.add_argument("--policy", choices=sorted(EXTERNAL_WARNED_PROJECTS), help=argparse.SUPPRESS)
+    parser.add_argument("--output", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--keep-publish", action="store_true",
                         help="keep artifacts/publish after a passing gate (default: removed — "
                              "pure verification byproduct, multiple GB over the full matrix)")
@@ -196,12 +282,30 @@ def main() -> None:
         for d in CLEAN_DEMOS:
             print(f"  clean   {d}")
         print(f"VENDOR_WARNED_DEMOS ({len(VENDOR_WARNED_DEMOS)}):")
-        for d, src in VENDOR_WARNED_DEMOS.items():
-            print(f"  warned  {d}  <- {src}")
+        for demo, policy in VENDOR_WARNED_DEMOS.items():
+            packages = ", ".join(sorted({f"{package}@{version}" for _, _, package, version, _, _ in policy}))
+            print(f"  warned  {demo}  <- {packages}")
         return
 
     rid = args.rid or runtime_identifier()
     env = dict(os.environ)
+    external = [args.project, args.policy, args.output]
+    if any(external):
+        if not all(external):
+            raise SystemExit("--project, --policy, and --output must be supplied together")
+        code, diagnostics, tail = publish(args.project, args.output, strict=False, rid=rid, env=env)
+        if code != 0:
+            raise SystemExit(f"external AOT publish failed: exit={code}; " + (diagnostics[0] if diagnostics else tail))
+        if not diagnostics:
+            if args.strict_promotion:
+                raise SystemExit(f"{args.policy} is now warning-clean; remove its vendor boundary")
+            print(f"{args.policy} promotion: now warning-clean")
+            return
+        valid, detail = validate_warning_policy(args.policy, args.project, diagnostics, rid)
+        if not valid:
+            raise SystemExit(f"{args.policy} warning policy failed: {detail}")
+        print(f"external-aot-publish-gate-ok {args.policy}: {detail}")
+        return
 
     plan: list[tuple[str, str]] = []  # (demo, kind)
     if args.set in ("clean", "all"):
@@ -222,10 +326,11 @@ def main() -> None:
     for demo, kind in plan:
         verdict, detail = (check_clean(demo, rid, env) if kind == "clean"
                            else check_warned(demo, rid, env))
-        icon = {"ok": "PASS", "regression": "FAIL", "hard-break": "FAIL", "promotion": "PROMO"}[verdict]
+        icon = {"ok": "PASS", "regression": "FAIL", "hard-break": "FAIL",
+                "policy-drift": "FAIL", "promotion": "PROMO"}[verdict]
         print(f"  [{icon}] {kind:6} {demo}  {detail}", flush=True)
         rows.append((icon, kind, demo, detail))
-        if verdict in ("regression", "hard-break"):
+        if verdict in ("regression", "hard-break", "policy-drift"):
             failures += 1
         elif verdict == "promotion":
             promotions += 1

@@ -97,7 +97,6 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
             "-r",
             runtime_identifier(),
             "-p:PublishAot=true",
-            "-p:TreatWarningsAsErrors=false",
             "--self-contained",
             "true",
             "-o",

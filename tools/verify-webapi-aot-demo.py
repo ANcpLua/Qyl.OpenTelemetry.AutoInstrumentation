@@ -4,8 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import platform
-import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -101,8 +101,9 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
     <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="{version}" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -117,57 +118,11 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     return project_path
 
 
-def _publish(project: Path, output: Path, env: dict[str, str], verbosity: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [
-            "dotnet",
-            "publish",
-            str(project),
-            "-c",
-            "Release",
-            "-r",
-            runtime_identifier(),
-            "-p:PublishAot=true",
-            "-p:TreatWarningsAsErrors=false",
-            "--self-contained",
-            "true",
-            "-o",
-            str(output),
-            "-v",
-            verbosity,
-        ],
-        cwd=project.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        check=False,
-    )
-
-
-def publish_nativeaot(project: Path, output: Path, log: Path, env: dict[str, str]) -> Path:
-    completed = _publish(project, output, env, "quiet")
-    log.write_text(completed.stdout, encoding="utf-8")
-    if completed.returncode != 0:
-        # The macOS NativeAOT native-link step has intermittently flaked here with clang exit 1,
-        # and "-v quiet" swallows the linker's (clang/ld) stderr, so the cause is invisible in CI.
-        # Re-publish once at detailed verbosity purely to capture that error for diagnosis. This
-        # does not change the outcome -- the original failure still fails the gate.
-        diagnostic = _publish(project, output, env, "detailed")
-        log.write_text(diagnostic.stdout, encoding="utf-8")
-        fail(
-            "NativeAOT web API publish failed\n"
-            f"exit={completed.returncode}\nlog={log}\n{diagnostic.stdout}"
-        )
-
-    qyl_warnings = [
-        line for line in completed.stdout.splitlines()
-        if re.search(r"\b(?:IL2[0-9]{3}|IL3[0-9]{3}|IL4[0-9]{3}|CA[0-9]{4})\b", line) and
-        "Qyl.OpenTelemetry.AutoInstrumentation" in line
-    ]
-    if qyl_warnings:
-        fail("NativeAOT web API publish emitted qyl-owned analyzer warnings:\n" + "\n".join(qyl_warnings))
-
+def publish_nativeaot(project: Path, output: Path, env: dict[str, str]) -> Path:
+    run_checked(
+        [sys.executable, "tools/verify-aot-publish-gate.py", "--project", str(project),
+         "--policy", "WebApiAotDemo", "--output", str(output), "--rid", runtime_identifier(),
+         "--strict-promotion"], ROOT, env)
     executable = output / ("WebApiAotDemo.exe" if platform.system().lower() == "windows" else "WebApiAotDemo")
     if not executable.exists():
         fail(f"NativeAOT web API executable missing: {executable}")
@@ -221,10 +176,9 @@ def main() -> None:
         feed = root / "feed"
         packages = root / "packages"
         publish = root / "publish"
-        publish_log = root / "publish.log"
         pack_runtime(feed, env)
         project = write_project(root / "consumer", feed, packages, version)
-        executable = publish_nativeaot(project, publish, publish_log, env)
+        executable = publish_nativeaot(project, publish, env)
         completed = run_executable(executable, env)
 
     if completed.returncode != 0:
@@ -236,7 +190,7 @@ def main() -> None:
         fail(f"NativeAOT web API demo wrote stderr:\n{completed.stderr}")
 
     verify_or_update_verified(completed.stdout, args.update_verified)
-    print("webapi-aot-demo-ok qyl_warnings=0")
+    print("webapi-aot-demo-ok")
 
 
 if __name__ == "__main__":

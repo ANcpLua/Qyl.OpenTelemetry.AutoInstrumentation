@@ -6,6 +6,7 @@ import os
 import platform
 import socket
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -21,19 +22,6 @@ SQL_PASSWORD = os.environ.get("QYL_SQL_PASSWORD", "Qyl_strong_Password_2026!")
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT SqlClient gate platform: {platform.system()} {platform.machine()}")
 
 
 def find_free_port() -> int:
@@ -99,27 +87,10 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     output = artifacts_publish_dir(PROJECT, "nativeaot")
-    run_checked(
-        [
-            "dotnet",
-            "publish",
-            str(PROJECT),
-            "-c",
-            "Release",
-            "-r",
-            runtime_identifier(),
-            "-p:PublishAot=true",
-            "-p:TreatWarningsAsErrors=false",
-            "--self-contained",
-            "true",
-            "-o",
-            str(output),
-            "-v",
-            "quiet",
-        ],
-        ROOT,
-        env,
-    )
+    if env.get("AOT_PUBLISH_GATE_SET") not in {"warned", "all"}:
+        run_checked(
+            [sys.executable, "tools/verify-aot-publish-gate.py", "--set", "warned", "--demo",
+             PROJECT.stem, "--strict-promotion", "--keep-publish"], ROOT, env)
     executable = output / ("Qyl.RealSqlClientDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealSqlClientDemo")
     if not executable.exists():
         fail(f"NativeAOT SqlClient executable missing: {executable}")

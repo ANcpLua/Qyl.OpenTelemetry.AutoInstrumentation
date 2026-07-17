@@ -5,6 +5,7 @@ import json
 import os
 import platform
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -13,26 +14,12 @@ from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealMassTransitDemo" / "Qyl.RealMassTransitDemo.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
 RABBITMQ_IMAGE = os.environ.get("QYL_RABBITMQ_IMAGE", "rabbitmq:4.1-alpine")
 
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT MassTransit gate platform: {platform.system()} {platform.machine()}")
 
 
 def parse_report(stdout: str) -> dict[str, Any]:
@@ -93,29 +80,11 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
     output = artifacts_publish_dir(PROJECT, "nativeaot")
-    run_checked(
-        [
-            "dotnet",
-            "publish",
-            str(PROJECT),
-            "-c",
-            "Release",
-            "-r",
-            runtime_identifier(),
-            "-p:PublishAot=true",
-            "-p:TreatWarningsAsErrors=false",
-            "--self-contained",
-            "true",
-            "-o",
-            str(output),
-            "-v",
-            "quiet",
-        ],
-        ROOT,
-        env,
-    )
+    if env.get("AOT_PUBLISH_GATE_SET") not in {"warned", "all"}:
+        run_checked(
+            [sys.executable, "tools/verify-aot-publish-gate.py", "--set", "warned", "--demo",
+             PROJECT.stem, "--strict-promotion", "--keep-publish"], ROOT, env)
     executable = output / ("Qyl.RealMassTransitDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealMassTransitDemo")
     if not executable.exists():
         fail(f"NativeAOT MassTransit executable missing: {executable}")

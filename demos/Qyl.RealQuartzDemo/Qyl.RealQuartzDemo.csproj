@@ -10,9 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="Quartz" />
-    <!-- Quartz instantiates its type-load helper and jobs through Activator.CreateInstance;
-         trimming removes those constructors. -->
-    <TrimmerRootAssembly Include="Quartz" />
   </ItemGroup>
 
   <ItemGroup>

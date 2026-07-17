@@ -3,37 +3,22 @@ from __future__ import annotations
 
 import json
 import os
-import platform
 import socket
 import subprocess
 from pathlib import Path
 from typing import Any
 
 from verify_container_helpers import run_published_container
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealKafkaDemo" / "Qyl.RealKafkaDemo.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
 KAFKA_IMAGE = os.environ.get("QYL_KAFKA_IMAGE", "apache/kafka:4.1.0")
 
 
 def fail(message: str) -> None:
     raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT Kafka gate platform: {platform.system()} {platform.machine()}")
 
 
 def find_free_port() -> int:
@@ -99,45 +84,6 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    output = artifacts_publish_dir(PROJECT, "nativeaot")
-    run_checked(
-        [
-            "dotnet",
-            "publish",
-            str(PROJECT),
-            "-c",
-            "Release",
-            "-r",
-            runtime_identifier(),
-            "-p:PublishAot=true",
-            "-p:TreatWarningsAsErrors=false",
-            "--self-contained",
-            "true",
-            "-o",
-            str(output),
-            "-v",
-            "quiet",
-        ],
-        ROOT,
-        env,
-    )
-    executable = output / ("Qyl.RealKafkaDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealKafkaDemo")
-    if not executable.exists():
-        fail(f"NativeAOT Kafka executable missing: {executable}")
-
-    return subprocess.run(
-        [str(executable)],
-        cwd=output,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-
-
 def main() -> None:
     env = clean_env()
     host_port = find_free_port()
@@ -166,10 +112,8 @@ def main() -> None:
     ) as kafka:
         env["QYL_KAFKA_BOOTSTRAP_SERVERS"] = f"{kafka.host}:{kafka.port}"
         managed = run_managed(env)
-        nativeaot = run_nativeaot(env)
 
     verify_report("managed Kafka demo", managed, "dynamic-code-supported")
-    verify_report("NativeAOT Kafka demo", nativeaot, "nativeaot")
     print("real-kafka-demo-ok")
 
 

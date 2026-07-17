@@ -5,11 +5,9 @@ using DbIncubatingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.
 using CpuAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Cpu.CpuAttributes;
 using DotnetAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Dotnet.DotnetAttributes;
 using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
-using ExceptionAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Exception.ExceptionAttributes;
 using GraphqlAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using MessagingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
-using OtelAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Otel.OtelAttributes;
 using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
@@ -171,9 +169,6 @@ public static class QylSemanticAttributes
     public const string LogSeverityCritical = "Critical";
     /// <summary>Well-known Log Severity Other value used by qyl auto-instrumentation.</summary>
     public const string LogSeverityOther = "Other";
-    /// <summary>Well-known Log Event Name value used by qyl auto-instrumentation.</summary>
-    public const string LogEventName = OtelAttributes.EventName;
-
     /// <summary>Well-known Graph Ql Operation Name value used by qyl auto-instrumentation.</summary>
     public const string GraphQlOperationName = GraphqlAttributes.OperationName;
     /// <summary>Well-known Graph Ql Document value used by qyl auto-instrumentation.</summary>
@@ -185,9 +180,6 @@ public static class QylSemanticAttributes
     public const string ServerPort = ServerAttributes.Port;
     /// <summary>Well-known Error Type value used by qyl auto-instrumentation.</summary>
     public const string ErrorType = ErrorAttributes.Type;
-    /// <summary>Well-known Exception Type value used by qyl auto-instrumentation.</summary>
-    public const string ExceptionType = ExceptionAttributes.Type;
-
     private static int GetRpcGrpcStatusCodeOk()
         => global::System.Int32.TryParse(
             RpcAttributes.GrpcStatusCodeValues.Ok,

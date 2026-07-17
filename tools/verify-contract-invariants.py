@@ -95,8 +95,12 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw ex;",
 ]
 MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
-    "signals.traces.NSERVICEBUS",
+    "signals.logs.LOG4NET",
     "signals.metrics.NSERVICEBUS",
+    "signals.traces.KAFKA",
+    "signals.traces.MONGODB",
+    "signals.traces.NSERVICEBUS",
+    "signals.traces.QUARTZ",
     "signals.traces.WCFCLIENT",
 }
 REQUIRED_METER_PROVIDER_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylMetricMeters.GetEnabledMeterNames()"

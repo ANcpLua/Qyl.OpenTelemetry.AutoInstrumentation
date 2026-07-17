@@ -466,24 +466,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealKafkaDemo
   - tools/verify-real-kafka-demo.py
-  conformance_signals:
-  - kind: span
-    name: kafka.message
-    required_attributes:
-    - messaging.system
-    - messaging.operation.type
-    - messaging.operation.name
-    - qyl.instrumentation.domain
-    recommended_attributes:
-    - error.type
-    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MASSTRANSIT
   signal: traces
@@ -557,24 +546,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMongoDbDemo
   - tools/verify-real-mongodb-demo.py
-  conformance_signals:
-  - kind: span
-    name: mongodb.command
-    required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
-    - qyl.instrumentation.domain
-    recommended_attributes:
-    - error.type
-    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MYSQLCONNECTOR
   signal: traces
@@ -851,21 +829,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
-  conformance_signals:
-  - kind: span
-    name: quartz.execute
-    required_attributes:
-    - qyl.instrumentation.domain
-    recommended_attributes:
-    - error.type
-    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.SQLCLIENT
   signal: traces
@@ -1521,21 +1491,13 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealLog4NetDemo
   - tools/verify-real-log4net-demo.py
-  conformance_signals:
-  - kind: span
-    name: log4net.log
-    required_attributes:
-    - log.severity
-    - qyl.instrumentation.domain
-    recommended_attributes: []
-    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.NLOG
   signal: logs

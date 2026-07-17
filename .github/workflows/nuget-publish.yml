@@ -94,7 +94,7 @@ jobs:
       - name: NativeAOT prerequisites
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
       - name: NativeAOT publish matrix
-        run: python3 tools/verify-aot-publish-gate.py --set all
+        run: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion
 
   publish:
     needs: [version, verify, aot-publish]

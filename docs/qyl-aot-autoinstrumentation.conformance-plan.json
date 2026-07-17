@@ -81,20 +81,6 @@
         },
         {
           "kind": "span",
-          "name": "mongodb.command",
-          "required_attributes": [
-            "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [
-            "error.type"
-          ],
-          "opt_in_attributes": []
-        },
-        {
-          "kind": "span",
           "name": "mysqlconnector.command",
           "required_attributes": [
             "db.system.name",
@@ -289,20 +275,6 @@
       "expected_signals": [
         {
           "kind": "span",
-          "name": "kafka.message",
-          "required_attributes": [
-            "messaging.system",
-            "messaging.operation.type",
-            "messaging.operation.name",
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [
-            "error.type"
-          ],
-          "opt_in_attributes": []
-        },
-        {
-          "kind": "span",
           "name": "masstransit.message",
           "required_attributes": [
             "messaging.system",
@@ -354,23 +326,6 @@
       ]
     },
     {
-      "service_name": "qyl-scheduler-aot-demo",
-      "profile_id": "qyl-aot-scheduler",
-      "expected_signals": [
-        {
-          "kind": "span",
-          "name": "quartz.execute",
-          "required_attributes": [
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [
-            "error.type"
-          ],
-          "opt_in_attributes": []
-        }
-      ]
-    },
-    {
       "service_name": "qyl-logging-aot-demo",
       "profile_id": "qyl-aot-logging",
       "expected_signals": [
@@ -384,16 +339,6 @@
           "recommended_attributes": [
             "error.type"
           ],
-          "opt_in_attributes": []
-        },
-        {
-          "kind": "span",
-          "name": "log4net.log",
-          "required_attributes": [
-            "log.severity",
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [],
           "opt_in_attributes": []
         },
         {
