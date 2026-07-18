@@ -19,7 +19,7 @@ const string topic = "qyl-probe";
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -168,20 +168,20 @@ internal sealed record KafkaReport(
         var failures = new List<string>();
         var kafkaSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.MessagingKafka))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "messaging.kafka"))
             .ToArray();
 
         var sendSuccess = kafkaSpans
-            .Where(static span => HasTag(span, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend) &&
+            .Where(static span => HasTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send) &&
                                   StringComparer.Ordinal.Equals(span.Status, "Unset"))
             .ToArray();
         var sendError = kafkaSpans
-            .Where(static span => HasTag(span, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend) &&
+            .Where(static span => HasTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send) &&
                                   StringComparer.Ordinal.Equals(span.Status, "Error"))
             .ToArray();
         var receive = kafkaSpans
-            .Where(static span => HasTag(span, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeReceive))
+            .Where(static span => HasTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Receive))
             .ToArray();
 
         if (sendSuccess.Length != 2)
@@ -195,20 +195,20 @@ internal sealed record KafkaReport(
 
         foreach (var span in sendSuccess)
         {
-            RequireTag(span, QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemKafka, failures);
-            RequireTag(span, QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Kafka, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, "publish", failures);
             RequireKind(span, "Producer", failures);
         }
 
         foreach (var span in sendError)
         {
-            RequireTag(span, QylSemanticAttributes.ErrorType, "ProduceException`2", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "ProduceException`2", failures);
             RequireKind(span, "Producer", failures);
         }
 
         foreach (var span in receive)
         {
-            RequireTag(span, QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemKafka, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Kafka, failures);
             RequireKind(span, "Consumer", failures);
         }
 

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
+
 namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 internal static class QylRuntimeProcessMetrics

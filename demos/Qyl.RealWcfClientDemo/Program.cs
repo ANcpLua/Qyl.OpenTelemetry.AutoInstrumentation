@@ -11,7 +11,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
 };
@@ -102,8 +102,8 @@ internal sealed record WcfClientReport(
         var failures = new List<string>();
         var wcfSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.RpcWcfClient))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "rpc.wcf.client"))
             .ToArray();
 
         if (wcfSpans.Length != 2)
@@ -121,9 +121,9 @@ internal sealed record WcfClientReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected WCF span status Error, got {span.Status}");
 
-            RequireTag(span, QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemDotNetWcf, failures);
-            RequireTag(span, QylSemanticAttributes.ErrorType, nameof(CommunicationException), failures);
-            RequireMissingTag(span, QylSemanticAttributes.UrlFull, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemValues.DotnetWcf, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(CommunicationException), failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
         }
 
         return new WcfClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), wcfSpans);
@@ -132,7 +132,7 @@ internal sealed record WcfClientReport(
     private static void RequireMethod(IEnumerable<CapturedActivity> activities, string expectedMethod, ICollection<string> failures)
     {
         if (!activities.Any(activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.RpcMethod, out var method) &&
+                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.Method, out var method) &&
                 StringComparer.Ordinal.Equals(method, expectedMethod)))
         {
             failures.Add($"missing WCF method span {expectedMethod}");

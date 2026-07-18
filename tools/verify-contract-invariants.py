@@ -204,7 +204,7 @@ DB_QUERY_TEXT_ALLOWED_PATHS = {
     "src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
     "src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
 }
-QYL_ABI_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylIntercepted"
+QYL_ABI_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylIntercepted"
 
 
 def fail(message: str) -> None:

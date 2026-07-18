@@ -7,7 +7,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// consuming app needs — wire it into the app's startup (or let the
 /// <c>[ModuleInitializer]</c> in <c>Qyl.OpenTelemetry.AutoInstrumentation.Hosting</c> do it automatically).
 /// </summary>
-public static class QylInstrumentation
+internal static class QylInstrumentation
 {
     /// <summary>
     /// Instrumentation-scope version stamped on every qyl-emitted span/metric (via

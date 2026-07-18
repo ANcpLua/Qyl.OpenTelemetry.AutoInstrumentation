@@ -9,12 +9,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NServiceBus;
 using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var captured = new List<CapturedActivity>();
 var capturedMetrics = new List<CapturedMetric>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -25,7 +26,7 @@ using var meterListener = new MeterListener();
 meterListener.InstrumentPublished = static (instrument, listener) =>
 {
     if (StringComparer.Ordinal.Equals(instrument.Meter.Name, QylMetricMeters.NServiceBusMeterName) &&
-        StringComparer.Ordinal.Equals(instrument.Name, QylMetricNames.NServiceBusMessagingOperationDuration))
+        StringComparer.Ordinal.Equals(instrument.Name, "nservicebus.messaging.operation.duration"))
     {
         listener.EnableMeasurementEvents(instrument);
     }
@@ -180,13 +181,13 @@ internal sealed record NServiceBusReport(
         var failures = new List<string>();
         var nServiceBusSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.MessagingNServiceBus))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "messaging.nservicebus"))
             .ToArray();
         var nServiceBusMetrics = metrics
             .Where(static metric =>
                 StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.NServiceBusMeterName) &&
-                StringComparer.Ordinal.Equals(metric.Name, QylMetricNames.NServiceBusMessagingOperationDuration))
+                StringComparer.Ordinal.Equals(metric.Name, "nservicebus.messaging.operation.duration"))
             .ToArray();
 
         if (nServiceBusSpans.Length != 3)
@@ -194,16 +195,16 @@ internal sealed record NServiceBusReport(
         if (nServiceBusMetrics.Length != 3)
             failures.Add($"expected 3 NServiceBus duration measurements, got {nServiceBusMetrics.Length}");
 
-        var publishSuccess = FindByOperationAndStatus(nServiceBusSpans, QylSemanticAttributes.MessagingOperationNamePublish, "Unset");
-        var sendSuccess = FindByOperationAndStatus(nServiceBusSpans, QylSemanticAttributes.MessagingOperationNameSend, "Unset");
-        var sendError = FindByOperationAndStatus(nServiceBusSpans, QylSemanticAttributes.MessagingOperationNameSend, "Error");
-        var publishMetrics = FindMetricsByOperation(nServiceBusMetrics, QylSemanticAttributes.MessagingOperationNamePublish);
-        var sendMetrics = FindMetricsByOperation(nServiceBusMetrics, QylSemanticAttributes.MessagingOperationNameSend);
+        var publishSuccess = FindByOperationAndStatus(nServiceBusSpans, "publish", "Unset");
+        var sendSuccess = FindByOperationAndStatus(nServiceBusSpans, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Unset");
+        var sendError = FindByOperationAndStatus(nServiceBusSpans, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Error");
+        var publishMetrics = FindMetricsByOperation(nServiceBusMetrics, "publish");
+        var sendMetrics = FindMetricsByOperation(nServiceBusMetrics, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send);
 
         Require(publishSuccess, "successful publish span", failures);
         Require(sendSuccess, "successful send span", failures);
         Require(sendError, "error send span", failures);
-        RequireTag(sendError, QylSemanticAttributes.ErrorType, "Exception", failures);
+        RequireTag(sendError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "Exception", failures);
         if (publishMetrics.Length != 1)
             failures.Add($"expected 1 publish duration measurement, got {publishMetrics.Length}");
         if (sendMetrics.Length != 2)
@@ -214,8 +215,8 @@ internal sealed record NServiceBusReport(
             if (!StringComparer.Ordinal.Equals(span.Name, "NServiceBus message"))
                 failures.Add($"unexpected NServiceBus span name: {span.Name}");
 
-            RequireTag(span, QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus, failures);
-            RequireTag(span, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "nservicebus", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");
@@ -226,8 +227,8 @@ internal sealed record NServiceBusReport(
             if (metric.Value < 0)
                 failures.Add($"expected non-negative NServiceBus duration, got {metric.Value.ToString(CultureInfo.InvariantCulture)}");
 
-            RequireMetricTag(metric, QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus, failures);
-            RequireMetricTag(metric, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend, failures);
+            RequireMetricTag(metric, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "nservicebus", failures);
+            RequireMetricTag(metric, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
         }
 
         return new NServiceBusReport(runtimeMode, failures.Count is 0, failures.ToArray(), nServiceBusSpans, nServiceBusMetrics);
@@ -236,12 +237,12 @@ internal sealed record NServiceBusReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(QylSemanticAttributes.MessagingOperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static CapturedMetric[] FindMetricsByOperation(IEnumerable<CapturedMetric> metrics, string operation)
         => metrics.Where(metric =>
-            metric.Tags.TryGetValue(QylSemanticAttributes.MessagingOperationName, out var actual) &&
+            metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation)).ToArray();
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

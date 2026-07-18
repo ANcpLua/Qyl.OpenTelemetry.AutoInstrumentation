@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var exportedMetrics = new List<Metric>();
 
@@ -174,10 +175,10 @@ internal sealed record AspNetCoreMetricsReport(
             failures.Add("observed metrics: " + string.Join("|", metrics.Select(static metric => metric.MeterName + ":" + metric.Name).OrderBy(static name => name, StringComparer.Ordinal)));
         }
 
-        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsRenderDiffDuration, failures);
-        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsRenderDiffSize, failures);
-        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, QylMetricNames.AspNetCoreComponentsUpdateParametersDuration, failures);
-        RequireMetric(hostingMetrics, QylMetricMeters.AspNetCoreHostingMeterName, QylMetricNames.HttpServerRequestDuration, failures);
+        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, "aspnetcore.components.render_diff.duration", failures);
+        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, "aspnetcore.components.render_diff.size", failures);
+        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, "aspnetcore.components.update_parameters.duration", failures);
+        RequireMetric(hostingMetrics, QylMetricMeters.AspNetCoreHostingMeterName, "http.server.request.duration", failures);
 
         foreach (var metric in capturedAspNetCoreMetrics.Where(static metric => metric.PointCount <= 0))
             failures.Add($"expected at least one metric point for {metric.MeterName}:{metric.Name}, got {metric.PointCount.ToString(CultureInfo.InvariantCulture)}");

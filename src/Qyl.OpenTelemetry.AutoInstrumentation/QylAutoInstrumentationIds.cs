@@ -14,7 +14,7 @@ public enum QylAutoInstrumentationSignal
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Auto Instrumentation Ids.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-public static class QylAutoInstrumentationIds
+internal static class QylAutoInstrumentationIds
 {
     /// <summary>Well-known Ado Net value used by qyl auto-instrumentation.</summary>
     public const string AdoNet = "ADONET";

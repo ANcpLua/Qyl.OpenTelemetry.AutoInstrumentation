@@ -17,7 +17,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -112,8 +112,8 @@ internal sealed record MongoDbReport(
         var failures = new List<string>();
         var mongoSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.DbMongoDb))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "db.mongodb"))
             .ToArray();
 
         if (mongoSpans.Length != 4)
@@ -128,14 +128,14 @@ internal sealed record MongoDbReport(
         Require(insertError, "error insert span", failures);
         Require(countSuccess, "successful count span", failures);
         Require(deleteSuccess, "successful delete span", failures);
-        RequireTag(insertError, QylSemanticAttributes.ErrorType, "MongoWriteException", failures);
+        RequireTag(insertError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "MongoWriteException", failures);
 
         foreach (var span in mongoSpans)
         {
             if (!StringComparer.Ordinal.Equals(span.Name, "MongoDB command"))
                 failures.Add($"unexpected MongoDB span name: {span.Name}");
 
-            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMongodb, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Mongodb, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected kind Client, got {span.Kind}");
@@ -147,7 +147,7 @@ internal sealed record MongoDbReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(QylSemanticAttributes.DbOperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

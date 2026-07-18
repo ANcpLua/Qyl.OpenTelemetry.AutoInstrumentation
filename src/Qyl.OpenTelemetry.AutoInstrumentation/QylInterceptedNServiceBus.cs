@@ -1,10 +1,11 @@
 using System.Diagnostics;
 using Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
-namespace Qyl.OpenTelemetry.AutoInstrumentation;
+namespace Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted N Service Bus.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylInterceptedNServiceBus
 {
 

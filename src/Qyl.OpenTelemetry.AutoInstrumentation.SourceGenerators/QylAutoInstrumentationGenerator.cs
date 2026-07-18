@@ -154,6 +154,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("{");
         builder.AppendLine("    internal static class QylGeneratedInterceptors");
         builder.AppendLine("    {");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V6;");
+        builder.AppendLine();
 
         for (var index = 0; index < invocations.Length; index++)
         {
@@ -812,8 +814,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (target.Parameters.Length > 0 && string.Equals(target.Parameters[0].TypeName,
                 "global::GraphQL.ExecutionOptions", StringComparison.Ordinal))
         {
-            builder.Append(
-                "global::Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationOptions.Current.GraphQlSetDocument && ");
             builder.Append(target.Parameters[0].Name);
             builder.Append(" is not null ? ");
             builder.Append(target.Parameters[0].Name);

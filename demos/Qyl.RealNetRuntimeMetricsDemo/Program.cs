@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var exportedMetrics = new List<Metric>();
 
@@ -83,12 +84,12 @@ internal sealed record NetRuntimeMetricsReport(
             failures.Add("observed metrics: " + string.Join("|", metrics.Select(static metric => metric.MeterName + ":" + metric.Name).OrderBy(static name => name, StringComparer.Ordinal)));
         }
 
-        RequireMetric(runtimeMetrics, QylMetricNames.ProcessRuntimeDotnetGcCollectionsCount, failures);
-        RequireMetric(runtimeMetrics, QylMetricNames.ProcessRuntimeDotnetGcHeapSize, failures);
-        RequireMetric(runtimeMetrics, QylMetricNames.ProcessRuntimeDotnetThreadPoolThreadsCount, failures);
-        RequireMetric(runtimeMetrics, QylMetricNames.ProcessCpuTime, failures);
-        RequireMetric(runtimeMetrics, QylMetricNames.ProcessMemoryUsage, failures);
-        RequireMetric(runtimeMetrics, QylMetricNames.ProcessCpuCount, failures);
+        RequireMetric(runtimeMetrics, "dotnet.gc.collections", failures);
+        RequireMetric(runtimeMetrics, "dotnet.gc.last_collection.heap.size", failures);
+        RequireMetric(runtimeMetrics, "dotnet.thread_pool.thread.count", failures);
+        RequireMetric(runtimeMetrics, "dotnet.process.cpu.time", failures);
+        RequireMetric(runtimeMetrics, "dotnet.process.memory.working_set", failures);
+        RequireMetric(runtimeMetrics, "dotnet.process.cpu.count", failures);
 
         foreach (var metric in runtimeMetrics.Where(static metric => metric.PointCount <= 0))
             failures.Add($"expected at least one metric point for {metric.Name}, got {metric.PointCount.ToString(CultureInfo.InvariantCulture)}");

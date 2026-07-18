@@ -16,6 +16,8 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated
 {
     internal static class QylGeneratedInterceptors
     {
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V6;
+
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(5,8)
         [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "BZ/VvozrZJa2e0oqXWVjZFQAAABQcm9ncmFtLmNz")]
         public static void ILogger_Log_0<TState>(
@@ -25,7 +27,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated
             TState state,
             global::System.Exception? exception,
             global::System.Func<TState, global::System.Exception?, string> formatter)
-            => global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
+            => global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
 
         // Intercepted call at /_qyl_generator_snapshot/Probe.cs(10,16)
         [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "bCVh78nW9Q7jLziddD9BAPcBAABQcm9iZS5jcw==")]
@@ -36,7 +38,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated
             TState state,
             global::System.Exception? exception,
             global::System.Func<TState, global::System.Exception?, string> formatter)
-            => global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
+            => global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
 
     }
 }

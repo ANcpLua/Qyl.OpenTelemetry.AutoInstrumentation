@@ -1,10 +1,12 @@
 using System.Diagnostics.Metrics;
 
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
+
 namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl database Client Metrics.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-public static class QylDbClientMetrics
+internal static class QylDbClientMetrics
 {
     private static readonly Meter Meter = new(QylMetricMeters.DatabaseMeterName);
     private static readonly Histogram<double> OperationDuration = Meter.CreateHistogram<double>(QylMetricNames.DbClientOperationDuration, "s");

@@ -3,7 +3,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// <summary>Composes the bounded, low-cardinality span names emitted by qyl auto-instrumentation.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery. Every input is already low-cardinality by construction: normalized HTTP methods, route templates, RPC method identifiers, and normalized database operation tokens.</remarks>
 /// <example><code>var name = QylActivityNames.HttpClient("GET");</code></example>
-public static class QylActivityNames
+internal static class QylActivityNames
 {
     private const string HttpFallback = "HTTP";
     private const string GrpcFallback = "gRPC";

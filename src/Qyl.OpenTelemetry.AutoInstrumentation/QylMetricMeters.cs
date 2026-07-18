@@ -1,10 +1,11 @@
-namespace Qyl.OpenTelemetry.AutoInstrumentation;
+namespace Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>
 /// Meter names required by the metrics side of the auto-instrumentation contract.
 /// These are registration targets for source-visible <c>MeterProviderBuilder.AddMeter(...)</c>
 /// interception; they do not create instruments by themselves.
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylMetricMeters
 {
     /// <summary>Well-known ASP.NET Core Hosting Meter Name value used by qyl auto-instrumentation.</summary>

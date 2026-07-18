@@ -8,6 +8,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 using Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 namespace Qyl;
 

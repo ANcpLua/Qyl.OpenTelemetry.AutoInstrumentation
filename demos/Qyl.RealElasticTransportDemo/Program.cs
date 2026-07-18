@@ -9,7 +9,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
 };
@@ -86,8 +86,8 @@ internal sealed record ElasticTransportReport(
         var failures = new List<string>();
         var elasticSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.ElasticTransport))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "elastic.transport"))
             .ToArray();
 
         if (elasticSpans.Length != 2)
@@ -102,10 +102,10 @@ internal sealed record ElasticTransportReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected Elastic.Transport span status Error, got {span.Status}");
 
-            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemElasticsearch, failures);
-            RequireTag(span, QylSemanticAttributes.DbOperationName, "request", failures);
-            RequireTag(span, QylSemanticAttributes.ErrorType, nameof(InvalidOperationException), failures);
-            RequireMissingTag(span, QylSemanticAttributes.DbQueryText, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Elasticsearch, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "request", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(InvalidOperationException), failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new ElasticTransportReport(runtimeMode, failures.Count is 0, failures.ToArray(), elasticSpans);

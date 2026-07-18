@@ -18,7 +18,7 @@ if (string.IsNullOrWhiteSpace(uriText))
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -122,29 +122,29 @@ internal sealed record MassTransitReport(
         var failures = new List<string>();
         var massTransitSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.MessagingMassTransit))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "messaging.masstransit"))
             .ToArray();
 
         if (massTransitSpans.Length != 3)
             failures.Add($"expected 3 MassTransit message spans, got {massTransitSpans.Length}");
 
-        var publishSuccess = FindByOperationAndStatus(massTransitSpans, QylSemanticAttributes.MessagingOperationNamePublish, "Unset");
-        var sendSuccess = FindByOperationAndStatus(massTransitSpans, QylSemanticAttributes.MessagingOperationNameSend, "Unset");
-        var publishError = FindByOperationAndStatus(massTransitSpans, QylSemanticAttributes.MessagingOperationNamePublish, "Error");
+        var publishSuccess = FindByOperationAndStatus(massTransitSpans, "publish", "Unset");
+        var sendSuccess = FindByOperationAndStatus(massTransitSpans, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Unset");
+        var publishError = FindByOperationAndStatus(massTransitSpans, "publish", "Error");
 
         Require(publishSuccess, "successful publish span", failures);
         Require(sendSuccess, "successful send span", failures);
         Require(publishError, "error publish span", failures);
-        RequireTag(publishError, QylSemanticAttributes.ErrorType, "ArgumentException", failures);
+        RequireTag(publishError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "ArgumentException", failures);
 
         foreach (var span in massTransitSpans)
         {
             if (!StringComparer.Ordinal.Equals(span.Name, "MassTransit message"))
                 failures.Add($"unexpected MassTransit span name: {span.Name}");
 
-            RequireTag(span, QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemMassTransit, failures);
-            RequireTag(span, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "masstransit", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");
@@ -156,7 +156,7 @@ internal sealed record MassTransitReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(QylSemanticAttributes.MessagingOperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

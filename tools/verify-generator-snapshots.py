@@ -33,7 +33,7 @@ REQUIRED_INTERCEPTOR_TOKENS = [
     "[global::System.Runtime.CompilerServices.InterceptsLocationAttribute(",
     "ILogger_Log_",
     "global::Microsoft.Extensions.Logging.ILogger logger",
-    "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedLogger.Log(",
+    "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(",
 ]
 
 FORBIDDEN_INTERCEPTOR_TOKENS = [

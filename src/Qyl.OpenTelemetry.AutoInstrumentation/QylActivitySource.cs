@@ -7,7 +7,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// so a consuming app subscribes ONCE and sees every qyl-emitted span across every instrumentation
 /// module (HTTP, EFCore, SqlClient, gRPC, …).
 /// </summary>
-public static class QylActivitySource
+internal static class QylActivitySource
 {
     /// <summary>The well-known source name. Mirror this in <c>AddSource(...)</c> on a TracerProvider
     /// or in <c>OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES</c>.</summary>

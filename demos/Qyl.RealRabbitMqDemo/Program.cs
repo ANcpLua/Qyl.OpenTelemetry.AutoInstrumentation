@@ -18,7 +18,7 @@ if (string.IsNullOrWhiteSpace(uriText))
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -109,8 +109,8 @@ internal sealed record RabbitMqReport(
         var failures = new List<string>();
         var rabbitSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.MessagingRabbitMq))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "messaging.rabbitmq"))
             .ToArray();
 
         var success = rabbitSpans.Where(static span => StringComparer.Ordinal.Equals(span.Status, "Unset")).ToArray();
@@ -127,16 +127,16 @@ internal sealed record RabbitMqReport(
             if (!StringComparer.Ordinal.Equals(span.Name, "RabbitMQ publish"))
                 failures.Add($"unexpected RabbitMQ span name: {span.Name}");
 
-            RequireTag(span, QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemRabbitMq, failures);
-            RequireTag(span, QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend, failures);
-            RequireTag(span, QylSemanticAttributes.MessagingOperationName, QylSemanticAttributes.MessagingOperationNamePublish, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Rabbitmq, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, "publish", failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");
         }
 
         foreach (var span in error)
-            RequireTag(span, QylSemanticAttributes.ErrorType, "AlreadyClosedException", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "AlreadyClosedException", failures);
 
         return new RabbitMqReport(runtimeMode, failures.Count is 0, failures.ToArray(), rabbitSpans);
     }

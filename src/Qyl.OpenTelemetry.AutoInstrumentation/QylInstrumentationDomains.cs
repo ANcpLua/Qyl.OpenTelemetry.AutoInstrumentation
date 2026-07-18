@@ -2,7 +2,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Instrumentation Domains.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-public static class QylInstrumentationDomains
+internal static class QylInstrumentationDomains
 {
     /// <summary>Well-known ASP.NET Core Server value used by qyl auto-instrumentation.</summary>
     public const string AspNetCoreServer = "aspnetcore.server";

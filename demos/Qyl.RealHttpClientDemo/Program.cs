@@ -7,13 +7,14 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var captured = new List<CapturedActivity>();
 var capturedMetrics = new List<CapturedMetric>();
 
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -25,7 +26,7 @@ using var meterListener = new MeterListener
     InstrumentPublished = static (instrument, listener) =>
     {
         if (StringComparer.Ordinal.Equals(instrument.Meter.Name, QylMetricMeters.HttpClientMeterName) &&
-            StringComparer.Ordinal.Equals(instrument.Name, QylMetricNames.HttpClientRequestDuration))
+            StringComparer.Ordinal.Equals(instrument.Name, "http.client.request.duration"))
         {
             listener.EnableMeasurementEvents(instrument);
         }
@@ -176,22 +177,22 @@ internal sealed record HttpClientReport(
         var httpClientMetrics = metrics
             .Where(static metric =>
                 StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.HttpClientMeterName) &&
-                StringComparer.Ordinal.Equals(metric.Name, QylMetricNames.HttpClientRequestDuration))
+                StringComparer.Ordinal.Equals(metric.Name, "http.client.request.duration"))
             .ToArray();
 
         if (httpClientMetrics.Length != 2)
             failures.Add($"expected 2 real HttpClient duration metrics, got {httpClientMetrics.Length}");
 
         var statusMetric = httpClientMetrics.FirstOrDefault(static metric =>
-            metric.Tags.TryGetValue(QylSemanticAttributes.HttpResponseStatusCode, out var statusCode) &&
+            metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "503"));
         var failureMetric = httpClientMetrics.FirstOrDefault(static metric =>
-            metric.Tags.TryGetValue(QylSemanticAttributes.ErrorType, out var errorType) &&
+            metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, out var errorType) &&
             errorType.Length > 0);
 
         Require(statusMetric, "503 status metric", failures);
         Require(failureMetric, "connection failure metric", failures);
-        RequireMetricTag(statusMetric, QylSemanticAttributes.HttpRequestMethod, QylSemanticAttributes.HttpRequestMethodGet, failures);
+        RequireMetricTag(statusMetric, Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes.RequestMethod, Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes.RequestMethodValues.Get, failures);
 
         foreach (var metric in httpClientMetrics)
         {

@@ -16,7 +16,7 @@ if (string.IsNullOrWhiteSpace(configuration))
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -104,8 +104,8 @@ internal sealed record RedisReport(
         var failures = new List<string>();
         var redisSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.DbRedis))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "db.redis"))
             .ToArray();
 
         if (redisSpans.Length != 4)
@@ -120,14 +120,14 @@ internal sealed record RedisReport(
         Require(get, "successful GET span", failures);
         Require(del, "successful DEL span", failures);
         Require(executeError, "error EXECUTE span", failures);
-        RequireTag(executeError, QylSemanticAttributes.ErrorType, "RedisServerException", failures);
+        RequireTag(executeError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "RedisServerException", failures);
 
         foreach (var span in redisSpans)
         {
             if (!StringComparer.Ordinal.Equals(span.Name, "Redis command"))
                 failures.Add($"unexpected Redis span name: {span.Name}");
 
-            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Redis, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected kind Client, got {span.Kind}");
@@ -139,7 +139,7 @@ internal sealed record RedisReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(QylSemanticAttributes.DbOperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

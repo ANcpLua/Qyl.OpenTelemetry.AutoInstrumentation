@@ -11,7 +11,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
 };
@@ -83,8 +83,8 @@ internal sealed record AzureReport(
         var failures = new List<string>();
         var azureSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.AzureSdk))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "azure.sdk"))
             .ToArray();
 
         if (azureSpans.Length != 2)
@@ -99,10 +99,10 @@ internal sealed record AzureReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected Azure span status Error, got {span.Status}");
 
-            RequireTag(span, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AzureSdk, failures);
-            RequireTag(span, QylSemanticAttributes.ErrorType, nameof(RequestFailedException), failures);
-            RequireMissingTag(span, QylSemanticAttributes.UrlFull, failures);
-            RequireMissingTag(span, QylSemanticAttributes.UrlPath, failures);
+            RequireTag(span, "qyl.instrumentation.domain", "azure.sdk", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(RequestFailedException), failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Path, failures);
         }
 
         return new AzureReport(runtimeMode, failures.Count is 0, failures.ToArray(), azureSpans);

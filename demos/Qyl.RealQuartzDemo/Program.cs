@@ -10,7 +10,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -106,8 +106,8 @@ internal sealed record QuartzReport(
         var failures = new List<string>();
         var quartzSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.JobQuartz))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "job.quartz"))
             .ToArray();
 
         if (quartzSpans.Length != 2)
@@ -121,7 +121,7 @@ internal sealed record QuartzReport(
 
         if (error is null)
             failures.Add("missing error Quartz execute span");
-        else if (!error.Tags.TryGetValue(QylSemanticAttributes.ErrorType, out var errorType) ||
+        else if (!error.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, out var errorType) ||
                  !StringComparer.Ordinal.Equals(errorType, "InvalidOperationException"))
             failures.Add("expected error.type=InvalidOperationException on error span");
 

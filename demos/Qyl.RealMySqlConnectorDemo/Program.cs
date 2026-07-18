@@ -9,7 +9,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
 };
@@ -65,10 +65,10 @@ internal sealed record MySqlConnectorReport(
         var failures = new List<string>();
         var mysqlSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.DbClient) &&
-                activity.Tags.TryGetValue(QylSemanticAttributes.DbSystemName, out var system) &&
-                StringComparer.Ordinal.Equals(system, QylSemanticAttributes.DbSystemMysql))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "db.client") &&
+                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Mysql))
             .ToArray();
 
         if (mysqlSpans.Length != 2)
@@ -83,10 +83,10 @@ internal sealed record MySqlConnectorReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected MySqlConnector span status Error, got {span.Status}");
 
-            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMysql, failures);
-            RequireTag(span, QylSemanticAttributes.DbOperationName, "SELECT", failures);
-            RequireTag(span, QylSemanticAttributes.ErrorType, nameof(InvalidOperationException), failures);
-            RequireMissingTag(span, QylSemanticAttributes.DbQueryText, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Mysql, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(InvalidOperationException), failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new MySqlConnectorReport(runtimeMode, failures.Count is 0, failures.ToArray(), mysqlSpans);

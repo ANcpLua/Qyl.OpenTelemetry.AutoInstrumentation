@@ -11,7 +11,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -70,8 +70,8 @@ internal sealed record NLogReport(
         var failures = new List<string>();
         var nlogSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.LogNLog))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "log.nlog"))
             .ToArray();
 
         if (logLines.Length != 2)
@@ -80,8 +80,8 @@ internal sealed record NLogReport(
         if (nlogSpans.Length != 2)
             failures.Add($"expected 2 NLog spans, got {nlogSpans.Length}");
 
-        var information = FindBySeverity(nlogSpans, QylSemanticAttributes.LogSeverityInformation);
-        var error = FindBySeverity(nlogSpans, QylSemanticAttributes.LogSeverityError);
+        var information = FindBySeverity(nlogSpans, "Information");
+        var error = FindBySeverity(nlogSpans, "Error");
         Require(information, "information span", failures);
         Require(error, "error span", failures);
 
@@ -102,7 +102,7 @@ internal sealed record NLogReport(
 
     private static CapturedActivity? FindBySeverity(IEnumerable<CapturedActivity> activities, string severity)
         => activities.FirstOrDefault(activity =>
-            activity.Tags.TryGetValue(QylSemanticAttributes.LogSeverity, out var actual) &&
+            activity.Tags.TryGetValue("log.severity", out var actual) &&
             StringComparer.Ordinal.Equals(actual, severity));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

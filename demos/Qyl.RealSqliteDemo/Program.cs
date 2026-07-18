@@ -9,7 +9,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -84,10 +84,10 @@ internal sealed record SqliteReport(
         var failures = new List<string>();
         var sqliteSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.DbClient) &&
-                activity.Tags.TryGetValue(QylSemanticAttributes.DbSystemName, out var system) &&
-                StringComparer.Ordinal.Equals(system, QylSemanticAttributes.DbSystemSqlite))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "db.client") &&
+                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Sqlite))
             .ToArray();
 
         if (sqliteSpans.Length != 4)
@@ -102,7 +102,7 @@ internal sealed record SqliteReport(
         Require(insert, "successful INSERT span", failures);
         Require(selectSuccess, "successful SELECT span", failures);
         Require(selectError, "error SELECT span", failures);
-        RequireTag(selectError, QylSemanticAttributes.ErrorType, nameof(SqliteException), failures);
+        RequireTag(selectError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(SqliteException), failures);
 
         foreach (var span in sqliteSpans)
         {
@@ -112,8 +112,8 @@ internal sealed record SqliteReport(
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected kind Client, got {span.Kind}");
 
-            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemSqlite, failures);
-            RequireMissingTag(span, QylSemanticAttributes.DbQueryText, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Sqlite, failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new SqliteReport(runtimeMode, failures.Count is 0, failures.ToArray(), sqliteSpans);
@@ -122,7 +122,7 @@ internal sealed record SqliteReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(QylSemanticAttributes.DbOperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

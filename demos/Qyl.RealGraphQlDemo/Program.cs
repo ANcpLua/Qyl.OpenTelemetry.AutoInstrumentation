@@ -11,7 +11,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -107,8 +107,8 @@ internal sealed record GraphQlReport(
         var failures = new List<string>();
         var graphQlSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.GraphQl))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "graphql"))
             .ToArray();
 
         if (graphQlSpans.Length != 2)
@@ -123,14 +123,14 @@ internal sealed record GraphQlReport(
         }
         else
         {
-            ExpectTag(success, QylSemanticAttributes.GraphQlOperationName, OperationName, failures);
-            ExpectTag(success, QylSemanticAttributes.GraphQlDocument, QueryText, failures);
+            ExpectTag(success, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.OperationName, OperationName, failures);
+            ExpectTag(success, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.Document, QueryText, failures);
         }
 
         if (error is null)
             failures.Add("missing error GraphQL execute span");
         else
-            ExpectTag(error, QylSemanticAttributes.ErrorType, nameof(ArgumentNullException), failures);
+            ExpectTag(error, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(ArgumentNullException), failures);
 
         foreach (var span in graphQlSpans)
         {

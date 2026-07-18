@@ -3,12 +3,13 @@ using System.Globalization;
 using System.Net.Http;
 using Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
-namespace Qyl.OpenTelemetry.AutoInstrumentation;
+namespace Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>
 /// Runtime target for compile-time generated HttpClient interceptors. Each method calls the original
 /// BCL API so qyl observes HttpClient behavior without reimplementing transport semantics.
 /// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylInterceptedHttpClient
 {
     // Registered on first use — which is inside an intercepted HttpClient call, before that call reaches

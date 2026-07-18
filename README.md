@@ -95,7 +95,7 @@ span attributes. The Anthropic .NET SDK itself emits no telemetry.
 The generated [`coverage matrix`](docs/coverage-matrix.md) is the detailed contract
 view. Its current 60 rows comprise:
 
-- 33 implemented signal rows: 30 with NativeAOT runtime evidence and 3 with managed
+- 33 implemented signal rows: 26 with NativeAOT runtime evidence and 7 with managed
   runtime evidence;
 - 19 configuration rows: 12 option bindings and 7 control bindings;
 - 8 unsupported NativeAOT rows, including four CLR-profiler/.NET Framework-only options.

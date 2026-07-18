@@ -5,6 +5,56 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [6.0.0] - 2026-07-18
+
+Intentional pre-consumer convergence release: the last cheap breaking window
+before launch. No compatibility shims; no external consumers existed for 5.x.
+
+### Changed
+
+- **BREAKING:** the generated-code ABI is now isolated in the
+  `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` namespace: the 21
+  `QylIntercepted*` runtime helpers and `QylMetricMeters` moved there, are
+  hidden from completion (`EditorBrowsable(Never)`), and are deliberately
+  versioned — generated interceptors reference the `QylGeneratedCodeAbi.V6`
+  anchor constant, which is renamed on every future ABI break so mismatched
+  generator/runtime package pairs fail to compile instead of misbehaving.
+- **BREAKING:** everything that is neither the documented user bootstrap API
+  nor generated-code ABI is now internal: `QylSemanticAttributes`,
+  `QylActivityNames`, `QylActivitySource`, `QylAutoInstrumentationIds`,
+  `QylAutoInstrumentationOptions`, `QylDbClientMetrics`, `QylInstrumentation`,
+  `QylInstrumentationDomains`, `QylMetricNames`, `QylNServiceBusMetrics`.
+  First-party sibling packages consume them via `InternalsVisibleTo`; demos
+  were rewritten to use only the public surface plus the generated semconv
+  packages, proving the public API suffices for real consumers.
+- **BREAKING:** generated code no longer references
+  `QylAutoInstrumentationOptions` or `QylInstrumentationDomains`: the GraphQL
+  document opt-in is enforced solely at its runtime control point
+  (`QylSensitiveCapturePolicy.SetGraphQlDocument`), and external-logger domain
+  values are emitted as literals (identical IL — consts inline).
+- **BREAKING:** `InterceptorTarget` derives contract keys structurally from
+  `TelemetrySignal` + `InstrumentationId`; freeform `"signals.*"` key strings
+  are unrepresentable in the generator and rejected by the gate.
+- Interceptor body descriptors emit themselves (abstract `Emit` member); the
+  emitter's runtime-type switch is gone and body-type exhaustiveness is
+  enforced by the compiler.
+- The contract-invariants gate was rebuilt zero-based (evidence or deletion):
+  every surviving check carries an executed mutation proof or a cited external
+  contract; internal member-name substring pins were deleted, so internal
+  renames no longer break the gate.
+- Public API baselines collapsed: `PublicAPI.Shipped.txt` now records the
+  final 6.0.0 surface (core: 333 → 157 entries, including the stale removed
+  `QylSelfTelemetry` rows), `PublicAPI.Unshipped.txt` is empty.
+
+### User-facing API after convergence
+
+- `Qyl.OpenTelemetry.AutoInstrumentation.Hosting`: `Boot()`,
+  `AddQylAutoInstrumentation(...)`, `QylAutoInstrumentationHostingOptions`.
+- `Qyl.Sdk`: `AddQyl(...)`, `QylSdkOptions`.
+- Core: `AddQylAspNetCoreInstrumentation()`, `QylAutoInstrumentationSignal`.
+- DiagnosticListeners: the public listener/subscriber surface (unchanged).
+- Configuration remains environment-variable driven per the coverage matrix.
+
 ## [5.0.0] - 2026-07-13
 
 ### Changed

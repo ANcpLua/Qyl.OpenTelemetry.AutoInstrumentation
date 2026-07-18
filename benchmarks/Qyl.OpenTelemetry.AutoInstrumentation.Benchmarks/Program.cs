@@ -6,6 +6,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 if (args.Contains("--smoke", StringComparer.Ordinal))
 {
@@ -76,7 +77,7 @@ public class DbCommandHotPathBenchmarks
     {
         using var activity = QylInterceptedDbCommand.StartActivity(
             command,
-            QylAutoInstrumentationIds.SqlClient,
+            "SQLCLIENT",
             "ExecuteScalar");
 
         return activity is null ? 0 : 1;

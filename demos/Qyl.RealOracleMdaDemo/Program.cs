@@ -9,7 +9,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
 };
@@ -72,8 +72,8 @@ internal sealed record OracleMdaReport(
         var failures = new List<string>();
         var oracleSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.DbSystemName, out var dbSystem) &&
-                StringComparer.Ordinal.Equals(dbSystem, QylSemanticAttributes.DbSystemOracleDb))
+                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var dbSystem) &&
+                StringComparer.Ordinal.Equals(dbSystem, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb))
             .ToArray();
 
         if (oracleSpans.Length != 2)
@@ -88,12 +88,12 @@ internal sealed record OracleMdaReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected Oracle MDA span status Error, got {span.Status}");
 
-            RequireTag(span, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbClient, failures);
-            RequireTag(span, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemOracleDb, failures);
-            RequireTag(span, QylSemanticAttributes.DbOperationName, "SELECT", failures);
-            RequireTag(span, QylSemanticAttributes.DbQuerySummary, "SELECT", failures);
-            RequireTag(span, QylSemanticAttributes.ErrorType, nameof(InvalidOperationException), failures);
-            RequireMissingTag(span, QylSemanticAttributes.DbQueryText, failures);
+            RequireTag(span, "qyl.instrumentation.domain", "db.client", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, "SELECT", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(InvalidOperationException), failures);
+            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new OracleMdaReport(runtimeMode, failures.Count is 0, failures.ToArray(), oracleSpans);

@@ -9,7 +9,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<CapturedActivity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
 };
@@ -96,8 +96,8 @@ internal sealed record ILoggerReport(
         var failures = new List<string>();
         var loggerSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain) &&
-                StringComparer.Ordinal.Equals(domain, QylInstrumentationDomains.LogILogger))
+                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                StringComparer.Ordinal.Equals(domain, "log.ilogger"))
             .ToArray();
 
         if (logLines.Length != 2)
@@ -106,11 +106,11 @@ internal sealed record ILoggerReport(
         if (loggerSpans.Length != 2)
             failures.Add($"expected 2 ILogger spans, got {loggerSpans.Length}");
 
-        var information = FindBySeverity(loggerSpans, QylSemanticAttributes.LogSeverityInformation);
-        var error = FindBySeverity(loggerSpans, QylSemanticAttributes.LogSeverityError);
+        var information = FindBySeverity(loggerSpans, "Information");
+        var error = FindBySeverity(loggerSpans, "Error");
         Require(information, "information span", failures);
         Require(error, "error span", failures);
-        RequireTag(error, QylSemanticAttributes.ErrorType, nameof(InvalidOperationException), failures);
+        RequireTag(error, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(InvalidOperationException), failures);
 
         foreach (var span in loggerSpans)
         {
@@ -126,7 +126,7 @@ internal sealed record ILoggerReport(
 
     private static CapturedActivity? FindBySeverity(IEnumerable<CapturedActivity> activities, string severity)
         => activities.FirstOrDefault(activity =>
-            activity.Tags.TryGetValue(QylSemanticAttributes.LogSeverity, out var actual) &&
+            activity.Tags.TryGetValue("log.severity", out var actual) &&
             StringComparer.Ordinal.Equals(actual, severity));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

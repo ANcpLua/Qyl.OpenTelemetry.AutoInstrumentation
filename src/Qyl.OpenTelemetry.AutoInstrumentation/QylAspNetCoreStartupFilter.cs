@@ -2,6 +2,8 @@ using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
+
 namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>
