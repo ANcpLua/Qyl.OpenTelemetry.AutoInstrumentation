@@ -255,7 +255,7 @@ def write_consumer(version: str, *, published: bool) -> None:
 
             using var provider = Sdk.CreateTracerProviderBuilder()
                 .SetSampler(new AlwaysOnSampler())
-                .AddSource(QylActivitySource.Name)
+                .AddSource("Qyl.OpenTelemetry.AutoInstrumentation")
                 .AddOtlpExporter(options =>
                 {
                     options.Endpoint = new Uri(args[0]);

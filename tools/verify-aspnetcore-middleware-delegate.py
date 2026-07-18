@@ -31,7 +31,7 @@ GENERATOR_PROJECT = (
 TARGETS = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.OpenTelemetry.AutoInstrumentation.targets"
 TARGET_FRAMEWORK = "net10.0"
 REQUEST_DELEGATE_INTERCEPTOR_TOKEN = "AspNetCoreRequestDelegate_Invoke"
-CONTROL_INTERCEPTOR_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.QylInterceptedHttpClient.GetStringAsync("
+CONTROL_INTERCEPTOR_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStringAsync("
 
 # Convention-based middleware whose next-hop call is a delegate invocation (`next(context)`),
 # plus a never-executed HttpClient call as a control so we can prove the generator still emits

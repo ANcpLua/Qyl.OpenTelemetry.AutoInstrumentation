@@ -35,7 +35,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<Activity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
@@ -50,10 +50,10 @@ await server.RequestCompleted;
 
 var httpClientSpans = captured.Count(static activity =>
     activity.TagObjects.Any(static tag =>
-        tag.Key == QylSemanticAttributes.QylInstrumentationDomain &&
+        tag.Key == "qyl.instrumentation.domain" &&
         string.Equals(
             Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
-            QylInstrumentationDomains.HttpClient,
+            "http.client",
             StringComparison.Ordinal)));
 
 Console.WriteLine("httpclient.spans=" + httpClientSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));

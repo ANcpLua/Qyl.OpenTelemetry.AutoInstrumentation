@@ -22,6 +22,7 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var options = QylAutoInstrumentationOptions.Current;
 
@@ -198,6 +199,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
         f'''<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <AssemblyName>Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe</AssemblyName>
     <TargetFramework>{TARGET_FRAMEWORK}</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -252,7 +254,7 @@ def main() -> None:
         pack_runtime(feed, env)
         project = write_project(root / "consumer", feed, packages, version)
         run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], project.parent, env)
-        assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
+        assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe.dll"
 
         assert_scenario("default", run_scenario(assembly, env, {}), DEFAULT_EXPECTED)
         assert_scenario(

@@ -65,7 +65,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<Activity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
@@ -97,10 +97,10 @@ foreach (var activity in captured.OrderBy(static activity => activity.DisplayNam
         static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
         StringComparer.Ordinal);
 
-    tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain);
-    tags.TryGetValue(QylSemanticAttributes.HttpRequestMethod, out var method);
-    tags.TryGetValue(QylSemanticAttributes.HttpResponseStatusCode, out var statusCode);
-    tags.TryGetValue(QylSemanticAttributes.LogSeverity, out var severity);
+    tags.TryGetValue("qyl.instrumentation.domain", out var domain);
+    tags.TryGetValue("http.request.method", out var method);
+    tags.TryGetValue("http.response.status_code", out var statusCode);
+    tags.TryGetValue("log.severity", out var severity);
 
     Console.WriteLine("activity=" + activity.DisplayName + "|" + activity.Kind + "|" + domain + "|" + method + "|" + statusCode + "|" + severity);
 }

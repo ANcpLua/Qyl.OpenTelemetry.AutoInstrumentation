@@ -17,6 +17,7 @@
     <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" />
     <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" />
     <InternalsVisibleTo Include="Qyl.Sdk" />
+    <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe" />
   </ItemGroup>
 
   <ItemGroup>

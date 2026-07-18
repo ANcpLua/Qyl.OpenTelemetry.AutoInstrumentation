@@ -32,7 +32,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
@@ -72,11 +72,11 @@ static void EmitSyntheticHttpClientEvent()
         "qyl.http.client",
         new Dictionary<string, object?>
         {
-            [QylSemanticAttributes.HttpRequestMethod] = "GET",
-            [QylSemanticAttributes.UrlFull] = "https://qyl.local/nativeaot/client?id=42",
-            [QylSemanticAttributes.ServerAddress] = "qyl.local",
-            [QylSemanticAttributes.HttpResponseStatusCode] = 503,
-            [QylSemanticAttributes.ErrorType] = "503",
+            ["http.request.method"] = "GET",
+            ["url.full"] = "https://qyl.local/nativeaot/client?id=42",
+            ["server.address"] = "qyl.local",
+            ["http.response.status_code"] = 503,
+            ["error.type"] = "503",
         });
 }
 '''

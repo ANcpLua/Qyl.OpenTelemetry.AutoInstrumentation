@@ -20,12 +20,11 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 PROGRAM = r'''
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
@@ -52,13 +51,13 @@ if (captured.Count == 1)
         static tag => tag.Key,
         static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
         StringComparer.Ordinal);
-    tags.TryGetValue(QylSemanticAttributes.QylInstrumentationDomain, out var domain);
-    tags.TryGetValue(QylSemanticAttributes.LogSeverity, out var severity);
+    tags.TryGetValue("qyl.instrumentation.domain", out var domain);
+    tags.TryGetValue("log.severity", out var severity);
 
     Console.WriteLine("activity.name=" + activity.DisplayName);
     Console.WriteLine("activity.kind=" + activity.Kind);
-    Console.WriteLine(QylSemanticAttributes.QylInstrumentationDomain + "=" + domain);
-    Console.WriteLine(QylSemanticAttributes.LogSeverity + "=" + severity);
+    Console.WriteLine("qyl.instrumentation.domain=" + domain);
+    Console.WriteLine("log.severity=" + severity);
 }
 
 return 0;

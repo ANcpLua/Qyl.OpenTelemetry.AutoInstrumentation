@@ -31,7 +31,7 @@ using Qyl.OpenTelemetry.AutoInstrumentation;
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == QylActivitySource.Name,
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
@@ -57,15 +57,15 @@ using (await http.PostAsync("content", content))
 }
 await server.RequestCompleted;
 
-var failure = captured.Single(activity => HasTag(activity, QylSemanticAttributes.HttpResponseStatusCode, "500"));
+var failure = captured.Single(activity => HasTag(activity, "http.response.status_code", "500"));
 var failureTags = Tags(failure);
 Console.WriteLine("http.activity.status=" + failure.Status);
-Console.WriteLine(QylSemanticAttributes.ServerAddress + "=" + failureTags[QylSemanticAttributes.ServerAddress]);
+Console.WriteLine("server.address" + "=" + failureTags["server.address"]);
 Console.WriteLine("http.request.header.x-qyl-source=" + failureTags["http.request.header.x-qyl-source"]);
-Console.WriteLine(QylSemanticAttributes.HttpResponseStatusCode + "=" + failureTags[QylSemanticAttributes.HttpResponseStatusCode]);
-Console.WriteLine(QylSemanticAttributes.ErrorType + "=" + failureTags[QylSemanticAttributes.ErrorType]);
+Console.WriteLine("http.response.status_code" + "=" + failureTags["http.response.status_code"]);
+Console.WriteLine("error.type" + "=" + failureTags["error.type"]);
 
-var success = captured.Single(activity => HasTag(activity, QylSemanticAttributes.HttpResponseStatusCode, "204"));
+var success = captured.Single(activity => HasTag(activity, "http.response.status_code", "204"));
 var successTags = Tags(success);
 Console.WriteLine("http.request.header.x-qyl-content=" + successTags["http.request.header.x-qyl-content"]);
 Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
