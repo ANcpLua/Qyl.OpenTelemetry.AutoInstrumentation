@@ -45,9 +45,24 @@ in `qyl-api-schema`, not in this instrumentation repository.
 
 ## Interceptor architecture
 
-The repository uses .NET SDK `10.0.301` with `latestFeature`. Roslyn interceptors are
+The repository uses .NET SDK `10.0.302` with `latestFeature`. Roslyn interceptors are
 supported on this SDK. Use `SemanticModel.GetInterceptableLocation(...)` and ordinary
-generated C#.
+generated C#. The `global.json` pin is a floor: `latestFeature` rolls forward to the
+newest installed feature-band patch, so keep the pin, this sentence, and the README
+in step when bumping.
+
+Two generated namespaces exist, four characters apart. Do not conflate them:
+
+- `Qyl.OpenTelemetry.AutoInstrumentation.Generated` — where the generator emits
+  interceptor methods, and the value `buildTransitive` adds to
+  `InterceptorsNamespaces`. Compiler-facing wiring; 6.0.0 did not move it.
+- `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` — the runtime ABI helpers
+  (`QylIntercepted*`, `QylMetricMeters`, the `QylGeneratedCodeAbi.V6` anchor) that
+  emitted interceptors call into.
+
+Emitted code lives in the first and delegates to the second. Renaming either side —
+or "fixing" the near-duplicate names — breaks the build assets or the pinned
+verifier tokens.
 
 Authoritative references:
 
