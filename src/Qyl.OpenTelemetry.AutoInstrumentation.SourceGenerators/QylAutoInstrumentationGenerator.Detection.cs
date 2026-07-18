@@ -918,13 +918,19 @@ public sealed partial class QylAutoInstrumentationGenerator
     }
 
     private static bool IsSupportedLoggerExtensionName(string name)
-        => name is "Log" or
-            "LogTrace" or
-            "LogDebug" or
-            "LogInformation" or
-            "LogWarning" or
-            "LogError" or
-            "LogCritical";
+        => string.Equals(name, "Log", StringComparison.Ordinal) || GetLoggerExtensionLevelName(name) is not null;
+
+    private static string? GetLoggerExtensionLevelName(string methodName)
+        => methodName switch
+        {
+            "LogTrace" => "Trace",
+            "LogDebug" => "Debug",
+            "LogInformation" => "Information",
+            "LogWarning" => "Warning",
+            "LogError" => "Error",
+            "LogCritical" => "Critical",
+            _ => null,
+        };
 
     private static bool IsSupportedLoggerExtensionParameters(IMethodSymbol symbol)
     {

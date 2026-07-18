@@ -26,7 +26,7 @@ public static class QylDbClientMetrics
         {
             OperationDuration.Record(
                 elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>(QylSemanticAttributes.DbSystemName, GetDbSystemName(instrumentationId)));
+                new KeyValuePair<string, object?>(QylSemanticAttributes.DbSystemName, Internal.QylDbActivityPolicy.GetDbSystemName(instrumentationId)));
         }
     }
 
@@ -39,13 +39,5 @@ public static class QylDbClientMetrics
             QylAutoInstrumentationIds.SqlClient => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.SqlClient),
             QylAutoInstrumentationIds.Npgsql => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Npgsql),
             _ => false,
-        };
-
-    private static string GetDbSystemName(string instrumentationId)
-        => instrumentationId switch
-        {
-            QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
-            QylAutoInstrumentationIds.Npgsql => QylSemanticAttributes.DbSystemPostgresql,
-            _ => QylSemanticAttributes.DbSystemOtherSql,
         };
 }

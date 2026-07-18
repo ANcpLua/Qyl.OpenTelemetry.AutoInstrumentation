@@ -41,7 +41,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private enum LoggerInterceptorBodyKind
     {
-        None,
         ILoggerLog,
         LoggerExtensionLog,
     }
@@ -152,8 +151,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         string HelperType,
         string StartActivityMethod,
         string RecordExceptionMethod,
-        TraceStartActivityArgumentKind StartActivityArguments = TraceStartActivityArgumentKind.None,
-        bool IsDefined = true)
+        TraceStartActivityArgumentKind StartActivityArguments = TraceStartActivityArgumentKind.None)
     {
         public string GetRecordExceptionStatement()
             => HelperType + "." + RecordExceptionMethod + "(activity, exception);";
@@ -262,8 +260,8 @@ public sealed partial class QylAutoInstrumentationGenerator
     private sealed record TraceInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
+        TraceRuntimeHelperDescriptor RuntimeHelper,
         TraceMethodPrefixKind MethodPrefixKind = TraceMethodPrefixKind.Default,
-        TraceRuntimeHelperDescriptor RuntimeHelper = default,
         TraceDurationMetricDescriptor DurationMetric = default,
         TraceActivityEnrichmentDescriptor ActivityEnrichment = default,
         TraceAsyncObservationDescriptor AsyncObservation = default) : InterceptorBodyDescriptor

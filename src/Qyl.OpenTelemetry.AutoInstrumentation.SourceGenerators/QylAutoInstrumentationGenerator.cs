@@ -1057,16 +1057,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             return;
         }
 
-        var levelName = target.MethodName switch
-        {
-            "LogTrace" => "Trace",
-            "LogDebug" => "Debug",
-            "LogInformation" => "Information",
-            "LogWarning" => "Warning",
-            "LogError" => "Error",
-            "LogCritical" => "Critical",
-            _ => "None",
-        };
+        var levelName = GetLoggerExtensionLevelName(target.MethodName)
+            ?? throw new InvalidOperationException("Unknown logger extension method: " + target.MethodName);
         builder.Append("global::Microsoft.Extensions.Logging.LogLevel.");
         builder.Append(levelName);
     }

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import functools
 import importlib.util
 import re
 from pathlib import Path
@@ -126,6 +127,7 @@ def generator_partial_paths():
     return sorted(GENERATOR_PATH.parent.glob("QylAutoInstrumentationGenerator*.cs"))
 
 
+@functools.cache
 def read_generator_sources() -> str:
     sources = [p.read_text() for p in generator_partial_paths()]
     sources.append(INTERCEPTOR_CATALOG_PATH.read_text())
@@ -1296,17 +1298,18 @@ def parse_emission_descriptor_kinds(generator: str) -> set[str]:
 
 def parse_emission_descriptor_bodies(generator: str) -> dict[str, str]:
     bodies_by_kind: dict[str, str] = {}
-    for line in generator.splitlines():
-        if "new InterceptorEmissionDescriptor(" not in line:
-            continue
-
-        match = re.search(
-            r"new InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+),\s*new ([A-Za-z0-9]+BodyDescriptor)\(",
-            line,
+    matches = list(re.finditer(
+        r"new\s+InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+),\s*new\s+([A-Za-z0-9]+BodyDescriptor)\(",
+        generator,
+    ))
+    constructor_count = len(re.findall(r"new\s+InterceptorEmissionDescriptor\(", generator))
+    if len(matches) != constructor_count:
+        fail(
+            "every emission descriptor must construct exactly one typed body descriptor: "
+            f"{constructor_count} constructors, {len(matches)} with a parsable body"
         )
-        if match is None:
-            fail(f"emission descriptor must construct exactly one typed body descriptor: {line.strip()}")
 
+    for match in matches:
         kind = match.group(1)
         if kind in bodies_by_kind:
             fail(f"duplicate emission descriptor for InterceptorKind.{kind}")
@@ -1388,6 +1391,25 @@ def extract_parenthesized_blocks(text: str, token: str) -> list[str]:
             fail(f"unterminated parenthesized block after {token}")
 
 
+def verify_matcher_registration(generator: str) -> None:
+    detection_methods = set(re.findall(r"private static bool (TryGet[A-Za-z0-9]+Invocation)\(", generator))
+    if not detection_methods:
+        fail("no TryGet*Invocation detection methods found in the generator")
+
+    registered = set(re.findall(r"new InterceptorMatcherDescriptor\((TryGet[A-Za-z0-9]+Invocation)\)", generator))
+    unknown = registered - detection_methods
+    if unknown:
+        fail(f"matcher rows reference unknown detection methods: {sorted(unknown)}")
+
+    for method in sorted(detection_methods - registered):
+        references = len(re.findall(rf"\b{method}\b", generator)) - 1
+        if references <= 0:
+            fail(
+                "detection method is neither registered in CreateGeneratedMatcherDescriptors "
+                f"nor called by another detection method: {method}"
+            )
+
+
 def verify_interceptor_emission_bodies(generator: str, kinds: set[str]) -> None:
     bodies_by_kind = parse_emission_descriptor_bodies(generator)
     missing_bodies = kinds - set(bodies_by_kind)
@@ -1435,18 +1457,12 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail("emitter dispatch must not use generic emitter delegates")
     if "switch (descriptor.Body)" not in dispatch_block:
         fail("emitter dispatch must switch on the typed body descriptor")
-    for token in [
-        "case TraceInterceptorBodyDescriptor body:",
-        "case ForwardingInterceptorBodyDescriptor body:",
-        "case HttpWebRequestBodyDescriptor body:",
-        "case DbCommandBodyDescriptor body:",
-        "case GrpcClientBodyDescriptor body:",
-        "case MeterProviderBuilderBodyDescriptor body:",
-        "case LoggerBodyDescriptor body:",
-        "case ExternalLoggerBodyDescriptor body:",
-    ]:
-        if token not in dispatch_block:
-            fail(f"emitter dispatch missing typed body descriptor case: {token}")
+    declared_bodies = set(re.findall(r"sealed record ([A-Za-z0-9]+BodyDescriptor)[\s(]", generator))
+    if not declared_bodies:
+        fail("no InterceptorBodyDescriptor subtypes declared in the generator")
+    for body_type in sorted(declared_bodies):
+        if f"case {body_type} body:" not in dispatch_block:
+            fail(f"emitter dispatch missing typed body descriptor case: {body_type}")
 
     try:
         matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(
@@ -1462,6 +1478,8 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail("matcher dispatch must invoke descriptor.TryMatch")
     if re.search(r"if\s*\(\s*TryGet[A-Za-z0-9]+Invocation\(", matcher_dispatch_block) is not None:
         fail("matcher dispatch must not reintroduce hand-coded TryGet*Invocation sequencing")
+
+    verify_matcher_registration(generator)
 
     descriptor_kinds = parse_emission_descriptor_kinds(generator)
     descriptor_missing = kinds - descriptor_kinds

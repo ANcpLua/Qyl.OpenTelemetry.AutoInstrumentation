@@ -83,7 +83,7 @@ internal static class QylDbActivityPolicy
     private static bool IsKnownDbOperation(string token)
         => token is "SELECT" or "INSERT" or "UPDATE" or "DELETE" or "MERGE" or "CALL" or "CREATE" or "ALTER" or "DROP" or "TRUNCATE" or "EXEC" or "EXECUTE";
 
-    private static string GetDbSystemName(string instrumentationId)
+    internal static string GetDbSystemName(string instrumentationId)
         => instrumentationId switch
         {
             QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
@@ -92,6 +92,8 @@ internal static class QylDbActivityPolicy
             QylAutoInstrumentationIds.MySqlConnector => QylSemanticAttributes.DbSystemMysql,
             QylAutoInstrumentationIds.MySqlData => QylSemanticAttributes.DbSystemMysql,
             QylAutoInstrumentationIds.OracleMda => QylSemanticAttributes.DbSystemOracleDb,
-            _ => QylSemanticAttributes.DbSystemOtherSql,
+            QylAutoInstrumentationIds.AdoNet => QylSemanticAttributes.DbSystemOtherSql,
+            _ => throw new ArgumentOutOfRangeException(nameof(instrumentationId), instrumentationId,
+                "Unknown DB instrumentation id."),
         };
 }

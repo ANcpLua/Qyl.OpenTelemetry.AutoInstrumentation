@@ -50,9 +50,9 @@ def approved(diagnostic: str, assembly: str, package: str, version: str,
 
 VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
     "Qyl.RealAspNetCoreMetricsDemo": (
-        approved("IL3053", "Microsoft.AspNetCore.Components.Endpoints", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.9"),
-        approved("IL2104", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.9"),
-        approved("IL3053", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.9"),
+        approved("IL3053", "Microsoft.AspNetCore.Components.Endpoints", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.10"),
+        approved("IL2104", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.10"),
+        approved("IL3053", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.10"),
     ),
     "Qyl.RealEfCoreDemo": (
         approved("IL2104", "Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore", "10.0.9"),
@@ -98,8 +98,8 @@ VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
     "Qyl.RealWcfClientDemo": (
         approved("IL2104", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
         approved("IL3053", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
-        approved("IL3053", "System.Reflection.DispatchProxy", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.9"),
-        approved("IL3053", "System.Private.DataContractSerialization", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.9"),
+        approved("IL3053", "System.Reflection.DispatchProxy", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.10"),
+        approved("IL3053", "System.Private.DataContractSerialization", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.10"),
     ),
 }
 
