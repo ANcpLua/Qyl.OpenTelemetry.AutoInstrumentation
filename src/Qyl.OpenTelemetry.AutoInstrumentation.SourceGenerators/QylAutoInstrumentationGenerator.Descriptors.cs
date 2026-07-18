@@ -353,6 +353,12 @@ public sealed partial class QylAutoInstrumentationGenerator
         Logs,
     }
 
+    // Signal and AdditionalMetricIds are intentionally never read by C#: their
+    // consumer is tools/verify-contract-invariants.py, which parses the generator
+    // source at InterceptorTarget construction sites and composes contract keys
+    // from TelemetrySignal + InstrumentationId (69429cb made freeform keys
+    // unrepresentable). They also participate in record value equality. Do not
+    // delete them to satisfy an unused-member inspection.
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,
         TelemetrySignal Signal,
