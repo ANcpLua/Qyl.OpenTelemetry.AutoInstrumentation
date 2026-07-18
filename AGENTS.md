@@ -18,12 +18,26 @@ The package family is public. Existing NuGet artifacts are immutable. Make
 intentional breaking convergence in a new major version, migrate known consumers,
 and do not add compatibility shims without a proven external requirement.
 
-Keep three API categories explicit:
+Three API categories are explicit, and 6.0.0 fixed their concrete form. Preserve it:
 
-1. A small supported user API for bootstrap and configuration.
-2. A generated-code ABI for cross-assembly interceptor calls. Keep it in a clearly
-   named namespace, hide it from normal completion, and version it deliberately.
-3. Internal implementation types, semantic helpers, listeners, and runtime state.
+1. A small supported user API for bootstrap and configuration: Hosting
+   `Boot()`/`AddQylAutoInstrumentation(...)`, `Qyl.Sdk` `AddQyl(...)`/`QylSdkOptions`,
+   core `AddQylAspNetCoreInstrumentation()`, and the DiagnosticListeners subscriber
+   surface with `QylAutoInstrumentationSignal`.
+2. A generated-code ABI for cross-assembly interceptor calls, living in the
+   `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` namespace, every member
+   `[EditorBrowsable(EditorBrowsableState.Never)]`, anchored by the
+   `QylGeneratedCodeAbi.V6` const that every generated interceptor file references so
+   a generator/runtime ABI mismatch fails compilation. That namespace, the anchor, and
+   the `V<major>` bump on a breaking ABI change are load-bearing: the snapshot and
+   invariant verifiers pin these exact tokens. Do not rename or re-derive them.
+   Generated code must not reference `QylAutoInstrumentationOptions` or
+   `QylInstrumentationDomains` — gate opt-ins at the policy type and emit domain names
+   as literals.
+3. Internal implementation types, semantic helpers, listeners, and runtime state —
+   everything else, including `QylSemanticAttributes`, `QylActivityNames`,
+   `QylActivitySource`, `QylAutoInstrumentationOptions`, and `QylInstrumentationDomains`.
+   Reach across assemblies with IVT, never by widening a type to public.
 
 Cross-assembly accessibility does not make generator ABI a user-facing product API.
 Any Qyl-specific client-visible request, response, event, or error contract belongs
@@ -66,9 +80,15 @@ own the same call site.
 
 ## Package boundaries
 
+Six projects pack and publish — core, Hosting, DiagnosticListeners, `Qyl.Sdk`,
+EntityFrameworkCore, SqlClient — and that set is owned by `.github/workflows/nuget-publish.yml`.
+
 - Core contains shared runtime and compiler-facing ABI only.
 - Hosting contains generic bootstrap/DI activation.
 - DiagnosticListeners contains public diagnostic-payload consumption.
+- `Qyl.Sdk` is the opinionated one-call onboarding surface (`AddQyl(...)`/`QylSdkOptions`)
+  layered over Hosting's `Boot()`, plus qyl-specific export concerns: collector
+  discovery and session span enrichment. It defines no interceptors.
 - EntityFrameworkCore and SqlClient isolate their dependency-heavy integrations.
 - SourceGenerators runs inside compilation and remains non-packable as a standalone
   user package.
@@ -83,6 +103,16 @@ Run focused verifiers while iterating. The complete local handoff gate is:
 ```bash
 python3 tools/verify-aot-autoinstrumentation-goal.py
 ```
+
+Read a gate's own exit code. Piping it through `tail`, `head`, or `tee` reports the
+pipe's status, not the gate's, and a masked failure has already reached `main` once.
+Redirect to a file and check `$?`, or set `pipefail`. A gate result you did not see
+in full is not a green gate.
+
+Verifier tools ship synthetic consumers. Those model *external* consumers, so they
+must compile against the public surface alone; when a type moves to internal, fix the
+consumer rather than widening the type. A prober that genuinely needs internals gets
+a narrowly named IVT, not a public API.
 
 Public API changes update the analyzer-managed shipped/unshipped baselines. Release
 work additionally packs the packages, restores them into a clean consumer, executes
