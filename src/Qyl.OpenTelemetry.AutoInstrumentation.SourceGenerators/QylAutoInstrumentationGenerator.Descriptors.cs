@@ -312,9 +312,16 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false, RefKind RefKind = RefKind.None);
 
+    private enum TelemetrySignal
+    {
+        Traces,
+        Metrics,
+        Logs,
+    }
+
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,
-        string ContractKey,
+        TelemetrySignal Signal,
         string InstrumentationId,
         string ReceiverType,
         string MethodName,
@@ -324,7 +331,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         string TypeParameterList = "",
         string ConstraintClauses = "",
         string ExtensionContainingType = "",
-        EquatableArray<string> AdditionalContractKeys = default);
+        EquatableArray<string> AdditionalMetricIds = default);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }

@@ -756,30 +756,32 @@ def parse_db_instrumentation_ids(generator: str) -> set[str]:
 
 
 def parse_db_trace_contract_keys(generator: str) -> set[str]:
-    if '"signals.traces." + instrumentationId' not in generator:
+    if re.search(r"TelemetrySignal\.Traces,\s*\n\s*instrumentationId,", generator) is None:
         fail("DbCommand target must derive its trace contract key from GetDbInstrumentationId")
 
     return {f"signals.traces.{db_id}" for db_id in parse_db_instrumentation_ids(generator)}
 
 
-def parse_contract_keys_call_keys(generator: str) -> set[str]:
+def parse_additional_metric_id_keys(generator: str) -> set[str]:
+    # Additional signal claims are always metrics and are declared structurally
+    # as MetricIds("<INSTRUMENTATION_ID>", ...) — never as freeform key strings.
     keys: set[str] = set()
-    for match in re.finditer(r"ContractKeys\((.*?)\)", generator, re.DOTALL):
-        keys.update(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(1)))
+    for match in re.finditer(r"MetricIds\((.*?)\)", generator, re.DOTALL):
+        keys.update(f"signals.metrics.{m}" for m in re.findall(r'"([A-Z0-9]+)"', match.group(1)))
 
     return keys
 
 
-def parse_switch_helper_keys(generator: str, helper_name: str) -> set[str]:
+def parse_db_metric_id_keys(generator: str) -> set[str]:
     match = re.search(
-        rf"private static [^=]+ {re.escape(helper_name)}\([^)]*\)\s*=>.*?}};",
+        r"private static [^=]+ GetDbMetricIds\([^)]*\)\s*=>.*?};",
         generator,
         re.DOTALL,
     )
     if match is None:
-        fail(f"{helper_name} helper missing from generator")
+        fail("GetDbMetricIds helper missing from generator")
 
-    return set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', match.group(0)))
+    return {f"signals.metrics.{m}" for m in re.findall(r'"([A-Z0-9]+)"', match.group(0))}
 
 
 def verify_matcher_registration(generator: str) -> None:
@@ -817,16 +819,24 @@ def verify_interceptor_emission_bodies(generator: str, kinds: set[str]) -> None:
 
 
 def collect_generator_target_contract_keys(generator: str) -> set[str]:
-    target_contract_keys = set(re.findall(
-        r"InterceptorKind\.[A-Za-z0-9]+,\s*\n\s*\"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)\"",
-        generator,
-    ))
-    target_contract_keys.update(parse_contract_keys_call_keys(generator))
+    # Primary keys are derived, never declared: each target names a
+    # TelemetrySignal and an InstrumentationId; the key is composed here.
+    signal_names = {"Traces": "traces", "Metrics": "metrics", "Logs": "logs"}
+    target_contract_keys = {
+        f"signals.{signal_names[match.group(1)]}.{match.group(2)}"
+        for match in re.finditer(
+            r"TelemetrySignal\.(Traces|Metrics|Logs),\s*\n\s*\"([A-Z0-9]+)\",",
+            generator,
+        )
+    }
+    if not target_contract_keys:
+        fail("no structurally derived target contract keys found in the generator")
+    target_contract_keys.update(parse_additional_metric_id_keys(generator))
     target_contract_keys.update(parse_db_trace_contract_keys(generator))
 
-    if "GetDbMetricContractKeys(instrumentationId)" not in generator:
-        fail("DbCommand target must route metric contract keys through GetDbMetricContractKeys")
-    target_contract_keys.update(parse_switch_helper_keys(generator, "GetDbMetricContractKeys"))
+    if "GetDbMetricIds(instrumentationId)" not in generator:
+        fail("DbCommand target must route metric contract keys through GetDbMetricIds")
+    target_contract_keys.update(parse_db_metric_id_keys(generator))
     return target_contract_keys
 
 
@@ -903,8 +913,11 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
 
 def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     generator = read_generator_sources()
-    generator_keys = set(re.findall(r'"(signals\.(?:traces|metrics|logs)\.[A-Z0-9]+)"', generator))
-    generator_keys.update(parse_db_trace_contract_keys(generator))
+    # Q3: keys are derived from TelemetrySignal + InstrumentationId. Freeform
+    # key literals are unrepresentable — their reappearance is a regression.
+    if re.search(r'"signals\.(?:traces|metrics|logs)\.', generator) is not None:
+        fail("generator must derive contract keys structurally, never declare freeform key literals")
+    generator_keys = collect_generator_target_contract_keys(generator)
     implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
     source_interceptor_signal_keys = {
         str(item["key"])

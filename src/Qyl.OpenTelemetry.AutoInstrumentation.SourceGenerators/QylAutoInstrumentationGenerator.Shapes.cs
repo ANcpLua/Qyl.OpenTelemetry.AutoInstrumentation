@@ -84,25 +84,24 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static InterceptorTarget HttpTarget(IMethodSymbol symbol, string methodName, string returnType, EquatableArray<ParameterSpec> parameters)
         => new(
             InterceptorKind.HttpClient,
-            "signals.traces.HTTPCLIENT",
+            TelemetrySignal.Traces,
             "HTTPCLIENT",
             CleanTypeName(symbol.ContainingType),
             methodName,
             returnType,
             parameters,
             false,
-            AdditionalContractKeys: BuildContractKeys("signals.metrics.HTTPCLIENT"));
+            AdditionalMetricIds: MetricIds("HTTPCLIENT"));
 
-    private static EquatableArray<string> GetDbMetricContractKeys(string instrumentationId)
+    private static EquatableArray<string> GetDbMetricIds(string instrumentationId)
         => instrumentationId switch
         {
-            "NPGSQL" => BuildContractKeys("signals.metrics.NPGSQL"),
-            "SQLCLIENT" => BuildContractKeys("signals.metrics.SQLCLIENT"),
+            "NPGSQL" or "SQLCLIENT" => MetricIds(instrumentationId),
             _ => default,
         };
 
-    private static EquatableArray<string> BuildContractKeys(params string[] contractKeys)
-        => contractKeys.ToEquatableArray();
+    private static EquatableArray<string> MetricIds(params string[] instrumentationIds)
+        => instrumentationIds.ToEquatableArray();
 
     private static bool TryGetSendShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {

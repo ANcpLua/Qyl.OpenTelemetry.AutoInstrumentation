@@ -115,14 +115,14 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.HttpWebRequest,
-            "signals.traces.HTTPCLIENT",
+            TelemetrySignal.Traces,
             "HTTPCLIENT",
             CleanTypeName(symbol.ContainingType),
             methodName,
             returnType,
             parameters,
             isAsync,
-            AdditionalContractKeys: BuildContractKeys("signals.metrics.HTTPCLIENT"));
+            AdditionalMetricIds: MetricIds("HTTPCLIENT"));
         return true;
     }
 
@@ -143,14 +143,14 @@ public sealed partial class QylAutoInstrumentationGenerator
         var instrumentationId = GetDbInstrumentationId(symbol.ContainingType);
         target = new InterceptorTarget(
             InterceptorKind.DbCommand,
-            "signals.traces." + instrumentationId,
+            TelemetrySignal.Traces,
             instrumentationId,
             CleanTypeName(symbol.ContainingType),
             methodName,
             returnType,
             parameters,
             isAsync,
-            AdditionalContractKeys: GetDbMetricContractKeys(instrumentationId));
+            AdditionalMetricIds: GetDbMetricIds(instrumentationId));
         return true;
     }
 
@@ -167,7 +167,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.AspNetCoreEndpointMap,
-            "signals.traces.ASPNETCORE",
+            TelemetrySignal.Traces,
             "ASPNETCORE",
             "global::Microsoft.AspNetCore.Routing.IEndpointRouteBuilder",
             symbol.Name,
@@ -238,7 +238,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.MeterProviderBuilderAddMeter,
-            "signals.metrics.ASPNETCORE",
+            TelemetrySignal.Metrics,
             "ASPNETCORE",
             CleanTypeName(receiverType),
             "AddMeter",
@@ -246,13 +246,13 @@ public sealed partial class QylAutoInstrumentationGenerator
             BuildParameters(symbol),
             false,
             ExtensionContainingType: extensionContainingType,
-            AdditionalContractKeys: BuildContractKeys(
-                "signals.metrics.HTTPCLIENT",
-                "signals.metrics.NETRUNTIME",
-                "signals.metrics.NPGSQL",
-                "signals.metrics.NSERVICEBUS",
-                "signals.metrics.PROCESS",
-                "signals.metrics.SQLCLIENT"));
+            AdditionalMetricIds: MetricIds(
+                "HTTPCLIENT",
+                "NETRUNTIME",
+                "NPGSQL",
+                "NSERVICEBUS",
+                "PROCESS",
+                "SQLCLIENT"));
         return true;
     }
 
@@ -270,7 +270,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.AzureClient,
-            "signals.traces.AZURE",
+            TelemetrySignal.Traces,
             "AZURE",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -343,7 +343,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.ElasticsearchClient,
-            "signals.traces.ELASTICSEARCH",
+            TelemetrySignal.Traces,
             "ELASTICSEARCH",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -378,7 +378,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.ElasticTransport,
-            "signals.traces.ELASTICTRANSPORT",
+            TelemetrySignal.Traces,
             "ELASTICTRANSPORT",
             CleanTypeName(receiverType),
             symbol.Name,
@@ -439,7 +439,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.WcfClient,
-            "signals.traces.WCFCLIENT",
+            TelemetrySignal.Traces,
             "WCFCLIENT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -477,7 +477,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.GrpcNetClientAsyncUnaryCall,
-            "signals.traces.GRPCNETCLIENT",
+            TelemetrySignal.Traces,
             "GRPCNETCLIENT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -513,7 +513,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             kind,
-            "signals.traces.GRPCNETCLIENT",
+            TelemetrySignal.Traces,
             "GRPCNETCLIENT",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -552,7 +552,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.MassTransitMessageOperation,
-            "signals.traces.MASSTRANSIT",
+            TelemetrySignal.Traces,
             "MASSTRANSIT",
             CleanTypeName(receiverType),
             symbol.Name,
@@ -602,7 +602,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.NServiceBusMessageOperation,
-            "signals.traces.NSERVICEBUS",
+            TelemetrySignal.Traces,
             "NSERVICEBUS",
             receiverTypeName,
             symbol.Name,
@@ -612,7 +612,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             typeParameterList,
             GetConstraintClauses(symbol),
             GetReducedExtensionContainingType(symbol),
-            AdditionalContractKeys: BuildContractKeys("signals.metrics.NSERVICEBUS"));
+            AdditionalMetricIds: MetricIds("NSERVICEBUS"));
         return true;
     }
 
@@ -637,7 +637,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.QuartzJobExecute,
-            "signals.traces.QUARTZ",
+            TelemetrySignal.Traces,
             "QUARTZ",
             CleanTypeName(symbol.ContainingType),
             "Execute",
@@ -660,7 +660,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.StackExchangeRedisCommandAsync,
-            "signals.traces.STACKEXCHANGEREDIS",
+            TelemetrySignal.Traces,
             "STACKEXCHANGEREDIS",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -725,7 +725,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.GraphQlDocumentExecuter,
-            "signals.traces.GRAPHQL",
+            TelemetrySignal.Traces,
             "GRAPHQL",
             CleanTypeName(symbol.ContainingType),
             "ExecuteAsync",
@@ -763,7 +763,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.MongoDbCollection,
-            "signals.traces.MONGODB",
+            TelemetrySignal.Traces,
             "MONGODB",
             receiverTypeName,
             symbol.Name,
@@ -828,7 +828,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         {
             target = new InterceptorTarget(
                 InterceptorKind.RabbitMqBasicPublish,
-                "signals.traces.RABBITMQ",
+                TelemetrySignal.Traces,
                 "RABBITMQ",
                 CleanTypeName(receiverType),
                 "BasicPublish",
@@ -844,7 +844,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         {
             target = new InterceptorTarget(
                 InterceptorKind.RabbitMqBasicPublish,
-                "signals.traces.RABBITMQ",
+                TelemetrySignal.Traces,
                 "RABBITMQ",
                 CleanTypeName(receiverType),
                 "BasicPublishAsync",
@@ -882,7 +882,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.ILoggerLog,
-            "signals.logs.ILOGGER",
+            TelemetrySignal.Logs,
             "ILOGGER",
             CleanTypeName(symbol.ContainingType),
             "Log",
@@ -907,7 +907,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.ILoggerExtensionLog,
-            "signals.logs.ILOGGER",
+            TelemetrySignal.Logs,
             "ILOGGER",
             "global::Microsoft.Extensions.Logging.ILogger",
             symbol.Name,
@@ -979,7 +979,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.NLogLogger,
-            "signals.logs.NLOG",
+            TelemetrySignal.Logs,
             "NLOG",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -1004,7 +1004,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.Log4NetLogger,
-            "signals.logs.LOG4NET",
+            TelemetrySignal.Logs,
             "LOG4NET",
             CleanTypeName(symbol.ContainingType),
             symbol.Name,
@@ -1106,7 +1106,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         {
             target = new InterceptorTarget(
                 InterceptorKind.KafkaProducer,
-                "signals.traces.KAFKA",
+                TelemetrySignal.Traces,
                 "KAFKA",
                 CleanTypeName(symbol.ContainingType),
                 "ProduceAsync",
@@ -1122,7 +1122,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         {
             target = new InterceptorTarget(
                 InterceptorKind.KafkaProducer,
-                "signals.traces.KAFKA",
+                TelemetrySignal.Traces,
                 "KAFKA",
                 CleanTypeName(symbol.ContainingType),
                 "Produce",
@@ -1148,7 +1148,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.KafkaConsumer,
-            "signals.traces.KAFKA",
+            TelemetrySignal.Traces,
             "KAFKA",
             CleanTypeName(symbol.ContainingType),
             "Consume",
@@ -1170,7 +1170,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         {
             target = new InterceptorTarget(
                 InterceptorKind.EntityFrameworkCoreDbContext,
-                "signals.traces.ENTITYFRAMEWORKCORE",
+                TelemetrySignal.Traces,
                 "ENTITYFRAMEWORKCORE",
                 CleanTypeName(symbol.ContainingType),
                 "SaveChanges",
@@ -1186,7 +1186,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         {
             target = new InterceptorTarget(
                 InterceptorKind.EntityFrameworkCoreDbContext,
-                "signals.traces.ENTITYFRAMEWORKCORE",
+                TelemetrySignal.Traces,
                 "ENTITYFRAMEWORKCORE",
                 CleanTypeName(symbol.ContainingType),
                 "SaveChangesAsync",
@@ -1215,7 +1215,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         target = new InterceptorTarget(
             InterceptorKind.EntityFrameworkCoreQueryable,
-            "signals.traces.ENTITYFRAMEWORKCORE",
+            TelemetrySignal.Traces,
             "ENTITYFRAMEWORKCORE",
             CleanTypeName(original.Parameters[0].Type),
             symbol.Name,
