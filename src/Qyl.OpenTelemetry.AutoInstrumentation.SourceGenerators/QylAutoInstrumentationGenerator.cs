@@ -160,36 +160,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             context.CancellationToken.ThrowIfCancellationRequested();
             var invocation = invocations[index];
             var descriptor = GetEmissionDescriptor(invocation.Target);
-            switch (descriptor.Body)
-            {
-                case TraceInterceptorBodyDescriptor body:
-                    EmitTraceInterceptor(builder, in invocation, index, body);
-                    break;
-                case ForwardingInterceptorBodyDescriptor body:
-                    EmitForwardingInterceptor(builder, in invocation, index, body);
-                    break;
-                case HttpWebRequestBodyDescriptor body:
-                    EmitHttpWebRequestInterceptor(builder, in invocation, index, body);
-                    break;
-                case DbCommandBodyDescriptor body:
-                    EmitDbCommandInterceptor(builder, in invocation, index, body);
-                    break;
-                case GrpcClientBodyDescriptor body:
-                    EmitGrpcNetClientInterceptor(builder, in invocation, index, body);
-                    break;
-                case MeterProviderBuilderBodyDescriptor body:
-                    EmitMeterProviderBuilderAddMeterInterceptor(builder, in invocation, index, body);
-                    break;
-                case LoggerBodyDescriptor body:
-                    EmitLoggerInterceptor(builder, in invocation, index, body);
-                    break;
-                case ExternalLoggerBodyDescriptor body:
-                    EmitExternalLoggerInterceptor(builder, in invocation, index, body);
-                    break;
-                default:
-                    throw new InvalidOperationException(
-                        "Interceptor emission descriptor has no supported body: " + descriptor.Kind);
-            }
+            descriptor.Body.Emit(builder, in invocation, index);
         }
 
         builder.AppendLine("    }");

@@ -94,16 +94,23 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     /// <summary>
     /// Closed set of interceptor body shapes. Exactly-one-body-per-descriptor is structural:
-    /// an emission descriptor holds a single <see cref="InterceptorBodyDescriptor"/> and the
-    /// emitter dispatches on its concrete type.
+    /// an emission descriptor holds a single <see cref="InterceptorBodyDescriptor"/> and each
+    /// body emits itself — the compiler's abstract-member enforcement makes the set exhaustive.
     /// </summary>
-    private abstract record InterceptorBodyDescriptor;
+    private abstract record InterceptorBodyDescriptor
+    {
+        public abstract void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index);
+    }
 
     private sealed record GrpcClientBodyDescriptor(
         GrpcClientCallShape Shape,
         string MethodPrefix,
         string ReceiverName,
-        string HelperType) : InterceptorBodyDescriptor;
+        string HelperType) : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitGrpcNetClientInterceptor(builder, in invocation, index, this);
+    }
 
     private sealed record DbCommandBodyDescriptor(
         string MethodPrefix,
@@ -114,7 +121,11 @@ public sealed partial class QylAutoInstrumentationGenerator
         string StartActivityMethod,
         string ObserveAsyncMethod,
         string RecordExceptionMethod,
-        string RecordDurationMethod) : InterceptorBodyDescriptor;
+        string RecordDurationMethod) : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitDbCommandInterceptor(builder, in invocation, index, this);
+    }
 
     private sealed record HttpWebRequestBodyDescriptor(
         string MethodPrefix,
@@ -124,28 +135,48 @@ public sealed partial class QylAutoInstrumentationGenerator
         string GetStartTimeUtcMethod,
         string StartActivityMethod,
         string RecordResultMethod,
-        string RecordExceptionMethod) : InterceptorBodyDescriptor;
+        string RecordExceptionMethod) : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitHttpWebRequestInterceptor(builder, in invocation, index, this);
+    }
 
     private sealed record MeterProviderBuilderBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
-        string EnabledMeterNamesExpression) : InterceptorBodyDescriptor;
+        string EnabledMeterNamesExpression) : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitMeterProviderBuilderAddMeterInterceptor(builder, in invocation, index, this);
+    }
 
     private sealed record LoggerBodyDescriptor(
         LoggerInterceptorBodyKind Kind,
         string MethodPrefix,
-        string HelperType) : InterceptorBodyDescriptor;
+        string HelperType) : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitLoggerInterceptor(builder, in invocation, index, this);
+    }
 
     private sealed record ExternalLoggerBodyDescriptor(
         string HelperType,
-        string DomainExpression) : InterceptorBodyDescriptor;
+        string DomainExpression) : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitExternalLoggerInterceptor(builder, in invocation, index, this);
+    }
 
     private sealed record ForwardingInterceptorBodyDescriptor(
         string MethodPrefix,
         string ReceiverName,
         string HelperType,
         string HelperMethodName = "",
-        string ReceiverTypeOverride = "") : InterceptorBodyDescriptor;
+        string ReceiverTypeOverride = "") : InterceptorBodyDescriptor
+    {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitForwardingInterceptor(builder, in invocation, index, this);
+    }
 
     private readonly record struct TraceRuntimeHelperDescriptor(
         string HelperType,
@@ -266,6 +297,9 @@ public sealed partial class QylAutoInstrumentationGenerator
         TraceActivityEnrichmentDescriptor ActivityEnrichment = default,
         TraceAsyncObservationDescriptor AsyncObservation = default) : InterceptorBodyDescriptor
     {
+        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
+            => EmitTraceInterceptor(builder, in invocation, index, this);
+
         public void AppendStartActivity(StringBuilder builder, in InterceptorTarget target)
         {
             builder.Append(RuntimeHelper.HelperType);

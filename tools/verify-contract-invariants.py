@@ -810,12 +810,13 @@ def verify_interceptor_emission_bodies(generator: str, kinds: set[str]) -> None:
         fail(f"InterceptorKind values missing emission body descriptors: {sorted(missing_bodies)}")
 
     for token in [
-        "private abstract record InterceptorBodyDescriptor;",
+        "private abstract record InterceptorBodyDescriptor",
+        "public abstract void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index);",
         "InterceptorBodyDescriptor Body",
         "Unsupported interceptor kind: ",
     ]:
         if token not in generator:
-            fail(f"generator must model emission bodies as a closed descriptor hierarchy: {token}")
+            fail(f"generator must model emission bodies as a closed self-emitting descriptor hierarchy: {token}")
 
 
 def collect_generator_target_contract_keys(generator: str) -> set[str]:
@@ -856,14 +857,10 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
         fail("emitter dispatch must use the descriptor table")
     if "private delegate void InterceptorEmitter" in generator or "InterceptorEmitter? Emitter" in generator or "descriptor.Emitter" in dispatch_block:
         fail("emitter dispatch must not use generic emitter delegates")
-    if "switch (descriptor.Body)" not in dispatch_block:
-        fail("emitter dispatch must switch on the typed body descriptor")
-    declared_bodies = set(re.findall(r"sealed record ([A-Za-z0-9]+BodyDescriptor)[\s(]", generator))
-    if not declared_bodies:
-        fail("no InterceptorBodyDescriptor subtypes declared in the generator")
-    for body_type in sorted(declared_bodies):
-        if f"case {body_type} body:" not in dispatch_block:
-            fail(f"emitter dispatch missing typed body descriptor case: {body_type}")
+    # Q4: bodies emit themselves; body-type exhaustiveness is enforced by the
+    # compiler through the abstract Emit member, not by this gate.
+    if "descriptor.Body.Emit(builder, in invocation, index);" not in dispatch_block:
+        fail("emitter dispatch must invoke the polymorphic body emit")
 
     try:
         matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(
