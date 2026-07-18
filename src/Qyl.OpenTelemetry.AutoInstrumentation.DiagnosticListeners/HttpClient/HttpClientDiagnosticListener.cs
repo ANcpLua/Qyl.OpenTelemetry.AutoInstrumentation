@@ -9,7 +9,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
 /// <c>System.Net.Http.HttpClient</c>'s <see cref="System.Diagnostics.DiagnosticSource"/> integration,
 /// and emits bounded HttpClient telemetry through the managed AOT-compatible path.
 /// </summary>
-public sealed class HttpClientDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class HttpClientDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "HttpHandlerDiagnosticListener";

@@ -9,7 +9,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.EntityFramew
 /// Real EFCore command events live in <c>Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore</c> so
 /// non-EFCore apps do not inherit EFCore package dependencies or NativeAOT warnings.
 /// </summary>
-public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "Microsoft.EntityFrameworkCore";

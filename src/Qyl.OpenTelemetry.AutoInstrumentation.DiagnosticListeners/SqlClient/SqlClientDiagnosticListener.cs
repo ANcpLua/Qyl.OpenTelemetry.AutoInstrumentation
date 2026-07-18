@@ -9,7 +9,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.SqlClient;
 /// Real Microsoft.Data.SqlClient command events live in <c>Qyl.OpenTelemetry.AutoInstrumentation.SqlClient</c>
 /// so non-SqlClient apps do not inherit SqlClient package dependencies or NativeAOT warnings.
 /// </summary>
-public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "SqlClientDiagnosticListener";

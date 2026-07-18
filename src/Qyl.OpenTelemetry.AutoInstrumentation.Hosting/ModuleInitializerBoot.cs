@@ -25,7 +25,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
 /// </summary>
 internal static class ModuleInitializerBoot
 {
-    private static readonly DiagnosticListenerSubscriber[] DiagnosticListeners =
+    private static readonly QylDiagnosticListenerSubscriber[] DiagnosticListeners =
     [
         new HttpClientDiagnosticListener(),
         new AspNetCoreDiagnosticListener(),

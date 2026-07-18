@@ -8,7 +8,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore;
 /// Subscribes to <c>Microsoft.EntityFrameworkCore</c> command events and extracts real EFCore
 /// command payload values without IL rewriting.
 /// </summary>
-public sealed class EntityFrameworkCoreDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "Microsoft.EntityFrameworkCore";

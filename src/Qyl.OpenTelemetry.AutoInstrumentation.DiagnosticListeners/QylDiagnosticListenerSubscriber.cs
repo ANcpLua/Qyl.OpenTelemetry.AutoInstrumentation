@@ -9,7 +9,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners;
 /// Concrete subscribers react on completion (<c>*.Stop</c>) and use
 /// <c>QylActivitySource.StartAtAmbientStart</c> so emitted duration reflects the real operation.
 /// </summary>
-public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<string, object?>>, IDisposable
+public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<string, object?>>, IDisposable
 {
     private IDisposable? _allListenersSubscription;
     private IDisposable? _eventSubscription;
@@ -60,7 +60,7 @@ public abstract class DiagnosticListenerSubscriber : IObserver<KeyValuePair<stri
         GC.SuppressFinalize(this);
     }
 
-    private sealed class AllListenersObserver(DiagnosticListenerSubscriber owner) : IObserver<DiagnosticListener>
+    private sealed class AllListenersObserver(QylDiagnosticListenerSubscriber owner) : IObserver<DiagnosticListener>
     {
         public void OnNext(DiagnosticListener value)
         {

@@ -1,5 +1,3 @@
 #nullable enable
 Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreAutoInstrumentationBootstrap
-Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreDiagnosticListener
-Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreDiagnosticListener.EntityFrameworkCoreDiagnosticListener() -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.EntityFrameworkCoreAutoInstrumentationBootstrap.Boot() -> void

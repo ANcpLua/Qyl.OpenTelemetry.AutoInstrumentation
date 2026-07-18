@@ -9,7 +9,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.SqlClient;
 /// Subscribes to Microsoft.Data.SqlClient command events and extracts real command payload values
 /// without IL rewriting or reflection.
 /// </summary>
-public sealed class SqlClientDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "SqlClientDiagnosticListener";

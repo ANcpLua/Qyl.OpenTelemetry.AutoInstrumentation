@@ -8,7 +8,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 /// Subscribes to <c>Microsoft.AspNetCore</c> — the listener emitted by Kestrel + the MVC pipeline.
 /// Provides HTTP SERVER spans without any per-request middleware injection.
 /// </summary>
-public sealed class AspNetCoreDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "Microsoft.AspNetCore";

@@ -7,7 +7,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 /// <summary>
 /// Subscribes to <c>Grpc.Net.Client</c> — gRPC CLIENT spans without IL rewriting.
 /// </summary>
-public sealed class GrpcClientDiagnosticListener : DiagnosticListenerSubscriber
+internal sealed class GrpcClientDiagnosticListener : QylDiagnosticListenerSubscriber
 {
     /// <inheritdoc/>
     protected override string ListenerName => "Grpc.Net.Client";
