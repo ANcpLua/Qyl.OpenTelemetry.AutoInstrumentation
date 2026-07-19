@@ -2036,11 +2036,12 @@ contract_items:
   qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-environment-options-behavior.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -2062,11 +2063,12 @@ contract_items:
   qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-environment-options-behavior.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
   environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
@@ -2112,11 +2114,12 @@ contract_items:
   qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-environment-options-behavior.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
   environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION

@@ -51,6 +51,79 @@ Console.WriteLine("http.query.unredacted=" + options.HttpClientUrlQueryRedaction
 '''
 
 
+# External-consumer runtime probe: public API only (no IVT — the assembly name is
+# deliberately NOT VerifierProbe). Proves option env vars change EMITTED SPANS,
+# not merely parsed option values: a real HttpClient call through the generated
+# interceptor against a loopback server, asserting url.full redaction and
+# captured header attributes on the stopped activity.
+RUNTIME_PROGRAM = r'''
+using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+
+var captured = new List<Activity>();
+using var listener = new ActivityListener
+{
+    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
+    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+    ActivityStopped = activity => captured.Add(activity),
+};
+ActivitySource.AddActivityListener(listener);
+
+var tcp = new TcpListener(IPAddress.Loopback, 0);
+tcp.Start(1);
+var port = ((IPEndPoint)tcp.LocalEndpoint).Port;
+var serve = Task.Run(async () =>
+{
+    using var client = await tcp.AcceptTcpClientAsync();
+    await using var stream = client.GetStream();
+    var buffer = new byte[8192];
+    var received = new List<byte>();
+    while (true)
+    {
+        var count = await stream.ReadAsync(buffer);
+        if (count == 0) throw new InvalidOperationException("client closed early");
+        received.AddRange(buffer.AsSpan(0, count).ToArray());
+        if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0) break;
+    }
+    var response = Encoding.ASCII.GetBytes(
+        "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nX-Server: srv1\r\nConnection: close\r\n\r\n");
+    await stream.WriteAsync(response);
+});
+
+using var http = new HttpClient();
+http.DefaultRequestHeaders.Add("X-Client", "abc");
+var response = await http.GetAsync($"http://127.0.0.1:{port}/probe?user=alice&token=hunter2");
+await serve;
+tcp.Stop();
+Console.WriteLine("http.status=" + (int)response.StatusCode);
+
+Console.WriteLine("activity.count=" + captured.Count);
+foreach (var activity in captured)
+{
+    var tags = activity.TagObjects
+        .Select(tag => (tag.Key, Value: tag.Value switch
+        {
+            string s => s,
+            System.Collections.IEnumerable e => string.Join(",", e.Cast<object?>()),
+            var other => Convert.ToString(other, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+        }))
+        .OrderBy(tag => tag.Key, StringComparer.Ordinal)
+        .ToList();
+
+    foreach (var (key, value) in tags)
+    {
+        if (key == "url.full")
+            Console.WriteLine("url.full=" + value.Replace(":" + port, ":PORT"));
+        else if (key.StartsWith("http.request.header.", StringComparison.Ordinal)
+                 || key.StartsWith("http.response.header.", StringComparison.Ordinal))
+            Console.WriteLine(key + "=" + value);
+    }
+}
+'''
+
+
 DEFAULT_EXPECTED = """global=True
 traces=True
 metrics=True
@@ -172,6 +245,24 @@ http.query.unredacted=False
 """
 
 
+RUNTIME_DEFAULT_EXPECTED = """http.status=204
+activity.count=1
+url.full=http://127.0.0.1:PORT/probe?user=Redacted&token=Redacted
+"""
+
+RUNTIME_CAPTURE_EXPECTED = """http.status=204
+activity.count=1
+http.request.header.x-client=abc
+http.response.header.x-server=srv1
+url.full=http://127.0.0.1:PORT/probe?user=Redacted&token=Redacted
+"""
+
+RUNTIME_UNREDACTED_EXPECTED = """http.status=204
+activity.count=1
+url.full=http://127.0.0.1:PORT/probe?user=alice&token=hunter2
+"""
+
+
 def fail(message: str) -> None:
     raise SystemExit(message)
 
@@ -192,14 +283,21 @@ def pack_runtime(feed: Path, env: dict[str, str]) -> None:
                 fcntl.flock(lock, fcntl.LOCK_UN)
 
 
-def write_project(directory: Path, feed: Path, packages: Path, version: str) -> Path:
+def write_project(
+    directory: Path,
+    feed: Path,
+    packages: Path,
+    version: str,
+    assembly_name: str = "Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe",
+    program: str | None = None,
+) -> Path:
     directory.mkdir(parents=True)
     project_path = directory / "Consumer.csproj"
     project_path.write_text(
         f'''<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AssemblyName>Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe</AssemblyName>
+    <AssemblyName>{assembly_name}</AssemblyName>
     <TargetFramework>{TARGET_FRAMEWORK}</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -215,7 +313,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
 ''',
         encoding="utf-8",
     )
-    (directory / "Program.cs").write_text(PROGRAM, encoding="utf-8")
+    (directory / "Program.cs").write_text(program if program is not None else PROGRAM, encoding="utf-8")
     return project_path
 
 
@@ -318,6 +416,44 @@ def main() -> None:
                 },
             ),
             ADDITIONAL_METRIC_SOURCES_EXPECTED,
+        )
+
+        runtime_project = write_project(
+            root / "runtime-consumer",
+            feed,
+            packages,
+            version,
+            assembly_name="Qyl.OpenTelemetry.RuntimeProbe",
+            program=RUNTIME_PROGRAM,
+        )
+        run_checked(["dotnet", "build", str(runtime_project), "-c", "Release", "-v", "quiet"], runtime_project.parent, env)
+        runtime_assembly = runtime_project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Qyl.OpenTelemetry.RuntimeProbe.dll"
+
+        assert_scenario(
+            "runtime: default redaction, no header capture",
+            run_scenario(runtime_assembly, env, {}),
+            RUNTIME_DEFAULT_EXPECTED,
+        )
+        assert_scenario(
+            "runtime: captured headers on emitted span",
+            run_scenario(
+                runtime_assembly,
+                env,
+                {
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Client",
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Server",
+                },
+            ),
+            RUNTIME_CAPTURE_EXPECTED,
+        )
+        assert_scenario(
+            "runtime: url query redaction disabled",
+            run_scenario(
+                runtime_assembly,
+                env,
+                {"OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION": "true"},
+            ),
+            RUNTIME_UNREDACTED_EXPECTED,
         )
 
     print("environment-options-behavior-ok")
