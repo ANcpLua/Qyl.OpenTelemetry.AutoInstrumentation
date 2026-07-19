@@ -2,12 +2,14 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORK="${TMPDIR:-/tmp}/qyl-smoke"
+SMOKE_TEMP_ROOT="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+WORK="$SMOKE_TEMP_ROOT/qyl-smoke"
 FEED="$WORK/feed"
 PACKAGES="$WORK/packages"
 NUGET_ORG="https://api.nuget.org/v3/index.json"
 MODE="local"
 VERSION="$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$ROOT/Directory.Build.props" | head -n 1)"
+INMEMORY_EXPORTER_VERSION="$(sed -n 's:.*<PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="\([^"]*\)".*:\1:p' "$ROOT/Directory.Packages.props" | head -n 1)"
 if [[ "${1:-}" == "--published" ]]; then
   if [[ $# -ne 2 || -z "${2:-}" ]]; then
     echo "usage: $0 [--published VERSION]" >&2
@@ -41,6 +43,10 @@ if [[ -z "$VERSION" ]]; then
   echo "Directory.Build.props does not contain a package <Version>" >&2
   exit 2
 fi
+if [[ -z "$INMEMORY_EXPORTER_VERSION" ]]; then
+  echo "Directory.Packages.props does not contain an OpenTelemetry.Exporter.InMemory package version" >&2
+  exit 2
+fi
 
 rm -rf "$WORK"
 mkdir -p "$FEED" "$PACKAGES"
@@ -49,18 +55,93 @@ if [[ "$MODE" == "local" ]]; then
   dotnet build "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
   dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
   dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" -c Release -o "$FEED" -v quiet
   dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.Sdk/Qyl.Sdk.csproj" -c Release -o "$FEED" -v quiet
 fi
 
 write_program() {
   local dir="$1"
   cat > "$dir/Program.cs" <<'EOF'
 using System.Diagnostics;
+#if QYL_SDK_PACKAGE_SMOKE
+using System.Diagnostics.Metrics;
+#endif
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+#if QYL_SDK_PACKAGE_SMOKE
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+#endif
 using Microsoft.Extensions.Logging;
+#if QYL_SDK_PACKAGE_SMOKE
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+using Qyl;
+#endif
 using Qyl.OpenTelemetry.AutoInstrumentation;
+#if QYL_PROJECTREFERENCE_SMOKE
+using Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
+#endif
+
+#if QYL_PROJECTREFERENCE_SMOKE
+QylAutoInstrumentationBootstrap.Boot();
+#endif
+
+#if QYL_SDK_PACKAGE_SMOKE
+const string qylActivitySourceName = "Qyl.OpenTelemetry.AutoInstrumentation";
+const string httpClientMeterName = "System.Net.Http";
+const string httpClientDurationMetricName = "http.client.request.duration";
+
+var exportedActivities = new List<Activity>();
+var exportedMetrics = new List<Metric>();
+var inMemoryMetricReader = new BaseExportingMetricReader(new InMemoryExporter<Metric>(exportedMetrics));
+var rawHttpClientDurationMeasurementCount = 0;
+var applicationServerPort = 0;
+
+var qylBuilder = new HostApplicationBuilder(new HostApplicationBuilderSettings
+{
+    ApplicationName = "qyl-package-smoke",
+    DisableDefaults = true,
+});
+qylBuilder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-package-smoke";
+    options.EnableCollectorDiscovery = false;
+    options.EnableMetricsExport = true;
+    options.EnableLogExport = false;
+    options.EnableSessionPropagation = false;
+});
+qylBuilder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities))
+    .WithMetrics(metrics => metrics.AddReader(inMemoryMetricReader));
+
+using var meterListener = new MeterListener
+{
+    InstrumentPublished = (instrument, listener) =>
+    {
+        if (StringComparer.Ordinal.Equals(instrument.Meter.Name, httpClientMeterName) &&
+            StringComparer.Ordinal.Equals(instrument.Name, httpClientDurationMetricName))
+        {
+            listener.EnableMeasurementEvents(instrument);
+        }
+    },
+};
+meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags, state) =>
+{
+    _ = instrument;
+    _ = measurement;
+    _ = state;
+    if (IsRawApplicationMeasurement(tags, Volatile.Read(ref applicationServerPort)))
+        Interlocked.Increment(ref rawHttpClientDurationMeasurementCount);
+});
+meterListener.Start();
+
+using var qylHost = qylBuilder.Build();
+await qylHost.StartAsync();
+#endif
 
 var captured = new List<Activity>();
 using var listener = new ActivityListener
@@ -73,6 +154,9 @@ using var listener = new ActivityListener
 ActivitySource.AddActivityListener(listener);
 
 await using var server = LoopbackHttpServer.Start();
+#if QYL_SDK_PACKAGE_SMOKE
+Volatile.Write(ref applicationServerPort, server.Uri.Port);
+#endif
 using var http = new HttpClient();
 var response = await http.GetAsync(server.Uri + "probe?secret=redacted");
 await server.RequestCompleted;
@@ -86,6 +170,60 @@ logger.Log(
     "smoke-log",
     exception: null,
     static (state, exception) => exception is null ? state : state + ":" + exception.GetType().Name);
+
+#if QYL_SDK_PACKAGE_SMOKE
+if (!inMemoryMetricReader.Collect(5_000))
+    throw new InvalidOperationException("The in-memory metric reader did not complete collection.");
+
+var exportedQylHttpClientSpanCount = exportedActivities.Count(activity =>
+    StringComparer.Ordinal.Equals(activity.Source.Name, qylActivitySourceName) &&
+    activity.GetTagItem("qyl.instrumentation.domain") is string domain &&
+    StringComparer.Ordinal.Equals(domain, "http.client") &&
+    IsApplicationActivity(activity.TagObjects, applicationServerPort));
+var exportedNativeHttpClientSpanCount = exportedActivities.Count(activity =>
+    StringComparer.Ordinal.Equals(activity.Source.Name, httpClientMeterName) &&
+    IsApplicationActivity(activity.TagObjects, applicationServerPort));
+var exportedHttpClientDurationMetricCount = 0;
+var exportedHttpClientDurationSeriesCount = 0;
+long exportedHttpClientDurationMeasurementCount = 0;
+foreach (var metric in exportedMetrics)
+{
+    if (!StringComparer.Ordinal.Equals(metric.MeterName, httpClientMeterName) ||
+        !StringComparer.Ordinal.Equals(metric.Name, httpClientDurationMetricName))
+    {
+        continue;
+    }
+
+    exportedHttpClientDurationMetricCount++;
+    foreach (ref readonly var point in metric.GetMetricPoints())
+    {
+        if (!IsApplicationMetricSeries(point.Tags, applicationServerPort))
+            continue;
+
+        exportedHttpClientDurationSeriesCount++;
+        exportedHttpClientDurationMeasurementCount += point.GetHistogramCount();
+    }
+}
+
+if (exportedQylHttpClientSpanCount != 1 ||
+    exportedNativeHttpClientSpanCount != 1 ||
+    rawHttpClientDurationMeasurementCount != 1 ||
+    exportedHttpClientDurationMetricCount != 1 ||
+    exportedHttpClientDurationSeriesCount != 1 ||
+    exportedHttpClientDurationMeasurementCount != 1)
+{
+    throw new InvalidOperationException(
+        "Unexpected Qyl.Sdk telemetry composition: " +
+        $"qylHttpClientSpans={exportedQylHttpClientSpanCount}, " +
+        $"nativeHttpClientSpans={exportedNativeHttpClientSpanCount}, " +
+        $"rawHttpClientDurationMeasurements={rawHttpClientDurationMeasurementCount}, " +
+        $"exportedHttpClientDurationMetrics={exportedHttpClientDurationMetricCount}, " +
+        $"exportedHttpClientDurationSeries={exportedHttpClientDurationSeriesCount}, " +
+        $"exportedHttpClientDurationMeasurements={exportedHttpClientDurationMeasurementCount}.");
+}
+
+await qylHost.StopAsync();
+#endif
 
 Console.WriteLine("logger.calls=" + concreteLogger.Calls.ToString(System.Globalization.CultureInfo.InvariantCulture));
 Console.WriteLine("logger.last=" + concreteLogger.Last);
@@ -108,6 +246,59 @@ foreach (var activity in captured.OrderBy(static activity => activity.DisplayNam
 Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 return captured.Count == 2 ? 0 : 3;
+
+#if QYL_SDK_PACKAGE_SMOKE
+static bool IsApplicationActivity(
+    IEnumerable<KeyValuePair<string, object?>> tags,
+    int expectedPort)
+{
+    var addressMatches = false;
+    var portMatches = false;
+    foreach (var tag in tags)
+    {
+        if (StringComparer.Ordinal.Equals(tag.Key, "server.address"))
+            addressMatches = StringComparer.Ordinal.Equals(Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture), "127.0.0.1");
+        else if (StringComparer.Ordinal.Equals(tag.Key, "server.port"))
+            portMatches = Convert.ToInt32(tag.Value, System.Globalization.CultureInfo.InvariantCulture) == expectedPort;
+    }
+
+    return addressMatches && portMatches;
+}
+
+static bool IsRawApplicationMeasurement(
+    ReadOnlySpan<KeyValuePair<string, object?>> tags,
+    int expectedPort)
+{
+    var addressMatches = false;
+    var portMatches = false;
+    foreach (var tag in tags)
+    {
+        if (StringComparer.Ordinal.Equals(tag.Key, "server.address"))
+            addressMatches = StringComparer.Ordinal.Equals(Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture), "127.0.0.1");
+        else if (StringComparer.Ordinal.Equals(tag.Key, "server.port"))
+            portMatches = Convert.ToInt32(tag.Value, System.Globalization.CultureInfo.InvariantCulture) == expectedPort;
+    }
+
+    return addressMatches && portMatches;
+}
+
+static bool IsApplicationMetricSeries(
+    OpenTelemetry.ReadOnlyTagCollection tags,
+    int expectedPort)
+{
+    var addressMatches = false;
+    var portMatches = false;
+    foreach (var tag in tags)
+    {
+        if (StringComparer.Ordinal.Equals(tag.Key, "server.address"))
+            addressMatches = StringComparer.Ordinal.Equals(Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture), "127.0.0.1");
+        else if (StringComparer.Ordinal.Equals(tag.Key, "server.port"))
+            portMatches = Convert.ToInt32(tag.Value, System.Globalization.CultureInfo.InvariantCulture) == expectedPort;
+    }
+
+    return addressMatches && portMatches;
+}
+#endif
 
 internal sealed class LoopbackHttpServer : IAsyncDisposable
 {
@@ -197,12 +388,14 @@ write_package_consumer() {
     <RestoreNoCache>true</RestoreNoCache>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    <DefineConstants>\$(DefineConstants);QYL_SDK_PACKAGE_SMOKE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="$VERSION" />
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="$VERSION" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Qyl.Sdk" Version="$VERSION" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="$INMEMORY_EXPORTER_VERSION" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
@@ -225,17 +418,18 @@ write_projectreference_consumer() {
     <RestoreNoCache>true</RestoreNoCache>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    <DefineConstants>\$(DefineConstants);QYL_PROJECTREFERENCE_SMOKE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
+    <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
     <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
                       Condition="'\$(PublishAot)' != 'true'"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
     <Analyzer Include="$GENERATOR_DLL" Condition="'\$(PublishAot)' == 'true'" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 
@@ -243,6 +437,39 @@ write_projectreference_consumer() {
 </Project>
 EOF
   write_program "$dir"
+}
+
+write_sqlclient_package_consumer() {
+  local dir="$1"
+  mkdir -p "$dir"
+  cat > "$dir/Consumer.csproj" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RestoreSources>$PACKAGE_SOURCES</RestoreSources>
+    <RestorePackagesPath>$PACKAGES/sqlclient</RestorePackagesPath>
+    <RestoreNoCache>true</RestoreNoCache>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="$VERSION" />
+    <Compile Remove="Generated/**/*.cs" />
+  </ItemGroup>
+</Project>
+EOF
+  cat > "$dir/Program.cs" <<'EOF'
+using Microsoft.Data.SqlClient;
+
+Console.WriteLine(typeof(SqlCommand).FullName);
+return 0;
+
+static int CompileTimeProbe(SqlCommand command) => command.ExecuteNonQuery();
+EOF
 }
 
 assert_generated_interceptor() {
@@ -254,6 +481,21 @@ assert_generated_interceptor() {
     find "$dir/Generated" -type f -print >&2 || true
     exit 4
   fi
+}
+
+assert_sqlclient_package_assets() {
+  local dir="$1"
+  local generated
+
+  dotnet restore "$dir/Consumer.csproj" --no-cache --force-evaluate -v quiet
+  dotnet build "$dir/Consumer.csproj" -c Release --no-restore -v quiet
+  assert_generated_interceptor "$dir"
+  generated="$(find "$dir/Generated" -name 'QylAutoInstrumentation.Interceptors.g.cs' -print -quit)"
+  if ! grep -q 'signals.traces.SQLCLIENT' "$generated" || ! grep -q 'signals.metrics.SQLCLIENT' "$generated"; then
+    echo "SqlClient-only package consumer did not receive the SQLCLIENT trace+metric generator manifest" >&2
+    exit 6
+  fi
+  echo "sqlclient-package-assets-ok"
 }
 
 assert_no_aot_warnings() {
@@ -327,6 +569,8 @@ run_consumer() {
 
 write_package_consumer "$WORK/pkg-consumer"
 run_consumer "package-reference" "$WORK/pkg-consumer"
+write_sqlclient_package_consumer "$WORK/sqlclient-pkg-consumer"
+assert_sqlclient_package_assets "$WORK/sqlclient-pkg-consumer"
 if [[ "$MODE" == "local" ]]; then
   write_projectreference_consumer "$WORK/projref-consumer"
   run_consumer "project-reference" "$WORK/projref-consumer"

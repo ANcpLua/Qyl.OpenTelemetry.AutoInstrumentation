@@ -154,14 +154,16 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("{");
         builder.AppendLine("    internal static class QylGeneratedInterceptors");
         builder.AppendLine("    {");
-        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V6;");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V8;");
         builder.AppendLine();
 
         for (var index = 0; index < invocations.Length; index++)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
             var invocation = invocations[index];
-            var descriptor = GetEmissionDescriptor(invocation.Target);
+            var target = invocation.Target;
+            var descriptor = GetEmissionDescriptor(in target);
+            EmitInterceptorManifest(builder, in target);
             descriptor.Body.Emit(builder, in invocation, index);
         }
 
@@ -175,6 +177,45 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs",
             SourceText.From(builder.ToString(), Encoding.UTF8));
     }
+
+    private static void EmitInterceptorManifest(StringBuilder builder, in InterceptorTarget target)
+    {
+        builder.Append("        // qyl-interceptor-manifest: {\"interceptorKind\":");
+        AppendStringLiteral(builder, target.Kind.ToString());
+        builder.Append(",\"signal\":");
+        AppendStringLiteral(builder, GetManifestSignalName(target.Signal));
+        builder.Append(",\"instrumentationId\":");
+        AppendStringLiteral(builder, target.InstrumentationId);
+        builder.Append(",\"additionalMetricIds\":[");
+        for (var index = 0; index < target.AdditionalMetricIds.Length; index++)
+        {
+            if (index > 0)
+                builder.Append(',');
+            AppendStringLiteral(builder, target.AdditionalMetricIds[index]);
+        }
+
+        builder.Append("],\"contractKeys\":[");
+        AppendStringLiteral(builder, GetContractKey(target.Signal, target.InstrumentationId));
+        for (var index = 0; index < target.AdditionalMetricIds.Length; index++)
+        {
+            builder.Append(',');
+            AppendStringLiteral(builder, GetContractKey(TelemetrySignal.Metrics, target.AdditionalMetricIds[index]));
+        }
+
+        builder.AppendLine("]}");
+    }
+
+    private static string GetContractKey(TelemetrySignal signal, string instrumentationId)
+        => "signals." + GetManifestSignalName(signal) + "." + instrumentationId;
+
+    private static string GetManifestSignalName(TelemetrySignal signal)
+        => signal switch
+        {
+            TelemetrySignal.Traces => "traces",
+            TelemetrySignal.Metrics => "metrics",
+            TelemetrySignal.Logs => "logs",
+            _ => throw new InvalidOperationException("Unknown telemetry signal: " + signal),
+        };
 
     private static void EmitInterceptsLocationAttribute(StringBuilder builder)
     {
@@ -417,79 +458,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         }
     }
 
-    private static void EmitHttpWebRequestInterceptor(
-        StringBuilder builder,
-        in InterceptedInvocation invocation,
-        int index,
-        HttpWebRequestBodyDescriptor descriptor)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType,
-            descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName,
-            target.Parameters, target.IsAsync);
-        builder.AppendLine("        {");
-        builder.Append("            var httpWebRequest = (");
-        builder.Append(descriptor.RequestType);
-        builder.Append(')');
-        builder.Append(descriptor.ReceiverName);
-        builder.AppendLine(";");
-        builder.Append("            var metricStartTimeUtc = ");
-        builder.Append(descriptor.HelperType);
-        builder.Append('.');
-        builder.Append(descriptor.GetStartTimeUtcMethod);
-        builder.AppendLine("();");
-        builder.Append("            var activity = ");
-        builder.Append(descriptor.HelperType);
-        builder.Append('.');
-        builder.Append(descriptor.StartActivityMethod);
-        builder.Append("(httpWebRequest, ");
-        AppendStringLiteral(builder, target.MethodName);
-        builder.AppendLine(");");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-
-        if (target.IsAsync)
-        {
-            builder.Append("                var result = await ");
-            builder.Append(descriptor.ReceiverName);
-            builder.Append('.');
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(").ConfigureAwait(false);");
-        }
-        else
-        {
-            builder.Append("                var result = ");
-            builder.Append(descriptor.ReceiverName);
-            builder.Append('.');
-            builder.Append(target.MethodName);
-            builder.Append('(');
-            AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
-            builder.AppendLine(");");
-        }
-
-        builder.Append("                ");
-        builder.Append(descriptor.HelperType);
-        builder.Append('.');
-        builder.Append(descriptor.RecordResultMethod);
-        builder.AppendLine("(activity, metricStartTimeUtc, httpWebRequest.Method, result);");
-        builder.AppendLine("                return result;");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.Append("                ");
-        builder.Append(descriptor.HelperType);
-        builder.Append('.');
-        builder.Append(descriptor.RecordExceptionMethod);
-        builder.AppendLine("(activity, metricStartTimeUtc, httpWebRequest.Method, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
     private static void EmitDbCommandInterceptor(
         StringBuilder builder,
         in InterceptedInvocation invocation,
@@ -581,41 +549,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             EmitActivityDisposeFinally(builder);
         }
 
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
-    private static void EmitMeterProviderBuilderAddMeterInterceptor(
-        StringBuilder builder,
-        in InterceptedInvocation invocation,
-        int index,
-        MeterProviderBuilderBodyDescriptor descriptor)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType,
-            descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName,
-            target.Parameters, isAsync: false);
-        builder.AppendLine("        {");
-        builder.Append("            var result = ");
-        AppendInvocationCall(builder, in target, descriptor.ReceiverName);
-        builder.AppendLine(";");
-        builder.Append("            var qylMeters = ");
-        builder.Append(descriptor.EnabledMeterNamesExpression);
-        builder.AppendLine(";");
-        if (string.IsNullOrEmpty(target.ExtensionContainingType))
-        {
-            builder.AppendLine("            return qylMeters.Length is 0 ? result : result.AddMeter(qylMeters);");
-        }
-        else
-        {
-            builder.Append("            return qylMeters.Length is 0 ? result : ");
-            builder.Append(target.ExtensionContainingType);
-            builder.Append('.');
-            builder.Append(target.MethodName);
-            builder.AppendLine("(result, qylMeters);");
-        }
-
-        builder.AppendLine();
         builder.AppendLine("        }");
         builder.AppendLine();
     }

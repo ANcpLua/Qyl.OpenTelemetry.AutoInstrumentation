@@ -8,7 +8,7 @@ member methods — intercepting a delegate invocation is rejected with CS9207
 ("Cannot intercept 'next' because it is not an invocation of an ordinary member method").
 
 The generator must not emit an `AspNetCoreRequestDelegate` interceptor for these call sites.
-The verifier builds a consumer with `next(context)` middleware and an unrelated HttpClient
+The verifier builds a consumer with `next(context)` middleware and an unrelated ILogger
 control, proving the generator skips delegate invocations while still emitting supported
 interceptors.
 """
@@ -31,14 +31,14 @@ GENERATOR_PROJECT = (
 TARGETS = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.OpenTelemetry.AutoInstrumentation.targets"
 TARGET_FRAMEWORK = "net10.0"
 REQUEST_DELEGATE_INTERCEPTOR_TOKEN = "AspNetCoreRequestDelegate_Invoke"
-CONTROL_INTERCEPTOR_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStringAsync("
+CONTROL_INTERCEPTOR_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log("
 
 # Convention-based middleware whose next-hop call is a delegate invocation (`next(context)`),
-# plus a never-executed HttpClient call as a control so we can prove the generator still emits
+# plus a never-executed ILogger call as a control so we can prove the generator still emits
 # interceptors for ordinary methods and only withholds the un-interceptable delegate invocation.
-PROGRAM = """using System.Net.Http;
-using Microsoft.AspNetCore.Builder;
+PROGRAM = """using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
@@ -46,8 +46,13 @@ app.UseMiddleware<PassThroughMiddleware>();
 app.MapGet("/", () => "ok");
 app.Run();
 
-static async System.Threading.Tasks.Task Probe(HttpClient client)
-    => _ = await client.GetStringAsync("https://qyl-middleware-delegate.invalid");
+static void Probe(ILogger logger)
+    => logger.Log(
+        LogLevel.Information,
+        new EventId(1, "probe"),
+        "probe",
+        exception: null,
+        static (state, exception) => state);
 
 internal sealed class PassThroughMiddleware(RequestDelegate next)
 {
@@ -116,7 +121,7 @@ def main() -> None:
         if REQUEST_DELEGATE_INTERCEPTOR_TOKEN in text:
             fail("generator emitted an un-interceptable RequestDelegate.Invoke interceptor (CS9207 risk)")
         if CONTROL_INTERCEPTOR_TOKEN not in text:
-            fail("generator emitted no control HttpClient interceptor — it went silent instead of selective")
+            fail("generator emitted no control ILogger interceptor — it went silent instead of selective")
 
     print("aspnetcore-middleware-delegate-ok")
 

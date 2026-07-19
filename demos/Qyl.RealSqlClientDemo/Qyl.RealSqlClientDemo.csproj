@@ -5,7 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Qyl.RealSqlClientDemo</RootNamespace>
     <AssemblyName>Qyl.RealSqlClientDemo</AssemblyName>
-    <Description>Real zero-code Microsoft.Data.SqlClient DiagnosticSource proof for qyl.</Description>
+    <Description>Real Microsoft.Data.SqlClient source-interceptor ownership and specialist-listener fallback proof for qyl.</Description>
+    <QylSqlClientSourceInterceptors Condition="'$(QylSqlClientSourceInterceptors)' == ''">true</QylSqlClientSourceInterceptors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient\Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+                      Condition="'$(QylSqlClientSourceInterceptors)' == 'true' and '$(PublishAot)' != 'true'"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <Analyzer Include="..\..\artifacts\bin\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\release\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
+              Condition="'$(QylSqlClientSourceInterceptors)' == 'true' and '$(PublishAot)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,5 +29,8 @@
              Link="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.Bootstrap.g.cs"
              Visible="false" />
   </ItemGroup>
+
+  <Import Project="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.targets"
+          Condition="'$(QylSqlClientSourceInterceptors)' == 'true'" />
 
 </Project>

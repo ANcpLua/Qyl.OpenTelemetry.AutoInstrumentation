@@ -167,7 +167,6 @@ internal sealed class QylAutoInstrumentationOptions
     private static readonly string[] TraceInstrumentationIds =
     [
         QylAutoInstrumentationIds.AdoNet,
-        QylAutoInstrumentationIds.AspNet,
         QylAutoInstrumentationIds.AspNetCore,
         QylAutoInstrumentationIds.Azure,
         QylAutoInstrumentationIds.Elasticsearch,
@@ -178,6 +177,10 @@ internal sealed class QylAutoInstrumentationOptions
         QylAutoInstrumentationIds.HttpClient,
         QylAutoInstrumentationIds.Kafka,
         QylAutoInstrumentationIds.MassTransit,
+        QylAutoInstrumentationIds.MicrosoftAgentsAi,
+        QylAutoInstrumentationIds.MicrosoftAgentsAiWorkflows,
+        QylAutoInstrumentationIds.MicrosoftExtensionsAi,
+        QylAutoInstrumentationIds.ModelContextProtocol,
         QylAutoInstrumentationIds.MongoDb,
         QylAutoInstrumentationIds.MySqlConnector,
         QylAutoInstrumentationIds.MySqlData,
@@ -191,14 +194,14 @@ internal sealed class QylAutoInstrumentationOptions
         QylAutoInstrumentationIds.StackExchangeRedis,
         QylAutoInstrumentationIds.WcfClient,
         QylAutoInstrumentationIds.WcfCore,
-        QylAutoInstrumentationIds.WcfService,
     ];
 
     private static readonly string[] MetricInstrumentationIds =
     [
-        QylAutoInstrumentationIds.AspNet,
         QylAutoInstrumentationIds.AspNetCore,
         QylAutoInstrumentationIds.HttpClient,
+        QylAutoInstrumentationIds.MicrosoftAgentsAi,
+        QylAutoInstrumentationIds.MicrosoftExtensionsAi,
         QylAutoInstrumentationIds.NetRuntime,
         QylAutoInstrumentationIds.Npgsql,
         QylAutoInstrumentationIds.NServiceBus,

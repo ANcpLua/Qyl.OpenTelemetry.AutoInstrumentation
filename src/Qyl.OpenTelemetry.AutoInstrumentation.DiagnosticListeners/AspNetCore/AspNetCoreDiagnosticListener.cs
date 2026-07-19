@@ -22,11 +22,9 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
-        if (!StringComparer.Ordinal.Equals(name, "qyl.http.server") &&
-            !StringComparer.Ordinal.Equals(name, "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop"))
-        {
+        if (!StringComparer.Ordinal.Equals(name, "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop") ||
+            QylAspNetCoreOwnership.MiddlewareRegistered)
             return;
-        }
 
         var method = HttpSemantics.NormalizeMethod(
             AspNetCorePayloadReader.GetMethod(payload) ??
@@ -48,7 +46,7 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRoute, route);
         SemanticTagWriter.Set(activity, SemanticAttributes.UrlPath, path);
 
-        // Option parity with the interceptor lane: url.query obeys the ASP.NET Core
+        // Option parity with the explicit middleware lane: url.query obeys the ASP.NET Core
         // redaction control; header capture obeys the configured capture lists.
         if (activity is not null)
         {

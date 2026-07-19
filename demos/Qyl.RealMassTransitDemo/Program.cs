@@ -136,7 +136,7 @@ internal sealed record MassTransitReport(
         Require(publishSuccess, "successful publish span", failures);
         Require(sendSuccess, "successful send span", failures);
         Require(publishError, "error publish span", failures);
-        RequireTag(publishError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "ArgumentException", failures);
+        RequireTag(publishError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentException).FullName!, failures);
 
         foreach (var span in massTransitSpans)
         {

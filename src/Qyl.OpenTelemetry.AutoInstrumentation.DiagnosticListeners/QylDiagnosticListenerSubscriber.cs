@@ -6,8 +6,8 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners;
 /// <summary>
 /// Base subscriber for built-in <see cref="DiagnosticListener"/> events. DiagnosticSource is a
 /// managed BCL primitive, so this layer emits spans without IL rewriting or runtime code generation.
-/// Concrete subscribers react on completion (<c>*.Stop</c>) and use
-/// <c>QylActivitySource.StartAtAmbientStart</c> so emitted duration reflects the real operation.
+/// Completion-driven subscribers use <c>QylActivitySource.StartAtAmbientStart</c> so emitted
+/// duration reflects the real operation.
 /// </summary>
 public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<string, object?>>, IDisposable
 {

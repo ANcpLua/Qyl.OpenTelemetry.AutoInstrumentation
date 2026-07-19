@@ -128,7 +128,7 @@ internal sealed record MongoDbReport(
         Require(insertError, "error insert span", failures);
         Require(countSuccess, "successful count span", failures);
         Require(deleteSuccess, "successful delete span", failures);
-        RequireTag(insertError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "MongoWriteException", failures);
+        RequireTag(insertError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(MongoDB.Driver.MongoWriteException).FullName!, failures);
 
         foreach (var span in mongoSpans)
         {

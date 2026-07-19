@@ -55,32 +55,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool TryGetHttpWebRequestReturn(IMethodSymbol symbol, string methodName, bool isAsync, out string returnType)
-    {
-        returnType = CleanTypeName(symbol.ReturnType, symbol);
-        if (!isAsync)
-        {
-            if (string.Equals(methodName, "GetResponse", StringComparison.Ordinal))
-                return InheritsFromOrIs(symbol.ReturnType, "global::System.Net.WebResponse");
-
-            if (string.Equals(methodName, "GetRequestStream", StringComparison.Ordinal))
-                return InheritsFromOrIs(symbol.ReturnType, "global::System.IO.Stream");
-
-            return false;
-        }
-
-        if (!TryGetTaskResult(symbol.ReturnType, out var taskResult))
-            return false;
-
-        if (string.Equals(methodName, "GetResponseAsync", StringComparison.Ordinal))
-            return InheritsFromOrIs(taskResult, "global::System.Net.WebResponse");
-
-        if (string.Equals(methodName, "GetRequestStreamAsync", StringComparison.Ordinal))
-            return InheritsFromOrIs(taskResult, "global::System.IO.Stream");
-
-        return false;
-    }
-
     private static InterceptorTarget HttpTarget(IMethodSymbol symbol, string methodName, string returnType, EquatableArray<ParameterSpec> parameters)
         => new(
             InterceptorKind.HttpClient,
@@ -381,37 +355,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         parameters = BuildParameters(symbol);
         return true;
-    }
-
-    private static bool TryGetEfCoreSaveChangesParameters(IMethodSymbol symbol, bool allowCancellationToken, out EquatableArray<ParameterSpec> parameters)
-    {
-        if (symbol.Parameters.Length is 0)
-        {
-            parameters = default;
-            return true;
-        }
-
-        if (symbol.Parameters.Length is 1)
-        {
-            if (symbol.Parameters[0].Type.SpecialType is SpecialType.System_Boolean ||
-                (allowCancellationToken && IsType(symbol.Parameters[0].Type, "global::System.Threading.CancellationToken")))
-            {
-                parameters = BuildParameters(symbol);
-                return true;
-            }
-        }
-
-        if (allowCancellationToken &&
-            symbol.Parameters.Length is 2 &&
-            symbol.Parameters[0].Type.SpecialType is SpecialType.System_Boolean &&
-            IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        parameters = default;
-        return false;
     }
 
     private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
@@ -869,7 +812,41 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static void AppendStringLiteral(StringBuilder builder, string value)
     {
         builder.Append('"');
-        builder.Append(value.Replace("\\", @"\\").Replace("\"", "\\\""));
+        foreach (var character in value)
+        {
+            switch (character)
+            {
+                case '"':
+                    builder.Append("\\\"");
+                    break;
+                case '\\':
+                    builder.Append("\\\\");
+                    break;
+                case '\b':
+                    builder.Append("\\b");
+                    break;
+                case '\f':
+                    builder.Append("\\f");
+                    break;
+                case '\n':
+                    builder.Append("\\n");
+                    break;
+                case '\r':
+                    builder.Append("\\r");
+                    break;
+                case '\t':
+                    builder.Append("\\t");
+                    break;
+                case < ' ':
+                    builder.Append("\\u");
+                    builder.Append(((int)character).ToString("x4", System.Globalization.CultureInfo.InvariantCulture));
+                    break;
+                default:
+                    builder.Append(character);
+                    break;
+            }
+        }
+
         builder.Append('"');
     }
 }

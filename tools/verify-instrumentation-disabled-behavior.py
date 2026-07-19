@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Negative-space gate: a DISABLED instrumentation actually emits zero telemetry.
+"""Negative-space gate: a disabled instrumentation actually emits zero qyl telemetry.
 
-The interceptor is compiled in unconditionally; disabling is a runtime gate inside the
-forwarding helper (QylInterceptedHttpClient.cs: `if (!observation.IsEnabled) return
-SendOriginal(...)`). Every other verifier proves the enabled path or that options are *read*;
-none fire a real request with instrumentation OFF and assert no span escapes. This does.
+The HttpClient runtime listener and ILogger source interceptor are present in the consumer;
+this gate fires real operations with instrumentation off and proves their qyl spans disappear.
+Native BCL metrics are intentionally outside this gate because qyl controls their SDK
+registration, not whether the framework records them.
 
 Control (enabled)  -> exactly one HttpClient span.
 Disabled (http)    -> zero spans, via OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED=false.
@@ -27,7 +27,6 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -42,33 +41,6 @@ using var listener = new ActivityListener
     ActivityStopped = activity => captured.Add(activity),
 };
 ActivitySource.AddActivityListener(listener);
-
-// qyl publishes http.client.request.duration on a Meter named System.Net.Http, the
-// same identity the BCL uses. qyl measurements carry ONLY http.request.method (+
-// status code); BCL measurements always carry server.address. Count qyl's only.
-var qylMeasurements = 0;
-using var meterListener = new MeterListener();
-meterListener.InstrumentPublished = static (instrument, l) =>
-{
-    if (instrument.Meter.Name == "System.Net.Http" && instrument.Name == "http.client.request.duration")
-        l.EnableMeasurementEvents(instrument);
-};
-meterListener.SetMeasurementEventCallback<double>((instrument, value, tags, state) =>
-{
-    var hasMethod = false;
-    var bclShaped = false;
-    foreach (var tag in tags)
-    {
-        if (tag.Key == "http.request.method")
-            hasMethod = true;
-        else if (tag.Key == "server.address")
-            bclShaped = true;
-    }
-
-    if (hasMethod && !bclShaped)
-        Interlocked.Increment(ref qylMeasurements);
-});
-meterListener.Start();
 
 await using var server = LoopbackHttpServer.Start();
 using var http = new HttpClient();
@@ -104,7 +76,6 @@ var iloggerSpans = captured.Count(static activity =>
 
 Console.WriteLine("httpclient.spans=" + httpClientSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
 Console.WriteLine("ilogger.spans=" + iloggerSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
-Console.WriteLine("httpclient.measurements=" + qylMeasurements.ToString(System.Globalization.CultureInfo.InvariantCulture));
 return 0;
 
 internal sealed class CapturingLogger : ILogger
@@ -256,49 +227,38 @@ def main() -> None:
         run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], project.parent, env)
         assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
 
-        def expect(spans: int, logs: int, measurements: int) -> str:
-            return f"httpclient.spans={spans}\nilogger.spans={logs}\nhttpclient.measurements={measurements}"
+        def expect(spans: int, logs: int) -> str:
+            return f"httpclient.spans={spans}\nilogger.spans={logs}"
 
-        # Control: everything on -> one span per lane, one qyl measurement.
-        assert_spans("enabled (control)", run_scenario(assembly, env, {}), expect(1, 1, 1))
+        # Control: everything on -> one span per lane.
+        assert_spans("enabled (control)", run_scenario(assembly, env, {}), expect(1, 1))
         # Per-integration trace kill switch: only the HttpClient TRACE lane dies.
         assert_spans(
             "http trace instrumentation disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED": "false"}),
-            expect(0, 1, 1),
+            expect(0, 1),
         )
         # Global kill switch: every lane dies.
         assert_spans(
             "global instrumentation disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED": "false"}),
-            expect(0, 0, 0),
+            expect(0, 0),
         )
         # Signal-level switches: exactly one signal dies each time.
         assert_spans(
             "traces signal disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED": "false"}),
-            expect(0, 1, 1),
-        )
-        assert_spans(
-            "metrics signal disabled",
-            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED": "false"}),
-            expect(1, 1, 0),
+            expect(0, 1),
         )
         assert_spans(
             "logs signal disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED": "false"}),
-            expect(1, 0, 1),
-        )
-        # Per-integration switches on the metrics and logs signals.
-        assert_spans(
-            "http metrics instrumentation disabled",
-            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_METRICS_HTTPCLIENT_INSTRUMENTATION_ENABLED": "false"}),
-            expect(1, 1, 0),
+            expect(1, 0),
         )
         assert_spans(
             "ilogger logs instrumentation disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_LOGS_ILOGGER_INSTRUMENTATION_ENABLED": "false"}),
-            expect(1, 0, 1),
+            expect(1, 0),
         )
 
     print("instrumentation-disabled-behavior-ok")

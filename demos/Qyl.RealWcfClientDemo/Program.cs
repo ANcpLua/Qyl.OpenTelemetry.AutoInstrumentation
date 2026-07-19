@@ -122,7 +122,7 @@ internal sealed record WcfClientReport(
                 failures.Add($"expected WCF span status Error, got {span.Status}");
 
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemValues.DotnetWcf, failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(CommunicationException), failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(CommunicationException).FullName!, failures);
             RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
         }
 

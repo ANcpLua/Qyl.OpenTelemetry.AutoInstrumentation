@@ -174,6 +174,8 @@ def pack_local_packages() -> str:
     for project in (
         ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj",
         ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj",
+        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj",
+        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj",
     ):
         run(
             [
@@ -233,7 +235,7 @@ def write_consumer(version: str, *, published: bool) -> None:
                 <RestorePackagesPath>{WORK / "packages"}</RestorePackagesPath>
               </PropertyGroup>
               <ItemGroup>
-                <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
+                <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
                 <PackageReference Include="OpenTelemetry" Version="{OTEL_VERSION}" />
                 <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="{OTEL_VERSION}" />
               </ItemGroup>

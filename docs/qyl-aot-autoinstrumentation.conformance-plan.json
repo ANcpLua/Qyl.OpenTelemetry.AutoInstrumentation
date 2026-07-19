@@ -354,6 +354,67 @@
       ]
     },
     {
+      "service_name": "qyl-mcp-aot-demo",
+      "profile_id": "qyl-aot-mcp",
+      "expected_signals": [
+        {
+          "kind": "span",
+          "name": "mcp.initialize",
+          "required_attributes": [
+            "mcp.method.name",
+            "mcp.session.id",
+            "network.transport"
+          ],
+          "recommended_attributes": [
+            "session.id"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "mcp.notifications.initialized",
+          "required_attributes": [
+            "mcp.method.name",
+            "mcp.session.id",
+            "network.transport"
+          ],
+          "recommended_attributes": [
+            "session.id"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "mcp.tools.list",
+          "required_attributes": [
+            "mcp.method.name",
+            "mcp.session.id",
+            "network.transport"
+          ],
+          "recommended_attributes": [
+            "session.id"
+          ],
+          "opt_in_attributes": []
+        },
+        {
+          "kind": "span",
+          "name": "mcp.tools.call",
+          "required_attributes": [
+            "gen_ai.operation.name",
+            "gen_ai.tool.name",
+            "mcp.method.name",
+            "mcp.protocol.version",
+            "mcp.session.id",
+            "network.transport"
+          ],
+          "recommended_attributes": [
+            "session.id"
+          ],
+          "opt_in_attributes": []
+        }
+      ]
+    },
+    {
       "service_name": "qyl-metrics-aot-demo",
       "profile_id": "qyl-aot-metrics",
       "expected_signals": [

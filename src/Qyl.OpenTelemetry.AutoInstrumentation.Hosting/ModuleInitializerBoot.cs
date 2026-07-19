@@ -2,10 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore;
-using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.EntityFrameworkCore;
 using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
-using Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.SqlClient;
 
 namespace Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
 
@@ -29,8 +27,6 @@ internal static class ModuleInitializerBoot
     [
         new HttpClientDiagnosticListener(),
         new AspNetCoreDiagnosticListener(),
-        new EntityFrameworkCoreDiagnosticListener(),
-        new SqlClientDiagnosticListener(),
         new GrpcClientDiagnosticListener(),
     ];
 

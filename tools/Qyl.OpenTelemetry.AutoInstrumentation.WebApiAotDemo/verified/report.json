@@ -8,7 +8,7 @@
       "Tags": {
         "db.operation.name": "CREATE",
         "db.query.summary": "CREATE",
-        "db.system.name": "other_sql",
+        "db.system.name": "sqlite",
         "qyl.instrumentation.domain": "db.client"
       }
     },
@@ -32,7 +32,7 @@
       "Tags": {
         "db.operation.name": "SELECT",
         "db.query.summary": "SELECT",
-        "db.system.name": "other_sql",
+        "db.system.name": "microsoft.sql_server",
         "error.type": "InvalidOperationException",
         "qyl.instrumentation.domain": "db.client"
       }
@@ -74,19 +74,6 @@
         "http.route": "/probe/{id:int}",
         "qyl.instrumentation.domain": "aspnetcore.server",
         "url.scheme": "http"
-      }
-    },
-    {
-      "Kind": "Client",
-      "Name": "SQL SELECT",
-      "Signal": "activity",
-      "Status": "Error",
-      "Tags": {
-        "db.operation.name": "SELECT",
-        "db.query.summary": "Text SELECT",
-        "db.system.name": "microsoft.sql_server",
-        "error.type": "System.InvalidOperationException",
-        "qyl.instrumentation.domain": "db.sqlclient"
       }
     }
   ],
@@ -147,15 +134,15 @@
     },
     {
       "Kind": "Client",
-      "Name": "SQL SELECT",
+      "Name": "DB SELECT",
       "Signal": "sqlclient.command",
       "Status": "Error",
       "Tags": {
         "db.operation.name": "SELECT",
-        "db.query.summary": "Text SELECT",
+        "db.query.summary": "SELECT",
         "db.system.name": "microsoft.sql_server",
-        "error.type": "System.InvalidOperationException",
-        "qyl.instrumentation.domain": "db.sqlclient"
+        "error.type": "InvalidOperationException",
+        "qyl.instrumentation.domain": "db.client"
       }
     }
   ]

@@ -477,7 +477,6 @@ public static class QylInterceptedHttpClient
         if (!originalTask.IsCompletedSuccessfully)
             return ObserveValueSlowAsync(originalTask, observation);
 
-        RecordSuccess(observation);
         observation.Dispose();
         return originalTask;
     }
@@ -486,9 +485,7 @@ public static class QylInterceptedHttpClient
     {
         try
         {
-            var result = await originalTask.ConfigureAwait(false);
-            RecordSuccess(observation);
-            return result;
+            return await originalTask.ConfigureAwait(false);
         }
         catch (Exception exception)
         {
@@ -503,14 +500,12 @@ public static class QylInterceptedHttpClient
 
     private static HttpClientObservation StartHttpClientObservation(HttpClient client, HttpRequestMessage request)
     {
-        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled, out var metricsEnabled))
+        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled))
             return default;
 
         var observation = StartHttpClientObservation(
             client,
-            options,
             traceEnabled,
-            metricsEnabled,
             request.Method.Method,
             request.RequestUri,
             rawRequestUri: null);
@@ -530,14 +525,14 @@ public static class QylInterceptedHttpClient
         string? requestUri,
         HttpContent? content = null)
     {
-        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled, out var metricsEnabled))
+        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled))
             return default;
 
         Uri? uri = null;
         if (traceEnabled && !string.IsNullOrWhiteSpace(requestUri))
             Uri.TryCreate(requestUri, UriKind.RelativeOrAbsolute, out uri);
 
-        var observation = StartHttpClientObservation(client, options, traceEnabled, metricsEnabled, method, uri, requestUri);
+        var observation = StartHttpClientObservation(client, traceEnabled, method, uri, requestUri);
         SetConvenienceRequestHeaders(observation.Activity, options, client, content);
         return observation;
     }
@@ -556,37 +551,34 @@ public static class QylInterceptedHttpClient
         string? rawRequestUri,
         HttpContent? content = null)
     {
-        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled, out var metricsEnabled))
+        if (!TryGetHttpClientObservationOptions(out var options, out var traceEnabled))
             return default;
 
-        var observation = StartHttpClientObservation(client, options, traceEnabled, metricsEnabled, method, requestUri, rawRequestUri);
+        var observation = StartHttpClientObservation(client, traceEnabled, method, requestUri, rawRequestUri);
         SetConvenienceRequestHeaders(observation.Activity, options, client, content);
         return observation;
     }
 
+    // The forwarded call reaches the real HttpClient, whose native System.Net.Http meter owns
+    // http.client.request.duration; the interceptor lane records no duplicate qyl instrument.
     private static bool TryGetHttpClientObservationOptions(
         out QylAutoInstrumentationOptions options,
-        out bool traceEnabled,
-        out bool metricsEnabled)
+        out bool traceEnabled)
     {
         options = QylAutoInstrumentationOptions.Current;
         traceEnabled = QylActivitySource.IsRecordingEnabled &&
                        options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient);
-        metricsEnabled = QylHttpClientMetrics.IsRecordingEnabledFor(options);
-        return traceEnabled || metricsEnabled;
+        return traceEnabled;
     }
 
     private static HttpClientObservation StartHttpClientObservation(
         HttpClient client,
-        QylAutoInstrumentationOptions options,
         bool traceEnabled,
-        bool metricsEnabled,
         string method,
         Uri? requestUri,
         string? rawRequestUri)
     {
         method = QylHttpMethod.Normalize(method, out var methodOriginal);
-        var startTimeUtc = QylDurationMetrics.GetHttpClientStartTimeUtc(metricsEnabled);
         Activity? activity = null;
 
         if (traceEnabled)
@@ -600,7 +592,7 @@ public static class QylInterceptedHttpClient
                 rawRequestUri);
         }
 
-        return new HttpClientObservation(activity, startTimeUtc, method, metricsEnabled);
+        return new HttpClientObservation(activity);
     }
 
     private static Uri? ResolveRequestUri(HttpClient client, Uri? requestUri)
@@ -639,13 +631,6 @@ public static class QylInterceptedHttpClient
                 response.Content?.Headers);
 
         }
-
-        RecordDuration(observation, statusCode);
-    }
-
-    private static void RecordSuccess(HttpClientObservation observation)
-    {
-        RecordDuration(observation, null);
     }
 
     private static void ThrowIfInvalidCallTarget(HttpClient client, HttpRequestMessage request)
@@ -670,7 +655,6 @@ public static class QylInterceptedHttpClient
 
         var activity = observation.Activity;
         QylActivityStatus.RecordException(activity, exception);
-        RecordDuration(observation, null);
     }
 
     private static void RecordResponseStatusException(HttpClientObservation observation, int statusCode)
@@ -680,29 +664,12 @@ public static class QylInterceptedHttpClient
         {
             QylHttpActivityPolicy.SetResponseStatus(activity, statusCode, 400);
         }
-
-        RecordDuration(observation, statusCode);
     }
 
-    private static void RecordDuration(HttpClientObservation observation, int? statusCode)
-    {
-        if (!observation.RecordMetrics)
-            return;
-
-        QylDurationMetrics.RecordHttpClientDurationUnchecked(
-            observation.StartTimeUtc,
-            observation.Method,
-            statusCode);
-    }
-
-    private readonly record struct HttpClientObservation(
-        Activity? Activity,
-        DateTime StartTimeUtc,
-        string? Method,
-        bool RecordMetrics) : IDisposable
+    private readonly record struct HttpClientObservation(Activity? Activity) : IDisposable
     {
         /// <summary>Well-known Is Enabled value used by qyl auto-instrumentation.</summary>
-        public bool IsEnabled => Activity is not null || RecordMetrics;
+        public bool IsEnabled => Activity is not null;
 
         /// <summary>Runs the Dispose runtime helper used by source-generated qyl interceptors.</summary>
         public void Dispose()

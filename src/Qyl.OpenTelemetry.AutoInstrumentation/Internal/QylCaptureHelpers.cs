@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using Grpc.Core;
@@ -43,38 +42,6 @@ internal static class QylCaptureHelpers
         }
     }
 
-    public static void SetRequestHeaders(
-        Activity? activity,
-        QylCapturedNameMap configuredHeaders,
-        IHeaderDictionary headers)
-    {
-        if (activity is null || configuredHeaders.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredHeaders.Count; index++)
-        {
-            var lookupName = configuredHeaders.GetLookupName(index);
-            if (headers.TryGetValue(lookupName, out var values) && values.Count > 0)
-                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
-        }
-    }
-
-    public static void SetRequestHeaders(
-        Activity? activity,
-        QylCapturedNameMap configuredHeaders,
-        WebHeaderCollection headers)
-    {
-        if (activity is null || configuredHeaders.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredHeaders.Count; index++)
-        {
-            var values = headers.GetValues(configuredHeaders.GetLookupName(index));
-            if (values is { Length: > 0 })
-                activity.SetTag(configuredHeaders.GetTagName(index), values);
-        }
-    }
-
     public static void SetMetadataHeaders(
         Activity? activity,
         QylCapturedNameMap configuredMetadata,
@@ -97,6 +64,22 @@ internal static class QylCaptureHelpers
 
             if (values is { Count: > 0 })
                 activity.SetTag(configuredMetadata.GetTagName(index), values.ToArray());
+        }
+    }
+
+    public static void SetRequestHeaders(
+        Activity? activity,
+        QylCapturedNameMap configuredHeaders,
+        IHeaderDictionary headers)
+    {
+        if (activity is null || configuredHeaders.Count is 0)
+            return;
+
+        for (var index = 0; index < configuredHeaders.Count; index++)
+        {
+            var lookupName = configuredHeaders.GetLookupName(index);
+            if (headers.TryGetValue(lookupName, out var values) && values.Count > 0)
+                activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
         }
     }
 

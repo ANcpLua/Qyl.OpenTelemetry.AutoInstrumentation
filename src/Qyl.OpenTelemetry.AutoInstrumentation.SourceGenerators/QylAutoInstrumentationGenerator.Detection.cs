@@ -94,43 +94,19 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool TryGetHttpWebRequestInvocation(IMethodSymbol symbol, ITypeSymbol? receiverType, out InterceptorTarget target)
-    {
-        target = default;
-        var effectiveReceiverType = IsType(symbol.ContainingType, "global::System.Net.HttpWebRequest")
-            ? symbol.ContainingType
-            : receiverType;
-
-        if (effectiveReceiverType is null ||
-            !IsType(effectiveReceiverType, "global::System.Net.HttpWebRequest") ||
-            !TryGetNoParameters(symbol, out var parameters))
-        {
-            return false;
-        }
-
-        var methodName = symbol.Name;
-        var isAsync = methodName.EndsWithOrdinal("Async");
-        if (!TryGetHttpWebRequestReturn(symbol, methodName, isAsync, out var returnType))
-            return false;
-
-        target = new InterceptorTarget(
-            InterceptorKind.HttpWebRequest,
-            TelemetrySignal.Traces,
-            "HTTPCLIENT",
-            CleanTypeName(symbol.ContainingType),
-            methodName,
-            returnType,
-            parameters,
-            isAsync,
-            AdditionalMetricIds: MetricIds("HTTPCLIENT"));
-        return true;
-    }
-
-    private static bool TryGetDbCommandInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    private static bool TryGetDbCommandInvocation(
+        IMethodSymbol symbol,
+        ITypeSymbol? receiverType,
+        out InterceptorTarget target)
     {
         target = default;
         if (!InheritsFromOrIs(symbol.ContainingType, "global::System.Data.Common.DbCommand"))
             return false;
+
+        var effectiveReceiverType = receiverType is not null &&
+                                    InheritsFromOrIs(receiverType, "global::System.Data.Common.DbCommand")
+            ? receiverType
+            : symbol.ContainingType;
 
         var methodName = symbol.Name;
         var isAsync = methodName.EndsWithOrdinal("Async");
@@ -140,7 +116,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         if (!TryGetDbCommandReturn(symbol, methodName, isAsync, out var returnType))
             return false;
 
-        var instrumentationId = GetDbInstrumentationId(symbol.ContainingType);
+        var instrumentationId = GetDbInstrumentationId(effectiveReceiverType);
         target = new InterceptorTarget(
             InterceptorKind.DbCommand,
             TelemetrySignal.Traces,
@@ -153,171 +129,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             AdditionalMetricIds: GetDbMetricIds(instrumentationId));
         return true;
     }
-
-    private static bool TryGetAspNetCoreEndpointMapInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        var original = symbol.ReducedFrom;
-
-        if (original is null ||
-            !IsSupportedAspNetCoreMapMethod(symbol.Name) ||
-            !IsType(original.ContainingType, "global::Microsoft.AspNetCore.Builder.EndpointRouteBuilderExtensions") ||
-            !TryGetAspNetCoreEndpointMapReturnType(symbol, out var returnType))
-            return false;
-
-        target = new InterceptorTarget(
-            InterceptorKind.AspNetCoreEndpointMap,
-            TelemetrySignal.Traces,
-            "ASPNETCORE",
-            "global::Microsoft.AspNetCore.Routing.IEndpointRouteBuilder",
-            symbol.Name,
-            returnType,
-            BuildParameters(symbol),
-            false);
-        return true;
-    }
-
-    private static bool TryGetAspNetCoreEndpointMapReturnType(IMethodSymbol symbol, out string returnType)
-    {
-        returnType = string.Empty;
-
-        var handlerIndex = 1;
-        if (string.Equals(symbol.Name, "MapMethods", StringComparison.Ordinal))
-        {
-            if (symbol.Parameters.Length is not 3 ||
-                !IsType(symbol.Parameters[0].Type, "global::System.String") ||
-                !IsConstructedFrom(symbol.Parameters[1].Type, "global::System.Collections.Generic.IEnumerable<T>"))
-            {
-                return false;
-            }
-
-            handlerIndex = 2;
-        }
-        else if (symbol.Parameters.Length is not 2 ||
-                 !IsType(symbol.Parameters[0].Type, "global::System.String"))
-        {
-            return false;
-        }
-
-        if (IsType(symbol.Parameters[handlerIndex].Type, "global::Microsoft.AspNetCore.Http.RequestDelegate") &&
-            IsType(symbol.ReturnType, "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder"))
-        {
-            returnType = "global::Microsoft.AspNetCore.Builder.IEndpointConventionBuilder";
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool IsSupportedAspNetCoreMapMethod(string name)
-        => name is "MapGet" or "MapPost" or "MapPut" or "MapDelete" or "MapPatch" or "MapMethods";
-
-    private static bool TryGetMeterProviderBuilderAddMeterInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        ITypeSymbol receiverType = symbol.ContainingType;
-        var extensionContainingType = string.Empty;
-        if (symbol.ReducedFrom is { Parameters.Length: > 0 } original)
-        {
-            receiverType = original.Parameters[0].Type;
-            extensionContainingType = CleanTypeName(original.ContainingType);
-        }
-        else if (symbol.IsStatic)
-        {
-            return false;
-        }
-
-        if (!string.Equals(symbol.Name, "AddMeter", StringComparison.Ordinal) ||
-            !IsType(receiverType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
-            !IsType(symbol.ReturnType, "global::OpenTelemetry.Metrics.MeterProviderBuilder") ||
-            symbol.Parameters.Length is not 1 ||
-            !IsArrayOf(symbol.Parameters[0].Type, "global::System.String"))
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            InterceptorKind.MeterProviderBuilderAddMeter,
-            TelemetrySignal.Metrics,
-            "ASPNETCORE",
-            CleanTypeName(receiverType),
-            "AddMeter",
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            false,
-            ExtensionContainingType: extensionContainingType,
-            AdditionalMetricIds: MetricIds(
-                "HTTPCLIENT",
-                "NETRUNTIME",
-                "NPGSQL",
-                "NSERVICEBUS",
-                "PROCESS",
-                "SQLCLIENT"));
-        return true;
-    }
-
-    private static bool TryGetAzureClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        if (symbol.IsStatic ||
-            symbol.MethodKind is not MethodKind.Ordinary ||
-            !CanEmitByValueOrInParameters(symbol) ||
-            !IsAzureClientType(symbol.ContainingType) ||
-            !TryGetAzureClientOperationReturn(symbol.ReturnType, out var isAsync))
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            InterceptorKind.AzureClient,
-            TelemetrySignal.Traces,
-            "AZURE",
-            CleanTypeName(symbol.ContainingType),
-            symbol.Name,
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            isAsync);
-        return true;
-    }
-
-    private static bool IsAzureClientType(ITypeSymbol? symbol)
-    {
-        if (symbol is not INamedTypeSymbol named ||
-            !named.Name.EndsWithOrdinal("Client"))
-        {
-            return false;
-        }
-
-        // Require the client to come from a real Azure SDK assembly (Azure.Storage.Blobs,
-        // Azure.Messaging.*, …) — not merely any user type parked in an `Azure.*` namespace.
-        // Together with the Azure.Response return-type gate this stops a false-positive Azure span
-        // on a user-authored *Client placed in the reserved Azure root namespace.
-        var namespaceName = named.ContainingNamespace.ToDisplayString();
-        return namespaceName.StartsWithOrdinal("Azure.") &&
-               !namespaceName.StartsWithOrdinal("Azure.Core") &&
-               named.ContainingAssembly?.Name is { } assemblyName &&
-               assemblyName.StartsWithOrdinal("Azure.");
-    }
-
-    private static bool TryGetAzureClientOperationReturn(ITypeSymbol returnType, out bool isAsync)
-    {
-        isAsync = false;
-        if (IsAzureResponseType(returnType))
-            return true;
-
-        if (TryGetTaskResult(returnType, out var resultType) && IsAzureResponseType(resultType))
-        {
-            isAsync = true;
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool IsAzureResponseType(ITypeSymbol? symbol)
-        => symbol is INamedTypeSymbol named &&
-           (IsTypeByMetadata(named, "Azure", "Response") ||
-            IsConstructedGeneric(named, "Azure", "Response`1"));
 
     private static bool TryGetElasticInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
@@ -1158,99 +969,4 @@ public sealed partial class QylAutoInstrumentationGenerator
         return true;
     }
 
-    private static bool TryGetEntityFrameworkCoreDbContextInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        if (!InheritsFromOrIs(symbol.ContainingType, "global::Microsoft.EntityFrameworkCore.DbContext"))
-            return false;
-
-        if (string.Equals(symbol.Name, "SaveChanges", StringComparison.Ordinal) &&
-            symbol.ReturnType.SpecialType is SpecialType.System_Int32 &&
-            TryGetEfCoreSaveChangesParameters(symbol, allowCancellationToken: false, out var parameters))
-        {
-            target = new InterceptorTarget(
-                InterceptorKind.EntityFrameworkCoreDbContext,
-                TelemetrySignal.Traces,
-                "ENTITYFRAMEWORKCORE",
-                CleanTypeName(symbol.ContainingType),
-                "SaveChanges",
-                "int",
-                parameters,
-                false);
-            return true;
-        }
-
-        if (string.Equals(symbol.Name, "SaveChangesAsync", StringComparison.Ordinal) &&
-            IsTaskOf(symbol.ReturnType, "global::System.Int32") &&
-            TryGetEfCoreSaveChangesParameters(symbol, allowCancellationToken: true, out parameters))
-        {
-            target = new InterceptorTarget(
-                InterceptorKind.EntityFrameworkCoreDbContext,
-                TelemetrySignal.Traces,
-                "ENTITYFRAMEWORKCORE",
-                CleanTypeName(symbol.ContainingType),
-                "SaveChangesAsync",
-                "global::System.Threading.Tasks.Task<int>",
-                parameters,
-                true);
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryGetEntityFrameworkCoreQueryableInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        var original = symbol.ReducedFrom;
-        if (original is null ||
-            !IsType(original.ContainingType, "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions") ||
-            !IsSupportedEntityFrameworkCoreQueryableMethod(symbol.Name) ||
-            !CanEmitByValueOrInParameters(symbol) ||
-            original.Parameters.Length is 0 ||
-            !TryGetEntityFrameworkCoreQueryableReturn(symbol.ReturnType))
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            InterceptorKind.EntityFrameworkCoreQueryable,
-            TelemetrySignal.Traces,
-            "ENTITYFRAMEWORKCORE",
-            CleanTypeName(original.Parameters[0].Type),
-            symbol.Name,
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            true,
-            GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol),
-            ExtensionContainingType: "global::Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions");
-        return true;
-    }
-
-    private static bool IsSupportedEntityFrameworkCoreQueryableMethod(string methodName)
-        => methodName is "ToListAsync" or
-            "ToArrayAsync" or
-            "FirstAsync" or
-            "FirstOrDefaultAsync" or
-            "SingleAsync" or
-            "SingleOrDefaultAsync" or
-            "LastAsync" or
-            "LastOrDefaultAsync" or
-            "AnyAsync" or
-            "AllAsync" or
-            "CountAsync" or
-            "LongCountAsync" or
-            "MinAsync" or
-            "MaxAsync" or
-            "SumAsync" or
-            "AverageAsync" or
-            "ContainsAsync" or
-            "LoadAsync" or
-            "ForEachAsync" or
-            "ExecuteDeleteAsync" or
-            "ExecuteUpdateAsync";
-
-    private static bool TryGetEntityFrameworkCoreQueryableReturn(ITypeSymbol returnType)
-        => IsTask(returnType) || TryGetTaskResult(returnType, out _);
 }

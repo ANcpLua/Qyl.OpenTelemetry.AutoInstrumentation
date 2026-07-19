@@ -22,11 +22,11 @@ public static class QylInterceptedDbCommand
 
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
     public static long GetTimestamp()
-        => QylDurationMetrics.GetDbClientStartTimestamp();
+        => QylDbClientMetrics.GetTimestamp();
 
     /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordDuration(long startTimestamp, string instrumentationId)
-        => QylDurationMetrics.RecordDbClientDuration(startTimestamp, instrumentationId);
+        => QylDbClientMetrics.RecordDuration(startTimestamp, instrumentationId);
 
     /// <summary>Observes an asynchronous database command and records qyl success, exception, and duration telemetry.</summary>
     public static Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
@@ -34,7 +34,7 @@ public static class QylInterceptedDbCommand
         ArgumentNullException.ThrowIfNull(task);
         ArgumentNullException.ThrowIfNull(instrumentationId);
 
-        if (activity is null && !QylDurationMetrics.IsDbClientRecordingEnabled(instrumentationId))
+        if (activity is null && !QylDbClientMetrics.IsRecordingEnabled(instrumentationId))
             return task;
 
         return ObserveSlowAsync(task, activity, metricStart, instrumentationId);
@@ -45,13 +45,13 @@ public static class QylInterceptedDbCommand
         try
         {
             var result = await task.ConfigureAwait(false);
-            QylDurationMetrics.RecordDbClientDuration(metricStart, instrumentationId);
+            QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
             return result;
         }
         catch (Exception exception)
         {
             RecordException(activity, exception);
-            QylDurationMetrics.RecordDbClientDuration(metricStart, instrumentationId);
+            QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
             throw;
         }
         finally

@@ -36,6 +36,13 @@ internal static class QylInstrumentation
         // owns telemetry in a zero-code app, so take the raw URI and redact it itself.
         AppContext.SetSwitch("System.Net.Http.DisableUriRedaction", true);
 
+        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(
+                QylAutoInstrumentationSignal.Traces,
+                QylAutoInstrumentationIds.Azure))
+        {
+            AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
+        }
+
         QylRuntimeProcessMetrics.Initialize();
 
         return true;

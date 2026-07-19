@@ -7,7 +7,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var captured = new List<CapturedActivity>();
 var capturedMetrics = new List<CapturedMetric>();
@@ -25,7 +24,7 @@ using var meterListener = new MeterListener
 {
     InstrumentPublished = static (instrument, listener) =>
     {
-        if (StringComparer.Ordinal.Equals(instrument.Meter.Name, QylMetricMeters.HttpClientMeterName) &&
+        if (StringComparer.Ordinal.Equals(instrument.Meter.Name, DemoMetricNames.HttpClient) &&
             StringComparer.Ordinal.Equals(instrument.Name, "http.client.request.duration"))
         {
             listener.EnableMeasurementEvents(instrument);
@@ -176,7 +175,7 @@ internal sealed record HttpClientReport(
 
         var httpClientMetrics = metrics
             .Where(static metric =>
-                StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.HttpClientMeterName) &&
+                StringComparer.Ordinal.Equals(metric.MeterName, DemoMetricNames.HttpClient) &&
                 StringComparer.Ordinal.Equals(metric.Name, "http.client.request.duration"))
             .ToArray();
 
@@ -253,6 +252,11 @@ internal sealed record HttpClientReport(
         if (!StringComparer.Ordinal.Equals(activity.Status, expected))
             failures.Add($"expected span status {expected}, got {activity.Status}");
     }
+}
+
+internal static class DemoMetricNames
+{
+    internal const string HttpClient = "System.Net.Http";
 }
 
 [JsonSerializable(typeof(HttpClientReport))]

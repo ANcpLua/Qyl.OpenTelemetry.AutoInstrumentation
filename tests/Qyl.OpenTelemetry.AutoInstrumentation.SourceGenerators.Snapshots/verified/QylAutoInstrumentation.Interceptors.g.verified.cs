@@ -16,8 +16,9 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated
 {
     internal static class QylGeneratedInterceptors
     {
-        private const int RequiredQylGeneratedCodeAbi = global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V6;
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V8;
 
+        // qyl-interceptor-manifest: {"interceptorKind":"ILoggerLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(5,8)
         [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "BZ/VvozrZJa2e0oqXWVjZFQAAABQcm9ncmFtLmNz")]
         public static void ILogger_Log_0<TState>(
@@ -29,6 +30,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated
             global::System.Func<TState, global::System.Exception?, string> formatter)
             => global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
 
+        // qyl-interceptor-manifest: {"interceptorKind":"ILoggerLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
         // Intercepted call at /_qyl_generator_snapshot/Probe.cs(10,16)
         [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "bCVh78nW9Q7jLziddD9BAPcBAABQcm9iZS5jcw==")]
         public static void ILogger_Log_1<TState>(

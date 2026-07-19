@@ -18,7 +18,7 @@ The package family is public. Existing NuGet artifacts are immutable. Make
 intentional breaking convergence in a new major version, migrate known consumers,
 and do not add compatibility shims without a proven external requirement.
 
-Three API categories are explicit, and 6.0.0 fixed their concrete form. Preserve it:
+The following API/ABI categories define the active 8.0 architecture. Preserve them:
 
 1. A small supported user API for bootstrap and configuration: Hosting
    `Boot()`/`AddQylAutoInstrumentation(...)`, `Qyl.Sdk` `AddQyl(...)`/`QylSdkOptions`,
@@ -29,15 +29,24 @@ Three API categories are explicit, and 6.0.0 fixed their concrete form. Preserve
    `[EditorBrowsable(EditorBrowsableState.Never)]`, anchored by the
    `QylGeneratedCodeAbi.V8` const that every generated interceptor file references so
    a generator/runtime ABI mismatch fails compilation. That namespace, the anchor, and
-   the `V<major>` bump on a breaking ABI change are load-bearing: the snapshot and
-   invariant verifiers pin these exact tokens. Do not rename or re-derive them.
+   the `V<major>` bump on a breaking ABI change are load-bearing: the version-sync and
+   generated-source snapshot verifiers pin the exact token. Do not rename or re-derive it.
    Generated code must not reference `QylAutoInstrumentationOptions` or
    `QylInstrumentationDomains` — gate opt-ins at the policy type and emit domain names
    as literals.
-3. Internal implementation types, semantic helpers, listeners, and runtime state —
+3. A narrow generated-code/build-transitive package bootstrap ABI, also under the
+   `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` namespace and hidden with
+   `[EditorBrowsable(EditorBrowsableState.Never)]`:
+   `EntityFrameworkCoreAutoInstrumentationBootstrap` and
+   `SqlClientAutoInstrumentationBootstrap`. They are public because generated source
+   compiled into consumer assemblies calls them; they are package plumbing, not user
+   configuration APIs.
+4. Internal implementation types, semantic helpers, listeners, meter registration
+   inventory, and runtime state —
    everything else, including `QylSemanticAttributes`, `QylActivityNames`,
-   `QylActivitySource`, `QylAutoInstrumentationOptions`, and `QylInstrumentationDomains`.
-   Reach across assemblies with IVT, never by widening a type to public.
+   `QylActivitySource`, `QylAutoInstrumentationOptions`, `QylInstrumentationDomains`,
+   and `QylMetricMeters`. Reach across assemblies with IVT, never by widening a type to
+   public.
 
 Cross-assembly accessibility does not make generator ABI a user-facing product API.
 Any Qyl-specific client-visible request, response, event, or error contract belongs
@@ -55,10 +64,10 @@ Two generated namespaces exist, four characters apart. Do not conflate them:
 
 - `Qyl.OpenTelemetry.AutoInstrumentation.Generated` — where the generator emits
   interceptor methods, and the value `buildTransitive` adds to
-  `InterceptorsNamespaces`. Compiler-facing wiring; 6.0.0 did not move it.
+  `InterceptorsNamespaces`. Compiler-facing wiring; it remains load-bearing in 8.0.
 - `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` — the runtime ABI helpers
-  (`QylIntercepted*`, `QylMetricMeters`, the `QylGeneratedCodeAbi.V8` anchor) that
-  emitted interceptors call into.
+  (`QylIntercepted*` and the `QylGeneratedCodeAbi.V8` anchor) that emitted
+  interceptors call into.
 
 Emitted code lives in the first and delegates to the second. Renaming either side —
 or "fixing" the near-duplicate names — breaks the build assets or the pinned
@@ -88,8 +97,8 @@ own the same call site.
   generated coverage matrix and conformance artifacts. Change inputs/generators,
   regenerate, and commit the outputs together.
 - The coverage matrix distinguishes runtime evidence from configuration bindings and
-  unsupported rows. Never summarize all 60 contract rows as 60 runtime-implemented or
-  NativeAOT-verified integrations.
+  unsupported rows. Never summarize the 60-row upstream contract or the separate
+  qyl-native promises as universally runtime-implemented or NativeAOT-verified.
 - Missing runtime values stay missing. Keep span names and metric dimensions bounded;
   sensitive values follow the repository's explicit redaction/opt-in controls.
 

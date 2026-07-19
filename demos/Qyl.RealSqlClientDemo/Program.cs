@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -23,13 +24,29 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+var capturedMetrics = new List<CapturedMetric>();
+using var meterListener = new MeterListener
+{
+    InstrumentPublished = static (instrument, listener) =>
+    {
+        if (instrument.Meter.Name == DemoMetricNames.Database)
+            listener.EnableMeasurementEvents(instrument);
+    },
+};
+meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+{
+    if (instrument.Name == "db.client.operation.duration")
+        capturedMetrics.Add(CapturedMetric.From(instrument, measurement, tags));
+});
+meterListener.Start();
+
 await WaitForSqlServerAsync(connectionString);
 
 await using (var connection = new SqlConnection(connectionString))
 {
     await connection.OpenAsync();
 
-    await ExecuteNonQueryAsync(connection, "CREATE TABLE #QylProbe (Id int NOT NULL, Name nvarchar(32) NOT NULL)");
+    ExecuteNonQuery(connection, "CREATE TABLE #QylProbe (Id int NOT NULL, Name nvarchar(32) NOT NULL)");
     await ExecuteNonQueryAsync(connection, "INSERT INTO #QylProbe (Id, Name) VALUES (1, N'alpha')");
     _ = await ExecuteScalarAsync(connection, "SELECT Id FROM #QylProbe WHERE Id = 1");
 
@@ -45,8 +62,10 @@ await using (var connection = new SqlConnection(connectionString))
 
 var report = SqlClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
+    Environment.GetEnvironmentVariable("QYL_SQLCLIENT_EXPECTED_TRACE_OWNER") ?? "source_interceptor",
     Environment.GetEnvironmentVariable("QYL_SQLCLIENT_EXPECTED_PORT") ?? "11433",
-    captured.ToArray());
+    captured.ToArray(),
+    capturedMetrics.ToArray());
 
 var json = JsonSerializer.Serialize(report, RealSqlClientJsonContext.Default.SqlClientReport);
 Console.WriteLine(json);
@@ -76,6 +95,13 @@ static async Task WaitForSqlServerAsync(string connectionString)
     throw new InvalidOperationException("SQL Server did not become ready.", lastException);
 }
 
+static void ExecuteNonQuery(SqlConnection connection, string sql)
+{
+    using var command = connection.CreateCommand();
+    command.CommandText = sql;
+    command.ExecuteNonQuery();
+}
+
 static async Task ExecuteNonQueryAsync(SqlConnection connection, string sql)
 {
     await using var command = connection.CreateCommand();
@@ -94,6 +120,7 @@ internal sealed record CapturedActivity(
     string Name,
     string Kind,
     string Status,
+    double DurationSeconds,
     IReadOnlyDictionary<string, string> Tags)
 {
     public static CapturedActivity From(Activity activity)
@@ -101,29 +128,69 @@ internal sealed record CapturedActivity(
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
+            activity.Duration.TotalSeconds,
             activity.TagObjects.ToDictionary(
                 static tag => tag.Key,
                 static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
                 StringComparer.Ordinal));
 }
 
+internal sealed record CapturedMetric(
+    string Name,
+    double Value,
+    IReadOnlyDictionary<string, string> Tags)
+{
+    public static CapturedMetric From(Instrument instrument, double value, ReadOnlySpan<KeyValuePair<string, object?>> tags)
+    {
+        var capturedTags = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var tag in tags)
+            capturedTags[tag.Key] = Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty;
+
+        return new CapturedMetric(instrument.Name, value, capturedTags);
+    }
+}
+
 internal sealed record SqlClientReport(
     string RuntimeMode,
+    string TraceOwner,
     bool Pass,
     string[] Failures,
-    CapturedActivity[] Activities)
+    CapturedActivity[] Activities,
+    CapturedMetric[] Metrics)
 {
-    public static SqlClientReport Create(string runtimeMode, string expectedServerPort, CapturedActivity[] activities)
+    public static SqlClientReport Create(
+        string runtimeMode,
+        string traceOwner,
+        string expectedServerPort,
+        CapturedActivity[] activities,
+        CapturedMetric[] metrics)
     {
         var failures = new List<string>();
+        var sourceInterceptorExpected = StringComparer.Ordinal.Equals(traceOwner, "source_interceptor");
+        if (!sourceInterceptorExpected && !StringComparer.Ordinal.Equals(traceOwner, "specialist_listener"))
+            failures.Add($"unknown trace owner: {traceOwner}");
+        var expectedDomain = sourceInterceptorExpected ? "db.client" : "db.sqlclient";
         var sqlSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "db.sqlclient"))
+                activity.Tags.ContainsKey("qyl.instrumentation.domain"))
+            .Where(activity => StringComparer.Ordinal.Equals(activity.Tags["qyl.instrumentation.domain"], expectedDomain))
+            .ToArray();
+        var sqlMetrics = metrics
+            .Where(static metric =>
+                StringComparer.Ordinal.Equals(metric.Name, "db.client.operation.duration") &&
+                metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.MicrosoftSqlServer))
             .ToArray();
 
+        var expectedMetricCount = sourceInterceptorExpected ? 4 : 0;
+        if (activities.Length != 4)
+            failures.Add($"expected exactly 4 captured qyl activities, got {activities.Length}");
         if (sqlSpans.Length != 4)
-            failures.Add($"expected 4 real SqlClient command spans, got {sqlSpans.Length}");
+            failures.Add($"expected 4 {traceOwner} SqlClient command spans, got {sqlSpans.Length}");
+        if (metrics.Length != expectedMetricCount)
+            failures.Add($"expected exactly {expectedMetricCount} captured qyl metrics, got {metrics.Length}");
+        if (sqlMetrics.Length != expectedMetricCount)
+            failures.Add($"expected {expectedMetricCount} SqlClient duration metric points, got {sqlMetrics.Length}");
 
         var successSelect = FindByOperationAndStatus(sqlSpans, "SELECT", "Unset");
         var errorSelect = FindByOperationAndStatus(sqlSpans, "SELECT", "Error");
@@ -133,9 +200,12 @@ internal sealed record SqlClientReport(
         RequireTag(successSelect, "db.system.name", "microsoft.sql_server", failures);
         RequireTag(successSelect, "db.namespace", "tempdb", failures);
         RequireTag(successSelect, "db.operation.name", "SELECT", failures);
-        RequireTag(successSelect, "db.query.summary", "Text SELECT", failures);
-        RequireTag(successSelect, "server.address", "127.0.0.1", failures);
-        RequireTag(successSelect, "server.port", expectedServerPort, failures);
+        RequireTag(successSelect, "db.query.summary", sourceInterceptorExpected ? "SELECT" : "Text SELECT", failures);
+        if (!sourceInterceptorExpected)
+        {
+            RequireTag(successSelect, "server.address", "127.0.0.1", failures);
+            RequireTag(successSelect, "server.port", expectedServerPort, failures);
+        }
         if (string.Equals(
                 Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT"),
                 "true",
@@ -147,16 +217,27 @@ internal sealed record SqlClientReport(
         {
             RequireMissingTag(successSelect, "db.query.text", failures);
         }
-        RequireTag(errorSelect, "error.type", "208", failures);
+        RequireTag(errorSelect, "error.type", sourceInterceptorExpected ? typeof(SqlException).FullName! : "208", failures);
         RequireTag(errorSelect, "db.operation.name", "SELECT", failures);
 
         foreach (var span in sqlSpans)
         {
-            if (span.Name is not "SQL CREATE" and not "SQL INSERT" and not "SQL SELECT")
+            var expectedPrefix = sourceInterceptorExpected ? "DB " : "SQL ";
+            if (!span.Name.StartsWith(expectedPrefix, StringComparison.Ordinal))
                 failures.Add($"unexpected SqlClient span name: {span.Name}");
+            if (!StringComparer.Ordinal.Equals(span.Kind, ActivityKind.Client.ToString()))
+                failures.Add($"expected SqlClient span kind Client, got {span.Kind}");
+            if (span.DurationSeconds <= 0)
+                failures.Add($"expected positive SqlClient span duration, got {span.DurationSeconds.ToString(CultureInfo.InvariantCulture)}");
         }
 
-        return new SqlClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities);
+        foreach (var metric in sqlMetrics)
+        {
+            if (metric.Value <= 0)
+                failures.Add($"expected positive SqlClient duration, got {metric.Value.ToString(CultureInfo.InvariantCulture)}");
+        }
+
+        return new SqlClientReport(runtimeMode, traceOwner, failures.Count is 0, failures.ToArray(), activities, metrics);
     }
 
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
@@ -209,6 +290,11 @@ internal sealed record SqlClientReport(
         if (activity.Tags.ContainsKey(key))
             failures.Add($"unexpected {key}");
     }
+}
+
+internal static class DemoMetricNames
+{
+    internal const string Database = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
 }
 
 [JsonSerializable(typeof(SqlClientReport))]

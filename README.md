@@ -25,7 +25,7 @@ Add the package that owns the integration you need. The supported zero-configura
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
 ```bash
-dotnet add package Qyl.OpenTelemetry.AutoInstrumentation.Hosting
+dotnet add package Qyl.Sdk
 ```
 
 ## How it works
@@ -47,23 +47,28 @@ ownership.
 The shortest path is `Qyl.Sdk`, which owns all of the wiring below as one call:
 
 ```csharp
+using Qyl;
+
 builder.AddQyl();
 ```
 
-That activates the qyl listeners, registers the qyl/ASP.NET Core/HttpClient/GenAI/MCP
-sources and the full qyl meter inventory (ASP.NET Core, HttpClient, DNS, database,
-messaging, runtime, plus the GenAI meters such as `gen_ai.client.token.usage`),
-copies `session.id` from the nearest tagged in-process ancestor to descendant spans
-(remote parents and unrelated trace branches are not propagated), and exports traces, metrics, and logs over
-OTLP — to `OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to a qyl collector
-discovered on localhost (4318/4317). GenAI telemetry still requires the one-line agent
-opt-in described below.
+That activates the qyl listeners; registers the single qyl source for qyl-owned
+ASP.NET Core, HttpClient, gRPC, and database spans plus the enabled first-party
+library sources; and registers the native and qyl-owned meter inventory (ASP.NET
+Core, HttpClient, DNS, database, messaging, and runtime). It copies `session.id`
+from the nearest tagged in-process
+ancestor to descendant spans (remote parents and unrelated trace branches are not
+propagated); and exports traces, metrics, and logs over OTLP — to
+`OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to a qyl collector discovered on
+localhost (4318/4317). It also registers the exact library telemetry paths
+listed below; wrapper-based libraries still require their explicit one-line opt-in.
 
 The rest of this section is the manual wiring for apps that want to own it.
 
-These packages emit `Activity` and `Meter` telemetry; they ship no exporter. The
-consuming application wires the OpenTelemetry SDK and chooses where the telemetry
-goes. A working setup against the qyl collector adds
+The lower-level instrumentation packages emit `Activity` and `Meter` telemetry; they
+ship no exporter. An application that does not use `Qyl.Sdk` wires the OpenTelemetry
+SDK and chooses where the telemetry goes. A working setup against the qyl collector
+adds
 `OpenTelemetry.Extensions.Hosting` and `OpenTelemetry.Exporter.OpenTelemetryProtocol`
 alongside `Qyl.OpenTelemetry.AutoInstrumentation.Hosting`, then registers the sources:
 
@@ -72,8 +77,6 @@ builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("my-service"))
     .WithTracing(t => t
         .AddSource("Qyl.OpenTelemetry.AutoInstrumentation") // qyl listeners
-        .AddSource("Microsoft.AspNetCore")                   // BCL incoming HTTP
-        .AddSource("System.Net.Http")                        // BCL outgoing HttpClient
         .AddOtlpExporter());
 builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 ```
@@ -82,31 +85,58 @@ Configure the exporter through the standard environment variables:
 `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`,
 `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, and `OTEL_SERVICE_NAME`.
 
-GenAI applications using `Microsoft.Agents.AI` additionally opt in with
-`agent.AsBuilder().UseOpenTelemetry().Build()` and register
-`AddSource("Experimental.Microsoft.Agents.AI")` and
-`AddSource("Experimental.Microsoft.Extensions.AI")`. The qyl collector ingests the
-resulting `gen_ai.*` spans, including sessions and token usage; billed costs come
-from provider APIs and model-catalog estimates on the collector side, not from
-span attributes. The Anthropic .NET SDK itself emits no telemetry.
+Do not also subscribe to `Microsoft.AspNetCore` or `System.Net.Http` traces when the
+qyl listeners own those operations; doing so exports the same request twice. Azure
+SDK tracing is the first-party exception: `Qyl.Sdk` enables
+`Azure.Experimental.EnableActivitySource`, subscribes `Azure.*`, and normalizes the
+exported Azure spans. A manually wired application must make those two choices
+explicitly if it wants Azure SDK spans.
+
+### AI, MCP, and CoreWCF paths in 8.0
+
+These are version-pinned library-hook claims, not provider- or protocol-wide claims.
+The exact `ModelContextProtocol` 1.4.1 client/server path has strict NativeAOT
+evidence; the other paths in this table have managed evidence only:
+
+| Library path | Application opt-in | Signals registered by `Qyl.Sdk` | Integration ID |
+| --- | --- | --- | --- |
+| `Microsoft.Extensions.AI` 10.8.0 | `chatClient.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Extensions.AI` | `MICROSOFTEXTENSIONSAI` |
+| `Microsoft.Agents.AI` 1.13.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
+| `Microsoft.Agents.AI.Workflows` 1.13.0 | `WorkflowBuilder.WithOpenTelemetry()` | traces from `Microsoft.Agents.AI.Workflows` | `MICROSOFTAGENTSAIWORKFLOWS` |
+| `ModelContextProtocol` 1.4.1 | none; the official client/server SDK emits automatically | managed and strict NativeAOT traces from `Experimental.ModelContextProtocol` | `MCP` |
+| `CoreWCF.Http` 1.9.1 | none; CoreWCF emits server activities | managed traces from `CoreWCF.Primitives` | `WCFCORE` |
+
+MCP metrics are intentionally not registered: the official instruments attach
+dynamic tool and resource names as dimensions, which conflicts with qyl's bounded-cardinality
+policy. The 8.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
+instrumentation, `Azure.AI.Inference`, Amazon Bedrock, or A2A.
+
+Every path is enabled by default when its signal is enabled. Set the applicable
+signal-specific variable to `false` to disable it:
+
+- `MICROSOFTEXTENSIONSAI`:
+  `OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED` and
+  `OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED`.
+- `MICROSOFTAGENTSAI`:
+  `OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED` and
+  `OTEL_DOTNET_AUTO_METRICS_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED`.
+- `MICROSOFTAGENTSAIWORKFLOWS`:
+  `OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAIWORKFLOWS_INSTRUMENTATION_ENABLED`.
+- `MCP`: `OTEL_DOTNET_AUTO_TRACES_MCP_INSTRUMENTATION_ENABLED`.
+- `WCFCORE`: `OTEL_DOTNET_AUTO_TRACES_WCFCORE_INSTRUMENTATION_ENABLED`.
+
+The global `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` and per-signal
+`OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_INSTRUMENTATION_ENABLED` switches still take
+precedence.
 
 ## Coverage and evidence
 
 The generated [`coverage matrix`](docs/coverage-matrix.md) is the detailed contract
-view. Its current 60 rows comprise:
-
-- 33 implemented signal rows: 26 with NativeAOT runtime evidence and 7 with managed
-  runtime evidence;
-- 19 configuration rows: 12 option bindings and 7 control bindings — each backed by
-  emitted-telemetry assertions in both directions (the behavior appears when opted in
-  and never appears otherwise), not merely by option parsing;
-- 8 unsupported NativeAOT rows, including four CLR-profiler/.NET Framework-only
-  options; each carries its verified blocking reason in the matrix.
-
-Those categories are intentionally separate. A configuration binding is not runtime
-instrumentation, and the matrix is generated from the declared contract rather than
+view. It keeps NativeAOT runtime evidence, managed runtime evidence, configuration
+bindings, and unsupported rows separate. A configuration binding is not runtime
+instrumentation, and the matrix is generated from the declared contracts rather than
 being independent empirical proof. Runtime claims are backed by executable demos or
-consumers named in the underlying ownership contract.
+consumers named in the underlying ownership contracts.
 
 The NativeAOT boundary applies to this compile-time/managed substrate. It does not
 claim parity with the CLR-profiler OpenTelemetry .NET automatic instrumentor, and it

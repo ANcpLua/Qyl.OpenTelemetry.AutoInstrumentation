@@ -15,11 +15,11 @@ public static class QylInterceptedNServiceBus
 
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
     public static long GetTimestamp()
-        => QylDurationMetrics.GetNServiceBusStartTimestamp();
+        => QylNServiceBusMetrics.GetTimestamp();
 
     /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordDuration(long startTimestamp, string operationName)
-        => QylDurationMetrics.RecordNServiceBusDuration(startTimestamp, operationName);
+        => QylNServiceBusMetrics.RecordDuration(startTimestamp, operationName);
 
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)

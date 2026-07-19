@@ -1,24 +1,16 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
 internal static class QylDbActivityPolicy
 {
-    public static Activity? StartEntityFrameworkCoreActivity(string operationName)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.EntityFrameworkCore,
-            QylActivityNames.DbCommand(operationName),
-            ActivityKind.Client,
-            QylInstrumentationDomains.DbEfCore);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetDbOperation(activity, operationName, operationName);
-        return activity;
-    }
+    /// <summary>Commands with an in-flight interceptor-lane activity. Weak on the command so neither
+    /// side outlives its natural lifetime: a command in an exporter queue is never pinned by its span,
+    /// and a collected command drops its entry automatically.</summary>
+    private static readonly ConditionalWeakTable<DbCommand, Activity> InFlightCommands = new();
 
     public static Activity? StartDbCommandActivity(DbCommand command, string instrumentationId, string operationName)
     {
@@ -30,6 +22,8 @@ internal static class QylDbActivityPolicy
             QylInstrumentationDomains.DbClient);
         if (activity is null)
             return null;
+
+        InFlightCommands.AddOrUpdate(command, activity);
 
         QylActivityTags.SetDb(
             activity,
@@ -43,6 +37,20 @@ internal static class QylDbActivityPolicy
 
         QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);
         return activity;
+    }
+
+    internal static bool HasCurrentActivityFor(DbCommand command)
+    {
+        if (!InFlightCommands.TryGetValue(command, out var activity))
+            return false;
+
+        if (activity.IsStopped)
+        {
+            InFlightCommands.Remove(command);
+            return false;
+        }
+
+        return true;
     }
 
     private static string NormalizeOperation(string operationName, DbCommand command)

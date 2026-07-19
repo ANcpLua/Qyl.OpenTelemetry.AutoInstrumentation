@@ -31,7 +31,11 @@ internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListe
         if (!EntityFrameworkCorePayloadReader.TryRead(payload, out var command))
             return;
 
-        using var activity = QylActivitySource.Source.StartActivity(QylActivityNames.DbCommand(command.Operation), ActivityKind.Client);
+        using var activity = QylActivitySource.StartAt(
+            QylActivityNames.DbCommand(command.Operation),
+            ActivityKind.Client,
+            command.StartTime);
+        activity?.SetEndTime((command.StartTime + command.Duration).UtcDateTime);
 
         SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbEfCore);
         SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, command.DbSystem);

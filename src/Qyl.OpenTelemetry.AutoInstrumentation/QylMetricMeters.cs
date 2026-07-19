@@ -1,56 +1,51 @@
-namespace Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
+namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
-/// <summary>
-/// Meter names required by the metrics side of the auto-instrumentation contract.
-/// These are registration targets for source-visible <c>MeterProviderBuilder.AddMeter(...)</c>
-/// interception; they do not create instruments by themselves.
-/// </summary>
-[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-public static class QylMetricMeters
+internal static class QylMetricMeters
 {
     /// <summary>Well-known ASP.NET Core Hosting Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";
+    internal const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";
     /// <summary>Well-known ASP.NET Core Routing Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";
+    internal const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";
     /// <summary>Well-known ASP.NET Core Diagnostics Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";
+    internal const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";
     /// <summary>Well-known ASP.NET Core Rate Limiting Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";
+    internal const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";
     /// <summary>Well-known ASP.NET Core Header Parsing Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";
+    internal const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";
     /// <summary>Well-known ASP.NET Core Kestrel Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";
+    internal const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";
     /// <summary>Well-known ASP.NET Core SignalR HTTP Connections Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
+    internal const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
     /// <summary>Well-known ASP.NET Core Authorization Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";
+    internal const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";
     /// <summary>Well-known ASP.NET Core Authentication Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";
+    internal const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";
     /// <summary>Well-known ASP.NET Core Components Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
+    internal const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
     /// <summary>Well-known ASP.NET Core Components Lifecycle Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
+    internal const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
     /// <summary>Well-known ASP.NET Core Components Server Circuits Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
+    internal const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
     /// <summary>Well-known HTTP Client Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string HttpClientMeterName = "System.Net.Http";
+    internal const string HttpClientMeterName = "System.Net.Http";
     /// <summary>Well-known System.Net DNS name resolution Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string NameResolutionMeterName = "System.Net.NameResolution";
+    internal const string NameResolutionMeterName = "System.Net.NameResolution";
     /// <summary>Well-known Database Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string DatabaseMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
-    /// <summary>Well-known Npgsql Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string NpgsqlMeterName = "Npgsql";
+    internal const string DatabaseMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
+    /// <summary>Npgsql's library-native Meter, carrying its connection-pool and command instruments.</summary>
+    internal const string NpgsqlNativeMeterName = "Npgsql";
     /// <summary>Well-known N Service Bus Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string NServiceBusMeterName = "NServiceBus.Core";
-    /// <summary>Well-known NServiceBus incoming pipeline Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
+    internal const string NServiceBusMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus";
+    /// <summary>NServiceBus's library-native core Meter.</summary>
+    internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
+    /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
+    internal const string NServiceBusNativeIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
     /// <summary>Well-known Net Runtime Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string NetRuntimeMeterName = "System.Runtime";
+    internal const string NetRuntimeMeterName = "System.Runtime";
     /// <summary>Well-known Process Meter Name value used by qyl auto-instrumentation.</summary>
-    public const string ProcessMeterName = "System.Runtime";
+    internal const string ProcessMeterName = "System.Runtime";
 
-    /// <summary>Runs the Get Enabled Meter Names runtime helper used by source-generated qyl interceptors.</summary>
-    public static string[] GetEnabledMeterNames()
+    internal static string[] GetEnabledMeterNames()
     {
         var options = QylAutoInstrumentationOptions.Current;
         var names = new List<string>(20);
@@ -79,10 +74,7 @@ public static class QylMetricMeters
 
         var databaseMeterEnabled = false;
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Npgsql))
-        {
-            names.Add(NpgsqlMeterName);
             databaseMeterEnabled = true;
-        }
 
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.SqlClient))
             databaseMeterEnabled = true;
@@ -91,10 +83,7 @@ public static class QylMetricMeters
             names.Add(DatabaseMeterName);
 
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
-        {
             names.Add(NServiceBusMeterName);
-            names.Add(NServiceBusIncomingPipelineMeterName);
-        }
 
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NetRuntime))
             names.Add(NetRuntimeMeterName);

@@ -66,9 +66,16 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} expected at least 2 ASP.NET Core activities, got {activities!r}")
 
 
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = artifacts_bin_assembly(PROJECT)
+def build_managed(env: dict[str, str]) -> Path:
+    run_checked(
+        ["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet", "--no-incremental"],
+        ROOT,
+        env,
+    )
+    return artifacts_bin_assembly(PROJECT)
+
+
+def run_managed(assembly: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["dotnet", str(assembly)],
         cwd=PROJECT.parent,
@@ -80,7 +87,7 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     )
 
 
-def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+def publish_nativeaot(env: dict[str, str]) -> Path:
     output = artifacts_publish_dir(PROJECT, "nativeaot")
     run_checked(
         [
@@ -106,9 +113,13 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     if not executable.exists():
         fail(f"NativeAOT ASP.NET Core executable missing: {executable}")
 
+    return executable
+
+
+def run_nativeaot(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [str(executable)],
-        cwd=output,
+        cwd=executable.parent,
         env=env,
         text=True,
         stdout=subprocess.PIPE,
@@ -119,21 +130,23 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
-    nativeaot = run_nativeaot(env)
-    verify_report("managed ASP.NET Core demo", managed, "dynamic-code-supported")
-    verify_report("NativeAOT ASP.NET Core demo", nativeaot, "nativeaot")
-
-    # Opt-in scenario: header capture + raw url.query on the emitted server span,
-    # asserted by the demo report itself. Default runs above assert redaction and
-    # header absence. Reuses the published NativeAOT binary.
     optin_env = dict(env)
     optin_env["OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"] = "X-Demo-Req"
     optin_env["OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"] = "X-Demo-Res"
     optin_env["OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION"] = "true"
     optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
-    verify_report("managed ASP.NET Core demo (capture opt-in)", run_managed(optin_env), "dynamic-code-supported")
-    verify_report("NativeAOT ASP.NET Core demo (capture opt-in)", run_nativeaot(optin_env), "nativeaot")
+
+    managed_assembly = build_managed(env)
+    managed = run_managed(managed_assembly, env)
+    managed_optin = run_managed(managed_assembly, optin_env)
+    nativeaot_executable = publish_nativeaot(env)
+    nativeaot = run_nativeaot(nativeaot_executable, env)
+    nativeaot_optin = run_nativeaot(nativeaot_executable, optin_env)
+
+    verify_report("managed ASP.NET Core demo", managed, "dynamic-code-supported")
+    verify_report("managed ASP.NET Core demo (capture opt-in)", managed_optin, "dynamic-code-supported")
+    verify_report("NativeAOT ASP.NET Core demo", nativeaot, "nativeaot")
+    verify_report("NativeAOT ASP.NET Core demo (capture opt-in)", nativeaot_optin, "nativeaot")
     print("real-aspnetcore-demo-ok")
 
 

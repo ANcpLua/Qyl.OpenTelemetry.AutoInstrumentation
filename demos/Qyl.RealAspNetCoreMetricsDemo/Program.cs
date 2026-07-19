@@ -17,13 +17,12 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var exportedMetrics = new List<Metric>();
 
 using var meterProvider = Sdk
     .CreateMeterProviderBuilder()
-    .AddMeter("consumer.placeholder")
+    .AddMeter(DemoMetricNames.AspNetCore)
     .AddInMemoryExporter(exportedMetrics)
     .Build();
 
@@ -53,7 +52,7 @@ meterProvider.ForceFlush();
 
 var report = AspNetCoreMetricsReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    QylMetricMeters.GetEnabledMeterNames(),
+    DemoMetricNames.AspNetCore,
     exportedMetrics.Select(CapturedMetric.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealAspNetCoreMetricsJsonContext.Default.AspNetCoreMetricsReport);
@@ -140,18 +139,18 @@ internal sealed record AspNetCoreMetricsReport(
     public static AspNetCoreMetricsReport Create(string runtimeMode, string[] enabledMeterNames, CapturedMetric[] metrics)
     {
         var failures = new List<string>();
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreHostingMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreRoutingMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreDiagnosticsMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreRateLimitingMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreHeaderParsingMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreServerKestrelMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreHttpConnectionsMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreAuthorizationMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreAuthenticationMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreComponentsMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, failures);
-        RequireEnabledMeter(enabledMeterNames, QylMetricMeters.AspNetCoreComponentsServerCircuitsMeterName, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreHosting, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreRouting, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreDiagnostics, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreRateLimiting, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreHeaderParsing, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreServerKestrel, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreHttpConnections, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreAuthorization, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreAuthentication, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreComponents, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreComponentsLifecycle, failures);
+        RequireEnabledMeter(enabledMeterNames, DemoMetricNames.AspNetCoreComponentsServerCircuits, failures);
 
         var capturedAspNetCoreMetrics = metrics
             .Where(static metric => metric.MeterName.StartsWith("Microsoft.AspNetCore", StringComparison.Ordinal))
@@ -160,7 +159,7 @@ internal sealed record AspNetCoreMetricsReport(
             .Where(static metric => metric.MeterName.StartsWith("Microsoft.AspNetCore.Components", StringComparison.Ordinal))
             .ToArray();
         var hostingMetrics = capturedAspNetCoreMetrics
-            .Where(static metric => StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.AspNetCoreHostingMeterName))
+            .Where(static metric => StringComparer.Ordinal.Equals(metric.MeterName, DemoMetricNames.AspNetCoreHosting))
             .ToArray();
 
         if (componentMetrics.Length is 0)
@@ -175,10 +174,10 @@ internal sealed record AspNetCoreMetricsReport(
             failures.Add("observed metrics: " + string.Join("|", metrics.Select(static metric => metric.MeterName + ":" + metric.Name).OrderBy(static name => name, StringComparer.Ordinal)));
         }
 
-        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, "aspnetcore.components.render_diff.duration", failures);
-        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, "aspnetcore.components.render_diff.size", failures);
-        RequireMetric(componentMetrics, QylMetricMeters.AspNetCoreComponentsLifecycleMeterName, "aspnetcore.components.update_parameters.duration", failures);
-        RequireMetric(hostingMetrics, QylMetricMeters.AspNetCoreHostingMeterName, "http.server.request.duration", failures);
+        RequireMetric(componentMetrics, DemoMetricNames.AspNetCoreComponentsLifecycle, "aspnetcore.components.render_diff.duration", failures);
+        RequireMetric(componentMetrics, DemoMetricNames.AspNetCoreComponentsLifecycle, "aspnetcore.components.render_diff.size", failures);
+        RequireMetric(componentMetrics, DemoMetricNames.AspNetCoreComponentsLifecycle, "aspnetcore.components.update_parameters.duration", failures);
+        RequireMetric(hostingMetrics, DemoMetricNames.AspNetCoreHosting, "http.server.request.duration", failures);
 
         foreach (var metric in capturedAspNetCoreMetrics.Where(static metric => metric.PointCount <= 0))
             failures.Add($"expected at least one metric point for {metric.MeterName}:{metric.Name}, got {metric.PointCount.ToString(CultureInfo.InvariantCulture)}");
@@ -197,6 +196,38 @@ internal sealed record AspNetCoreMetricsReport(
         if (!metrics.Any(metric => StringComparer.Ordinal.Equals(metric.MeterName, meterName) && StringComparer.Ordinal.Equals(metric.Name, metricName)))
             failures.Add($"missing ASP.NET Core metric {meterName}:{metricName}");
     }
+}
+
+internal static class DemoMetricNames
+{
+    internal const string AspNetCoreHosting = "Microsoft.AspNetCore.Hosting";
+    internal const string AspNetCoreRouting = "Microsoft.AspNetCore.Routing";
+    internal const string AspNetCoreDiagnostics = "Microsoft.AspNetCore.Diagnostics";
+    internal const string AspNetCoreRateLimiting = "Microsoft.AspNetCore.RateLimiting";
+    internal const string AspNetCoreHeaderParsing = "Microsoft.AspNetCore.HeaderParsing";
+    internal const string AspNetCoreServerKestrel = "Microsoft.AspNetCore.Server.Kestrel";
+    internal const string AspNetCoreHttpConnections = "Microsoft.AspNetCore.Http.Connections";
+    internal const string AspNetCoreAuthorization = "Microsoft.AspNetCore.Authorization";
+    internal const string AspNetCoreAuthentication = "Microsoft.AspNetCore.Authentication";
+    internal const string AspNetCoreComponents = "Microsoft.AspNetCore.Components";
+    internal const string AspNetCoreComponentsLifecycle = "Microsoft.AspNetCore.Components.Lifecycle";
+    internal const string AspNetCoreComponentsServerCircuits = "Microsoft.AspNetCore.Components.Server.Circuits";
+
+    internal static readonly string[] AspNetCore =
+    [
+        AspNetCoreHosting,
+        AspNetCoreRouting,
+        AspNetCoreDiagnostics,
+        AspNetCoreRateLimiting,
+        AspNetCoreHeaderParsing,
+        AspNetCoreServerKestrel,
+        AspNetCoreHttpConnections,
+        AspNetCoreAuthorization,
+        AspNetCoreAuthentication,
+        AspNetCoreComponents,
+        AspNetCoreComponentsLifecycle,
+        AspNetCoreComponentsServerCircuits,
+    ];
 }
 
 [JsonSerializable(typeof(AspNetCoreMetricsReport))]

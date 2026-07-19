@@ -71,6 +71,18 @@ try
     {
         var client = new LiveProbeClient(channel);
         _ = await client.CollectAsync(Array.Empty<byte>(), requestMetadata);
+
+        // Compile-binding coverage for the three streaming interceptor shapes. The generated
+        // interceptor manifest (and its contract invariant) requires every catalog kind to bind a
+        // real ClientBase<T> call site in demo evidence; the loopback server only speaks unary, so
+        // these call sites are guarded behind an env flag no verifier sets and never execute here.
+        if (string.Equals(
+                Environment.GetEnvironmentVariable("QYL_GRPC_DEMO_STREAMING_SHAPES"), "1", StringComparison.Ordinal))
+        {
+            using var serverStreaming = client.CollectStream(Array.Empty<byte>());
+            using var clientStreaming = client.CollectClientStream();
+            using var duplexStreaming = client.CollectDuplex();
+        }
     }
     else
     {

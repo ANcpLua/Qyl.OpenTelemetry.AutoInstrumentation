@@ -16,6 +16,7 @@ except ModuleNotFoundError as exc:  # pragma: no cover - dependency guard for cl
 
 ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM_CONTRACT_PATH = ROOT / "docs" / "contracts" / "otel-dotnet-auto-60.upstream.yaml"
+QYL_NATIVE_CONTRACT_PATH = ROOT / "docs" / "contracts" / "qyl-native-instrumentations.yaml"
 OWNERSHIP_PATH = ROOT / "docs" / "contracts" / "qyl-aot-ownership.yaml"
 RESOLVED_CONTRACT_PATH = ROOT / "docs" / "generated" / "qyl-aot-contract.resolved.yaml"
 SCHEMA_PATH = ROOT / "docs" / "generated" / "qyl-aot-contract.schema.json"
@@ -99,6 +100,16 @@ CONFORMANCE_PROFILES = [
         ],
     },
     {
+        "service_name": "qyl-mcp-aot-demo",
+        "profile_id": "qyl-aot-mcp",
+        "signal_names": [
+            "mcp.initialize",
+            "mcp.notifications.initialized",
+            "mcp.tools.list",
+            "mcp.tools.call",
+        ],
+    },
+    {
         "service_name": "qyl-metrics-aot-demo",
         "profile_id": "qyl-aot-metrics",
         "signal_names": [
@@ -128,6 +139,7 @@ REQUIRED_CONFORMANCE_PROFILE_IDS = {
     "qyl-aot-graphql",
     "qyl-aot-grpc",
     "qyl-aot-logging",
+    "qyl-aot-mcp",
     "qyl-aot-messaging",
     "qyl-aot-metrics",
     "qyl-aot-search",
@@ -158,6 +170,75 @@ CALL_SITE_VISIBILITIES = {"user_code", "library_internal", "both", "not_applicab
 PAYLOAD_ACCESS_VALUES = {"typed_public", "reflection_required", "not_applicable"}
 EVIDENCE_LEVELS = {"none", "verified_nativeaot", "verified_managed", "compile_binding_only", "option_bound"}
 CONFORMANCE_KINDS = {"span", "metric", "log"}
+QYL_NATIVE_8_SIGNAL_CONTRACT = [
+    (
+        "QYL_NATIVE_CONTRACT_001",
+        "signals.traces.MICROSOFTEXTENSIONSAI",
+        "traces",
+        "MICROSOFTEXTENSIONSAI",
+        "OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED",
+    ),
+    (
+        "QYL_NATIVE_CONTRACT_002",
+        "signals.metrics.MICROSOFTEXTENSIONSAI",
+        "metrics",
+        "MICROSOFTEXTENSIONSAI",
+        "OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED",
+    ),
+    (
+        "QYL_NATIVE_CONTRACT_003",
+        "signals.traces.MICROSOFTAGENTSAI",
+        "traces",
+        "MICROSOFTAGENTSAI",
+        "OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED",
+    ),
+    (
+        "QYL_NATIVE_CONTRACT_004",
+        "signals.metrics.MICROSOFTAGENTSAI",
+        "metrics",
+        "MICROSOFTAGENTSAI",
+        "OTEL_DOTNET_AUTO_METRICS_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED",
+    ),
+    (
+        "QYL_NATIVE_CONTRACT_005",
+        "signals.traces.MICROSOFTAGENTSAIWORKFLOWS",
+        "traces",
+        "MICROSOFTAGENTSAIWORKFLOWS",
+        "OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAIWORKFLOWS_INSTRUMENTATION_ENABLED",
+    ),
+    (
+        "QYL_NATIVE_CONTRACT_006",
+        "signals.traces.MCP",
+        "traces",
+        "MCP",
+        "OTEL_DOTNET_AUTO_TRACES_MCP_INSTRUMENTATION_ENABLED",
+    ),
+]
+QYL_NATIVE_8_SUPPORTED_PATHS = {
+    "signals.traces.MICROSOFTEXTENSIONSAI": (
+        "Microsoft.Extensions.AI ==10.8.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
+    ),
+    "signals.metrics.MICROSOFTEXTENSIONSAI": (
+        "Microsoft.Extensions.AI ==10.8.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
+    ),
+    "signals.traces.MICROSOFTAGENTSAI": (
+        "Microsoft.Agents.AI ==1.13.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+    ),
+    "signals.metrics.MICROSOFTAGENTSAI": (
+        "Microsoft.Agents.AI ==1.13.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+    ),
+    "signals.traces.MICROSOFTAGENTSAIWORKFLOWS": (
+        "Microsoft.Agents.AI.Workflows ==1.13.0; WorkflowBuilder.WithOpenTelemetry() path only"
+    ),
+    "signals.traces.MCP": (
+        "ModelContextProtocol ==1.4.1; automatic official client/server ActivitySource path only"
+    ),
+}
+QYL_SUPPORTED_VERSION_OVERRIDES = {
+    "signals.traces.WCFCORE": (
+        "CoreWCF.Primitives ==1.9.1; CoreWCF.Http ==1.9.1; server ActivitySource path only"
+    ),
+}
 MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
     "signals.logs.LOG4NET",
     "signals.metrics.NSERVICEBUS",
@@ -166,8 +247,23 @@ MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
     "signals.traces.NSERVICEBUS",
     "signals.traces.QUARTZ",
     "signals.traces.WCFCLIENT",
+    "signals.traces.WCFCORE",
+    "signals.traces.MICROSOFTEXTENSIONSAI",
+    "signals.metrics.MICROSOFTEXTENSIONSAI",
+    "signals.traces.MICROSOFTAGENTSAI",
+    "signals.metrics.MICROSOFTAGENTSAI",
+    "signals.traces.MICROSOFTAGENTSAIWORKFLOWS",
 }
 IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST: set[str] = set()
+# Signals whose contract row is owned by the runtime_public_telemetry listener/meter lane while a
+# source interceptor also binds their call sites. QylSignalOwnership hands the emitted span to the
+# interceptor lane when it is present; the listener lane stays the contract owner because it covers
+# call sites the interceptor cannot see (raw CallInvoker, HttpMessageInvoker, DI-injected clients).
+GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = {
+    "signals.traces.HTTPCLIENT",
+    "signals.metrics.HTTPCLIENT",
+    "signals.traces.GRPCNETCLIENT",
+}
 GENERATED_INTERCEPTOR_CATALOG_REQUIRED_SIGNAL_KEYS = {
     "signals.logs.ILOGGER",
     "signals.logs.LOG4NET",
@@ -198,6 +294,7 @@ GENERATED_INTERCEPTOR_CATALOG_REQUIRED_SIGNAL_KEYS = {
 COMMON_ITEM_PROPERTIES = {
     "kind",
     "key",
+    "contract_origin",
     "status",
     "index",
     "contract_item_id",
@@ -274,17 +371,27 @@ def load_yaml_file(path: Path) -> dict[str, Any]:
 
 def load_contract() -> dict[str, Any]:
     upstream = load_yaml_file(UPSTREAM_CONTRACT_PATH)
+    qyl_native = load_yaml_file(QYL_NATIVE_CONTRACT_PATH)
     ownership = load_yaml_file(OWNERSHIP_PATH)
-    return resolve_contract(upstream, ownership)
+    return resolve_contract(upstream, qyl_native, ownership)
 
 
-def resolve_contract(upstream: dict[str, Any], ownership: dict[str, Any]) -> dict[str, Any]:
+def resolve_contract(
+    upstream: dict[str, Any],
+    qyl_native: dict[str, Any],
+    ownership: dict[str, Any],
+) -> dict[str, Any]:
     upstream_items = upstream.get("contract_items")
+    qyl_native_items = qyl_native.get("contract_items")
     ownership_items = ownership.get("ownership_items")
     if not isinstance(upstream_items, list):
         fail("upstream contract must contain contract_items[]")
+    if not isinstance(qyl_native_items, list):
+        fail("qyl-native contract must contain contract_items[]")
     if not isinstance(ownership_items, list):
         fail("qyl ownership overlay must contain ownership_items[]")
+
+    verify_source_contract_sequences(upstream_items, qyl_native_items)
 
     overlay_by_id: dict[str, dict[str, Any]] = {}
     for raw_overlay in ownership_items:
@@ -302,6 +409,7 @@ def resolve_contract(upstream: dict[str, Any], ownership: dict[str, Any]) -> dic
         if not isinstance(raw_item, dict):
             fail(f"upstream contract item must be an object: {raw_item!r}")
         item = dict(raw_item)
+        item["contract_origin"] = "upstream_otel_dotnet_auto_60"
         contract_item_id = str(item.get("contract_item_id", ""))
         overlay = overlay_by_id.pop(contract_item_id, None)
         if overlay is None:
@@ -318,6 +426,7 @@ def resolve_contract(upstream: dict[str, Any], ownership: dict[str, Any]) -> dic
             "evidence",
             "conformance_signals",
             "unsupported_reason",
+            "supported_versions",
         ]:
             if field in overlay:
                 item[field] = overlay[field]
@@ -326,17 +435,77 @@ def resolve_contract(upstream: dict[str, Any], ownership: dict[str, Any]) -> dic
     if overlay_by_id:
         fail(f"qyl ownership overlay contains unknown contract items: {sorted(overlay_by_id)}")
 
+    for raw_item in sorted(qyl_native_items, key=lambda candidate: int(candidate["index"])):
+        if not isinstance(raw_item, dict):
+            fail(f"qyl-native contract item must be an object: {raw_item!r}")
+        item = dict(raw_item)
+        item["contract_origin"] = "qyl_native"
+        resolved_items.append(item)
+
     return {
         "schema_id": "qyl-aot-autoinstrumentation-resolved-contract",
-        "schema_version": str(upstream.get("schema_version", "1.0.0")),
-        "generated_at": str(upstream.get("generated_at", "2026-06-04")),
-        "source": upstream.get("source", {}),
+        "schema_version": "2.0.0",
+        "generated_at": str(qyl_native.get("generated_at", "2026-07-19")),
+        "sources": {
+            "upstream_otel_dotnet_auto_60": upstream.get("source", {}),
+            "qyl_native": qyl_native.get("source", {}),
+        },
         "generated_from": {
             "upstream_contract": str(UPSTREAM_CONTRACT_PATH.relative_to(ROOT)),
+            "qyl_native_contract": str(QYL_NATIVE_CONTRACT_PATH.relative_to(ROOT)),
             "qyl_ownership": str(OWNERSHIP_PATH.relative_to(ROOT)),
         },
         "contract_items": resolved_items,
     }
+
+
+def verify_source_contract_sequences(
+    upstream_items: list[Any],
+    qyl_native_items: list[Any],
+) -> None:
+    if len(upstream_items) != 60:
+        fail(f"upstream contract must remain exactly 60 items: {len(upstream_items)}")
+    upstream_indexes = [int(item["index"]) for item in upstream_items]
+    if upstream_indexes != list(range(1, 61)):
+        fail(f"upstream contract indexes must remain contiguous 1..60: {upstream_indexes}")
+    upstream_ids = [str(item["contract_item_id"]) for item in upstream_items]
+    expected_upstream_ids = [f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, 61)]
+    if upstream_ids != expected_upstream_ids:
+        fail("upstream contract_item_id sequence mismatch")
+
+    if len(qyl_native_items) != 6:
+        fail(f"qyl-native 8.0 contract must contain exactly 6 scoped signal items: {len(qyl_native_items)}")
+    qyl_native_indexes = [int(item["index"]) for item in qyl_native_items]
+    if qyl_native_indexes != list(range(61, 67)):
+        fail(f"qyl-native contract indexes must be contiguous 61..66: {qyl_native_indexes}")
+    qyl_native_ids = [str(item["contract_item_id"]) for item in qyl_native_items]
+    expected_qyl_native_ids = [f"QYL_NATIVE_CONTRACT_{index:03d}" for index in range(1, 7)]
+    if qyl_native_ids != expected_qyl_native_ids:
+        fail("qyl-native contract_item_id sequence mismatch")
+    actual_qyl_native_contract = [
+        (
+            str(item["contract_item_id"]),
+            str(item["key"]),
+            str(item["signal"]),
+            str(item["instrumentation_id"]),
+            str(item["environment_toggle"]),
+        )
+        for item in qyl_native_items
+    ]
+    if actual_qyl_native_contract != QYL_NATIVE_8_SIGNAL_CONTRACT:
+        fail(
+            "qyl-native 8.0 signal scope mismatch: "
+            f"expected={QYL_NATIVE_8_SIGNAL_CONTRACT} actual={actual_qyl_native_contract}"
+        )
+    actual_supported_paths = {
+        str(item["key"]): str(item["supported_versions"])
+        for item in qyl_native_items
+    }
+    if actual_supported_paths != QYL_NATIVE_8_SUPPORTED_PATHS:
+        fail(
+            "qyl-native 8.0 supported path/version mismatch: "
+            f"expected={QYL_NATIVE_8_SUPPORTED_PATHS} actual={actual_supported_paths}"
+        )
 
 
 def contract_items(contract: dict[str, Any]) -> list[dict[str, Any]]:
@@ -375,6 +544,12 @@ def contract_counts(contract: dict[str, Any]) -> dict[str, int]:
     items = contract_items(contract)
     signals = signal_items(contract)
     return {
+        "upstream_contract_items": sum(
+            1 for item in items if item.get("contract_origin") == "upstream_otel_dotnet_auto_60"
+        ),
+        "qyl_native_contract_items": sum(
+            1 for item in items if item.get("contract_origin") == "qyl_native"
+        ),
         "signal_specific_instrumentation_promises": len(signals),
         "global_environment_controls": sum(1 for item in items if item["kind"] == CONTROL_KIND),
         "instrumentation_options": sum(1 for item in items if item["kind"] == OPTION_KIND),
@@ -388,28 +563,32 @@ def contract_counts(contract: dict[str, Any]) -> dict[str, int]:
 
 def verify_contract_model(contract: dict[str, Any]) -> None:
     items = contract_items(contract)
-    if len(items) != 60:
+    if len(items) != 66:
         fail(f"wrong contract item count: {len(items)}")
 
     indexes = [int(item["index"]) for item in items]
-    if indexes != list(range(1, 61)):
-        fail(f"contract indexes must be contiguous 1..60: {indexes}")
+    if indexes != list(range(1, 67)):
+        fail(f"resolved contract indexes must be contiguous 1..66: {indexes}")
 
     ids = [str(item["contract_item_id"]) for item in items]
-    expected_ids = [f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, 61)]
+    expected_ids = [f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, 61)] + [
+        f"QYL_NATIVE_CONTRACT_{index:03d}" for index in range(1, 7)
+    ]
     if ids != expected_ids:
         fail("contract_item_id sequence mismatch")
 
     counts = contract_counts(contract)
     expected_counts = {
-        "signal_specific_instrumentation_promises": 37,
+        "upstream_contract_items": 60,
+        "qyl_native_contract_items": 6,
+        "signal_specific_instrumentation_promises": 43,
         "global_environment_controls": 7,
         "instrumentation_options": 16,
-        "total_contract_items": 60,
-        "traces_signal_specific_promises": 26,
-        "metrics_signal_specific_promises": 8,
+        "total_contract_items": 66,
+        "traces_signal_specific_promises": 30,
+        "metrics_signal_specific_promises": 10,
         "logs_signal_specific_promises": 3,
-        "unique_instrumentation_ids": 31,
+        "unique_instrumentation_ids": 35,
     }
     if counts != expected_counts:
         fail(f"contract count mismatch: expected={expected_counts} actual={counts}")
@@ -421,6 +600,21 @@ def verify_contract_model(contract: dict[str, Any]) -> None:
         if key in seen_keys:
             fail(f"duplicate contract key: {key}")
         seen_keys.add(key)
+
+    upstream_items = [
+        item for item in items if item.get("contract_origin") == "upstream_otel_dotnet_auto_60"
+    ]
+    qyl_native_items = [item for item in items if item.get("contract_origin") == "qyl_native"]
+    verify_source_contract_sequences(upstream_items, qyl_native_items)
+
+    items_by_key = {str(item["key"]): item for item in items}
+    for key, expected in QYL_SUPPORTED_VERSION_OVERRIDES.items():
+        actual = str(items_by_key[key]["supported_versions"])
+        if actual != expected:
+            fail(
+                f"qyl supported-version override mismatch for {key}: "
+                f"expected={expected!r} actual={actual!r}"
+            )
 
     verify_managed_nativeaot_boundary_semantics(contract)
     verify_conformance_signal_semantics(contract)
@@ -454,6 +648,10 @@ def verify_contract_item(item: dict[str, Any]) -> None:
     evidence_level = str(item.get("evidence_level", ""))
     evidence = item.get("evidence")
     upstream_sources = item.get("upstream_sources")
+    contract_origin = str(item.get("contract_origin", ""))
+
+    if contract_origin not in {"upstream_otel_dotnet_auto_60", "qyl_native"}:
+        fail(f"invalid contract_origin for {key}: {contract_origin}")
 
     if lane not in LANES:
         fail(f"invalid lane for {key}: {lane}")
@@ -545,6 +743,7 @@ def verify_contract_item(item: dict[str, Any]) -> None:
         if lane == "runtime_public_telemetry":
             proof_tokens = [
                 "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
+                "DiagnosticListener",
                 "src/Qyl.OpenTelemetry.AutoInstrumentation/QylMetricMeters.cs",
                 "ILogger",
                 "ActivitySource",
@@ -695,6 +894,7 @@ def render_schema() -> str:
     common_required = [
         "kind",
         "key",
+        "contract_origin",
         "status",
         "index",
         "contract_item_id",
@@ -713,25 +913,34 @@ def render_schema() -> str:
         "$comment": "<auto-generated/> Regenerate with tools/generate-contract-artifacts.py --write.",
         "type": "object",
         "additionalProperties": False,
-        "required": ["schema_id", "schema_version", "generated_at", "source", "generated_from", "contract_items"],
+        "required": ["schema_id", "schema_version", "generated_at", "sources", "generated_from", "contract_items"],
         "properties": {
             "schema_id": {"const": "qyl-aot-autoinstrumentation-resolved-contract"},
-            "schema_version": {"type": "string"},
+            "schema_version": {"const": "2.0.0"},
             "generated_at": {"type": "string"},
-            "source": {"type": "object"},
+            "sources": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["upstream_otel_dotnet_auto_60", "qyl_native"],
+                "properties": {
+                    "upstream_otel_dotnet_auto_60": {"type": "object"},
+                    "qyl_native": {"type": "object"},
+                },
+            },
             "generated_from": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["upstream_contract", "qyl_ownership"],
+                "required": ["upstream_contract", "qyl_native_contract", "qyl_ownership"],
                 "properties": {
                     "upstream_contract": {"const": "docs/contracts/otel-dotnet-auto-60.upstream.yaml"},
+                    "qyl_native_contract": {"const": "docs/contracts/qyl-native-instrumentations.yaml"},
                     "qyl_ownership": {"const": "docs/contracts/qyl-aot-ownership.yaml"},
                 },
             },
             "contract_items": {
                 "type": "array",
-                "minItems": 60,
-                "maxItems": 60,
+                "minItems": 66,
+                "maxItems": 66,
                 "items": {"$ref": "#/$defs/contract_item"},
             },
         },
@@ -783,9 +992,13 @@ def common_schema_properties() -> dict[str, Any]:
     return {
         "kind": {"enum": [SIGNAL_KIND, CONTROL_KIND, OPTION_KIND]},
         "key": {"type": "string"},
+        "contract_origin": {"enum": ["upstream_otel_dotnet_auto_60", "qyl_native"]},
         "status": {"type": "string"},
-        "index": {"type": "integer", "minimum": 1, "maximum": 60},
-        "contract_item_id": {"type": "string", "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"},
+        "index": {"type": "integer", "minimum": 1, "maximum": 66},
+        "contract_item_id": {
+            "type": "string",
+            "pattern": "^(?:OTEL_DOTNET_AUTO_CONTRACT|QYL_NATIVE_CONTRACT)_[0-9]{3}$",
+        },
         "upstream_sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/upstream_source"}},
         "lane": {"enum": sorted(LANES)},
         "qyl_status": {"enum": sorted(STATUSES)},
@@ -874,14 +1087,16 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
         "<!-- Regenerate with `python3 tools/generate-contract-artifacts.py --write`. -->",
         "",
         "This matrix is generated from `docs/generated/qyl-aot-contract.resolved.yaml`.",
-        "The raw upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.yaml`; qyl ownership and evidence live in `docs/contracts/qyl-aot-ownership.yaml`.",
-        "Every row carries a clickable upstream source anchored to the official OpenTelemetry documentation source.",
+        "The exact 60-row upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.yaml`; qyl-native promises live in `docs/contracts/qyl-native-instrumentations.yaml`; qyl ownership and evidence for upstream rows live in `docs/contracts/qyl-aot-ownership.yaml`.",
+        "Every row identifies its contract origin and carries a clickable authoritative source.",
         "",
         "## Counts",
         "",
         "| Count | Value |",
         "|---|---:|",
         f"| Total contract items | {counts['total_contract_items']} |",
+        f"| Upstream OpenTelemetry .NET auto-instrumentation items | {counts['upstream_contract_items']} |",
+        f"| qyl-native items | {counts['qyl_native_contract_items']} |",
         f"| Signal promises | {counts['signal_specific_instrumentation_promises']} |",
         f"| Global environment controls | {counts['global_environment_controls']} |",
         f"| Instrumentation options | {counts['instrumentation_options']} |",
@@ -904,15 +1119,42 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
             "",
             "## Matrix",
             "",
-            "| # | Key | Upstream source | Lane | qyl status | Call-site visibility | Payload access | Evidence | Owner |",
-            "|---:|---|---|---|---|---|---|---|---|",
+            "| # | Origin | Key | Authoritative source | Supported path/version | Lane | qyl status | Call-site visibility | Payload access | Evidence | Owner |",
+            "|---:|---|---|---|---|---|---|---|---|---|---|",
         ]
     )
     for item in contract_items(contract):
+        origin = (
+            "upstream 60"
+            if item["contract_origin"] == "upstream_otel_dotnet_auto_60"
+            else "qyl native"
+        )
         lines.append(
-            f"| {int(item['index'])} | `{item['key']}` | {format_upstream_sources(item)} | `{item['lane']}` | `{item['qyl_status']}` | "
+            f"| {int(item['index'])} | {origin} | `{item['key']}` | {format_authoritative_sources(item)} | "
+            f"{escape_md(str(item.get('supported_versions', 'n/a')))} | `{item['lane']}` | `{item['qyl_status']}` | "
             f"`{item['call_site_visibility']}` | `{item['payload_access']}` | `{item['evidence_level']}` | {escape_md(str(item['primary_owner']))} |"
         )
+    qyl_native = [
+        item for item in contract_items(contract) if item.get("contract_origin") == "qyl_native"
+    ]
+    if qyl_native:
+        lines.extend(
+            [
+                "",
+                "## qyl-native 8.0 scope boundaries",
+                "",
+                "These are exact library-hook promises. Evidence level is explicit per row; none imply provider-wide coverage.",
+                "",
+                "| Key | Exact supported path/version | Boundary notes |",
+                "|---|---|---|",
+            ]
+        )
+        for item in qyl_native:
+            notes = item.get("notes", [])
+            formatted_notes = "<br>".join(escape_md(str(note)) for note in notes) if isinstance(notes, list) else ""
+            lines.append(
+                f"| `{item['key']}` | {escape_md(str(item.get('supported_versions', '')))} | {formatted_notes} |"
+            )
     unsupported = [item for item in contract_items(contract) if item.get("qyl_status") == "unsupported_nativeaot"]
     if unsupported:
         lines.extend(
@@ -937,7 +1179,7 @@ def escape_md(value: str) -> str:
     return value.replace("|", "\\|")
 
 
-def format_upstream_sources(item: dict[str, Any]) -> str:
+def format_authoritative_sources(item: dict[str, Any]) -> str:
     sources = item.get("upstream_sources", [])
     if not isinstance(sources, list):
         return ""
@@ -1017,7 +1259,9 @@ def write_generated_files(contract: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate or verify qyl AOT contract artifacts from upstream + qyl ownership YAML.")
+    parser = argparse.ArgumentParser(
+        description="Generate or verify qyl AOT contract artifacts from upstream, qyl-native, and ownership YAML."
+    )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--write", action="store_true", help="Regenerate tracked contract artifacts.")
     group.add_argument("--check", action="store_true", help="Fail if tracked contract artifacts are stale.")

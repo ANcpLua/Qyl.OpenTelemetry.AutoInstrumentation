@@ -28,8 +28,6 @@ internal static class QylInstrumentationDomains
     public const string HttpClient = "http.client";
     /// <summary>Well-known HTTP Server value used by qyl auto-instrumentation.</summary>
     public const string HttpServer = "http.server";
-    /// <summary>Well-known HTTP Web Request value used by qyl auto-instrumentation.</summary>
-    public const string HttpWebRequest = "http.webrequest";
     /// <summary>Well-known Job Quartz value used by qyl auto-instrumentation.</summary>
     public const string JobQuartz = "job.quartz";
     /// <summary>Well-known Log I Logger value used by qyl auto-instrumentation.</summary>
@@ -50,6 +48,4 @@ internal static class QylInstrumentationDomains
     public const string RpcGrpc = "rpc.grpc";
     /// <summary>Well-known Rpc Wcf Client value used by qyl auto-instrumentation.</summary>
     public const string RpcWcfClient = "rpc.wcf.client";
-    /// <summary>Well-known Rpc Wcf Core value used by qyl auto-instrumentation.</summary>
-    public const string RpcWcfCore = "rpc.wcf.core";
 }

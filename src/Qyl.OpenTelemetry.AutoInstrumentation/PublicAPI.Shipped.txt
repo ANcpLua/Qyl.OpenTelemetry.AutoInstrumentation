@@ -1,15 +1,11 @@
 #nullable enable
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAzure
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedEntityFrameworkCore
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedExternalLogger
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpWebRequest
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMassTransit
@@ -19,43 +15,12 @@ Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
 Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfCore
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters
 Qyl.OpenTelemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions
 Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V6 = 6 -> int
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.DatabaseMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.Database" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.HttpClientMeterName = "System.Net.Http" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.NServiceBusIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.NServiceBusMeterName = "NServiceBus.Core" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.NameResolutionMeterName = "System.Net.NameResolution" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.NetRuntimeMeterName = "System.Runtime" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.NpgsqlMeterName = "Npgsql" -> string!
-const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.ProcessMeterName = "System.Runtime" -> string!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.InvokeAsync(Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate, Microsoft.AspNetCore.Http.HttpContext! context) -> System.Threading.Tasks.Task!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.MapDelete(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.MapGet(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.MapMethods(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, System.Collections.Generic.IEnumerable<string!>! httpMethods, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.MapPatch(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.MapPost(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAspNetCore.MapPut(Microsoft.AspNetCore.Routing.IEndpointRouteBuilder! endpoints, string! pattern, Microsoft.AspNetCore.Http.RequestDelegate! requestDelegate) -> Microsoft.AspNetCore.Builder.IEndpointConventionBuilder!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAzure.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedAzure.StartActivity(string! methodName) -> System.Diagnostics.Activity?
+const Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V8 = 8 -> int
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
@@ -65,8 +30,6 @@ static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic.StartActivity(string! instrumentationId, string! methodName) -> System.Diagnostics.Activity?
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedEntityFrameworkCore.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedEntityFrameworkCore.StartActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedExternalLogger.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedExternalLogger.StartActivity(string! instrumentationId, string! domain, string! methodName, string? severityName) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
@@ -124,10 +87,6 @@ static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpCli
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpWebRequest.GetStartTimeUtc() -> System.DateTime
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpWebRequest.RecordException(System.Diagnostics.Activity? activity, System.DateTime startTimeUtc, string? method, System.Exception! exception) -> void
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpWebRequest.RecordResult(System.Diagnostics.Activity? activity, System.DateTime startTimeUtc, string? method, object? result) -> void
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpWebRequest.StartActivity(System.Net.HttpWebRequest! request, string! methodName) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.StartConsumerActivity() -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.StartProducerActivity() -> System.Diagnostics.Activity?
@@ -152,7 +111,4 @@ static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.R
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.StartCommandActivity(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.StartActivity(string! clientType, string! methodName) -> System.Diagnostics.Activity?
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfCore.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfCore.StartActivity(string! serviceName, string! contractName, string! operationName) -> System.Diagnostics.Activity?
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylMetricMeters.GetEnabledMeterNames() -> string![]!
 static Qyl.OpenTelemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

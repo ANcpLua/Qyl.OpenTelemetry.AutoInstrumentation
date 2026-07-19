@@ -70,13 +70,10 @@ internal static class QylHttpActivityPolicy
 
     public static void SetResponseStatus(Activity activity, int statusCode, int errorStatusCodeFloor)
     {
-        SetResponseStatus(activity, statusCode);
+        activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
         if (statusCode >= errorStatusCodeFloor)
             QylActivityStatus.RecordError(activity, statusCode);
     }
-
-    public static void SetResponseStatus(Activity activity, int statusCode)
-        => activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
 
     private static void SetRequestMethod(Activity activity, string method, string? methodOriginal)
     {

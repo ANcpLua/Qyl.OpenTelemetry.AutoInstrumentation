@@ -1,11 +1,20 @@
 <Solution>
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" />
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" />
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj" />
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
+  <Project Path="src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" />
+  <Project Path="src/Qyl.Sdk/Qyl.Sdk.csproj" />
   <Project Path="demos/Qyl.RealAdoNetDemo/Qyl.RealAdoNetDemo.csproj" />
   <Project Path="demos/Qyl.RealAspNetCoreDemo/Qyl.RealAspNetCoreDemo.csproj" />
   <Project Path="demos/Qyl.RealAspNetCoreMetricsDemo/Qyl.RealAspNetCoreMetricsDemo.csproj" />
+  <Project Path="demos/Qyl.RealCoreWcfDemo/Qyl.RealCoreWcfDemo.csproj" />
   <Project Path="demos/Qyl.RealAzureDemo/Qyl.RealAzureDemo.csproj" />
   <Project Path="demos/Qyl.RealEfCoreDemo/Qyl.RealEfCoreDemo.csproj" />
   <Project Path="demos/Qyl.RealElasticsearchDemo/Qyl.RealElasticsearchDemo.csproj" />
   <Project Path="demos/Qyl.RealElasticTransportDemo/Qyl.RealElasticTransportDemo.csproj" />
+  <Project Path="demos/Qyl.RealGenAiDemo/Qyl.RealGenAiDemo.csproj" />
   <Project Path="demos/Qyl.RealGraphQlDemo/Qyl.RealGraphQlDemo.csproj" />
   <Project Path="demos/Qyl.RealGrpcClientDemo/Qyl.RealGrpcClientDemo.csproj" />
   <Project Path="demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj" />
@@ -13,6 +22,7 @@
   <Project Path="demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj" />
   <Project Path="demos/Qyl.RealLog4NetDemo/Qyl.RealLog4NetDemo.csproj" />
   <Project Path="demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj" />
+  <Project Path="demos/Qyl.RealMcpDemo/Qyl.RealMcpDemo.csproj" />
   <Project Path="demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj" />
   <Project Path="demos/Qyl.RealMySqlConnectorDemo/Qyl.RealMySqlConnectorDemo.csproj" />
   <Project Path="demos/Qyl.RealMySqlDataDemo/Qyl.RealMySqlDataDemo.csproj" />

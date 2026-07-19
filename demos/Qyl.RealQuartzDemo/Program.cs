@@ -122,7 +122,7 @@ internal sealed record QuartzReport(
         if (error is null)
             failures.Add("missing error Quartz execute span");
         else if (!error.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, out var errorType) ||
-                 !StringComparer.Ordinal.Equals(errorType, "InvalidOperationException"))
+                 !StringComparer.Ordinal.Equals(errorType, "System.InvalidOperationException"))
             failures.Add("expected error.type=InvalidOperationException on error span");
 
         foreach (var span in quartzSpans)

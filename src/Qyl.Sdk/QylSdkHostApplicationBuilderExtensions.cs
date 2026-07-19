@@ -8,19 +8,20 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 using Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 namespace Qyl;
 
 /// <summary>
 /// The one-line qyl onboarding surface: <c>builder.AddQyl()</c> activates the qyl
-/// auto-instrumentation listeners, wires the OpenTelemetry SDK with the qyl, ASP.NET Core,
-/// HttpClient, GenAI, and MCP sources plus the full qyl meter inventory, propagates
+/// auto-instrumentation listeners, wires the OpenTelemetry SDK with qyl-owned ASP.NET Core and
+/// HttpClient spans, version-pinned GenAI, Azure SDK, MCP, and CoreWCF sources plus the native and
+/// qyl-owned meter inventory, propagates
 /// <c>session.id</c> across traces, and exports traces, metrics, and logs over OTLP — to
 /// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl collector.
-/// The qyl DiagnosticListeners emit EF Core, SqlClient, and gRPC-client spans under the single
-/// qyl ActivitySource, so those integrations need no extra source registration here (and adding
-/// the libraries' native sources would double-report them).
+/// The specialist EF Core and SqlClient packages and the gRPC-client listener emit spans under
+/// the single qyl ActivitySource, so they need no extra source registration here. Applications
+/// still install the specialist package for each dependency-heavy database integration; adding
+/// competing native sources would double-report the same operations.
 /// </summary>
 public static class QylSdkHostApplicationBuilderExtensions
 {
@@ -28,10 +29,11 @@ public static class QylSdkHostApplicationBuilderExtensions
 
     /// <summary>Activate qyl instrumentation, session propagation, and OTLP export.</summary>
     /// <remarks>
-    /// GenAI telemetry additionally requires opting the agent itself in:
+    /// Wrapper-based GenAI telemetry additionally requires opting the library itself in:
     /// <c>agent.AsBuilder().UseOpenTelemetry().Build()</c> for Microsoft.Agents.AI, or
     /// <c>chatClient.AsBuilder().UseOpenTelemetry().Build()</c> for a bare IChatClient. The
-    /// sources are pre-registered here so that single line is all that's left.
+    /// Workflows use <c>WorkflowBuilder.WithOpenTelemetry()</c>. MCP and CoreWCF emit from
+    /// their official SDK paths without a separate telemetry wrapper.
     /// </remarks>
     public static IHostApplicationBuilder AddQyl(
         this IHostApplicationBuilder builder,
@@ -62,16 +64,13 @@ public static class QylSdkHostApplicationBuilderExtensions
             .ConfigureResource(resource => resource.AddService(serviceName))
             .WithTracing(tracing =>
             {
-                tracing.AddSource(
-                    QylActivitySource.Name,
-                    "Microsoft.AspNetCore",
-                    "System.Net.Http",
-                    "Experimental.Microsoft.Agents.AI",
-                    "Experimental.Microsoft.Extensions.AI",
-                    "Experimental.ModelContextProtocol");
+                tracing.AddSource(QylTelemetrySources.GetEnabledActivitySourceNames());
 
                 foreach (var source in options.AdditionalSources)
                     tracing.AddSource(source);
+
+                if (QylTelemetrySources.IsAzureTracingEnabled())
+                    tracing.AddProcessor(new QylAzureSpanProcessor());
 
                 if (options.EnableSessionPropagation)
                     tracing.AddProcessor(new QylSessionSpanProcessor());
@@ -88,10 +87,7 @@ public static class QylSdkHostApplicationBuilderExtensions
                 // GenAI meters, which are emitted by the same UseOpenTelemetry() opt-in that
                 // produces the gen_ai spans.
                 metrics.AddMeter(QylMetricMeters.GetEnabledMeterNames());
-                metrics.AddMeter(
-                    "Experimental.Microsoft.Extensions.AI",
-                    "Experimental.Microsoft.Agents.AI",
-                    "Experimental.ModelContextProtocol");
+                metrics.AddMeter(QylTelemetrySources.GetEnabledMeterNames());
 
                 foreach (var meter in options.AdditionalMeters)
                     metrics.AddMeter(meter);

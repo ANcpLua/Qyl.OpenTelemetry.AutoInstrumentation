@@ -27,42 +27,6 @@ internal static class QylRpcActivityPolicy
         return activity;
     }
 
-    public static Activity? StartWcfClientActivity(string clientType, string methodName)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.WcfClient,
-            QylActivityNames.WcfClient,
-            ActivityKind.Client,
-            QylInstrumentationDomains.RpcWcfClient);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetRpc(
-            activity,
-            QylSemanticAttributes.RpcSystemDotNetWcf,
-            clientType,
-            methodName);
-        return activity;
-    }
-
-    public static Activity? StartWcfCoreActivity(string serviceName, string contractName, string operationName)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.WcfCore,
-            QylActivityNames.CoreWcfServer,
-            ActivityKind.Server,
-            QylInstrumentationDomains.RpcWcfCore);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetRpc(
-            activity,
-            QylSemanticAttributes.RpcSystemDotNetWcf,
-            string.IsNullOrEmpty(contractName) ? serviceName : contractName,
-            operationName);
-        return activity;
-    }
-
     public static void SetGrpcOkStatus(Activity activity)
         => activity.SetTag(QylSemanticAttributes.RpcGrpcStatusCode, QylSemanticAttributes.RpcGrpcStatusCodeOk);
 

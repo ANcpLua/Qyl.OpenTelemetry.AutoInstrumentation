@@ -6,16 +6,31 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Azure;
 using Azure.Storage.Blobs;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
+using Qyl;
 
-var capturedActivities = new List<CapturedActivity>();
-using var activityListener = new ActivityListener
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
-};
-ActivitySource.AddActivityListener(activityListener);
+    ApplicationName = "Qyl.RealAzureDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-azure-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
+
+using var host = builder.Build();
+await host.StartAsync();
 
 var endpoint = new Uri($"http://{IPAddress.Loopback}:9/devstoreaccount1");
 var options = new BlobClientOptions
@@ -46,9 +61,12 @@ catch (RequestFailedException exception)
     Console.WriteLine("expected-azure-error=" + exception.GetType().Name);
 }
 
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
+
 var report = AzureReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    capturedActivities.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealAzureJsonContext.Default.AzureReport);
 Console.WriteLine(json);
@@ -87,15 +105,22 @@ internal sealed record AzureReport(
                 StringComparer.Ordinal.Equals(domain, "azure.sdk"))
             .ToArray();
 
-        if (azureSpans.Length != 2)
-            failures.Add($"expected 2 Azure spans, got {azureSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+        if (azureSpans.Length != 4)
+            failures.Add($"expected 4 Azure spans, got {azureSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+
+        var transportSpans = azureSpans
+            .Where(static span => StringComparer.Ordinal.Equals(span.Kind, "Client"))
+            .ToArray();
+        var operationSpans = azureSpans
+            .Where(static span => StringComparer.Ordinal.Equals(span.Kind, "Internal"))
+            .ToArray();
+        if (transportSpans.Length != 2)
+            failures.Add($"expected 2 Azure transport spans, got {transportSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+        if (operationSpans.Length != 2)
+            failures.Add($"expected 2 Azure operation spans, got {operationSpans.Length.ToString(CultureInfo.InvariantCulture)}");
 
         foreach (var span in azureSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "Azure SDK"))
-                failures.Add($"unexpected Azure span name: {span.Name}");
-            if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
-                failures.Add($"expected Azure span kind Client, got {span.Kind}");
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected Azure span status Error, got {span.Status}");
 
@@ -103,6 +128,20 @@ internal sealed record AzureReport(
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(RequestFailedException), failures);
             RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
             RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Path, failures);
+        }
+
+        foreach (var span in transportSpans)
+        {
+            if (!StringComparer.Ordinal.Equals(span.Name, "GET"))
+                failures.Add($"unexpected Azure transport span name: {span.Name}");
+            RequireTag(span, "http.request.method", "GET", failures);
+            RequireTag(span, "server.address", "127.0.0.1", failures);
+        }
+
+        foreach (var span in operationSpans)
+        {
+            if (!StringComparer.Ordinal.Equals(span.Name, "BlobServiceClient.GetProperties"))
+                failures.Add($"unexpected Azure operation span name: {span.Name}");
         }
 
         return new AzureReport(runtimeMode, failures.Count is 0, failures.ToArray(), azureSpans);

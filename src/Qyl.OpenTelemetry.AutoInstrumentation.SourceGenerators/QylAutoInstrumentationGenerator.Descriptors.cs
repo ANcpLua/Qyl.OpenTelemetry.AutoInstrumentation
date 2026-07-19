@@ -10,10 +10,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private enum InterceptorKind
     {
         HttpClient,
-        HttpWebRequest,
-        AspNetCoreEndpointMap,
-        MeterProviderBuilderAddMeter,
-        AzureClient,
         ElasticsearchClient,
         ElasticTransport,
         WcfClient,
@@ -34,8 +30,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         ILoggerLog,
         NLogLogger,
         Log4NetLogger,
-        EntityFrameworkCoreDbContext,
-        EntityFrameworkCoreQueryable,
         DbCommand,
     }
 
@@ -125,29 +119,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
             => EmitDbCommandInterceptor(builder, in invocation, index, this);
-    }
-
-    private sealed record HttpWebRequestBodyDescriptor(
-        string MethodPrefix,
-        string ReceiverName,
-        string RequestType,
-        string HelperType,
-        string GetStartTimeUtcMethod,
-        string StartActivityMethod,
-        string RecordResultMethod,
-        string RecordExceptionMethod) : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitHttpWebRequestInterceptor(builder, in invocation, index, this);
-    }
-
-    private sealed record MeterProviderBuilderBodyDescriptor(
-        string MethodPrefix,
-        string ReceiverName,
-        string EnabledMeterNamesExpression) : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitMeterProviderBuilderAddMeterInterceptor(builder, in invocation, index, this);
     }
 
     private sealed record LoggerBodyDescriptor(
@@ -353,12 +324,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         Logs,
     }
 
-    // Signal and AdditionalMetricIds are intentionally never read by C#: their
-    // consumer is tools/verify-contract-invariants.py, which parses the generator
-    // source at InterceptorTarget construction sites and composes contract keys
-    // from TelemetrySignal + InstrumentationId (69429cb made freeform keys
-    // unrepresentable). They also participate in record value equality. Do not
-    // delete them to satisfy an unused-member inspection.
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,
         TelemetrySignal Signal,

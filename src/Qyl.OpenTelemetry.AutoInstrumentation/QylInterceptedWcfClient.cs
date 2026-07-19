@@ -11,7 +11,22 @@ public static class QylInterceptedWcfClient
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity(string clientType, string methodName)
-        => QylRpcActivityPolicy.StartWcfClientActivity(clientType, methodName);
+    {
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.WcfClient,
+            QylActivityNames.WcfClient,
+            ActivityKind.Client,
+            QylInstrumentationDomains.RpcWcfClient);
+        if (activity is null)
+            return null;
+
+        QylActivityTags.SetRpc(
+            activity,
+            QylSemanticAttributes.RpcSystemDotNetWcf,
+            clientType,
+            methodName);
+        return activity;
+    }
 
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)

@@ -18,8 +18,6 @@ internal static class QylAutoInstrumentationIds
 {
     /// <summary>Well-known Ado Net value used by qyl auto-instrumentation.</summary>
     public const string AdoNet = "ADONET";
-    /// <summary>Well-known ASP.NET value used by qyl auto-instrumentation.</summary>
-    public const string AspNet = "ASPNET";
     /// <summary>Well-known ASP.NET Core value used by qyl auto-instrumentation.</summary>
     public const string AspNetCore = "ASPNETCORE";
     /// <summary>Well-known Azure value used by qyl auto-instrumentation.</summary>
@@ -40,6 +38,14 @@ internal static class QylAutoInstrumentationIds
     public const string Kafka = "KAFKA";
     /// <summary>Well-known Mass Transit value used by qyl auto-instrumentation.</summary>
     public const string MassTransit = "MASSTRANSIT";
+    /// <summary>Well-known Microsoft Agents AI value used by qyl auto-instrumentation.</summary>
+    public const string MicrosoftAgentsAi = "MICROSOFTAGENTSAI";
+    /// <summary>Well-known Microsoft Agents AI Workflows value used by qyl auto-instrumentation.</summary>
+    public const string MicrosoftAgentsAiWorkflows = "MICROSOFTAGENTSAIWORKFLOWS";
+    /// <summary>Well-known Microsoft Extensions AI value used by qyl auto-instrumentation.</summary>
+    public const string MicrosoftExtensionsAi = "MICROSOFTEXTENSIONSAI";
+    /// <summary>Well-known Model Context Protocol value used by qyl auto-instrumentation.</summary>
+    public const string ModelContextProtocol = "MCP";
     /// <summary>Well-known Mongo Db value used by qyl auto-instrumentation.</summary>
     public const string MongoDb = "MONGODB";
     /// <summary>Well-known My Sql Connector value used by qyl auto-instrumentation.</summary>
@@ -70,8 +76,6 @@ internal static class QylAutoInstrumentationIds
     public const string WcfClient = "WCFCLIENT";
     /// <summary>Well-known Wcf Core value used by qyl auto-instrumentation.</summary>
     public const string WcfCore = "WCFCORE";
-    /// <summary>Well-known Wcf Service value used by qyl auto-instrumentation.</summary>
-    public const string WcfService = "WCFSERVICE";
     /// <summary>Well-known I Logger value used by qyl auto-instrumentation.</summary>
     public const string ILogger = "ILOGGER";
     /// <summary>Well-known Log4 Net value used by qyl auto-instrumentation.</summary>

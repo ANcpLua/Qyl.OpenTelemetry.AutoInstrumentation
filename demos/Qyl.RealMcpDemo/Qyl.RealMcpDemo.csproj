@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.RealMcpDemo</RootNamespace>
+    <AssemblyName>Qyl.RealMcpDemo</AssemblyName>
+    <Description>Official in-process MCP client/server trace and NativeAOT proof for qyl.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qyl.Sdk\Qyl.Sdk.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -51,7 +51,6 @@ internal static class QylSensitiveCapturePolicy
         return instrumentationId switch
         {
             QylAutoInstrumentationIds.SqlClient => options.SqlClientSetDbStatementForText,
-            QylAutoInstrumentationIds.EntityFrameworkCore => options.EntityFrameworkCoreSetDbStatementForText,
             QylAutoInstrumentationIds.OracleMda => options.OracleMdaSetDbStatementForText,
             _ => false,
         };

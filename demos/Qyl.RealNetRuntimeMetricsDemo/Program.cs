@@ -5,13 +5,12 @@ using System.Text.Json.Serialization;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var exportedMetrics = new List<Metric>();
 
 using var meterProvider = Sdk
     .CreateMeterProviderBuilder()
-    .AddMeter(QylMetricMeters.NetRuntimeMeterName)
+    .AddMeter(DemoMetricNames.Runtime)
     .AddRuntimeInstrumentation()
     .AddInMemoryExporter(exportedMetrics)
     .Build();
@@ -75,7 +74,7 @@ internal sealed record NetRuntimeMetricsReport(
     {
         var failures = new List<string>();
         var runtimeMetrics = metrics
-            .Where(static metric => StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.NetRuntimeMeterName))
+            .Where(static metric => StringComparer.Ordinal.Equals(metric.MeterName, DemoMetricNames.Runtime))
             .ToArray();
 
         if (runtimeMetrics.Length is 0)
@@ -102,6 +101,11 @@ internal sealed record NetRuntimeMetricsReport(
         if (!metrics.Any(metric => StringComparer.Ordinal.Equals(metric.Name, name)))
             failures.Add($"missing runtime metric {name}");
     }
+}
+
+internal static class DemoMetricNames
+{
+    internal const string Runtime = "System.Runtime";
 }
 
 [JsonSerializable(typeof(NetRuntimeMetricsReport))]

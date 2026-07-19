@@ -202,7 +202,7 @@ internal sealed record KafkaReport(
 
         foreach (var span in sendError)
         {
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "ProduceException`2", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "Confluent.Kafka.ProduceException`2", failures);
             RequireKind(span, "Producer", failures);
         }
 

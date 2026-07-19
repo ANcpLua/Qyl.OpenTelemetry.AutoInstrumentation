@@ -16,13 +16,14 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
 CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj"
+HOSTING_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 
 PROGRAM = r'''
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var options = QylAutoInstrumentationOptions.Current;
 
@@ -53,9 +54,8 @@ Console.WriteLine("http.query.unredacted=" + options.HttpClientUrlQueryRedaction
 
 # External-consumer runtime probe: public API only (no IVT — the assembly name is
 # deliberately NOT VerifierProbe). Proves option env vars change EMITTED SPANS,
-# not merely parsed option values: a real HttpClient call through the generated
-# interceptor against a loopback server, asserting url.full redaction and
-# captured header attributes on the stopped activity.
+# not merely parsed option values: a real HttpClient call through the Hosting runtime
+# listener against a loopback server, asserting url.full redaction on the stopped activity.
 RUNTIME_PROGRAM = r'''
 using System.Diagnostics;
 using System.Net;
@@ -133,7 +133,7 @@ trace.sql=True
 metric.http=True
 metric.sql=True
 log.ilogger=True
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
 ef.text=False
 graphql.document=False
 oracle.text=False
@@ -181,7 +181,7 @@ trace.sql=False
 metric.http=True
 metric.sql=False
 log.ilogger=False
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
 ef.text=False
 graphql.document=False
 oracle.text=False
@@ -205,7 +205,7 @@ trace.sql=True
 metric.http=True
 metric.sql=True
 log.ilogger=True
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
 ef.text=True
 graphql.document=True
 oracle.text=True
@@ -229,7 +229,7 @@ trace.sql=True
 metric.http=True
 metric.sql=True
 log.ilogger=True
-meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Npgsql|Qyl.OpenTelemetry.AutoInstrumentation.Database|NServiceBus.Core|NServiceBus.Core.Pipeline.Incoming|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
 ef.text=False
 graphql.document=False
 oracle.text=False
@@ -273,11 +273,12 @@ def pack_runtime(feed: Path, env: dict[str, str]) -> None:
         if fcntl is not None:
             fcntl.flock(lock, fcntl.LOCK_EX)
         try:
-            run_checked(
-                ["dotnet", "pack", str(CORE_PROJECT), "-c", "Release", "-o", str(feed), "-v", "quiet"],
-                ROOT,
-                env,
-            )
+            for project in (CORE_PROJECT, DIAGNOSTIC_LISTENERS_PROJECT, HOSTING_PROJECT):
+                run_checked(
+                    ["dotnet", "pack", str(project), "-c", "Release", "-o", str(feed), "-v", "quiet"],
+                    ROOT,
+                    env,
+                )
         finally:
             if fcntl is not None:
                 fcntl.flock(lock, fcntl.LOCK_UN)
@@ -290,6 +291,7 @@ def write_project(
     version: str,
     assembly_name: str = "Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe",
     program: str | None = None,
+    package_id: str = "Qyl.OpenTelemetry.AutoInstrumentation",
 ) -> Path:
     directory.mkdir(parents=True)
     project_path = directory / "Consumer.csproj"
@@ -307,7 +309,7 @@ def write_project(
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="{package_id}" Version="{version}" />
   </ItemGroup>
 </Project>
 ''',
@@ -425,6 +427,7 @@ def main() -> None:
             version,
             assembly_name="Qyl.OpenTelemetry.RuntimeProbe",
             program=RUNTIME_PROGRAM,
+            package_id="Qyl.OpenTelemetry.AutoInstrumentation.Hosting",
         )
         run_checked(["dotnet", "build", str(runtime_project), "-c", "Release", "-v", "quiet"], runtime_project.parent, env)
         runtime_assembly = runtime_project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Qyl.OpenTelemetry.RuntimeProbe.dll"
