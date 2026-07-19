@@ -47,6 +47,22 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRoute, route);
         SemanticTagWriter.Set(activity, SemanticAttributes.UrlPath, path);
+
+        // Option parity with the interceptor lane: url.query obeys the ASP.NET Core
+        // redaction control; header capture obeys the configured capture lists.
+        if (activity is not null)
+        {
+            var query = AspNetCorePayloadReader.GetQuery(payload);
+            if (!string.IsNullOrEmpty(query))
+                Internal.QylSensitiveCapturePolicy.SetAspNetCoreUrlQuery(activity, query);
+
+            var options = QylAutoInstrumentationOptions.Current;
+            if (AspNetCorePayloadReader.GetRequestHeaders(payload) is { } requestHeaders)
+                Internal.QylCaptureHelpers.SetRequestHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, requestHeaders);
+            if (AspNetCorePayloadReader.GetResponseHeaders(payload) is { } responseHeaders)
+                Internal.QylCaptureHelpers.SetRequestHeaders(activity, options.AspNetCoreCapturedResponseHeaderMap, responseHeaders);
+        }
+
         HttpSemantics.SetStatus(activity, ActivityKind.Server, statusCode, errorType);
     }
 }

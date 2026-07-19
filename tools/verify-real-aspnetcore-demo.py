@@ -123,6 +123,17 @@ def main() -> None:
     nativeaot = run_nativeaot(env)
     verify_report("managed ASP.NET Core demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT ASP.NET Core demo", nativeaot, "nativeaot")
+
+    # Opt-in scenario: header capture + raw url.query on the emitted server span,
+    # asserted by the demo report itself. Default runs above assert redaction and
+    # header absence. Reuses the published NativeAOT binary.
+    optin_env = dict(env)
+    optin_env["OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"] = "X-Demo-Req"
+    optin_env["OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"] = "X-Demo-Res"
+    optin_env["OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION"] = "true"
+    optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
+    verify_report("managed ASP.NET Core demo (capture opt-in)", run_managed(optin_env), "dynamic-code-supported")
+    verify_report("NativeAOT ASP.NET Core demo (capture opt-in)", run_nativeaot(optin_env), "nativeaot")
     print("real-aspnetcore-demo-ok")
 
 

@@ -22,6 +22,18 @@ internal static class AspNetCorePayloadReader
     public static int? GetStatusCode(object? payload)
         => GetHttpContext(payload)?.Response.StatusCode;
 
+    public static string? GetQuery(object? payload)
+    {
+        var query = GetHttpContext(payload)?.Request.QueryString;
+        return query is { HasValue: true } value ? value.Value![1..] : null;
+    }
+
+    public static IHeaderDictionary? GetRequestHeaders(object? payload)
+        => GetHttpContext(payload)?.Request.Headers;
+
+    public static IHeaderDictionary? GetResponseHeaders(object? payload)
+        => GetHttpContext(payload)?.Response.Headers;
+
     private static HttpContext? GetHttpContext(object? payload)
         => payload as HttpContext;
 }

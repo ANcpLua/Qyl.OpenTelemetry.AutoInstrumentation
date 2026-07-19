@@ -27,6 +27,7 @@ var app = builder.Build();
 app.MapHealthChecks("/healthz");
 app.MapGet("/items/{id:int}", (HttpContext context) =>
 {
+    context.Response.Headers["X-Demo-Res"] = "sv1";
     context.Response.StatusCode = StatusCodes.Status204NoContent;
     return Task.CompletedTask;
 });
@@ -38,6 +39,7 @@ try
 {
     var address = app.Urls.Single();
     using var httpClient = new HttpClient();
+    httpClient.DefaultRequestHeaders.Add("X-Demo-Req", "rv1");
     using (await httpClient.GetAsync($"{address}/items/42?sample=1"))
     {
     }
@@ -73,7 +75,12 @@ internal sealed record CapturedActivity(
             activity.Status.ToString(),
             activity.TagObjects.ToDictionary(
                 static tag => tag.Key,
-                static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                static tag => tag.Value switch
+                {
+                    string s => s,
+                    System.Collections.IEnumerable e => string.Join(",", e.Cast<object?>()),
+                    var other => Convert.ToString(other, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+                },
                 StringComparer.Ordinal));
 }
 
@@ -110,6 +117,28 @@ internal sealed record AspNetCoreReport(
         RequireTag(failureSpan, "error.type", "500", failures);
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
+
+        // Option rows are asserted in both directions, keyed off the same env vars
+        // the runtime honors: header capture opt-in and URL query redaction.
+        var captureOptIn = !string.IsNullOrEmpty(
+            Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"));
+        var redactionDisabled = string.Equals(
+            Environment.GetEnvironmentVariable("OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+
+        RequireTag(successSpan, "url.query", redactionDisabled ? "sample=1" : "sample=Redacted", failures);
+        if (captureOptIn)
+        {
+            RequireTag(successSpan, "http.request.header.x-demo-req", "rv1", failures);
+            RequireTag(successSpan, "http.response.header.x-demo-res", "sv1", failures);
+        }
+        else if (successSpan is not null &&
+                 (successSpan.Tags.ContainsKey("http.request.header.x-demo-req") ||
+                  successSpan.Tags.ContainsKey("http.response.header.x-demo-res")))
+        {
+            failures.Add("header attributes captured without opt-in");
+        }
 
         foreach (var span in httpServerSpans)
         {
