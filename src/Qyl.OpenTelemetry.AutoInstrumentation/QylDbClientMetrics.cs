@@ -1,7 +1,5 @@
 using System.Diagnostics.Metrics;
 
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
-
 namespace Qyl.OpenTelemetry.AutoInstrumentation;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl database Client Metrics.</summary>
