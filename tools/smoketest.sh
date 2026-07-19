@@ -206,7 +206,7 @@ foreach (var metric in exportedMetrics)
 }
 
 if (exportedQylHttpClientSpanCount != 1 ||
-    exportedNativeHttpClientSpanCount != 0 ||
+    exportedNativeHttpClientSpanCount != 1 ||
     rawHttpClientDurationMeasurementCount != 1 ||
     exportedHttpClientDurationMetricCount != 1 ||
     exportedHttpClientDurationSeriesCount != 1 ||

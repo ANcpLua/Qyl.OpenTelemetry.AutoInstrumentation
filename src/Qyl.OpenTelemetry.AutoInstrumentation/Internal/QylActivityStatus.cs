@@ -10,9 +10,17 @@ internal static class QylActivityStatus
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().FullName);
+        activity.SetTag(QylSemanticAttributes.ErrorType, GetErrorTypeName(exception.GetType()));
         activity.SetStatus(ActivityStatusCode.Error);
     }
+
+    /// <summary>Namespace-qualified type name without generic-argument expansion, so generic
+    /// exceptions stay bounded ("Confluent.Kafka.ProduceException`2") instead of the
+    /// assembly-qualified FullName explosion.</summary>
+    private static string GetErrorTypeName(Type type)
+        => !type.IsGenericType && type.FullName is { } fullName
+            ? fullName
+            : type.Namespace is { } ns ? ns + "." + type.Name : type.Name;
 
     public static void RecordError(Activity? activity, int statusCode)
     {

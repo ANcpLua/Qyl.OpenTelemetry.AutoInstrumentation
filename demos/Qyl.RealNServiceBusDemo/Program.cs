@@ -203,7 +203,7 @@ internal sealed record NServiceBusReport(
         Require(publishSuccess, "successful publish span", failures);
         Require(sendSuccess, "successful send span", failures);
         Require(sendError, "error send span", failures);
-        RequireTag(sendError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "Exception", failures);
+        RequireTag(sendError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "System.Exception", failures);
         if (publishMetrics.Length != 1)
             failures.Add($"expected 1 publish duration measurement, got {publishMetrics.Length}");
         if (sendMetrics.Length != 2)
