@@ -27,7 +27,7 @@ Three API categories are explicit, and 6.0.0 fixed their concrete form. Preserve
 2. A generated-code ABI for cross-assembly interceptor calls, living in the
    `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` namespace, every member
    `[EditorBrowsable(EditorBrowsableState.Never)]`, anchored by the
-   `QylGeneratedCodeAbi.V6` const that every generated interceptor file references so
+   `QylGeneratedCodeAbi.V8` const that every generated interceptor file references so
    a generator/runtime ABI mismatch fails compilation. That namespace, the anchor, and
    the `V<major>` bump on a breaking ABI change are load-bearing: the snapshot and
    invariant verifiers pin these exact tokens. Do not rename or re-derive them.
@@ -57,7 +57,7 @@ Two generated namespaces exist, four characters apart. Do not conflate them:
   interceptor methods, and the value `buildTransitive` adds to
   `InterceptorsNamespaces`. Compiler-facing wiring; 6.0.0 did not move it.
 - `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` — the runtime ABI helpers
-  (`QylIntercepted*`, `QylMetricMeters`, the `QylGeneratedCodeAbi.V6` anchor) that
+  (`QylIntercepted*`, `QylMetricMeters`, the `QylGeneratedCodeAbi.V8` anchor) that
   emitted interceptors call into.
 
 Emitted code lives in the first and delegates to the second. Renaming either side —
@@ -92,6 +92,30 @@ own the same call site.
   NativeAOT-verified integrations.
 - Missing runtime values stay missing. Keep span names and metric dimensions bounded;
   sensitive values follow the repository's explicit redaction/opt-in controls.
+
+## Upstream currency
+
+This repository instruments a live ecosystem, not the one training data remembers.
+Plans, feasibility verdicts, and roadmaps rot silently; treat every stored claim
+about an external library as dated the moment it is written.
+
+- Before judging, planning, or implementing any external library or framework
+  integration, verify against live upstream — the package registry and the
+  project's own repository — that the target is current, maintained, and has no
+  successor. Ask the successor question explicitly; a package that still resolves
+  on NuGet can already be legacy. (Canonical failure: Semantic Kernel was judged
+  as an integration target after it had merged into Microsoft Agent Framework.)
+- Record in the plan or verdict what was checked and on which date. An undated
+  feasibility claim about an external library is an opinion, not a finding.
+- Subagent and workflow prompts that evaluate external libraries must carry this
+  check, and adversarial refuters must include a "is this superseded, deprecated,
+  or renamed upstream?" lens.
+- Correct drift in what already ships — registered source/meter names, pinned
+  upstream identifiers, documented library claims — before adding new integration
+  targets. Reconciling the existing surface with upstream reality outranks new
+  scope.
+- When comparing against the `qyl-references/` clones, pull them first; a stale
+  reference clone reintroduces exactly the drift this section exists to prevent.
 
 ## Package boundaries
 
