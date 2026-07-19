@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import platform
 import subprocess
@@ -157,10 +158,19 @@ def verify_or_update_verified(stdout: str, update: bool) -> None:
     if canonical != expected:
         received = VERIFIED_PATH.with_suffix(".received.json")
         received.write_text(canonical, encoding="utf-8")
+        diff = "".join(
+            difflib.unified_diff(
+                expected.splitlines(keepends=True),
+                canonical.splitlines(keepends=True),
+                fromfile="verified/report.json",
+                tofile="report.received.json",
+            )
+        )
         fail(
             "web API AOT verified mismatch\n"
             f"expected={VERIFIED_PATH}\n"
-            f"received={received}"
+            f"received={received}\n"
+            f"{diff}"
         )
 
 
