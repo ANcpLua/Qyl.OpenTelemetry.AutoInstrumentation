@@ -102,7 +102,7 @@ internal sealed record SqliteReport(
         Require(insert, "successful INSERT span", failures);
         Require(selectSuccess, "successful SELECT span", failures);
         Require(selectError, "error SELECT span", failures);
-        RequireTag(selectError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(SqliteException), failures);
+        RequireTag(selectError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(SqliteException).FullName!, failures);
 
         foreach (var span in sqliteSpans)
         {

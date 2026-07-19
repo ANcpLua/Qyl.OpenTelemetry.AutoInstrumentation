@@ -136,7 +136,7 @@ internal sealed record RabbitMqReport(
         }
 
         foreach (var span in error)
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "AlreadyClosedException", failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(RabbitMQ.Client.Exceptions.AlreadyClosedException).FullName!, failures);
 
         return new RabbitMqReport(runtimeMode, failures.Count is 0, failures.ToArray(), rabbitSpans);
     }

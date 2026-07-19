@@ -217,7 +217,7 @@ internal sealed record SqlClientReport(
         {
             RequireMissingTag(successSelect, "db.query.text", failures);
         }
-        RequireTag(errorSelect, "error.type", sourceInterceptorExpected ? nameof(SqlException) : "208", failures);
+        RequireTag(errorSelect, "error.type", sourceInterceptorExpected ? typeof(SqlException).FullName! : "208", failures);
         RequireTag(errorSelect, "db.operation.name", "SELECT", failures);
 
         foreach (var span in sqlSpans)

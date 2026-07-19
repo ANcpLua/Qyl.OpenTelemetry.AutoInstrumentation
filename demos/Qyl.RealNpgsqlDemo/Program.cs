@@ -127,7 +127,7 @@ internal sealed record NpgsqlReport(
 
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql, failures);
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(InvalidOperationException), failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
             RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 

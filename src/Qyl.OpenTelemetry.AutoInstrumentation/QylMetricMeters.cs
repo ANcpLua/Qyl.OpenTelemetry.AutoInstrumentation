@@ -32,8 +32,14 @@ internal static class QylMetricMeters
     internal const string NameResolutionMeterName = "System.Net.NameResolution";
     /// <summary>Well-known Database Meter Name value used by qyl auto-instrumentation.</summary>
     internal const string DatabaseMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
+    /// <summary>Npgsql's library-native Meter, carrying its connection-pool and command instruments.</summary>
+    internal const string NpgsqlNativeMeterName = "Npgsql";
     /// <summary>Well-known N Service Bus Meter Name value used by qyl auto-instrumentation.</summary>
     internal const string NServiceBusMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus";
+    /// <summary>NServiceBus's library-native core Meter.</summary>
+    internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
+    /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
+    internal const string NServiceBusNativeIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
     /// <summary>Well-known Net Runtime Meter Name value used by qyl auto-instrumentation.</summary>
     internal const string NetRuntimeMeterName = "System.Runtime";
     /// <summary>Well-known Process Meter Name value used by qyl auto-instrumentation.</summary>

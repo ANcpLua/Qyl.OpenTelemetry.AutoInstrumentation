@@ -255,7 +255,15 @@ MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
     "signals.traces.MICROSOFTAGENTSAIWORKFLOWS",
 }
 IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST: set[str] = set()
-GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = set()
+# Signals whose contract row is owned by the runtime_public_telemetry listener/meter lane while a
+# source interceptor also binds their call sites. QylSignalOwnership hands the emitted span to the
+# interceptor lane when it is present; the listener lane stays the contract owner because it covers
+# call sites the interceptor cannot see (raw CallInvoker, HttpMessageInvoker, DI-injected clients).
+GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = {
+    "signals.traces.HTTPCLIENT",
+    "signals.metrics.HTTPCLIENT",
+    "signals.traces.GRPCNETCLIENT",
+}
 GENERATED_INTERCEPTOR_CATALOG_REQUIRED_SIGNAL_KEYS = {
     "signals.logs.ILOGGER",
     "signals.logs.LOG4NET",

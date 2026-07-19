@@ -120,7 +120,7 @@ internal sealed record RedisReport(
         Require(get, "successful GET span", failures);
         Require(del, "successful DEL span", failures);
         Require(executeError, "error EXECUTE span", failures);
-        RequireTag(executeError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "RedisServerException", failures);
+        RequireTag(executeError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(StackExchange.Redis.RedisServerException).FullName!, failures);
 
         foreach (var span in redisSpans)
         {

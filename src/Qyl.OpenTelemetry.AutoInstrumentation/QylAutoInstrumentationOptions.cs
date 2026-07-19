@@ -23,6 +23,14 @@ internal sealed class QylAutoInstrumentationOptions
         "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
     private const string AspNetCoreResponseHeadersVariable =
         "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
+    private const string GrpcClientRequestMetadataVariable =
+        "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA";
+    private const string GrpcClientResponseMetadataVariable =
+        "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA";
+    private const string HttpClientRequestHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
+    private const string HttpClientResponseHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
     private const string AspNetCoreUrlQueryRedactionDisabledVariable =
         "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION";
     private const string HttpClientUrlQueryRedactionDisabledVariable =
@@ -45,6 +53,10 @@ internal sealed class QylAutoInstrumentationOptions
         bool sqlClientSetDbStatementForText,
         string[] aspNetCoreCapturedRequestHeaders,
         string[] aspNetCoreCapturedResponseHeaders,
+        string[] grpcNetClientCapturedRequestMetadata,
+        string[] grpcNetClientCapturedResponseMetadata,
+        string[] httpClientCapturedRequestHeaders,
+        string[] httpClientCapturedResponseHeaders,
         string[] additionalMetricMeterNames,
         bool aspNetCoreUrlQueryRedactionDisabled,
         bool httpClientUrlQueryRedactionDisabled)
@@ -60,8 +72,16 @@ internal sealed class QylAutoInstrumentationOptions
         SqlClientSetDbStatementForText = sqlClientSetDbStatementForText;
         AspNetCoreCapturedRequestHeaders = aspNetCoreCapturedRequestHeaders;
         AspNetCoreCapturedResponseHeaders = aspNetCoreCapturedResponseHeaders;
+        GrpcNetClientCapturedRequestMetadata = grpcNetClientCapturedRequestMetadata;
+        GrpcNetClientCapturedResponseMetadata = grpcNetClientCapturedResponseMetadata;
+        HttpClientCapturedRequestHeaders = httpClientCapturedRequestHeaders;
+        HttpClientCapturedResponseHeaders = httpClientCapturedResponseHeaders;
         AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, aspNetCoreCapturedRequestHeaders);
         AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, aspNetCoreCapturedResponseHeaders);
+        GrpcNetClientCapturedRequestMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcRequestMetadataPrefix, grpcNetClientCapturedRequestMetadata, normalizeLookupName: true);
+        GrpcNetClientCapturedResponseMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcResponseMetadataPrefix, grpcNetClientCapturedResponseMetadata, normalizeLookupName: true);
+        HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, httpClientCapturedRequestHeaders);
+        HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, httpClientCapturedResponseHeaders);
         AdditionalMetricMeterNames = additionalMetricMeterNames;
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
@@ -97,9 +117,29 @@ internal sealed class QylAutoInstrumentationOptions
     /// <summary>Gets the configured ASP.NET Core Captured Response Headers value for the current qyl auto-instrumentation runtime.</summary>
     public string[] AspNetCoreCapturedResponseHeaders { get; }
 
+    /// <summary>Gets the configured gRPC Net Client Captured Request Metadata value for the current qyl auto-instrumentation runtime.</summary>
+    public string[] GrpcNetClientCapturedRequestMetadata { get; }
+
+    /// <summary>Gets the configured gRPC Net Client Captured Response Metadata value for the current qyl auto-instrumentation runtime.</summary>
+    public string[] GrpcNetClientCapturedResponseMetadata { get; }
+
+    /// <summary>Gets the configured HTTP Client Captured Request Headers value for the current qyl auto-instrumentation runtime.</summary>
+    public string[] HttpClientCapturedRequestHeaders { get; }
+
+    /// <summary>Gets the configured HTTP Client Captured Response Headers value for the current qyl auto-instrumentation runtime.</summary>
+    public string[] HttpClientCapturedResponseHeaders { get; }
+
     internal QylCapturedNameMap AspNetCoreCapturedRequestHeaderMap { get; }
 
     internal QylCapturedNameMap AspNetCoreCapturedResponseHeaderMap { get; }
+
+    internal QylCapturedNameMap GrpcNetClientCapturedRequestMetadataMap { get; }
+
+    internal QylCapturedNameMap GrpcNetClientCapturedResponseMetadataMap { get; }
+
+    internal QylCapturedNameMap HttpClientCapturedRequestHeaderMap { get; }
+
+    internal QylCapturedNameMap HttpClientCapturedResponseHeaderMap { get; }
 
     internal string[] AdditionalMetricMeterNames { get; }
 
@@ -205,6 +245,10 @@ internal sealed class QylAutoInstrumentationOptions
             EnvironmentOptions.ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
             EnvironmentOptions.ReadList(AspNetCoreRequestHeadersVariable),
             EnvironmentOptions.ReadList(AspNetCoreResponseHeadersVariable),
+            EnvironmentOptions.ReadList(GrpcClientRequestMetadataVariable),
+            EnvironmentOptions.ReadList(GrpcClientResponseMetadataVariable),
+            EnvironmentOptions.ReadList(HttpClientRequestHeadersVariable),
+            EnvironmentOptions.ReadList(HttpClientResponseHeadersVariable),
             EnvironmentOptions.ReadCaseSensitiveList(MetricsAdditionalSourcesVariable),
             EnvironmentOptions.ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
             EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false);

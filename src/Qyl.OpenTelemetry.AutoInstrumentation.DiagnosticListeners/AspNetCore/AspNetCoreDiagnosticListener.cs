@@ -22,15 +22,6 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
-        if (StringComparer.Ordinal.Equals(name, "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start"))
-        {
-            var ambient = Activity.Current;
-            if (ambient is not null)
-                ambient.ActivityTraceFlags |= ActivityTraceFlags.Recorded;
-
-            return;
-        }
-
         if (!StringComparer.Ordinal.Equals(name, "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop") ||
             QylAspNetCoreOwnership.MiddlewareRegistered)
             return;

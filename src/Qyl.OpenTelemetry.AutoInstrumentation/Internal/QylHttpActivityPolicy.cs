@@ -4,6 +4,28 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
 internal static class QylHttpActivityPolicy
 {
+    public static Activity? StartClientActivity(
+        string instrumentationDomain,
+        string method,
+        string? methodOriginal,
+        Uri? requestUri,
+        string? rawRequestUri)
+    {
+        var activity = QylActivityFactory.StartTraceActivity(
+            QylAutoInstrumentationIds.HttpClient,
+            QylActivityNames.HttpClient(method),
+            ActivityKind.Client,
+            instrumentationDomain);
+        if (activity is null)
+            return null;
+
+        SetRequestMethod(activity, method, methodOriginal);
+        if (requestUri is not null)
+            SetClientUrl(activity, requestUri, rawRequestUri);
+
+        return activity;
+    }
+
     public static Activity? StartServerActivity(
         string method,
         string? methodOriginal,
@@ -60,4 +82,16 @@ internal static class QylHttpActivityPolicy
             activity.SetTag(QylSemanticAttributes.HttpRequestMethodOriginal, methodOriginal);
     }
 
+    private static void SetClientUrl(Activity activity, Uri requestUri, string? rawRequestUri)
+    {
+        if (requestUri.IsAbsoluteUri)
+        {
+            activity.SetTag(QylSemanticAttributes.ServerAddress, requestUri.Host);
+            if (!requestUri.IsDefaultPort)
+                activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
+        }
+
+        var urlFull = requestUri.IsAbsoluteUri ? requestUri.ToString() : rawRequestUri ?? requestUri.ToString();
+        QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, urlFull);
+    }
 }

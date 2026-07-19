@@ -218,7 +218,7 @@ internal sealed record WebApiAotReport(
         AddRequired(signals, failures, "sqlclient.command", activities.FirstOrDefault(static activity =>
             HasTag(activity, "qyl.instrumentation.domain", "db.client") &&
             HasTag(activity, "db.operation.name", "SELECT") &&
-            HasTag(activity, "error.type", "InvalidOperationException")));
+            HasTag(activity, "error.type", "System.InvalidOperationException")));
 
         foreach (var signal in signals)
         {

@@ -24,8 +24,8 @@ Every row identifies its contract origin and carries a clickable authoritative s
 |---|---:|
 | `control_bound` | 7 |
 | `implemented` | 40 |
-| `option_bound` | 8 |
-| `unsupported_nativeaot` | 11 |
+| `option_bound` | 12 |
+| `unsupported_nativeaot` | 7 |
 
 ## Lane counts
 
@@ -33,19 +33,19 @@ Every row identifies its contract origin and carries a clickable authoritative s
 |---|---:|
 | `environment_control` | 7 |
 | `framework_initialization` | 1 |
-| `instrumentation_option` | 8 |
+| `instrumentation_option` | 12 |
 | `official_library_hook` | 7 |
 | `runtime_public_telemetry` | 8 |
 | `source_interceptor` | 24 |
-| `unsupported_nativeaot` | 11 |
+| `unsupported_nativeaot` | 7 |
 
 ## Evidence counts
 
 | Evidence level | Count |
 |---|---:|
-| `none` | 11 |
-| `verified_managed` | 21 |
-| `verified_nativeaot` | 34 |
+| `none` | 7 |
+| `verified_managed` | 23 |
+| `verified_nativeaot` | 36 |
 
 ## Matrix
 
@@ -103,10 +103,10 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 50 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L266) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
 | 51 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L267) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 52 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L268) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
-| 53 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L269) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
-| 54 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L270) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
-| 55 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L271) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
-| 56 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L272) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
+| 53 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L269) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
+| 54 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L270) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
+| 55 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L271) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
+| 56 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L272) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 57 | upstream 60 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L273) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 58 | upstream 60 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L274) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 59 | upstream 60 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L275) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
@@ -143,9 +143,5 @@ table only by gaining an executable owner or by upstream removing the promise.
 | `signals.metrics.ASPNET` | Upstream emits these metrics from the System.Web TelemetryHttpModule pipeline (.NET Framework-only) and gates them on the AspNet trace instrumentation, which is itself impossible here (see signals.traces.ASPNET). |
 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored. |
 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored. |
-| `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | The authoritative DiagnosticListener completion payload does not expose request Metadata; do not claim a bound no-op option. |
-| `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | The authoritative DiagnosticListener completion payload does not expose response Metadata; do not claim a bound no-op option. |
-| `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | The authoritative HttpHandlerDiagnosticListener Stop path exposes only Activity tags through the AOT-safe reader, not typed request headers; do not claim a bound no-op option. |
-| `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | The authoritative HttpHandlerDiagnosticListener Stop path exposes only Activity tags through the AOT-safe reader, not typed response headers; do not claim a bound no-op option. |
 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION` | Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored. |
 | `instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED` | The option's entire semantic is CLR-profiler IL rewriting of System.Data.SqlClient on .NET Framework; runtime IL rewriting is excluded from this package family by definition. Devil's-advocate check (2026-07-18): no substrate-legal mechanism honors the option's meaning. |

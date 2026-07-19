@@ -5,6 +5,95 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators;
 
 public sealed partial class QylAutoInstrumentationGenerator
 {
+    private static bool TryGetHttpClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsType(symbol.ContainingType, "global::System.Net.Http.HttpClient"))
+            return false;
+
+        if (string.Equals(symbol.Name, "Send", StringComparison.Ordinal) &&
+            IsType(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetSendShape(symbol, out var parameters))
+        {
+            target = HttpTarget(symbol, "Send", "global::System.Net.Http.HttpResponseMessage", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "SendAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetSendShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "SendAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: true, out parameters))
+        {
+            target = HttpTarget(symbol, "GetAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "DeleteAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "DeleteAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "PostAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriContentShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "PostAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "PutAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriContentShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "PutAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "PatchAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Net.Http.HttpResponseMessage") &&
+            TryGetRequestUriContentShape(symbol, out parameters))
+        {
+            target = HttpTarget(symbol, "PatchAsync", "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetStringAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.String") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "GetStringAsync", "global::System.Threading.Tasks.Task<string>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetByteArrayAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.Byte[]") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "GetByteArrayAsync", "global::System.Threading.Tasks.Task<byte[]>", parameters);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "GetStreamAsync", StringComparison.Ordinal) &&
+            IsTaskOf(symbol.ReturnType, "global::System.IO.Stream") &&
+            TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+        {
+            target = HttpTarget(symbol, "GetStreamAsync", "global::System.Threading.Tasks.Task<global::System.IO.Stream>", parameters);
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryGetDbCommandInvocation(
         IMethodSymbol symbol,
         ITypeSymbol? receiverType,
@@ -187,6 +276,63 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static bool IsSystemServiceModelType(ITypeSymbol? symbol)
         => symbol is INamedTypeSymbol named &&
            named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("System.ServiceModel");
+
+    private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncUnaryCall<TResponse>") ||
+            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            InterceptorKind.GrpcNetClientAsyncUnaryCall,
+            TelemetrySignal.Traces,
+            "GRPCNETCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            BuildParameters(symbol),
+            false);
+        return true;
+    }
+
+    private static bool TryGetGrpcNetClientStreamingInvocation(IMethodSymbol symbol, out InterceptorTarget target)
+    {
+        target = default;
+        if (!InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
+            return false;
+
+        var kind = default(InterceptorKind);
+        if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncServerStreamingCall<TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncServerStreamingCall;
+        }
+        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncClientStreamingCall;
+        }
+        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>"))
+        {
+            kind = InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall;
+        }
+        else
+        {
+            return false;
+        }
+
+        target = new InterceptorTarget(
+            kind,
+            TelemetrySignal.Traces,
+            "GRPCNETCLIENT",
+            CleanTypeName(symbol.ContainingType),
+            symbol.Name,
+            CleanTypeName(symbol.ReturnType, symbol),
+            BuildParameters(symbol),
+            false);
+        return true;
+    }
 
     private static bool TryGetKafkaInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {

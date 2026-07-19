@@ -25,7 +25,9 @@ internal static class EntityFrameworkCorePayloadReader
             QueryText: commandEvent.Command.CommandText,
             ErrorType: payload is CommandErrorEventData errorEvent
                 ? errorEvent.Exception.GetType().FullName
-                : null);
+                : null,
+            StartTime: commandEvent is CommandEndEventData endEvent ? endEvent.StartTime : TimeProvider.System.GetUtcNow(),
+            Duration: commandEvent is CommandEndEventData timedEvent ? timedEvent.Duration : TimeSpan.Zero);
 
         return true;
     }
@@ -53,4 +55,6 @@ internal readonly record struct EntityFrameworkCoreCommand(
     string? Operation,
     string? QuerySummary,
     string? QueryText,
-    string? ErrorType);
+    string? ErrorType,
+    DateTimeOffset StartTime,
+    TimeSpan Duration);

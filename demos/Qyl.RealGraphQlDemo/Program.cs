@@ -130,7 +130,7 @@ internal sealed record GraphQlReport(
         if (error is null)
             failures.Add("missing error GraphQL execute span");
         else
-            ExpectTag(error, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(ArgumentNullException), failures);
+            ExpectTag(error, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentNullException).FullName!, failures);
 
         foreach (var span in graphQlSpans)
         {

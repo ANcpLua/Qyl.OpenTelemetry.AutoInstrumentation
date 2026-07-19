@@ -6,8 +6,11 @@ public sealed partial class QylAutoInstrumentationGenerator
 {
     private static ImmutableArray<InterceptorMatcherDescriptor> CreateGeneratedMatcherDescriptors()
         => ImmutableArray.Create(
+            new InterceptorMatcherDescriptor(TryGetHttpClientInvocation),
             new InterceptorMatcherDescriptor(TryGetElasticInvocation),
             new InterceptorMatcherDescriptor(TryGetWcfClientInvocation),
+            new InterceptorMatcherDescriptor(TryGetGrpcNetClientAsyncUnaryInvocation),
+            new InterceptorMatcherDescriptor(TryGetGrpcNetClientStreamingInvocation),
             new InterceptorMatcherDescriptor(TryGetKafkaInvocation),
             new InterceptorMatcherDescriptor(TryGetMassTransitInvocation),
             new InterceptorMatcherDescriptor(TryGetNServiceBusInvocation),
@@ -24,9 +27,14 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static ImmutableArray<InterceptorEmissionDescriptor> CreateGeneratedEmissionDescriptors()
         => ImmutableArray.Create(
+            new InterceptorEmissionDescriptor(InterceptorKind.HttpClient, new ForwardingInterceptorBodyDescriptor("HttpClient", "client", "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient", ReceiverTypeOverride: "global::System.Net.Http.HttpClient")),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticsearchClient, new TraceInterceptorBodyDescriptor("Elastic", "client", MethodPrefixKind: TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName, AsyncObservation: new TraceAsyncObservationDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic.ObserveAsync", TraceAsyncObservationCondition.AsyncWithByRefParameters), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic", "StartActivity", "RecordException", TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.ElasticTransport, new TraceInterceptorBodyDescriptor("Elastic", "client", MethodPrefixKind: TraceMethodPrefixKind.InstrumentationIdAndTargetMethodName, AsyncObservation: new TraceAsyncObservationDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic.ObserveAsync", TraceAsyncObservationCondition.AsyncWithByRefParameters), RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic", "StartActivity", "RecordException", TraceStartActivityArgumentKind.InstrumentationIdAndTargetMethodName))),
             new InterceptorEmissionDescriptor(InterceptorKind.WcfClient, new TraceInterceptorBodyDescriptor("WcfClient", "client", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient", "StartActivity", "RecordException", TraceStartActivityArgumentKind.ReceiverTypeAndTargetMethodName))),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncUnaryCall, new GrpcClientBodyDescriptor(GrpcClientCallShape.Unary, "GrpcNetClientAsyncUnary", "client", "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncServerStreamingCall, new GrpcClientBodyDescriptor(GrpcClientCallShape.ServerStreaming, "GrpcNetClientAsyncServerStreaming", "client", "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncClientStreamingCall, new GrpcClientBodyDescriptor(GrpcClientCallShape.ClientStreaming, "GrpcNetClientAsyncClientStreaming", "client", "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient")),
+            new InterceptorEmissionDescriptor(InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall, new GrpcClientBodyDescriptor(GrpcClientCallShape.DuplexStreaming, "GrpcNetClientAsyncDuplexStreaming", "client", "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient")),
             new InterceptorEmissionDescriptor(InterceptorKind.KafkaProducer, new TraceInterceptorBodyDescriptor("KafkaProducer", "producer", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka", "StartProducerActivity", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.KafkaConsumer, new TraceInterceptorBodyDescriptor("KafkaConsumer", "consumer", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka", "StartConsumerActivity", "RecordException"))),
             new InterceptorEmissionDescriptor(InterceptorKind.MassTransitMessageOperation, new TraceInterceptorBodyDescriptor("MassTransit", "endpoint", RuntimeHelper: new TraceRuntimeHelperDescriptor("global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMassTransit", "StartActivity", "RecordException", TraceStartActivityArgumentKind.TargetMethodName))),

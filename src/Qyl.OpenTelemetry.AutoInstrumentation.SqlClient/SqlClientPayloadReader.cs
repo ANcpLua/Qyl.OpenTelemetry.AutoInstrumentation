@@ -9,6 +9,8 @@ internal static class SqlClientPayloadReader
 {
     private const string CommandKey = "Command";
     private const string ExceptionKey = "Exception";
+    private const string OperationIdKey = "OperationId";
+    private const string TimestampKey = "Timestamp";
 
     public static bool TryRead(object? payload, bool isError, out SqlClientCommand command)
     {
@@ -32,9 +34,38 @@ internal static class SqlClientPayloadReader
             QueryText: sqlCommand.CommandText,
             ServerAddress: endpoint.Address,
             ServerPort: endpoint.Port,
-            ErrorType: isError ? GetErrorType(exception) : null);
+            ErrorType: isError ? GetErrorType(exception) : null,
+            OperationId: TryGetPayloadStruct<Guid>(payload, OperationIdKey, out var operationId) ? operationId : null,
+            Timestamp: TryGetPayloadStruct<long>(payload, TimestampKey, out var timestamp) ? timestamp : null);
 
         return true;
+    }
+
+    public static bool TryReadOperationStart(object? payload, out Guid operationId, out long timestamp)
+    {
+        timestamp = 0;
+        return TryGetPayloadStruct(payload, OperationIdKey, out operationId) &&
+               TryGetPayloadStruct(payload, TimestampKey, out timestamp);
+    }
+
+    private static bool TryGetPayloadStruct<T>(object? payload, string key, out T value)
+        where T : struct
+    {
+        if (payload is IEnumerable<KeyValuePair<string, object>> entries)
+        {
+            foreach (var entry in entries)
+            {
+                if (StringComparer.Ordinal.Equals(entry.Key, key) &&
+                    entry.Value is T matched)
+                {
+                    value = matched;
+                    return true;
+                }
+            }
+        }
+
+        value = default;
+        return false;
     }
 
     private static bool TryGetPayloadValue<T>(object? payload, string key, out T? value)
@@ -128,6 +159,8 @@ internal readonly record struct SqlClientCommand(
     string? QueryText,
     string? ServerAddress,
     int? ServerPort,
-    string? ErrorType);
+    string? ErrorType,
+    Guid? OperationId,
+    long? Timestamp);
 
 internal readonly record struct SqlServerEndpoint(string? Address, int? Port);

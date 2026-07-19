@@ -1,12 +1,16 @@
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
 internal static class QylDbActivityPolicy
 {
-    private const string CommandActivityProperty = "Qyl.DbCommand";
+    /// <summary>Commands with an in-flight interceptor-lane activity. Weak on the command so neither
+    /// side outlives its natural lifetime: a command in an exporter queue is never pinned by its span,
+    /// and a collected command drops its entry automatically.</summary>
+    private static readonly ConditionalWeakTable<DbCommand, Activity> InFlightCommands = new();
 
     public static Activity? StartDbCommandActivity(DbCommand command, string instrumentationId, string operationName)
     {
@@ -19,7 +23,7 @@ internal static class QylDbActivityPolicy
         if (activity is null)
             return null;
 
-        activity.SetCustomProperty(CommandActivityProperty, command);
+        InFlightCommands.AddOrUpdate(command, activity);
 
         QylActivityTags.SetDb(
             activity,
@@ -37,13 +41,16 @@ internal static class QylDbActivityPolicy
 
     internal static bool HasCurrentActivityFor(DbCommand command)
     {
-        for (var activity = Activity.Current; activity is not null; activity = activity.Parent)
+        if (!InFlightCommands.TryGetValue(command, out var activity))
+            return false;
+
+        if (activity.IsStopped)
         {
-            if (ReferenceEquals(activity.GetCustomProperty(CommandActivityProperty), command))
-                return true;
+            InFlightCommands.Remove(command);
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     private static string NormalizeOperation(string operationName, DbCommand command)

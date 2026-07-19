@@ -10,7 +10,7 @@ internal static class QylActivityStatus
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().Name);
+        activity.SetTag(QylSemanticAttributes.ErrorType, exception.GetType().FullName);
         activity.SetStatus(ActivityStatusCode.Error);
     }
 

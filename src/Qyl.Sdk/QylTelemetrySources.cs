@@ -10,14 +10,22 @@ internal static class QylTelemetrySources
     internal const string ModelContextProtocol = "Experimental.ModelContextProtocol";
     internal const string CoreWcf = "CoreWCF.Primitives";
     internal const string Azure = "Azure.*";
+    internal const string AspNetCore = "Microsoft.AspNetCore";
+    internal const string HttpClient = "System.Net.Http";
 
     internal static string[] GetEnabledActivitySourceNames()
     {
         var options = QylAutoInstrumentationOptions.Current;
-        var names = new List<string>(6);
+        var names = new List<string>(8);
 
         if (options.HasAnyActivityInstrumentationEnabled())
             names.Add(QylActivitySource.Name);
+
+        // Framework-native sources: registering them makes ASP.NET Core hosting and HttpClient
+        // create their activities through the sampler (proper root sampling decisions, honored
+        // upstream traceparent) instead of the legacy unsampled DiagnosticListener fallback.
+        AddIfEnabled(names, options, QylAutoInstrumentationIds.AspNetCore, AspNetCore);
+        AddIfEnabled(names, options, QylAutoInstrumentationIds.HttpClient, HttpClient);
 
         AddIfEnabled(names, options, QylAutoInstrumentationIds.MicrosoftExtensionsAi, MicrosoftExtensionsAi);
         AddIfEnabled(names, options, QylAutoInstrumentationIds.MicrosoftAgentsAi, MicrosoftAgentsAi);
@@ -51,7 +59,6 @@ internal static class QylTelemetrySources
             QylAutoInstrumentationIds.MicrosoftAgentsAi,
             MicrosoftAgentsAi,
             QylAutoInstrumentationSignal.Metrics);
-
         return names.ToArray();
     }
 

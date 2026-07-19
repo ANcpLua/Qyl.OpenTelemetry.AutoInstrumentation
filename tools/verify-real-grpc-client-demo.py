@@ -137,6 +137,21 @@ def main() -> None:
     verify_report("managed gRPC client demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT gRPC client demo", nativeaot, "nativeaot")
 
+    # Interceptor lane (ClientBase<T> client shape): metadata capture opt-in asserts
+    # rpc.grpc.request/response.metadata.* on the emitted span; the client-mode
+    # default run asserts their ABSENCE. The invoker-lane runs above prove the
+    # DiagnosticListeners lane never captures. Reuses the published NativeAOT binary.
+    client_env = dict(env)
+    client_env["QYL_GRPC_DEMO_MODE"] = "client"
+    client_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
+    verify_report("managed gRPC client demo (client lane)", run_managed(client_env), "dynamic-code-supported")
+    verify_report("NativeAOT gRPC client demo (client lane)", run_nativeaot(client_env), "nativeaot")
+
+    optin_env = dict(client_env)
+    optin_env["OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"] = "X-Demo-Md"
+    optin_env["OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA"] = "X-Demo-Res-Md"
+    verify_report("managed gRPC client demo (metadata opt-in)", run_managed(optin_env), "dynamic-code-supported")
+    verify_report("NativeAOT gRPC client demo (metadata opt-in)", run_nativeaot(optin_env), "nativeaot")
     print("real-grpc-client-demo-ok")
 
 

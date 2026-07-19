@@ -22,26 +22,25 @@ evidence; the other new paths have managed evidence only.
 - **BREAKING:** deleted the orphan `QylInterceptedWcfCore` generated-code helper and
   its unused policy/domain/name tail. No generator called it; CoreWCF server spans
   now use the official `CoreWCF.Primitives` `ActivitySource` path.
-- **BREAKING:** deleted the generated HttpClient/HttpWebRequest, ASP.NET endpoint-map,
-  gRPC client, EF Core, Azure client, and `MeterProviderBuilder.AddMeter` interceptor
-  lanes and their unused generated-code helpers. Their process-wide ownership flags
-  could suppress later library-internal operations, while EF Core could emit an
-  extra outer span. Runtime listeners, specialist packages, explicit SDK meter
-  registration, and first-party Azure sources are now the single owners.
+- **BREAKING:** deleted the generated HttpWebRequest, ASP.NET endpoint-map,
+  EF Core, Azure client, and `MeterProviderBuilder.AddMeter` interceptor lanes and
+  their unused generated-code helpers. Runtime listeners, specialist packages,
+  explicit SDK meter registration, and first-party Azure sources are now the single
+  owners of those signals. The HttpClient and gRPC client interceptor lanes remain
+  the call-site owners of outbound HTTP/gRPC spans, header/metadata capture, and
+  URL redaction; their completion listeners defer per signal ownership.
 - **BREAKING:** deleted the DiagnosticListeners package's synthetic `qyl.db.efcore` and
   `qyl.db.sqlclient` demo listeners. Real EF Core and Microsoft.Data.SqlClient events
   are owned only by their dependency-isolating specialist packages.
-- **BREAKING:** removed the no-longer-actionable gRPC metadata and HttpClient header
-  capture bindings, plus the core package's `Grpc.Core.Api` dependency. The
-  authoritative completion listeners do not expose those typed values through their
-  AOT-safe payloads, so the four upstream options are now reported as unsupported
-  instead of being accepted as no-ops. ASP.NET Core header capture remains supported
-  through its typed `HttpContext` owner.
 - **BREAKING:** deleted the custom HTTP duration producer; the
   `System.Net.Http/http.client.request.duration` instrument is authoritative. The
   NServiceBus qyl meter is now `Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus`,
-  and the obsolete native Npgsql and NServiceBus incoming-pipeline meter ABI
-  constants were removed.
+  and `Qyl.Sdk` no longer force-registers the library-native `Npgsql`,
+  `NServiceBus.Core`, and `NServiceBus.Core.Pipeline.Incoming` meters — consumers
+  that want those instruments exported register them via
+  `QylSdkOptions.AdditionalMeters`. MCP metrics are likewise outside the 8.0.0
+  contract (mcp spans are registered; the `Experimental.ModelContextProtocol` meter
+  is consumer-registered).
 - **BREAKING:** renamed the public diagnostic extension base
   `DiagnosticListenerSubscriber` to `QylDiagnosticListenerSubscriber`. The five
   concrete ASP.NET Core, EF Core, gRPC client, HttpClient, and SqlClient listener

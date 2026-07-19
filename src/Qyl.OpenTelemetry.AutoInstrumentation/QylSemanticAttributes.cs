@@ -126,6 +126,10 @@ internal static class QylSemanticAttributes
     /// <summary>Well-known Rpc gRPC Status Code Ok value used by qyl auto-instrumentation.</summary>
     public static readonly int RpcGrpcStatusCodeOk = GetRpcGrpcStatusCodeOk();
 #pragma warning restore CS0618
+    /// <summary>Well-known gRPC Request Metadata Prefix value used by qyl auto-instrumentation.</summary>
+    public const string GrpcRequestMetadataPrefix = RpcAttributes.RequestMetadata + ".";
+    /// <summary>Well-known gRPC Response Metadata Prefix value used by qyl auto-instrumentation.</summary>
+    public const string GrpcResponseMetadataPrefix = RpcAttributes.ResponseMetadata + ".";
 
     /// <summary>Well-known Messaging System value used by qyl auto-instrumentation.</summary>
     public const string MessagingSystem = MessagingAttributes.System;

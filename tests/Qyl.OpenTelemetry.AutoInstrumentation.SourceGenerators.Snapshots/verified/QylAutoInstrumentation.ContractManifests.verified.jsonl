@@ -8,6 +8,11 @@
 {"interceptorKind":"ElasticTransport","signal":"traces","instrumentationId":"ELASTICTRANSPORT","additionalMetricIds":[],"contractKeys":["signals.traces.ELASTICTRANSPORT"]}
 {"interceptorKind":"ElasticsearchClient","signal":"traces","instrumentationId":"ELASTICSEARCH","additionalMetricIds":[],"contractKeys":["signals.traces.ELASTICSEARCH"]}
 {"interceptorKind":"GraphQlDocumentExecuter","signal":"traces","instrumentationId":"GRAPHQL","additionalMetricIds":[],"contractKeys":["signals.traces.GRAPHQL"]}
+{"interceptorKind":"GrpcNetClientAsyncClientStreamingCall","signal":"traces","instrumentationId":"GRPCNETCLIENT","additionalMetricIds":[],"contractKeys":["signals.traces.GRPCNETCLIENT"]}
+{"interceptorKind":"GrpcNetClientAsyncDuplexStreamingCall","signal":"traces","instrumentationId":"GRPCNETCLIENT","additionalMetricIds":[],"contractKeys":["signals.traces.GRPCNETCLIENT"]}
+{"interceptorKind":"GrpcNetClientAsyncServerStreamingCall","signal":"traces","instrumentationId":"GRPCNETCLIENT","additionalMetricIds":[],"contractKeys":["signals.traces.GRPCNETCLIENT"]}
+{"interceptorKind":"GrpcNetClientAsyncUnaryCall","signal":"traces","instrumentationId":"GRPCNETCLIENT","additionalMetricIds":[],"contractKeys":["signals.traces.GRPCNETCLIENT"]}
+{"interceptorKind":"HttpClient","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
 {"interceptorKind":"ILoggerExtensionLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
 {"interceptorKind":"ILoggerLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
 {"interceptorKind":"KafkaConsumer","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}

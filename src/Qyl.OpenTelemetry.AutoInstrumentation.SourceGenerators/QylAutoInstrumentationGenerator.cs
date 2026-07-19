@@ -42,8 +42,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     private static readonly ImmutableArray<InterceptorEmissionDescriptor> s_emissionDescriptors =
         CreateGeneratedEmissionDescriptors();
 
-    // Runtime packages are excluded so QylIntercepted* helpers cannot self-intercept
-    // (for example, QylInterceptedLogger.LogExtension calls logger.Log). Keep this set aligned
+    // Runtime packages are excluded so QylIntercepted* forwarding helpers cannot self-intercept
+    // (for example, QylInterceptedHttpClient.SendAsync calls client.SendAsync). Keep this set aligned
     // with runtime packages under /src; consumers, demos, and test fixtures remain instrumented.
     private static readonly HashSet<string> s_qylRuntimeAssemblies = new(StringComparer.Ordinal)
     {
@@ -168,6 +168,10 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         }
 
         builder.AppendLine("    }");
+        var grpcStreamReaderHelperType = GetGrpcStreamReaderHelperType(invocations);
+        if (!string.IsNullOrEmpty(grpcStreamReaderHelperType))
+            EmitGrpcStreamReaderWrapper(builder, grpcStreamReaderHelperType);
+
         builder.AppendLine("}");
 
         context.AddSource("QylAutoInstrumentation.Interceptors.g.cs",
@@ -246,6 +250,43 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("            {");
         builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("            }");
+    }
+
+    private static void EmitForwardingInterceptor(
+        StringBuilder builder,
+        in InterceptedInvocation invocation,
+        int index,
+        ForwardingInterceptorBodyDescriptor descriptor)
+    {
+        var target = invocation.Target;
+        var receiverType = string.IsNullOrEmpty(descriptor.ReceiverTypeOverride)
+            ? target.ReceiverType
+            : descriptor.ReceiverTypeOverride;
+        var helperMethodName = string.IsNullOrEmpty(descriptor.HelperMethodName)
+            ? target.MethodName
+            : descriptor.HelperMethodName;
+
+        EmitAttributeAndSignature(
+            builder,
+            invocation.Location,
+            target.ReturnType,
+            descriptor.MethodPrefix + "_" + target.MethodName,
+            index,
+            receiverType,
+            descriptor.ReceiverName,
+            target.Parameters,
+            isAsync: false,
+            target.TypeParameterList,
+            target.ConstraintClauses);
+        builder.Append("            => ");
+        builder.Append(descriptor.HelperType);
+        builder.Append('.');
+        builder.Append(helperMethodName);
+        builder.Append('(');
+        builder.Append(descriptor.ReceiverName);
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
+        builder.AppendLine(");");
+        builder.AppendLine();
     }
 
     private static void EmitTraceInterceptor(
@@ -510,6 +551,195 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
         builder.AppendLine("        }");
         builder.AppendLine();
+    }
+
+    private static void EmitGrpcNetClientInterceptor(
+        StringBuilder builder,
+        in InterceptedInvocation invocation,
+        int index,
+        GrpcClientBodyDescriptor descriptor)
+    {
+        var target = invocation.Target;
+        EmitAttributeAndSignature(builder, invocation.Location, target.ReturnType,
+            descriptor.MethodPrefix + "_" + target.MethodName, index, target.ReceiverType, descriptor.ReceiverName,
+            target.Parameters, isAsync: false);
+        builder.AppendLine("        {");
+        EmitGrpcCallPreamble(builder, in target, descriptor);
+        builder.Append("                return new ");
+        builder.Append(target.ReturnType);
+        builder.AppendLine("(");
+        EmitGrpcConstructorArguments(builder, descriptor);
+        EmitGrpcDisposeAction(builder, descriptor);
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.Append("                ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".RecordException(activity, exception);");
+        builder.AppendLine("                activity?.Dispose();");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+    }
+
+    private static void EmitGrpcConstructorArguments(StringBuilder builder, GrpcClientBodyDescriptor descriptor)
+    {
+        switch (descriptor.Shape)
+        {
+            case GrpcClientCallShape.Unary:
+                builder.Append("                    ");
+                builder.Append(descriptor.HelperType);
+                builder.AppendLine(
+                    ".ObserveUnaryResponseAsync(call.ResponseAsync, call.ResponseHeadersAsync, activity),");
+                break;
+
+            case GrpcClientCallShape.ServerStreaming:
+                builder.AppendLine(
+                    "                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity, call.ResponseHeadersAsync),");
+                break;
+
+            case GrpcClientCallShape.ClientStreaming:
+                builder.AppendLine("                    call.RequestStream,");
+                builder.Append("                    ");
+                builder.Append(descriptor.HelperType);
+                builder.AppendLine(
+                    ".ObserveUnaryResponseAsync(call.ResponseAsync, call.ResponseHeadersAsync, activity),");
+                break;
+
+            case GrpcClientCallShape.DuplexStreaming:
+                builder.AppendLine("                    call.RequestStream,");
+                builder.AppendLine(
+                    "                    QylObservedAsyncStreamReader.Create(call.ResponseStream, activity, call.ResponseHeadersAsync),");
+                break;
+
+            default:
+                throw new InvalidOperationException("Unknown gRPC client call shape: " + descriptor.Shape);
+        }
+
+        builder.AppendLine("                    observedResponseHeaders,");
+        builder.AppendLine("                    call.GetStatus,");
+        builder.AppendLine("                    call.GetTrailers,");
+    }
+
+    private static void EmitGrpcCallPreamble(StringBuilder builder, in InterceptorTarget target,
+        GrpcClientBodyDescriptor descriptor)
+    {
+        builder.Append("            var activity = ");
+        builder.Append(descriptor.HelperType);
+        builder.Append(".StartActivity(");
+        AppendStringLiteral(builder, target.ReceiverType);
+        builder.Append(", ");
+        AppendStringLiteral(builder, target.MethodName);
+        builder.Append(", ");
+        AppendGrpcMetadataExpression(builder, in target);
+        builder.AppendLine(");");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.Append("                var call = ");
+        builder.Append(descriptor.ReceiverName);
+        builder.Append('.');
+        builder.Append(target.MethodName);
+        builder.Append('(');
+        AppendArgumentList(builder, target.Parameters, includeLeadingComma: false);
+        builder.AppendLine(");");
+        builder.Append("                var observedResponseHeaders = ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".ObserveResponseHeadersAsync(call.ResponseHeadersAsync, activity);");
+    }
+
+    private static void EmitGrpcDisposeAction(StringBuilder builder, GrpcClientBodyDescriptor descriptor)
+    {
+        builder.AppendLine("                    () =>");
+        builder.AppendLine("                    {");
+        builder.AppendLine("                        try");
+        builder.AppendLine("                        {");
+        builder.AppendLine("                            call.Dispose();");
+        builder.AppendLine("                        }");
+        builder.AppendLine("                        finally");
+        builder.AppendLine("                        {");
+        builder.Append("                            ");
+        builder.Append(descriptor.HelperType);
+        builder.AppendLine(".Dispose(activity);");
+        builder.AppendLine("                        }");
+        builder.AppendLine("                    });");
+    }
+
+    private static void AppendGrpcMetadataExpression(StringBuilder builder, in InterceptorTarget target)
+    {
+        foreach (var parameter in target.Parameters)
+        {
+            if (string.Equals(parameter.TypeName, "global::Grpc.Core.Metadata", StringComparison.Ordinal))
+            {
+                builder.Append(parameter.Name);
+                return;
+            }
+        }
+
+        builder.Append("null");
+    }
+
+    private static void EmitGrpcStreamReaderWrapper(StringBuilder builder, string helperType)
+    {
+        builder.AppendLine();
+        builder.AppendLine("    internal static class QylObservedAsyncStreamReader");
+        builder.AppendLine("    {");
+        builder.AppendLine(
+            "        public static global::Grpc.Core.IAsyncStreamReader<T> Create<T>(global::Grpc.Core.IAsyncStreamReader<T> inner, global::System.Diagnostics.Activity? activity, global::System.Threading.Tasks.Task<global::Grpc.Core.Metadata>? responseHeadersTask)");
+        builder.AppendLine("            => new QylObservedAsyncStreamReader<T>(inner, activity, responseHeadersTask);");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine(
+            "    internal sealed class QylObservedAsyncStreamReader<T> : global::Grpc.Core.IAsyncStreamReader<T>");
+        builder.AppendLine("    {");
+        builder.AppendLine("        private readonly global::Grpc.Core.IAsyncStreamReader<T> _inner;");
+        builder.AppendLine("        private readonly global::System.Diagnostics.Activity? _activity;");
+        builder.AppendLine(
+            "        private readonly global::System.Threading.Tasks.Task<global::Grpc.Core.Metadata>? _responseHeadersTask;");
+        builder.AppendLine("        private bool _completed;");
+        builder.AppendLine();
+        builder.AppendLine(
+            "        public QylObservedAsyncStreamReader(global::Grpc.Core.IAsyncStreamReader<T> inner, global::System.Diagnostics.Activity? activity, global::System.Threading.Tasks.Task<global::Grpc.Core.Metadata>? responseHeadersTask)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            _inner = inner;");
+        builder.AppendLine("            _activity = activity;");
+        builder.AppendLine("            _responseHeadersTask = responseHeadersTask;");
+        builder.AppendLine("        }");
+        builder.AppendLine();
+        builder.AppendLine("        public T Current => _inner.Current;");
+        builder.AppendLine();
+        builder.AppendLine(
+            "        public async global::System.Threading.Tasks.Task<bool> MoveNext(global::System.Threading.CancellationToken cancellationToken)");
+        builder.AppendLine("        {");
+        builder.AppendLine("            try");
+        builder.AppendLine("            {");
+        builder.AppendLine(
+            "                var hasNext = await _inner.MoveNext(cancellationToken).ConfigureAwait(false);");
+        builder.AppendLine("                if (!hasNext && !_completed)");
+        builder.AppendLine("                {");
+        builder.AppendLine("                    _completed = true;");
+        builder.Append("                    ");
+        builder.Append(helperType);
+        builder.AppendLine(".CaptureCompletedResponseHeaders(_responseHeadersTask, _activity);");
+        builder.Append("                    ");
+        builder.Append(helperType);
+        builder.AppendLine(".RecordStreamingComplete(_activity);");
+        builder.AppendLine("                }");
+        builder.AppendLine();
+        builder.AppendLine("                return hasNext;");
+        builder.AppendLine("            }");
+        builder.AppendLine("            catch (global::System.Exception exception)");
+        builder.AppendLine("            {");
+        builder.Append("                ");
+        builder.Append(helperType);
+        builder.AppendLine(".RecordException(_activity, exception);");
+        builder.Append("                ");
+        builder.Append(helperType);
+        builder.AppendLine(".Dispose(_activity);");
+        builder.AppendLine("                throw;");
+        builder.AppendLine("            }");
+        builder.AppendLine("        }");
+        builder.AppendLine("    }");
     }
 
     private static void AppendGraphQlDocumentCaptureExpression(StringBuilder builder, in InterceptorTarget target)

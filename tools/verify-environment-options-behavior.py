@@ -43,6 +43,10 @@ Console.WriteLine("oracle.text=" + options.OracleMdaSetDbStatementForText);
 Console.WriteLine("sql.text=" + options.SqlClientSetDbStatementForText);
 Console.WriteLine("aspnetcore.req=" + string.Join("|", options.AspNetCoreCapturedRequestHeaders));
 Console.WriteLine("aspnetcore.res=" + string.Join("|", options.AspNetCoreCapturedResponseHeaders));
+Console.WriteLine("grpc.req=" + string.Join("|", options.GrpcNetClientCapturedRequestMetadata));
+Console.WriteLine("grpc.res=" + string.Join("|", options.GrpcNetClientCapturedResponseMetadata));
+Console.WriteLine("http.req=" + string.Join("|", options.HttpClientCapturedRequestHeaders));
+Console.WriteLine("http.res=" + string.Join("|", options.HttpClientCapturedResponseHeaders));
 Console.WriteLine("aspnetcore.query.unredacted=" + options.AspNetCoreUrlQueryRedactionDisabled);
 Console.WriteLine("http.query.unredacted=" + options.HttpClientUrlQueryRedactionDisabled);
 '''
@@ -84,11 +88,12 @@ var serve = Task.Run(async () =>
         if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0) break;
     }
     var response = Encoding.ASCII.GetBytes(
-        "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+        "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nX-Server: srv1\r\nConnection: close\r\n\r\n");
     await stream.WriteAsync(response);
 });
 
 using var http = new HttpClient();
+http.DefaultRequestHeaders.Add("X-Client", "abc");
 var response = await http.GetAsync($"http://127.0.0.1:{port}/probe?user=alice&token=hunter2");
 await serve;
 tcp.Stop();
@@ -111,6 +116,9 @@ foreach (var activity in captured)
     {
         if (key == "url.full")
             Console.WriteLine("url.full=" + value.Replace(":" + port, ":PORT"));
+        else if (key.StartsWith("http.request.header.", StringComparison.Ordinal)
+                 || key.StartsWith("http.response.header.", StringComparison.Ordinal))
+            Console.WriteLine(key + "=" + value);
     }
 }
 '''
@@ -132,6 +140,10 @@ oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
+grpc.req=
+grpc.res=
+http.req=
+http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -152,6 +164,10 @@ oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
+grpc.req=
+grpc.res=
+http.req=
+http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -172,6 +188,10 @@ oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
+grpc.req=
+grpc.res=
+http.req=
+http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -192,6 +212,10 @@ oracle.text=True
 sql.text=True
 aspnetcore.req=x-core-request|tenant
 aspnetcore.res=x-core-response|etag
+grpc.req=traceparent|authorization
+grpc.res=grpc-status|trailers
+http.req=authorization|x-client
+http.res=set-cookie|server
 aspnetcore.query.unredacted=True
 http.query.unredacted=True
 """
@@ -212,6 +236,10 @@ oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
+grpc.req=
+grpc.res=
+http.req=
+http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -219,6 +247,13 @@ http.query.unredacted=False
 
 RUNTIME_DEFAULT_EXPECTED = """http.status=204
 activity.count=1
+url.full=http://127.0.0.1:PORT/probe?user=Redacted&token=Redacted
+"""
+
+RUNTIME_CAPTURE_EXPECTED = """http.status=204
+activity.count=1
+http.request.header.x-client=abc
+http.response.header.x-server=srv1
 url.full=http://127.0.0.1:PORT/probe?user=Redacted&token=Redacted
 """
 
@@ -363,6 +398,10 @@ def main() -> None:
                     "OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT": "true",
                     "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Core-Request,Tenant",
                     "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Core-Response,ETag",
+                    "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA": "TraceParent, Authorization",
+                    "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA": "Grpc-Status, Trailers",
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "Authorization, X-Client",
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "Set-Cookie, Server",
                     "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION": "true",
                     "OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION": "true",
                 },
@@ -397,6 +436,18 @@ def main() -> None:
             "runtime: default redaction, no header capture",
             run_scenario(runtime_assembly, env, {}),
             RUNTIME_DEFAULT_EXPECTED,
+        )
+        assert_scenario(
+            "runtime: captured headers on emitted span",
+            run_scenario(
+                runtime_assembly,
+                env,
+                {
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Client",
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Server",
+                },
+            ),
+            RUNTIME_CAPTURE_EXPECTED,
         )
         assert_scenario(
             "runtime: url query redaction disabled",
