@@ -109,3 +109,19 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | 58 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L274) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 59 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L275) | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
 | 60 | `instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L276-L284) | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
+
+## Unsupported NativeAOT reasons
+
+Each unsupported row carries the verified blocking fact. A row leaves this
+table only by gaining an executable owner or by upstream removing the promise.
+
+| Key | Reason |
+|---|---|
+| `signals.traces.ASPNET` | Classic ASP.NET (System.Web MVC/WebApi) executes only on .NET Framework 4.x inside IIS; System.Web does not exist on .NET 10, so no in-process mechanism is available to this managed substrate. Devil's-advocate check (2026-07-18): Microsoft.AspNetCore.SystemWebAdapters covers apps mid-migration to ASP.NET Core, not the literal promise; rejected as a rescue. |
+| `signals.traces.WCFCORE` | Not yet implemented rather than impossible: CoreWCF >=1.8 natively emits server-side spans through its own ActivitySource ('CoreWCF.Primitives'), so registration-lane coverage is feasible (managed); planned on the qyl roadmap. Unsupported today because no executable owner exists yet. |
+| `signals.traces.WCFSERVICE` | System.ServiceModel server-side hosting (ServiceHost/ChannelDispatcher) does not exist on modern .NET; the promise as written is dead on .NET 10. The successor surface is CoreWCF (see signals.traces.WCFCORE). |
+| `signals.metrics.ASPNET` | Upstream emits these metrics from the System.Web TelemetryHttpModule pipeline (.NET Framework-only) and gates them on the AspNet trace instrumentation, which is itself impossible here (see signals.traces.ASPNET). |
+| `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored. |
+| `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored. |
+| `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION` | Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored. |
+| `instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED` | The option's entire semantic is CLR-profiler IL rewriting of System.Data.SqlClient on .NET Framework; runtime IL rewriting is excluded from this package family by definition. Devil's-advocate check (2026-07-18): no substrate-legal mechanism honors the option's meaning. |

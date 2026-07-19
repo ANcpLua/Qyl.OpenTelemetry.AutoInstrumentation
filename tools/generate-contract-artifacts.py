@@ -210,6 +210,7 @@ COMMON_ITEM_PROPERTIES = {
     "primary_owner",
     "evidence",
     "conformance_signals",
+    "unsupported_reason",
 }
 SIGNAL_ITEM_PROPERTIES = COMMON_ITEM_PROPERTIES | {
     "signal",
@@ -316,6 +317,7 @@ def resolve_contract(upstream: dict[str, Any], ownership: dict[str, Any]) -> dic
             "primary_owner",
             "evidence",
             "conformance_signals",
+            "unsupported_reason",
         ]:
             if field in overlay:
                 item[field] = overlay[field]
@@ -489,6 +491,14 @@ def verify_contract_item(item: dict[str, Any]) -> None:
         fail(f"reflection_required item must be research_required or unsupported_nativeaot: {key}")
     if key == "signals.traces.SQLCLIENT" and lane != "source_interceptor":
         fail("SqlClient trace contract must remain interceptor-primary")
+
+    # An unsupported row must state WHY it is unsupported; a supported row must not
+    # carry a leftover reason. Reasons are adversarially-verified facts, not prose.
+    unsupported_reason = str(item.get("unsupported_reason", ""))
+    if status == "unsupported_nativeaot" and not unsupported_reason:
+        fail(f"unsupported_nativeaot item must carry unsupported_reason: {key}")
+    if status != "unsupported_nativeaot" and unsupported_reason:
+        fail(f"non-unsupported item must not carry unsupported_reason: {key}")
 
     if status == "implemented":
         if evidence_level == "none":
@@ -785,6 +795,7 @@ def common_schema_properties() -> dict[str, Any]:
         "primary_owner": {"type": "string"},
         "evidence": string_array_schema(),
         "conformance_signals": {"type": "array", "items": {"$ref": "#/$defs/conformance_signal"}},
+        "unsupported_reason": {"type": "string", "minLength": 1},
     }
 
 
@@ -902,6 +913,22 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
             f"| {int(item['index'])} | `{item['key']}` | {format_upstream_sources(item)} | `{item['lane']}` | `{item['qyl_status']}` | "
             f"`{item['call_site_visibility']}` | `{item['payload_access']}` | `{item['evidence_level']}` | {escape_md(str(item['primary_owner']))} |"
         )
+    unsupported = [item for item in contract_items(contract) if item.get("qyl_status") == "unsupported_nativeaot"]
+    if unsupported:
+        lines.extend(
+            [
+                "",
+                "## Unsupported NativeAOT reasons",
+                "",
+                "Each unsupported row carries the verified blocking fact. A row leaves this",
+                "table only by gaining an executable owner or by upstream removing the promise.",
+                "",
+                "| Key | Reason |",
+                "|---|---|",
+            ]
+        )
+        for item in unsupported:
+            lines.append(f"| `{item['key']}` | {escape_md(str(item['unsupported_reason']))} |")
     lines.append("")
     return "\n".join(lines)
 

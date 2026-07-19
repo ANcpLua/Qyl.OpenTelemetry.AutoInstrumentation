@@ -152,6 +152,10 @@
         "items": {
           "$ref": "#/$defs/conformance_signal"
         }
+      },
+      "unsupported_reason": {
+        "type": "string",
+        "minLength": 1
       }
     },
     "signal_item": {
@@ -302,6 +306,10 @@
         },
         "supported_versions": {
           "type": "string"
+        },
+        "unsupported_reason": {
+          "type": "string",
+          "minLength": 1
         },
         "upstream_sources": {
           "type": "array",
@@ -493,6 +501,10 @@
         },
         "status": {
           "type": "string"
+        },
+        "unsupported_reason": {
+          "type": "string",
+          "minLength": 1
         },
         "upstream_sources": {
           "type": "array",
@@ -695,6 +707,10 @@
             "metrics",
             "logs"
           ]
+        },
+        "unsupported_reason": {
+          "type": "string",
+          "minLength": 1
         },
         "upstream_sources": {
           "type": "array",

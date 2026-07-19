@@ -98,6 +98,10 @@ contract_items:
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
   - docs/coverage-matrix.md
+  unsupported_reason: 'Classic ASP.NET (System.Web MVC/WebApi) executes only on .NET Framework 4.x inside IIS; System.Web
+    does not exist on .NET 10, so no in-process mechanism is available to this managed substrate. Devil''s-advocate check
+    (2026-07-18): Microsoft.AspNetCore.SystemWebAdapters covers apps mid-migration to ASP.NET Core, not the literal promise;
+    rejected as a rescue.'
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ASPNETCORE
   signal: traces
@@ -1033,6 +1037,9 @@ contract_items:
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
   - docs/coverage-matrix.md
+  unsupported_reason: 'Not yet implemented rather than impossible: CoreWCF >=1.8 natively emits server-side spans through
+    its own ActivitySource (''CoreWCF.Primitives''), so registration-lane coverage is feasible (managed); planned on the qyl
+    roadmap. Unsupported today because no executable owner exists yet.'
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.WCFSERVICE
   signal: traces
@@ -1062,6 +1069,8 @@ contract_items:
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
   - docs/coverage-matrix.md
+  unsupported_reason: System.ServiceModel server-side hosting (ServiceHost/ChannelDispatcher) does not exist on modern .NET;
+    the promise as written is dead on .NET 10. The successor surface is CoreWCF (see signals.traces.WCFCORE).
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.ASPNET
   signal: metrics
@@ -1096,6 +1105,8 @@ contract_items:
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
   - docs/coverage-matrix.md
+  unsupported_reason: Upstream emits these metrics from the System.Web TelemetryHttpModule pipeline (.NET Framework-only)
+    and gates them on the AspNet trace instrumentation, which is itself impossible here (see signals.traces.ASPNET).
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.ASPNETCORE
   signal: metrics
@@ -1870,6 +1881,8 @@ contract_items:
   evidence_level: none
   primary_owner: not_applicable
   evidence: []
+  unsupported_reason: Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate
+    (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored.
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1896,6 +1909,8 @@ contract_items:
   evidence_level: none
   primary_owner: not_applicable
   evidence: []
+  unsupported_reason: Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate
+    (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored.
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -2125,6 +2140,8 @@ contract_items:
   evidence_level: none
   primary_owner: not_applicable
   evidence: []
+  unsupported_reason: Parameterizes the classic System.Web ASPNET trace integration, which is impossible on this substrate
+    (see signals.traces.ASPNET); an option to a nonexistent integration cannot be honored.
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
@@ -2155,3 +2172,6 @@ contract_items:
   evidence_level: none
   primary_owner: not_applicable
   evidence: []
+  unsupported_reason: 'The option''s entire semantic is CLR-profiler IL rewriting of System.Data.SqlClient on .NET Framework;
+    runtime IL rewriting is excluded from this package family by definition. Devil''s-advocate check (2026-07-18): no substrate-legal
+    mechanism honors the option''s meaning.'
