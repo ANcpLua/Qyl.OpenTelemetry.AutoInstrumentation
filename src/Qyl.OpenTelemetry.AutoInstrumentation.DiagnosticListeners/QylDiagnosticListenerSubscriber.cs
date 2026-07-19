@@ -6,8 +6,8 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners;
 /// <summary>
 /// Base subscriber for built-in <see cref="DiagnosticListener"/> events. DiagnosticSource is a
 /// managed BCL primitive, so this layer emits spans without IL rewriting or runtime code generation.
-/// Concrete subscribers react on completion (<c>*.Stop</c>) and use
-/// <c>QylActivitySource.StartAtAmbientStart</c> so emitted duration reflects the real operation.
+/// Completion-driven subscribers use <c>QylActivitySource.StartAtAmbientStart</c> so emitted
+/// duration reflects the real operation.
 /// </summary>
 public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<string, object?>>, IDisposable
 {
@@ -31,10 +31,6 @@ public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<s
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
             return;
 
-        // Claim the DiagnosticListener lane for this signal. If a higher-priority lane (interceptor /
-        // generated middleware) also covers it, this subscriber defers in OnNext so the operation is
-        // instrumented exactly once. See QylSignalOwnership.
-        QylSignalOwnership.Register(InstrumentationId, QylSignalOwnership.DiagnosticListener);
         _allListenersSubscription ??= DiagnosticListener.AllListeners.Subscribe(new AllListenersObserver(this));
     }
 
@@ -43,8 +39,7 @@ public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<s
 
     void IObserver<KeyValuePair<string, object?>>.OnNext(KeyValuePair<string, object?> value)
     {
-        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId)
-            && QylSignalOwnership.ShouldEmit(InstrumentationId, QylSignalOwnership.DiagnosticListener))
+        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
             OnEvent(value.Key, value.Value);
     }
 

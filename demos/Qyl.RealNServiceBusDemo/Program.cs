@@ -9,7 +9,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NServiceBus;
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var captured = new List<CapturedActivity>();
 var capturedMetrics = new List<CapturedMetric>();
@@ -25,7 +24,7 @@ ActivitySource.AddActivityListener(listener);
 using var meterListener = new MeterListener();
 meterListener.InstrumentPublished = static (instrument, listener) =>
 {
-    if (StringComparer.Ordinal.Equals(instrument.Meter.Name, QylMetricMeters.NServiceBusMeterName) &&
+    if (StringComparer.Ordinal.Equals(instrument.Meter.Name, DemoMetricNames.NServiceBus) &&
         StringComparer.Ordinal.Equals(instrument.Name, "nservicebus.messaging.operation.duration"))
     {
         listener.EnableMeasurementEvents(instrument);
@@ -186,7 +185,7 @@ internal sealed record NServiceBusReport(
             .ToArray();
         var nServiceBusMetrics = metrics
             .Where(static metric =>
-                StringComparer.Ordinal.Equals(metric.MeterName, QylMetricMeters.NServiceBusMeterName) &&
+                StringComparer.Ordinal.Equals(metric.MeterName, DemoMetricNames.NServiceBus) &&
                 StringComparer.Ordinal.Equals(metric.Name, "nservicebus.messaging.operation.duration"))
             .ToArray();
 
@@ -277,6 +276,11 @@ internal sealed record NServiceBusReport(
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected metric {key}={expected}, got {actual}");
     }
+}
+
+internal static class DemoMetricNames
+{
+    internal const string NServiceBus = "Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus";
 }
 
 [JsonSerializable(typeof(NServiceBusReport))]

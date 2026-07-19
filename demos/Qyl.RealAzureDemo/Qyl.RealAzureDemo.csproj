@@ -5,24 +5,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Qyl.RealAzureDemo</RootNamespace>
     <AssemblyName>Qyl.RealAzureDemo</AssemblyName>
-    <Description>Real zero-code Azure SDK source-interceptor proof for qyl.</Description>
+    <Description>Real zero-code Azure SDK first-party ActivitySource proof for qyl.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
-    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
-                      Condition="'$(PublishAot)' != 'true'"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false"
-                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
-    <Analyzer Include="..\..\artifacts\bin\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\release\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
-              Condition="'$(PublishAot)' == 'true'" />
+    <ProjectReference Include="..\..\src\Qyl.Sdk\Qyl.Sdk.csproj" />
   </ItemGroup>
-
-  <Import Project="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.targets" />
 
 </Project>

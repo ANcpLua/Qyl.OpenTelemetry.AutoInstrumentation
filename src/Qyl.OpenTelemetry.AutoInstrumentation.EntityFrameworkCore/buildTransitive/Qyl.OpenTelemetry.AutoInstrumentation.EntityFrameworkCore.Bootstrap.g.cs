@@ -8,6 +8,6 @@ internal static class QylEntityFrameworkCoreAutoInstrumentationConsumerBootstrap
 {
     [ModuleInitializer]
     internal static void Initialize()
-        => EntityFrameworkCoreAutoInstrumentationBootstrap.Boot();
+        => global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.EntityFrameworkCoreAutoInstrumentationBootstrap.Boot();
 }
 #endif

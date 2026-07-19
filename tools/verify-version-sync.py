@@ -6,6 +6,7 @@ the shipped package. This gate enforces a single source of truth:
 
   * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag,
   * any version-pinned README package-reference example must equal that version,
+  * the generated-code ABI anchor and emitted references must exactly match the package major,
   * QylInstrumentation.Version must stay DERIVED from the build (no hardcoded semver literal).
 
 Any mismatch is a hard build failure.
@@ -21,6 +22,22 @@ PROPS = ROOT / "Directory.Build.props"
 README = ROOT / "README.md"
 INSTRUMENTATION = (
     ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylInstrumentation.cs"
+)
+GENERATED_CODE_ABI = (
+    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylGeneratedCodeAbi.cs"
+)
+GENERATOR = (
+    ROOT
+    / "src"
+    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
+    / "QylAutoInstrumentationGenerator.cs"
+)
+GENERATED_INTERCEPTOR_SNAPSHOT = (
+    ROOT
+    / "tests"
+    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots"
+    / "verified"
+    / "QylAutoInstrumentation.Interceptors.g.verified.cs"
 )
 
 STABLE_TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
@@ -92,6 +109,40 @@ def check_readme(version: str) -> None:
     print(f"  - {len(refs)} README example(s) all pinned to {version}")
 
 
+def check_generated_code_abi(version: str) -> None:
+    package_major = semver(version)[0]
+    expected_anchor = f"V{package_major}"
+    expected_declaration = [(expected_anchor, str(package_major))]
+    abi_text = GENERATED_CODE_ABI.read_text(encoding="utf-8")
+    declarations = re.findall(r"\bpublic const int (V\d+)\s*=\s*(\d+)\s*;", abi_text)
+    if declarations != expected_declaration:
+        fail(
+            "generated-code ABI declaration must exactly match the package major: "
+            f"expected={expected_declaration!r} actual={declarations!r}"
+        )
+
+    expected_reference = (
+        "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode."
+        f"QylGeneratedCodeAbi.{expected_anchor}"
+    )
+    reference_pattern = re.compile(
+        r"global::Qyl\.OpenTelemetry\.AutoInstrumentation\.GeneratedCode\."
+        r"QylGeneratedCodeAbi\.V\d+"
+    )
+    for label, path in [
+        ("source generator", GENERATOR),
+        ("generated interceptor snapshot", GENERATED_INTERCEPTOR_SNAPSHOT),
+    ]:
+        references = set(reference_pattern.findall(path.read_text(encoding="utf-8")))
+        if references != {expected_reference}:
+            fail(
+                f"{label} must reference exactly {expected_reference}: "
+                f"actual={sorted(references)!r}"
+            )
+
+    print(f"  - package major {package_major} exactly matches QylGeneratedCodeAbi.{expected_anchor}")
+
+
 def check_version_is_derived() -> None:
     text = INSTRUMENTATION.read_text(encoding="utf-8")
     literal = re.search(r'\bVersion\s*=\s*"\d', text)
@@ -114,6 +165,7 @@ def main() -> None:
     print(f"version-sync: single source of truth = Directory.Build.props <Version> = {version}")
     check_props_version(version)
     check_readme(version)
+    check_generated_code_abi(version)
     check_version_is_derived()
     print("version-sync: OK")
 

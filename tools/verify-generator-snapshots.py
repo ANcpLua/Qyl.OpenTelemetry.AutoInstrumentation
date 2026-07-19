@@ -6,6 +6,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from generator_manifest_coverage import ManifestCoverageError, collect_live_manifest_artifact
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PROJECT = (
@@ -18,6 +20,8 @@ FIXTURE_PROJECT = (
 FIXTURE_DIR = FIXTURE_PROJECT.parent
 GENERATED_ROOT = ROOT / "artifacts" / "obj" / FIXTURE_PROJECT.stem / "generated"
 VERIFIED_ROOT = FIXTURE_DIR.parent / "verified"
+VERIFIED_MANIFEST_ARTIFACT = VERIFIED_ROOT / "QylAutoInstrumentation.ContractManifests.verified.jsonl"
+RECEIVED_MANIFEST_ARTIFACT = GENERATED_ROOT / "QylAutoInstrumentation.ContractManifests.received.jsonl"
 
 EXPECTED_FILES = {
     "QylAutoInstrumentation.Interceptors.g.verified.cs": "QylAutoInstrumentation.Interceptors.g.cs",
@@ -59,9 +63,14 @@ def run_build() -> None:
             str(FIXTURE_PROJECT),
             "-c",
             "Release",
+            "--disable-build-servers",
             "--no-incremental",
+            "-m:1",
+            "/nr:false",
             "-v",
             "quiet",
+            "-p:NuGetAudit=false",
+            "-p:UseSharedCompilation=false",
         ],
         cwd=ROOT,
         text=True,
@@ -125,9 +134,31 @@ def compare_snapshots(files: dict[str, Path]) -> None:
     verify_interceptor_snapshot((VERIFIED_ROOT / "QylAutoInstrumentation.Interceptors.g.verified.cs").read_text(encoding="utf-8"))
 
 
+def compare_contract_manifest_coverage() -> None:
+    if not VERIFIED_MANIFEST_ARTIFACT.exists():
+        fail(f"missing verified generator manifest artifact: {VERIFIED_MANIFEST_ARTIFACT}")
+    try:
+        received = collect_live_manifest_artifact()
+    except ManifestCoverageError as error:
+        fail(str(error))
+
+    verified = VERIFIED_MANIFEST_ARTIFACT.read_text(encoding="utf-8")
+    if received == verified:
+        return
+
+    RECEIVED_MANIFEST_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
+    RECEIVED_MANIFEST_ARTIFACT.write_text(received, encoding="utf-8")
+    fail(
+        "generator contract manifest snapshot mismatch\n"
+        f"verified={VERIFIED_MANIFEST_ARTIFACT}\n"
+        f"received={RECEIVED_MANIFEST_ARTIFACT}"
+    )
+
+
 def main() -> None:
     run_build()
     compare_snapshots(generated_files_by_name())
+    compare_contract_manifest_coverage()
     print("generator-snapshots-ok")
 
 

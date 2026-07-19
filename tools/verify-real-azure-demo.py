@@ -66,8 +66,8 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 2:
-        fail(f"{name} expected exactly 2 Azure activities, got {activities!r}")
+    if not isinstance(activities, list) or len(activities) != 4:
+        fail(f"{name} expected exactly 4 Azure activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

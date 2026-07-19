@@ -28,15 +28,33 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+from generator_manifest_coverage import (
+    ManifestCoverageError,
+    parse_generated_interceptor_source,
+    parse_verified_manifest_artifact,
+)
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 GENERATOR_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
 INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
+GENERATED_INTERCEPTOR_SNAPSHOT_PATH = (
+    ROOT
+    / "tests"
+    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots"
+    / "verified"
+    / "QylAutoInstrumentation.Interceptors.g.verified.cs"
+)
+GENERATED_INTERCEPTOR_MANIFEST_ARTIFACT_PATH = (
+    GENERATED_INTERCEPTOR_SNAPSHOT_PATH.parent
+    / "QylAutoInstrumentation.ContractManifests.verified.jsonl"
+)
 OPTIONS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
 IDS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
 SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylSemanticAttributes.cs"
 HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
+DEMO_SOLUTION_PATH = ROOT / "Qyl.OpenTelemetry.AutoInstrumentation.Demos.slnx"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylMetricNames.cs"
@@ -141,10 +159,16 @@ MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
     "signals.traces.NSERVICEBUS",
     "signals.traces.QUARTZ",
     "signals.traces.WCFCLIENT",
+    "signals.traces.WCFCORE",
+    "signals.traces.MICROSOFTEXTENSIONSAI",
+    "signals.metrics.MICROSOFTEXTENSIONSAI",
+    "signals.traces.MICROSOFTAGENTSAI",
+    "signals.metrics.MICROSOFTAGENTSAI",
+    "signals.traces.MICROSOFTAGENTSAIWORKFLOWS",
 }
 # External contract: well-known meter names published by .NET / providers that
-# the metrics contract registers via intercepted AddMeter. Values, not C#
-# constant names — declarations are free to rename.
+# Qyl.Sdk registers explicitly. Values, not C# constant names — declarations
+# are free to rename.
 REQUIRED_REGISTERED_METER_NAME_VALUES = {
     "Microsoft.AspNetCore.Hosting",
     "Microsoft.AspNetCore.Routing",
@@ -160,17 +184,29 @@ REQUIRED_REGISTERED_METER_NAME_VALUES = {
     "Microsoft.AspNetCore.Components.Server.Circuits",
     "System.Net.Http",
     "System.Net.NameResolution",
+    "System.Runtime",
+    "Qyl.OpenTelemetry.AutoInstrumentation.Database",
+    "Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus",
+}
+FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
     "Npgsql",
     "NServiceBus.Core",
     "NServiceBus.Core.Pipeline.Incoming",
-    "System.Runtime",
-    "Qyl.OpenTelemetry.AutoInstrumentation.Database",
 }
-# External contract: well-known metric instrument names the contract pins.
-REQUIRED_METRIC_NAME_VALUES = {
-    "aspnetcore.components.navigate",
-    "http.server.request.duration",
-    "dns.lookup.duration",
+# External contract: instrument names emitted by qyl-owned metric producers.
+# Native System.Net and ASP.NET Core instruments are selected by meter name and
+# must not be mirrored as dead QylMetricNames constants.
+QYL_OWNED_METRIC_NAME_VALUES = {
+    "db.client.operation.duration",
+    "nservicebus.messaging.operation.duration",
+    "dotnet.process.cpu.time",
+    "dotnet.process.memory.working_set",
+    "dotnet.process.cpu.count",
+    "dotnet.gc.collections",
+    "dotnet.gc.last_collection.heap.size",
+    "dotnet.gc.heap.total_allocated",
+    "dotnet.thread_pool.queue.length",
+    "dotnet.thread_pool.thread.count",
 }
 # External contract: upstream OTEL .NET auto-instrumentation environment
 # variable for additional metric sources.
@@ -199,8 +235,6 @@ URL_FORMAT_ALLOWED_PATHS = {
     "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
 }
 DB_QUERY_TEXT_ALLOWED_PATHS = {
-    "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
-    "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/SqlClient/SqlClientDiagnosticListener.cs",
     "src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
     "src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
 }
@@ -357,6 +391,20 @@ def verify_managed_evidence_boundaries(artifacts: ModuleType, contract: dict[str
         )
 
 
+def verify_supported_version_overrides(artifacts: ModuleType, contract: dict[str, Any]) -> None:
+    items_by_key = {
+        str(item["key"]): item
+        for item in artifacts.contract_items(contract)
+    }
+    for key, expected in artifacts.QYL_SUPPORTED_VERSION_OVERRIDES.items():
+        actual = str(items_by_key[key]["supported_versions"])
+        if actual != expected:
+            fail(
+                f"qyl supported-version override mismatch for {key}: "
+                f"expected={expected!r} actual={actual!r}"
+            )
+
+
 def verify_handoff_real_demo_coverage(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     evidence_real_demo_verifiers = {
         evidence
@@ -427,17 +475,19 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
             fail(f"global control is not read by QylAutoInstrumentationOptions: {variable}")
 
     for item in instrumentation_options:
-        if item.get("qyl_status") != "option_bound":
-            continue
         variable = str(item["environment_variable"])
-        if variable not in options:
+        status = item.get("qyl_status")
+        if status == "option_bound" and variable not in options:
             fail(f"instrumentation option is not read by QylAutoInstrumentationOptions: {variable}")
+        if status == "unsupported_nativeaot" and variable in options:
+            fail(f"unsupported instrumentation option must be absent from QylAutoInstrumentationOptions: {variable}")
 
+    implemented_signals = list(artifacts.implemented_signal_items(contract))
     expected_by_signal = {
         signal: {
             str(item["instrumentation_id"])
-            for item in items
-            if item["kind"] == artifacts.SIGNAL_KIND and item.get("signal") == signal
+            for item in implemented_signals
+            if item.get("signal") == signal
         }
         for signal in ["traces", "metrics", "logs"]
     }
@@ -482,6 +532,20 @@ def verify_semconv_attribute_contract() -> None:
                     fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
 
 
+def verify_demo_solution_release_mapping() -> None:
+    listed_projects = set(re.findall(r'<Project Path="([^"]+\.csproj)"', DEMO_SOLUTION_PATH.read_text()))
+    source_projects = {
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "src").rglob("*.csproj")
+    }
+    missing_projects = source_projects - listed_projects
+    if missing_projects:
+        fail(
+            "demo solution must list every source project so Release configuration propagates to project references: "
+            f"{sorted(missing_projects)}"
+        )
+
+
 def verify_metric_contract() -> None:
     meters = METRIC_METERS_PATH.read_text()
     names = METRIC_NAMES_PATH.read_text()
@@ -497,11 +561,17 @@ def verify_metric_contract() -> None:
     missing_meters = REQUIRED_REGISTERED_METER_NAME_VALUES - registered_meter_values
     if missing_meters:
         fail(f"QylMetricMeters must register required well-known meter names: {sorted(missing_meters)}")
+    forbidden_meters = FORBIDDEN_REGISTERED_METER_NAME_VALUES & registered_meter_values
+    if forbidden_meters:
+        fail(f"QylMetricMeters must not register superseded native meter names: {sorted(forbidden_meters)}")
 
     metric_name_values = set(parse_string_constants(names).values())
-    missing_metric_names = REQUIRED_METRIC_NAME_VALUES - metric_name_values
-    if missing_metric_names:
-        fail(f"QylMetricNames must pin required well-known metric names: {sorted(missing_metric_names)}")
+    if metric_name_values != QYL_OWNED_METRIC_NAME_VALUES:
+        fail(
+            "QylMetricNames must contain exactly the qyl-owned instrument names: "
+            f"missing={sorted(QYL_OWNED_METRIC_NAME_VALUES - metric_name_values)} "
+            f"extra={sorted(metric_name_values - QYL_OWNED_METRIC_NAME_VALUES)}"
+        )
 
     if METRICS_ADDITIONAL_SOURCES_VARIABLE not in options:
         fail(
@@ -537,11 +607,26 @@ def verify_sensitive_attribute_emission_policy() -> None:
     for token in [
         "QylCaptureHelpers.RedactQueryValues(",
         "AspNetCoreUrlQueryRedactionDisabled",
-        "HttpClientUrlQueryRedactionDisabled",
         "GraphQlSetDocument",
     ]:
         if token not in policy:
             fail(f"QylSensitiveCapturePolicy must implement the redaction/opt-in controls: {token}")
+
+    http_semantics = (ROOT / SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH).read_text()
+    for token in [
+        "QylCaptureHelpers.FormatUrlFull(",
+        "HttpClientUrlQueryRedactionDisabled",
+    ]:
+        if token not in http_semantics:
+            fail(f"HttpSemantics must implement the HttpClient url.full redaction control: {token}")
+
+    stale_db_query_text_paths = sorted(
+        relative_path
+        for relative_path in DB_QUERY_TEXT_ALLOWED_PATHS
+        if not (ROOT / relative_path).is_file()
+    )
+    if stale_db_query_text_paths:
+        fail(f"db.query.text writer allowlist contains missing paths: {stale_db_query_text_paths}")
 
     for root in RUNTIME_EMISSION_ROOTS:
         for path in root.rglob("*.cs"):
@@ -739,49 +824,18 @@ def parse_emission_descriptor_bodies(generator: str) -> dict[str, str]:
     return bodies_by_kind
 
 
-def parse_db_instrumentation_ids(generator: str) -> set[str]:
-    match = re.search(
-        r"private static string GetDbInstrumentationId\([^)]*\)\s*\{(?P<body>.*?)\n    \}",
-        generator,
-        re.DOTALL,
-    )
-    if match is None:
-        fail("GetDbInstrumentationId helper missing from generator")
-
-    ids = set(re.findall(r'return "([A-Z0-9]+)";', match.group("body")))
-    if not ids:
-        fail("GetDbInstrumentationId must return database instrumentation ids")
-
-    return ids
-
-
-def parse_db_trace_contract_keys(generator: str) -> set[str]:
-    if re.search(r"TelemetrySignal\.Traces,\s*\n\s*instrumentationId,", generator) is None:
-        fail("DbCommand target must derive its trace contract key from GetDbInstrumentationId")
-
-    return {f"signals.traces.{db_id}" for db_id in parse_db_instrumentation_ids(generator)}
-
-
-def parse_additional_metric_id_keys(generator: str) -> set[str]:
-    # Additional signal claims are always metrics and are declared structurally
-    # as MetricIds("<INSTRUMENTATION_ID>", ...) — never as freeform key strings.
-    keys: set[str] = set()
-    for match in re.finditer(r"MetricIds\((.*?)\)", generator, re.DOTALL):
-        keys.update(f"signals.metrics.{m}" for m in re.findall(r'"([A-Z0-9]+)"', match.group(1)))
-
-    return keys
-
-
-def parse_db_metric_id_keys(generator: str) -> set[str]:
-    match = re.search(
-        r"private static [^=]+ GetDbMetricIds\([^)]*\)\s*=>.*?};",
-        generator,
-        re.DOTALL,
-    )
-    if match is None:
-        fail("GetDbMetricIds helper missing from generator")
-
-    return {f"signals.metrics.{m}" for m in re.findall(r'"([A-Z0-9]+)"', match.group(0))}
+def verify_generated_interceptor_manifests(
+    manifests: list[dict[str, Any]],
+    interceptor_kinds: set[str],
+    context: str,
+) -> set[str]:
+    emitted_keys: set[str] = set()
+    for index, manifest in enumerate(manifests):
+        kind = manifest["interceptorKind"]
+        if kind not in interceptor_kinds:
+            fail(f"{context} manifest {index} has unknown interceptor kind: {kind!r}")
+        emitted_keys.update(manifest["contractKeys"])
+    return emitted_keys
 
 
 def verify_matcher_registration(generator: str) -> None:
@@ -819,29 +873,7 @@ def verify_interceptor_emission_bodies(generator: str, kinds: set[str]) -> None:
             fail(f"generator must model emission bodies as a closed self-emitting descriptor hierarchy: {token}")
 
 
-def collect_generator_target_contract_keys(generator: str) -> set[str]:
-    # Primary keys are derived, never declared: each target names a
-    # TelemetrySignal and an InstrumentationId; the key is composed here.
-    signal_names = {"Traces": "traces", "Metrics": "metrics", "Logs": "logs"}
-    target_contract_keys = {
-        f"signals.{signal_names[match.group(1)]}.{match.group(2)}"
-        for match in re.finditer(
-            r"TelemetrySignal\.(Traces|Metrics|Logs),\s*\n\s*\"([A-Z0-9]+)\",",
-            generator,
-        )
-    }
-    if not target_contract_keys:
-        fail("no structurally derived target contract keys found in the generator")
-    target_contract_keys.update(parse_additional_metric_id_keys(generator))
-    target_contract_keys.update(parse_db_trace_contract_keys(generator))
-
-    if "GetDbMetricIds(instrumentationId)" not in generator:
-        fail("DbCommand target must route metric contract keys through GetDbMetricIds")
-    target_contract_keys.update(parse_db_metric_id_keys(generator))
-    return target_contract_keys
-
-
-def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: set[str]) -> None:
+def verify_interceptor_structure(generator: str) -> set[str]:
     kinds = parse_interceptor_kinds(generator)
     if not kinds:
         fail("InterceptorKind enum has no values")
@@ -853,7 +885,9 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     except IndexError:
         fail("EmitInterceptors dispatch block missing")
 
-    if "GetEmissionDescriptor(invocation.Target)" not in dispatch_block:
+    if "var target = invocation.Target;" not in dispatch_block:
+        fail("emitter dispatch must retain the matched InterceptorTarget")
+    if "GetEmissionDescriptor(in target)" not in dispatch_block:
         fail("emitter dispatch must use the descriptor table")
     if "private delegate void InterceptorEmitter" in generator or "InterceptorEmitter? Emitter" in generator or "descriptor.Emitter" in dispatch_block:
         fail("emitter dispatch must not use generic emitter delegates")
@@ -861,6 +895,26 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
     # compiler through the abstract Emit member, not by this gate.
     if "descriptor.Body.Emit(builder, in invocation, index);" not in dispatch_block:
         fail("emitter dispatch must invoke the polymorphic body emit")
+    if "EmitInterceptorManifest(builder, in target);" not in dispatch_block:
+        fail("emitter dispatch must emit one manifest from each matched InterceptorTarget")
+
+    try:
+        manifest_emitter = generator.split("private static void EmitInterceptorManifest(", 1)[1].split(
+            "private static void EmitInterceptsLocationAttribute(",
+            1,
+        )[0]
+    except IndexError:
+        fail("generated interceptor manifest emitter missing")
+    for token in [
+        "target.Kind",
+        "target.Signal",
+        "target.InstrumentationId",
+        "target.AdditionalMetricIds",
+        "GetContractKey(target.Signal, target.InstrumentationId)",
+        "GetContractKey(TelemetrySignal.Metrics, target.AdditionalMetricIds[index])",
+    ]:
+        if token not in manifest_emitter:
+            fail(f"generated interceptor manifest must derive its representation from InterceptorTarget: {token}")
 
     try:
         matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(
@@ -888,24 +942,8 @@ def verify_interceptor_target_coverage(generator: str, implemented_signal_keys: 
             f"missing={sorted(descriptor_missing)} extra={sorted(descriptor_extra)}"
         )
 
-    target_missing = {
-        kind
-        for kind in kinds
-        if f"InterceptorKind.{kind}," not in generator and f"= InterceptorKind.{kind};" not in generator
-    }
-    if target_missing:
-        fail(f"InterceptorKind values missing from target construction: {sorted(target_missing)}")
-
     verify_interceptor_emission_bodies(generator, kinds)
-
-    target_contract_keys = collect_generator_target_contract_keys(generator)
-    missing_contract_keys = implemented_signal_keys - target_contract_keys
-    extra_contract_keys = target_contract_keys - implemented_signal_keys
-    if missing_contract_keys or extra_contract_keys:
-        fail(
-            "generator target contract key mismatch: "
-            f"missing={sorted(missing_contract_keys)} extra={sorted(extra_contract_keys)}"
-        )
+    return kinds
 
 
 def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> None:
@@ -914,22 +952,12 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     # key literals are unrepresentable — their reappearance is a regression.
     if re.search(r'"signals\.(?:traces|metrics|logs)\.', generator) is not None:
         fail("generator must derive contract keys structurally, never declare freeform key literals")
-    generator_keys = collect_generator_target_contract_keys(generator)
     implemented_signal_keys = {str(item["key"]) for item in artifacts.implemented_signal_items(contract)}
     source_interceptor_signal_keys = {
         str(item["key"])
         for item in artifacts.source_interceptor_signal_items(contract)
     }
     unsupported_keys = {str(item["key"]) for item in artifacts.unsupported_signal_items(contract)}
-    if generator_keys != implemented_signal_keys:
-        fail(
-            "generator signal key mismatch: "
-            f"missing={sorted(implemented_signal_keys - generator_keys)} "
-            f"extra={sorted(generator_keys - implemented_signal_keys)}"
-        )
-
-    if generator_keys & unsupported_keys:
-        fail(f"unsupported keys leaked into generator: {sorted(generator_keys & unsupported_keys)}")
 
     for token in FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS:
         if token in generator:
@@ -946,11 +974,71 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     if "InterceptsLocationAttribute(" in generator and "GetInterceptsLocationAttributeSyntax(" not in generator:
         fail("generator must emit InterceptsLocationAttribute through Roslyn GetInterceptsLocationAttributeSyntax")
 
-    verify_interceptor_target_coverage(generator, implemented_signal_keys)
-    generator_target_keys = collect_generator_target_contract_keys(generator)
-    missing_source_interceptor_bindings = source_interceptor_signal_keys - generator_target_keys
-    if missing_source_interceptor_bindings:
-        fail(f"source_interceptor contract keys missing generator binding: {sorted(missing_source_interceptor_bindings)}")
+    interceptor_kinds = verify_interceptor_structure(generator)
+    try:
+        fixture_manifests = parse_generated_interceptor_source(
+            GENERATED_INTERCEPTOR_SNAPSHOT_PATH.read_text(encoding="utf-8"),
+            GENERATED_INTERCEPTOR_SNAPSHOT_PATH,
+        )
+        coverage_manifests = parse_verified_manifest_artifact(
+            GENERATED_INTERCEPTOR_MANIFEST_ARTIFACT_PATH.read_text(encoding="utf-8"),
+            GENERATED_INTERCEPTOR_MANIFEST_ARTIFACT_PATH,
+        )
+    except (ManifestCoverageError, OSError) as error:
+        fail(str(error))
+
+    verify_generated_interceptor_manifests(
+        fixture_manifests,
+        interceptor_kinds,
+        "two-ILogger deterministic fixture",
+    )
+    fixture_kinds = [manifest["interceptorKind"] for manifest in fixture_manifests]
+    if fixture_kinds != ["ILoggerLog", "ILoggerLog"]:
+        fail(f"generated interceptor snapshot kind mismatch: {fixture_kinds}")
+    fixture_keys = [manifest["contractKeys"] for manifest in fixture_manifests]
+    if fixture_keys != [["signals.logs.ILOGGER"], ["signals.logs.ILOGGER"]]:
+        fail(f"generated interceptor snapshot contract-key mismatch: {fixture_keys}")
+
+    emitted_keys = verify_generated_interceptor_manifests(
+        coverage_manifests,
+        interceptor_kinds,
+        "verified live coverage",
+    )
+    emitted_kinds = {str(manifest["interceptorKind"]) for manifest in coverage_manifests}
+    if emitted_kinds != interceptor_kinds:
+        fail(
+            "live generated manifest kinds must exactly match the interceptor catalog: "
+            f"missing={sorted(interceptor_kinds - emitted_kinds)} "
+            f"unexpected={sorted(emitted_kinds - interceptor_kinds)}"
+        )
+    unsupported_emitted = emitted_keys & unsupported_keys
+    if unsupported_emitted:
+        fail(f"unsupported keys leaked into generated interceptor manifests: {sorted(unsupported_emitted)}")
+    unknown_emitted = emitted_keys - implemented_signal_keys
+    if unknown_emitted:
+        fail(f"generated interceptor manifests contain non-implemented keys: {sorted(unknown_emitted)}")
+    non_source_interceptors = emitted_keys - source_interceptor_signal_keys
+    allowed_non_source_interceptors = (
+        set(artifacts.IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST)
+        | set(artifacts.GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST)
+    )
+    unexpected_non_source_interceptors = non_source_interceptors - allowed_non_source_interceptors
+    if unexpected_non_source_interceptors:
+        fail(
+            "generated interceptor manifests contain keys not owned by the source_interceptor lane: "
+            f"{sorted(unexpected_non_source_interceptors)}"
+        )
+    stale_non_source_allowlist = allowed_non_source_interceptors - non_source_interceptors
+    if stale_non_source_allowlist:
+        fail(f"generated interceptor non-source allowlist contains stale keys: {sorted(stale_non_source_allowlist)}")
+    missing_source_interceptors = source_interceptor_signal_keys - emitted_keys
+    if missing_source_interceptors:
+        fail(
+            "source_interceptor contract keys missing from live generated manifests: "
+            f"{sorted(missing_source_interceptors)}"
+        )
+    if not any(manifest["additionalMetricIds"] for manifest in coverage_manifests):
+        fail("live generated interceptor manifests do not exercise AdditionalMetricIds")
 
 
 def main() -> None:
@@ -960,11 +1048,13 @@ def main() -> None:
     verify_compile_binding_only_truth_gate(artifacts, contract)
     verify_conformance_profile_gate(artifacts)
     verify_managed_evidence_boundaries(artifacts, contract)
+    verify_supported_version_overrides(artifacts, contract)
     verify_handoff_real_demo_coverage(artifacts, contract)
     verify_nativeaot_evidence_is_executable(artifacts, contract)
     verify_generator_keys(artifacts, contract)
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
+    verify_demo_solution_release_mapping()
     verify_metric_contract()
     verify_sensitive_attribute_emission_policy()
     verify_bounded_activity_name_policy()

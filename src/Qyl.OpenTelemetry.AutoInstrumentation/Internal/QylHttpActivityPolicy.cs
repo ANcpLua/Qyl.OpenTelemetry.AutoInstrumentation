@@ -4,28 +4,6 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
 internal static class QylHttpActivityPolicy
 {
-    public static Activity? StartClientActivity(
-        string instrumentationDomain,
-        string method,
-        string? methodOriginal,
-        Uri? requestUri,
-        string? rawRequestUri)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.HttpClient,
-            QylActivityNames.HttpClient(method),
-            ActivityKind.Client,
-            instrumentationDomain);
-        if (activity is null)
-            return null;
-
-        SetRequestMethod(activity, method, methodOriginal);
-        if (requestUri is not null)
-            SetClientUrl(activity, requestUri, rawRequestUri);
-
-        return activity;
-    }
-
     public static Activity? StartServerActivity(
         string method,
         string? methodOriginal,
@@ -70,13 +48,10 @@ internal static class QylHttpActivityPolicy
 
     public static void SetResponseStatus(Activity activity, int statusCode, int errorStatusCodeFloor)
     {
-        SetResponseStatus(activity, statusCode);
+        activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
         if (statusCode >= errorStatusCodeFloor)
             QylActivityStatus.RecordError(activity, statusCode);
     }
-
-    public static void SetResponseStatus(Activity activity, int statusCode)
-        => activity.SetTag(QylSemanticAttributes.HttpResponseStatusCode, statusCode);
 
     private static void SetRequestMethod(Activity activity, string method, string? methodOriginal)
     {
@@ -85,16 +60,4 @@ internal static class QylHttpActivityPolicy
             activity.SetTag(QylSemanticAttributes.HttpRequestMethodOriginal, methodOriginal);
     }
 
-    private static void SetClientUrl(Activity activity, Uri requestUri, string? rawRequestUri)
-    {
-        if (requestUri.IsAbsoluteUri)
-        {
-            activity.SetTag(QylSemanticAttributes.ServerAddress, requestUri.Host);
-            if (!requestUri.IsDefaultPort)
-                activity.SetTag(QylSemanticAttributes.ServerPort, requestUri.Port);
-        }
-
-        var urlFull = requestUri.IsAbsoluteUri ? requestUri.ToString() : rawRequestUri ?? requestUri.ToString();
-        QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, urlFull);
-    }
 }

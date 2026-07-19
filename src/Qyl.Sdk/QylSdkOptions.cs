@@ -29,8 +29,8 @@ public sealed class QylSdkOptions
     public bool EnableLogExport { get; set; } = true;
 
     /// <summary>
-    /// Register a MeterProvider covering the qyl auto-instrumentation meter inventory (ASP.NET
-    /// Core, HttpClient, DNS, database, messaging, runtime) plus the GenAI meters, and export it
+    /// Register a MeterProvider covering the native and qyl-owned auto-instrumentation meter
+    /// inventory (ASP.NET Core, HttpClient, DNS, database, messaging, runtime) plus the GenAI meters, and export it
     /// over OTLP alongside traces. Defaults to true.
     /// </summary>
     public bool EnableMetricsExport { get; set; } = true;
@@ -44,7 +44,8 @@ public sealed class QylSdkOptions
 
     /// <summary>
     /// Additional <see cref="System.Diagnostics.ActivitySource"/> names to subscribe beyond the
-    /// qyl defaults (qyl listeners, ASP.NET Core, HttpClient, and the GenAI sources).
+    /// qyl defaults (qyl listener spans plus version-pinned GenAI, Azure SDK, MCP, and CoreWCF
+    /// sources).
     /// </summary>
     public IList<string> AdditionalSources { get; } = [];
 

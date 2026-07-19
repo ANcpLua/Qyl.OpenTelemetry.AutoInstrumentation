@@ -6,19 +6,7 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation.Internal;
 
 internal static class QylDbActivityPolicy
 {
-    public static Activity? StartEntityFrameworkCoreActivity(string operationName)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.EntityFrameworkCore,
-            QylActivityNames.DbCommand(operationName),
-            ActivityKind.Client,
-            QylInstrumentationDomains.DbEfCore);
-        if (activity is null)
-            return null;
-
-        QylActivityTags.SetDbOperation(activity, operationName, operationName);
-        return activity;
-    }
+    private const string CommandActivityProperty = "Qyl.DbCommand";
 
     public static Activity? StartDbCommandActivity(DbCommand command, string instrumentationId, string operationName)
     {
@@ -30,6 +18,8 @@ internal static class QylDbActivityPolicy
             QylInstrumentationDomains.DbClient);
         if (activity is null)
             return null;
+
+        activity.SetCustomProperty(CommandActivityProperty, command);
 
         QylActivityTags.SetDb(
             activity,
@@ -43,6 +33,17 @@ internal static class QylDbActivityPolicy
 
         QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);
         return activity;
+    }
+
+    internal static bool HasCurrentActivityFor(DbCommand command)
+    {
+        for (var activity = Activity.Current; activity is not null; activity = activity.Parent)
+        {
+            if (ReferenceEquals(activity.GetCustomProperty(CommandActivityProperty), command))
+                return true;
+        }
+
+        return false;
     }
 
     private static string NormalizeOperation(string operationName, DbCommand command)

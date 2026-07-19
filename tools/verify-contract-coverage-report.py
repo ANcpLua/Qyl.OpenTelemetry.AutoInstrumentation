@@ -33,6 +33,7 @@ def build_report(artifacts: ModuleType, contract: dict[str, Any]) -> dict[str, A
         {
             "index": int(item["index"]),
             "contract_item_id": str(item["contract_item_id"]),
+            "contract_origin": str(item["contract_origin"]),
             "kind": str(item["kind"]),
             "key": str(item["key"]),
             "lane": str(item["lane"]),
@@ -46,7 +47,7 @@ def build_report(artifacts: ModuleType, contract: dict[str, Any]) -> dict[str, A
     ]
     return {
         "schema_id": "qyl-aot-autoinstrumentation-contract-coverage-report",
-        "schema_version": "1.0.0",
+        "schema_version": "2.0.0",
         "counts": artifacts.contract_counts(contract),
         "items": records,
     }
@@ -72,6 +73,8 @@ def main() -> None:
     print(
         "contract-coverage-report-ok "
         f"total={counts['total_contract_items']} "
+        f"upstream={counts['upstream_contract_items']} "
+        f"qyl_native={counts['qyl_native_contract_items']} "
         f"signals={counts['signal_specific_instrumentation_promises']} "
         f"environment_controls={counts['global_environment_controls']} "
         f"instrumentation_options={counts['instrumentation_options']}"

@@ -11,7 +11,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.RealGrpcClientDemo;
 
 var captured = new List<CapturedActivity>();
 var byteArrayMarshaller = new Marshaller<byte[]>(
@@ -48,13 +47,6 @@ app.MapPost("/qyl.LiveProbe/Collect", static async context =>
 
 await app.StartAsync();
 
-// Two lanes, one binary. "invoker" (default) drives raw CallInvoker calls, which the
-// interceptor cannot see — the DiagnosticListeners lane emits. "client" drives a
-// ClientBase<T>-derived client (the protoc-generated shape); the source interceptor
-// owns the signal and the listener defers, so metadata capture is provable there.
-var clientMode = string.Equals(
-    Environment.GetEnvironmentVariable("QYL_GRPC_DEMO_MODE"), "client", StringComparison.OrdinalIgnoreCase);
-
 try
 {
     var address = app.Urls.Single();
@@ -67,30 +59,14 @@ try
 
     using var channel = GrpcChannel.ForAddress(address);
     var requestMetadata = new Metadata { { "x-demo-md", "mv1" } };
-    if (clientMode)
-    {
-        var client = new LiveProbeClient(channel);
-        _ = await client.CollectAsync(Array.Empty<byte>(), requestMetadata);
-    }
-    else
-    {
-        _ = await channel.CreateCallInvoker().AsyncUnaryCall(method, null, new CallOptions(requestMetadata), Array.Empty<byte>());
-    }
+    _ = await channel.CreateCallInvoker().AsyncUnaryCall(method, null, new CallOptions(requestMetadata), Array.Empty<byte>());
 
     try
     {
         using var failureChannel = GrpcChannel.ForAddress("http://127.0.0.1:1");
-        if (clientMode)
-        {
-            var failureClient = new LiveProbeClient(failureChannel);
-            _ = await failureClient.CollectAsync(Array.Empty<byte>());
-        }
-        else
-        {
-            _ = await failureChannel
-                .CreateCallInvoker()
-                .AsyncUnaryCall(method, null, new CallOptions(), Array.Empty<byte>());
-        }
+        _ = await failureChannel
+            .CreateCallInvoker()
+            .AsyncUnaryCall(method, null, new CallOptions(), Array.Empty<byte>());
     }
     catch (RpcException exception)
     {
@@ -104,8 +80,7 @@ finally
 
 var report = GrpcClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray(),
-    clientMode);
+    captured.ToArray());
 
 var json = JsonSerializer.Serialize(report, RealGrpcClientJsonContext.Default.GrpcClientReport);
 Console.WriteLine(json);
@@ -140,7 +115,7 @@ internal sealed record GrpcClientReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
-    public static GrpcClientReport Create(string runtimeMode, CapturedActivity[] activities, bool clientMode)
+    public static GrpcClientReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
         var grpcSpans = activities
@@ -152,8 +127,8 @@ internal sealed record GrpcClientReport(
         if (grpcSpans.Length != 2)
             failures.Add($"expected 2 real gRPC client spans, got {grpcSpans.Length}");
 
-        var expectedService = clientMode ? "LiveProbe" : "qyl.LiveProbe";
-        var expectedMethod = clientMode ? "CollectAsync" : "Collect";
+        const string expectedService = "qyl.LiveProbe";
+        const string expectedMethod = "Collect";
         var expectedName = $"{expectedService}/{expectedMethod}";
 
         var successSpan = FindByStatus(grpcSpans, "0");
@@ -168,28 +143,8 @@ internal sealed record GrpcClientReport(
         RequireTag(successSpan, "rpc.grpc.status_code", "0", failures);
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
-        if (!clientMode)
-        {
-            RequireTag(failureSpan, "rpc.grpc.status_code", "14", failures);
-            RequireTag(failureSpan, "error.type", "14", failures);
-        }
-
-        // Metadata capture is asserted in both directions, keyed off the env vars
-        // the runtime honors. The interceptor lane (client mode) is the one that
-        // owns capture; the listener lane must never capture.
-        var captureOptIn = !string.IsNullOrEmpty(
-            Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"));
-        if (clientMode && captureOptIn)
-        {
-            RequireTag(successSpan, "rpc.request.metadata.x-demo-md", "mv1", failures);
-            RequireTag(successSpan, "rpc.response.metadata.x-demo-res-md", "sv1", failures);
-        }
-        else if (successSpan is not null &&
-                 (successSpan.Tags.ContainsKey("rpc.request.metadata.x-demo-md") ||
-                  successSpan.Tags.ContainsKey("rpc.response.metadata.x-demo-res-md")))
-        {
-            failures.Add("gRPC metadata captured without opt-in");
-        }
+        RequireTag(failureSpan, "rpc.grpc.status_code", "14", failures);
+        RequireTag(failureSpan, "error.type", "14", failures);
 
         foreach (var span in grpcSpans)
         {

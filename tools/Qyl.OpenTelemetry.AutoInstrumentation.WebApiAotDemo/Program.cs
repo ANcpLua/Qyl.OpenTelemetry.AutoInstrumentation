@@ -192,8 +192,8 @@ internal sealed record WebApiAotReport(
         var failures = new List<string>();
         var signals = new List<MatchedSignal>();
 
-        // Server span is owned by the generated-middleware lane (priority 90) which wins over the
-        // DiagnosticListener lane (70) via QylSignalOwnership, so exactly one server span is emitted and
+        // Server span is owned by the explicit middleware; the DiagnosticListener observes only the
+        // ambient start in this mode, so exactly one server span is emitted and
         // it carries the aspnetcore.server domain (with the route backfilled after routing).
         AddRequired(signals, failures, "aspnetcore.server", activities.FirstOrDefault(static activity =>
             HasTag(activity, "qyl.instrumentation.domain", "aspnetcore.server") &&
@@ -216,9 +216,9 @@ internal sealed record WebApiAotReport(
             HasTag(activity, "qyl.instrumentation.domain", "db.efcore")));
 
         AddRequired(signals, failures, "sqlclient.command", activities.FirstOrDefault(static activity =>
-            HasTag(activity, "qyl.instrumentation.domain", "db.sqlclient") &&
+            HasTag(activity, "qyl.instrumentation.domain", "db.client") &&
             HasTag(activity, "db.operation.name", "SELECT") &&
-            HasTag(activity, "error.type", "System.InvalidOperationException")));
+            HasTag(activity, "error.type", "InvalidOperationException")));
 
         foreach (var signal in signals)
         {

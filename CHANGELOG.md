@@ -5,6 +5,83 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.0.0] - 2026-07-19
+
+Intentional breaking convergence plus version-pinned telemetry paths. The new AI,
+MCP, and CoreWCF entries below describe only the exact library versions and hooks
+exercised by repository evidence; they are not provider- or protocol-wide claims.
+The exact `ModelContextProtocol` 1.4.1 client/server path has strict NativeAOT
+evidence; the other new paths have managed evidence only.
+
+### Breaking changes
+
+- **BREAKING:** the generated-code ABI anchor moved from
+  `QylGeneratedCodeAbi.V6` to `QylGeneratedCodeAbi.V8`. Generated interceptors now
+  require the V8 runtime anchor, so mixing an 8.x generator with a 6.x runtime (or
+  the reverse) fails compilation.
+- **BREAKING:** deleted the orphan `QylInterceptedWcfCore` generated-code helper and
+  its unused policy/domain/name tail. No generator called it; CoreWCF server spans
+  now use the official `CoreWCF.Primitives` `ActivitySource` path.
+- **BREAKING:** deleted the generated HttpClient/HttpWebRequest, ASP.NET endpoint-map,
+  gRPC client, EF Core, Azure client, and `MeterProviderBuilder.AddMeter` interceptor
+  lanes and their unused generated-code helpers. Their process-wide ownership flags
+  could suppress later library-internal operations, while EF Core could emit an
+  extra outer span. Runtime listeners, specialist packages, explicit SDK meter
+  registration, and first-party Azure sources are now the single owners.
+- **BREAKING:** deleted the DiagnosticListeners package's synthetic `qyl.db.efcore` and
+  `qyl.db.sqlclient` demo listeners. Real EF Core and Microsoft.Data.SqlClient events
+  are owned only by their dependency-isolating specialist packages.
+- **BREAKING:** removed the no-longer-actionable gRPC metadata and HttpClient header
+  capture bindings, plus the core package's `Grpc.Core.Api` dependency. The
+  authoritative completion listeners do not expose those typed values through their
+  AOT-safe payloads, so the four upstream options are now reported as unsupported
+  instead of being accepted as no-ops. ASP.NET Core header capture remains supported
+  through its typed `HttpContext` owner.
+- **BREAKING:** deleted the custom HTTP duration producer; the
+  `System.Net.Http/http.client.request.duration` instrument is authoritative. The
+  NServiceBus qyl meter is now `Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus`,
+  and the obsolete native Npgsql and NServiceBus incoming-pipeline meter ABI
+  constants were removed.
+- **BREAKING:** renamed the public diagnostic extension base
+  `DiagnosticListenerSubscriber` to `QylDiagnosticListenerSubscriber`. The five
+  concrete ASP.NET Core, EF Core, gRPC client, HttpClient, and SqlClient listener
+  types are internal; the abstract qyl-prefixed subscriber remains the supported
+  extension surface.
+
+### Changed
+
+- Every emitted interceptor now carries one adjacent machine-readable JSON manifest
+  containing its interceptor kind, signal, instrumentation ID, additional metric
+  IDs, and canonically derived contract keys. Contract verification reads emitted
+  generated output instead of reconstructing ownership from generator source text,
+  and proves that every remaining catalog kind appears in the checked artifact.
+- Azure SDK instrumentation now uses the SDK's first-party `Azure.*`
+  `ActivitySource` path. Bootstrap enables `Azure.Experimental.EnableActivitySource`;
+  `Qyl.Sdk` subscribes the wildcard and normalizes the bounded qyl domain/name/error
+  contract before export.
+- The `Qyl.Sdk` → Hosting → core NuGet dependency chain now preserves build and
+  analyzer assets. A clean consumer references only `Qyl.Sdk`, executes `AddQyl`,
+  requires an emitted interceptor, and runs the same payload as managed code and
+  NativeAOT.
+- `Qyl.Sdk` registers the following version-pinned, environment-switchable telemetry paths:
+  - `Microsoft.Extensions.AI` 10.8.0 traces and metrics through the application's
+    explicit `UseOpenTelemetry()` chat-client wrapper;
+  - `Microsoft.Agents.AI` 1.13.0 traces and metrics through the application's
+    explicit `UseOpenTelemetry()` agent wrapper;
+  - `Microsoft.Agents.AI.Workflows` 1.13.0 traces through the application's explicit
+    `WithOpenTelemetry()` workflow hook;
+  - `ModelContextProtocol` 1.4.1 automatic official client/server traces, verified
+    on the exact path under both managed execution and strict NativeAOT; and
+  - `CoreWCF.Http` 1.9.1 managed server traces from `CoreWCF.Primitives`.
+- The new signal-specific IDs are `MICROSOFTEXTENSIONSAI`, `MICROSOFTAGENTSAI`,
+  `MICROSOFTAGENTSAIWORKFLOWS`, and `MCP`; CoreWCF uses `WCFCORE`. Each follows the
+  standard `OTEL_DOTNET_AUTO_{SIGNAL}_{ID}_INSTRUMENTATION_ENABLED` switch shape.
+- MCP is traces-only in 8.0. Its metrics are deliberately not registered because the
+  official instruments attach dynamic tool and resource names as dimensions, which
+  conflicts with qyl's bounded-cardinality policy.
+- Direct OpenAI SDK instrumentation, raw Anthropic SDK instrumentation,
+  `Azure.AI.Inference`, Amazon Bedrock, and A2A are not claimed by 8.0.
+
 ## [6.0.0] - 2026-07-18
 
 Intentional pre-consumer convergence release: the last cheap breaking window

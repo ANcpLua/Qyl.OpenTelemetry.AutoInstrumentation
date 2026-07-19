@@ -29,7 +29,7 @@ public static class QylAspNetCoreInstrumentationServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         // Claim the ASP.NET Core signal for the middleware lane so the DiagnosticListener lane (if the
         // Hosting package is also referenced) defers and the server span is emitted exactly once.
-        QylSignalOwnership.Register(QylAutoInstrumentationIds.AspNetCore, QylSignalOwnership.GeneratedMiddleware);
+        QylAspNetCoreOwnership.RegisterMiddleware();
         // IStartupFilters compose in registration order and this one must stay outermost so the server
         // span wraps the whole pipeline — call this before registering other pipeline-wrapping filters.
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IStartupFilter, QylAspNetCoreStartupFilter>());

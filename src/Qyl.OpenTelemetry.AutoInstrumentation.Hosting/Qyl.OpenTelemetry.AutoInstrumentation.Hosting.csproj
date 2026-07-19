@@ -22,7 +22,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation\Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation\Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+                      IncludeAssets="all"
+                      PrivateAssets="none" />
     <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners\Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" />
   </ItemGroup>
 

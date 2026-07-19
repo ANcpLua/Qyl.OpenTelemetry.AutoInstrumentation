@@ -25,6 +25,7 @@ internal static class SqlClientPayloadReader
         var endpoint = ParseDataSource(sqlCommand.Connection?.DataSource);
 
         command = new SqlClientCommand(
+            Command: sqlCommand,
             Namespace: NormalizeEmpty(sqlCommand.Connection?.Database),
             Operation: operation,
             QuerySummary: DatabaseSemantics.CreateSummary(operation, sqlCommand.CommandType.ToString()),
@@ -120,6 +121,7 @@ internal static class SqlClientPayloadReader
 }
 
 internal readonly record struct SqlClientCommand(
+    SqlCommand Command,
     string? Namespace,
     string? Operation,
     string? QuerySummary,

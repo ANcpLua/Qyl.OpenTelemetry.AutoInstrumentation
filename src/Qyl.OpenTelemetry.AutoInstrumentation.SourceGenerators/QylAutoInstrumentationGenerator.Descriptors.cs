@@ -9,18 +9,9 @@ public sealed partial class QylAutoInstrumentationGenerator
 {
     private enum InterceptorKind
     {
-        HttpClient,
-        HttpWebRequest,
-        AspNetCoreEndpointMap,
-        MeterProviderBuilderAddMeter,
-        AzureClient,
         ElasticsearchClient,
         ElasticTransport,
         WcfClient,
-        GrpcNetClientAsyncUnaryCall,
-        GrpcNetClientAsyncServerStreamingCall,
-        GrpcNetClientAsyncClientStreamingCall,
-        GrpcNetClientAsyncDuplexStreamingCall,
         KafkaProducer,
         KafkaConsumer,
         MassTransitMessageOperation,
@@ -34,8 +25,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         ILoggerLog,
         NLogLogger,
         Log4NetLogger,
-        EntityFrameworkCoreDbContext,
-        EntityFrameworkCoreQueryable,
         DbCommand,
     }
 
@@ -79,15 +68,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         InstrumentationIdAndTargetMethodName,
     }
 
-    private enum GrpcClientCallShape
-    {
-        None,
-        Unary,
-        ServerStreaming,
-        ClientStreaming,
-        DuplexStreaming,
-    }
-
     private readonly record struct InterceptorEmissionDescriptor(
         InterceptorKind Kind,
         InterceptorBodyDescriptor Body);
@@ -100,16 +80,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private abstract record InterceptorBodyDescriptor
     {
         public abstract void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index);
-    }
-
-    private sealed record GrpcClientBodyDescriptor(
-        GrpcClientCallShape Shape,
-        string MethodPrefix,
-        string ReceiverName,
-        string HelperType) : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitGrpcNetClientInterceptor(builder, in invocation, index, this);
     }
 
     private sealed record DbCommandBodyDescriptor(
@@ -127,29 +97,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             => EmitDbCommandInterceptor(builder, in invocation, index, this);
     }
 
-    private sealed record HttpWebRequestBodyDescriptor(
-        string MethodPrefix,
-        string ReceiverName,
-        string RequestType,
-        string HelperType,
-        string GetStartTimeUtcMethod,
-        string StartActivityMethod,
-        string RecordResultMethod,
-        string RecordExceptionMethod) : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitHttpWebRequestInterceptor(builder, in invocation, index, this);
-    }
-
-    private sealed record MeterProviderBuilderBodyDescriptor(
-        string MethodPrefix,
-        string ReceiverName,
-        string EnabledMeterNamesExpression) : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitMeterProviderBuilderAddMeterInterceptor(builder, in invocation, index, this);
-    }
-
     private sealed record LoggerBodyDescriptor(
         LoggerInterceptorBodyKind Kind,
         string MethodPrefix,
@@ -165,17 +112,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
             => EmitExternalLoggerInterceptor(builder, in invocation, index, this);
-    }
-
-    private sealed record ForwardingInterceptorBodyDescriptor(
-        string MethodPrefix,
-        string ReceiverName,
-        string HelperType,
-        string HelperMethodName = "",
-        string ReceiverTypeOverride = "") : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitForwardingInterceptor(builder, in invocation, index, this);
     }
 
     private readonly record struct TraceRuntimeHelperDescriptor(
@@ -353,12 +289,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         Logs,
     }
 
-    // Signal and AdditionalMetricIds are intentionally never read by C#: their
-    // consumer is tools/verify-contract-invariants.py, which parses the generator
-    // source at InterceptorTarget construction sites and composes contract keys
-    // from TelemetrySignal + InstrumentationId (69429cb made freeform keys
-    // unrepresentable). They also participate in record value equality. Do not
-    // delete them to satisfy an unused-member inspection.
     private readonly record struct InterceptorTarget(
         InterceptorKind Kind,
         TelemetrySignal Signal,

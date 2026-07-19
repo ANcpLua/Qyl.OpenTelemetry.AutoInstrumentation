@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" />
     <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" />
   </ItemGroup>

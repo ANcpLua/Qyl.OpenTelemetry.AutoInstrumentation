@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Npgsql;
 using Qyl.OpenTelemetry.AutoInstrumentation;
-using Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode;
 
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener
@@ -22,7 +21,7 @@ using var meterListener = new MeterListener
 {
     InstrumentPublished = static (instrument, listener) =>
     {
-        if (instrument.Meter.Name == QylMetricMeters.DatabaseMeterName)
+        if (instrument.Meter.Name == DemoMetricNames.Database)
             listener.EnableMeasurementEvents(instrument);
     },
 };
@@ -158,6 +157,11 @@ internal sealed record NpgsqlReport(
         if (activity.Tags.ContainsKey(key))
             failures.Add($"unexpected {key}");
     }
+}
+
+internal static class DemoMetricNames
+{
+    internal const string Database = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
 }
 
 [JsonSerializable(typeof(NpgsqlReport))]

@@ -1,0 +1,255 @@
+schema_id: qyl-native-instrumentation-contract-items
+schema_version: 1.0.0
+generated_at: '2026-07-19'
+source:
+  title: qyl-native version-pinned instrumentation promises
+  source_kind: qyl_owned_contract_with_official_library_sources
+  content_basis: First-class telemetry hooks registered by Qyl.Sdk 8.0.0 and exercised by owned real-library demos
+  release: 8.0.0
+contract_items:
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MICROSOFTEXTENSIONSAI
+  signal: traces
+  instrumentation_id: MICROSOFTEXTENSIONSAI
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: qyl_native_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Extensions.AI
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
+  supported_versions: Microsoft.Extensions.AI ==10.8.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Qyl.Sdk registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
+  index: 61
+  contract_item_id: QYL_NATIVE_CONTRACT_001
+  upstream_sources:
+  - label: Microsoft.Extensions.AI 10.8.0
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
+  - label: official UseOpenTelemetry documentation
+    url: https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai
+  lane: official_library_hook
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: typed_public
+  evidence_level: verified_managed
+  primary_owner: Qyl.Sdk source registration plus Microsoft.Extensions.AI UseOpenTelemetry
+  evidence:
+  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - demos/Qyl.RealGenAiDemo
+  - tools/verify-real-genai-demo.py
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.MICROSOFTEXTENSIONSAI
+  signal: metrics
+  instrumentation_id: MICROSOFTEXTENSIONSAI
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: qyl_native_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Extensions.AI
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
+  supported_versions: Microsoft.Extensions.AI ==10.8.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Qyl.Sdk registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
+  index: 62
+  contract_item_id: QYL_NATIVE_CONTRACT_002
+  upstream_sources:
+  - label: Microsoft.Extensions.AI 10.8.0
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
+  - label: official UseOpenTelemetry documentation
+    url: https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai
+  lane: official_library_hook
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: typed_public
+  evidence_level: verified_managed
+  primary_owner: Qyl.Sdk meter registration plus Microsoft.Extensions.AI UseOpenTelemetry
+  evidence:
+  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - demos/Qyl.RealGenAiDemo
+  - tools/verify-real-genai-demo.py
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MICROSOFTAGENTSAI
+  signal: traces
+  instrumentation_id: MICROSOFTAGENTSAI
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: qyl_native_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Agents.AI
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
+  supported_versions: Microsoft.Agents.AI ==1.13.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Qyl.Sdk registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
+  index: 63
+  contract_item_id: QYL_NATIVE_CONTRACT_003
+  upstream_sources:
+  - label: Microsoft.Agents.AI 1.13.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
+  - label: official UseOpenTelemetry API
+    url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
+  lane: official_library_hook
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: typed_public
+  evidence_level: verified_managed
+  primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI UseOpenTelemetry
+  evidence:
+  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - demos/Qyl.RealGenAiDemo
+  - tools/verify-real-genai-demo.py
+- kind: signal_specific_instrumentation_promise
+  key: signals.metrics.MICROSOFTAGENTSAI
+  signal: metrics
+  instrumentation_id: MICROSOFTAGENTSAI
+  environment_toggle: OTEL_DOTNET_AUTO_METRICS_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: qyl_native_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Agents.AI
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
+  supported_versions: Microsoft.Agents.AI ==1.13.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Qyl.Sdk registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
+  index: 64
+  contract_item_id: QYL_NATIVE_CONTRACT_004
+  upstream_sources:
+  - label: Microsoft.Agents.AI 1.13.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
+  - label: official UseOpenTelemetry API
+    url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
+  lane: official_library_hook
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: typed_public
+  evidence_level: verified_managed
+  primary_owner: Qyl.Sdk meter registration plus Microsoft.Agents.AI UseOpenTelemetry
+  evidence:
+  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - demos/Qyl.RealGenAiDemo
+  - tools/verify-real-genai-demo.py
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MICROSOFTAGENTSAIWORKFLOWS
+  signal: traces
+  instrumentation_id: MICROSOFTAGENTSAIWORKFLOWS
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAIWORKFLOWS_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: qyl_native_signal_specific_pattern
+  libraries:
+  - name: Microsoft.Agents.AI.Workflows
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.13.0
+  supported_versions: Microsoft.Agents.AI.Workflows ==1.13.0; WorkflowBuilder.WithOpenTelemetry() path only
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Qyl.Sdk registers Microsoft.Agents.AI.Workflows; the application explicitly calls WithOpenTelemetry.
+  - The 8.0.0 promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
+  - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
+  index: 65
+  contract_item_id: QYL_NATIVE_CONTRACT_005
+  upstream_sources:
+  - label: Microsoft.Agents.AI.Workflows 1.13.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.13.0
+  - label: official Agent Framework repository
+    url: https://github.com/microsoft/agent-framework
+  lane: official_library_hook
+  qyl_status: implemented
+  call_site_visibility: user_code
+  payload_access: typed_public
+  evidence_level: verified_managed
+  primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI.Workflows WithOpenTelemetry
+  evidence:
+  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - demos/Qyl.RealGenAiDemo
+  - tools/verify-real-genai-demo.py
+- kind: signal_specific_instrumentation_promise
+  key: signals.traces.MCP
+  signal: traces
+  instrumentation_id: MCP
+  environment_toggle: OTEL_DOTNET_AUTO_TRACES_MCP_INSTRUMENTATION_ENABLED
+  environment_toggle_origin: qyl_native_signal_specific_pattern
+  libraries:
+  - name: ModelContextProtocol
+    url: https://www.nuget.org/packages/ModelContextProtocol/1.4.1
+  supported_versions: ModelContextProtocol ==1.4.1; automatic official client/server ActivitySource path only
+  instrumentation_types:
+  - source
+  instrumentation_type_operator: single
+  status: experimental
+  notes:
+  - Qyl.Sdk registers Experimental.ModelContextProtocol; the official SDK emits the client/server spans automatically.
+  - MCP metrics are deliberately outside the 8.0.0 contract because the official instruments attach dynamic tool and resource names as dimensions, violating qyl's bounded-cardinality policy.
+  - This exact path and version is verified in managed and NativeAOT execution; it is not a protocol-wide claim.
+  index: 66
+  contract_item_id: QYL_NATIVE_CONTRACT_006
+  upstream_sources:
+  - label: ModelContextProtocol 1.4.1
+    url: https://www.nuget.org/packages/ModelContextProtocol/1.4.1
+  - label: official MCP C# SDK
+    url: https://github.com/modelcontextprotocol/csharp-sdk
+  lane: official_library_hook
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: verified_nativeaot
+  primary_owner: Qyl.Sdk source registration plus automatic ModelContextProtocol telemetry
+  evidence:
+  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - demos/Qyl.RealMcpDemo
+  - tools/verify-real-mcp-demo.py
+  conformance_signals:
+  - kind: span
+    name: mcp.initialize
+    required_attributes:
+    - mcp.method.name
+    - mcp.session.id
+    - network.transport
+    recommended_attributes:
+    - session.id
+    opt_in_attributes: []
+  - kind: span
+    name: mcp.notifications.initialized
+    required_attributes:
+    - mcp.method.name
+    - mcp.session.id
+    - network.transport
+    recommended_attributes:
+    - session.id
+    opt_in_attributes: []
+  - kind: span
+    name: mcp.tools.list
+    required_attributes:
+    - mcp.method.name
+    - mcp.session.id
+    - network.transport
+    recommended_attributes:
+    - session.id
+    opt_in_attributes: []
+  - kind: span
+    name: mcp.tools.call
+    required_attributes:
+    - gen_ai.operation.name
+    - gen_ai.tool.name
+    - mcp.method.name
+    - mcp.protocol.version
+    - mcp.session.id
+    - network.transport
+    recommended_attributes:
+    - session.id
+    opt_in_attributes: []

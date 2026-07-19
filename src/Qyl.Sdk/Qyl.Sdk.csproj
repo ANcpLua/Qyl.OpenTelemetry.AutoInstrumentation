@@ -5,7 +5,7 @@
     <RootNamespace>Qyl</RootNamespace>
     <AssemblyName>Qyl.Sdk</AssemblyName>
     <PackageId>Qyl.Sdk</PackageId>
-    <Description>One-line qyl onboarding for .NET applications: builder.AddQyl() wires the OpenTelemetry SDK, the qyl auto-instrumentation listeners, GenAI sources, OTLP export with local collector auto-discovery, and session propagation.</Description>
+    <Description>One-line qyl onboarding for .NET applications: builder.AddQyl() wires the OpenTelemetry SDK, qyl listeners, version-pinned GenAI, Azure SDK, MCP and CoreWCF sources, OTLP export with local collector discovery, and session propagation.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,7 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
+    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj"
+                      IncludeAssets="all"
+                      PrivateAssets="none" />
   </ItemGroup>
 
 </Project>

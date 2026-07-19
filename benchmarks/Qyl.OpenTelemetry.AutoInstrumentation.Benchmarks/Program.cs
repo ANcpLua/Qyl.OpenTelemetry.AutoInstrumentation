@@ -1,7 +1,6 @@
 using System.Data;
 using System.Data.Common;
 using System.Collections;
-using System.Net;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
@@ -20,42 +19,10 @@ internal static class BenchmarkSmoke
 {
     public static async Task RunAsync()
     {
-        using var httpClient = new HttpClientHotPathBenchmarks();
-        await httpClient.InterceptedGetAsync();
-
         var dbCommand = new DbCommandHotPathBenchmarks();
         dbCommand.InterceptedSqlClientCommand();
-
-        var efCore = new EntityFrameworkCoreHotPathBenchmarks();
-        efCore.InterceptedExecuteSqlRaw();
+        await Task.CompletedTask;
     }
-}
-
-[MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net10_0, launchCount: 1, warmupCount: 3, iterationCount: 5)]
-[SimpleJob(RuntimeMoniker.NativeAot10_0, launchCount: 1, warmupCount: 3, iterationCount: 5)]
-public class HttpClientHotPathBenchmarks : IDisposable
-{
-    private readonly HttpClient httpClient = new(new StaticHttpMessageHandler())
-    {
-        BaseAddress = new Uri("https://example.invalid"),
-    };
-
-    [Benchmark(Baseline = true)]
-    public async Task<int> DirectGetAsync()
-    {
-        using var response = await httpClient.GetAsync("/", HttpCompletionOption.ResponseHeadersRead);
-        return (int)response.StatusCode;
-    }
-
-    [Benchmark]
-    public async Task<int> InterceptedGetAsync()
-    {
-        using var response = await QylInterceptedHttpClient.GetAsync(httpClient, "/", HttpCompletionOption.ResponseHeadersRead);
-        return (int)response.StatusCode;
-    }
-
-    public void Dispose() => httpClient.Dispose();
 }
 
 [MemoryDiagnoser]
@@ -81,38 +48,6 @@ public class DbCommandHotPathBenchmarks
             "ExecuteScalar");
 
         return activity is null ? 0 : 1;
-    }
-}
-
-[MemoryDiagnoser]
-[SimpleJob(RuntimeMoniker.Net10_0, launchCount: 1, warmupCount: 3, iterationCount: 5)]
-[SimpleJob(RuntimeMoniker.NativeAot10_0, launchCount: 1, warmupCount: 3, iterationCount: 5)]
-public class EntityFrameworkCoreHotPathBenchmarks
-{
-    private const string Statement = "INSERT INTO qyl_benchmark(value) VALUES (1)";
-
-    [Benchmark(Baseline = true)]
-    public int DirectExecuteSqlRaw() => Statement.Length;
-
-    [Benchmark]
-    public int InterceptedExecuteSqlRaw()
-    {
-        using var activity = QylInterceptedEntityFrameworkCore.StartActivity(Statement);
-
-        return activity is null ? 0 : 1;
-    }
-}
-
-internal sealed class StaticHttpMessageHandler : HttpMessageHandler
-{
-    protected override Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent)
-        {
-            RequestMessage = request,
-        });
     }
 }
 

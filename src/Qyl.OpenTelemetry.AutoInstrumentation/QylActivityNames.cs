@@ -11,9 +11,6 @@ internal static class QylActivityNames
     private const string SqlFallback = "SQL CLIENT";
 
     /// <summary>Fixed span name for Azure operations: <c>Azure SDK</c>.</summary>
-    internal const string AzureSdk = "Azure SDK";
-    /// <summary>Fixed span name for CoreWCF operations: <c>CoreWCF SERVER</c>.</summary>
-    internal const string CoreWcfServer = "CoreWCF SERVER";
     /// <summary>Fixed span name for GraphQL operations: <c>GraphQL execute</c>.</summary>
     internal const string GraphQlExecute = "GraphQL execute";
     /// <summary>Fixed span name for Kafka operations: <c>Kafka message</c>.</summary>

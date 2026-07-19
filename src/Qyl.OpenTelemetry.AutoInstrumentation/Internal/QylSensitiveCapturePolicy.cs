@@ -14,15 +14,6 @@ internal static class QylSensitiveCapturePolicy
                 : QylCaptureHelpers.RedactQueryValues(query));
     }
 
-    public static void SetHttpClientUrlFull(Activity activity, string url)
-    {
-        activity.SetTag(
-            QylSemanticAttributes.UrlFull,
-            QylCaptureHelpers.FormatUrlFull(
-                url,
-                QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled));
-    }
-
     public static void SetDbQueryText(Activity activity, DbCommand command, string instrumentationId)
     {
         if (!ShouldCaptureDbQueryText(command, instrumentationId))
@@ -51,7 +42,6 @@ internal static class QylSensitiveCapturePolicy
         return instrumentationId switch
         {
             QylAutoInstrumentationIds.SqlClient => options.SqlClientSetDbStatementForText,
-            QylAutoInstrumentationIds.EntityFrameworkCore => options.EntityFrameworkCoreSetDbStatementForText,
             QylAutoInstrumentationIds.OracleMda => options.OracleMdaSetDbStatementForText,
             _ => false,
         };

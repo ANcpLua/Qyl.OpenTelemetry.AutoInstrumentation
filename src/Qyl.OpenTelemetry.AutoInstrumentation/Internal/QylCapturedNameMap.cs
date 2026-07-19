@@ -21,7 +21,7 @@ internal sealed class QylCapturedNameMap
 
     internal string GetTagName(int index) => _tagNames[index];
 
-    internal static QylCapturedNameMap Create(string prefix, string[] configuredNames, bool normalizeLookupName = false)
+    internal static QylCapturedNameMap Create(string prefix, string[] configuredNames)
     {
         if (configuredNames.Length is 0)
             return Empty;
@@ -34,8 +34,7 @@ internal sealed class QylCapturedNameMap
                 continue;
 
             var normalizedName = NormalizeName(trimmedName);
-            var lookupName = normalizeLookupName ? normalizedName : trimmedName;
-            entries[lookupName] = prefix + normalizedName;
+            entries[trimmedName] = prefix + normalizedName;
         }
 
         if (entries.Count is 0)

@@ -23,9 +23,7 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
+using Microsoft.Extensions.Logging;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
@@ -37,121 +35,60 @@ using var activityListener = new ActivityListener
 };
 ActivitySource.AddActivityListener(activityListener);
 
-await using var server = LoopbackHttpServer.Start(HttpStatusCode.InternalServerError, HttpStatusCode.NoContent);
-using var http = new HttpClient { BaseAddress = server.Uri };
-http.DefaultRequestHeaders.Add("x-qyl-source", "default-header");
+var concreteLogger = new CapturingLogger();
+ILogger logger = concreteLogger;
+logger.Log(
+    LogLevel.Warning,
+    new EventId(1, "warning"),
+    "warning",
+    exception: null,
+    static (state, exception) => state);
+logger.Log(
+    LogLevel.Error,
+    new EventId(2, "error"),
+    "error",
+    exception: null,
+    static (state, exception) => state);
 
-try
+var logActivities = captured
+    .Where(static activity => activity.TagObjects.Any(static tag =>
+        tag.Key == "qyl.instrumentation.domain" &&
+        StringComparer.Ordinal.Equals(tag.Value as string, "log.ilogger")))
+    .ToArray();
+var severities = logActivities
+    .Select(static activity => activity.GetTagItem("log.severity") as string)
+    .OfType<string>()
+    .OrderBy(static severity => severity, StringComparer.Ordinal)
+    .ToArray();
+
+Console.WriteLine("logger.calls=" + concreteLogger.Calls.ToString(System.Globalization.CultureInfo.InvariantCulture));
+Console.WriteLine("activity.count=" + logActivities.Length.ToString(System.Globalization.CultureInfo.InvariantCulture));
+Console.WriteLine("activity.severities=" + string.Join("|", severities));
+
+return concreteLogger.Calls == 2 && logActivities.Length == 2 ? 0 : 1;
+
+internal sealed class CapturingLogger : ILogger
 {
-    await http.GetStringAsync("failure");
-}
-catch (HttpRequestException exception)
-{
-    Console.WriteLine("http.exception.status=" + ((int?)exception.StatusCode)?.ToString(System.Globalization.CultureInfo.InvariantCulture));
-}
+    public int Calls { get; private set; }
 
-using var content = new StringContent("payload");
-content.Headers.Add("x-qyl-content", "content-header");
-using (await http.PostAsync("content", content))
-{
-}
-await server.RequestCompleted;
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-var failure = captured.Single(activity => HasTag(activity, "http.response.status_code", "500"));
-var failureTags = Tags(failure);
-Console.WriteLine("http.activity.status=" + failure.Status);
-Console.WriteLine("server.address" + "=" + failureTags["server.address"]);
-Console.WriteLine("http.request.header.x-qyl-source=" + failureTags["http.request.header.x-qyl-source"]);
-Console.WriteLine("http.response.status_code" + "=" + failureTags["http.response.status_code"]);
-Console.WriteLine("error.type" + "=" + failureTags["error.type"]);
+    public bool IsEnabled(LogLevel logLevel) => true;
 
-var success = captured.Single(activity => HasTag(activity, "http.response.status_code", "204"));
-var successTags = Tags(success);
-Console.WriteLine("http.request.header.x-qyl-content=" + successTags["http.request.header.x-qyl-content"]);
-Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
-
-return captured.Count == 2 ? 0 : 1;
-
-static bool HasTag(Activity activity, string key, string expected)
-    => activity.TagObjects.Any(tag => tag.Key == key &&
-        string.Equals(Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture), expected, StringComparison.Ordinal));
-
-static Dictionary<string, string> Tags(Activity activity)
-    => activity.TagObjects.ToDictionary(
-        static tag => tag.Key,
-        static tag => tag.Value is string[] values
-            ? string.Join(",", values)
-            : Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-        StringComparer.Ordinal);
-
-internal sealed class LoopbackHttpServer : IAsyncDisposable
-{
-    private readonly TcpListener _listener;
-
-    private LoopbackHttpServer(TcpListener listener, HttpStatusCode[] statuses)
-    {
-        _listener = listener;
-        Uri = new Uri($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/", UriKind.Absolute);
-        RequestCompleted = ServeAsync(listener, statuses);
-    }
-
-    public Uri Uri { get; }
-
-    public Task RequestCompleted { get; }
-
-    public static LoopbackHttpServer Start(params HttpStatusCode[] statuses)
-    {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start(statuses.Length);
-        return new LoopbackHttpServer(listener, statuses);
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _listener.Stop();
-        return ValueTask.CompletedTask;
-    }
-
-    private static async Task ServeAsync(TcpListener listener, HttpStatusCode[] statuses)
-    {
-        foreach (var status in statuses)
-        {
-            using var client = await listener.AcceptTcpClientAsync();
-            await using var stream = client.GetStream();
-            await ReadRequestAsync(stream);
-            var reason = status == HttpStatusCode.NoContent ? "No Content" : "Internal Server Error";
-            var response = Encoding.ASCII.GetBytes(
-                $"HTTP/1.1 {(int)status} {reason}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-            await stream.WriteAsync(response);
-        }
-    }
-
-    private static async Task ReadRequestAsync(NetworkStream stream)
-    {
-        var buffer = new byte[4096];
-        var received = new List<byte>();
-        while (true)
-        {
-            var count = await stream.ReadAsync(buffer);
-            if (count == 0)
-                throw new InvalidOperationException("Loopback client closed before sending HTTP headers.");
-            received.AddRange(buffer.AsSpan(0, count).ToArray());
-            if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0)
-                return;
-        }
-    }
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
+        => Calls++;
 }
 '''
 
 
-EXPECTED = """http.exception.status=500
-http.activity.status=Error
-server.address=127.0.0.1
-http.request.header.x-qyl-source=default-header
-http.response.status_code=500
-error.type=500
-http.request.header.x-qyl-content=content-header
+EXPECTED = """logger.calls=2
 activity.count=2
+activity.severities=Error|Warning
 """
 
 
@@ -189,6 +126,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
@@ -218,10 +156,9 @@ def verify_generated_source(directory: Path) -> None:
     text = generated[0].read_text(encoding="utf-8")
     for token in [
         "namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated",
-        "HttpClient_GetStringAsync_",
-        "QylInterceptedHttpClient.GetStringAsync(",
-        "HttpClient_PostAsync_",
-        "QylInterceptedHttpClient.PostAsync(",
+        "ILogger_Log_0",
+        "QylInterceptedLogger.Log(",
+        '"contractKeys":["signals.logs.ILOGGER"]',
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")
@@ -257,7 +194,6 @@ def verify_completed(name: str, completed: subprocess.CompletedProcess[str]) -> 
 
 def main() -> None:
     env = clean_env()
-    env["OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"] = "x-qyl-source,x-qyl-content"
     with tempfile.TemporaryDirectory(prefix="qyl-source-interceptor-") as temp:
         root = Path(temp)
         feed = root / "feed"

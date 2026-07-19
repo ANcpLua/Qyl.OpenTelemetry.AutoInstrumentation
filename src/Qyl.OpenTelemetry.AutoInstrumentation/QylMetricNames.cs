@@ -4,25 +4,8 @@ namespace Qyl.OpenTelemetry.AutoInstrumentation;
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 internal static class QylMetricNames
 {
-    /// <summary>Well-known HTTP Server Request Duration value used by qyl auto-instrumentation.</summary>
-    public const string HttpServerRequestDuration = "http.server.request.duration";
-    /// <summary>Well-known ASP.NET Core Components Navigate value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsNavigate = "aspnetcore.components.navigate";
-    /// <summary>Well-known ASP.NET Core Components Handle Event Duration value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsHandleEventDuration = "aspnetcore.components.handle_event.duration";
-    /// <summary>Well-known ASP.NET Core Components Update Parameters Duration value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsUpdateParametersDuration = "aspnetcore.components.update_parameters.duration";
-    /// <summary>Well-known ASP.NET Core Components Render Diff Duration value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsRenderDiffDuration = "aspnetcore.components.render_diff.duration";
-    /// <summary>Well-known ASP.NET Core Components Render Diff Size value used by qyl auto-instrumentation.</summary>
-    public const string AspNetCoreComponentsRenderDiffSize = "aspnetcore.components.render_diff.size";
-
     /// <summary>Well-known database Client Operation Duration value used by qyl auto-instrumentation.</summary>
     public const string DbClientOperationDuration = "db.client.operation.duration";
-    /// <summary>Well-known HTTP Client Request Duration value used by qyl auto-instrumentation.</summary>
-    public const string HttpClientRequestDuration = "http.client.request.duration";
-    /// <summary>Well-known DNS Lookup Duration value used by qyl auto-instrumentation.</summary>
-    public const string DnsLookupDuration = "dns.lookup.duration";
     /// <summary>Well-known N Service Bus Messaging Operation Duration value used by qyl auto-instrumentation.</summary>
     public const string NServiceBusMessagingOperationDuration = "nservicebus.messaging.operation.duration";
 

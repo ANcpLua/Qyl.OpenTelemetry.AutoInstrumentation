@@ -8,6 +8,6 @@ internal static class QylSqlClientAutoInstrumentationConsumerBootstrap
 {
     [ModuleInitializer]
     internal static void Initialize()
-        => SqlClientAutoInstrumentationBootstrap.Boot();
+        => global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.SqlClientAutoInstrumentationBootstrap.Boot();
 }
 #endif

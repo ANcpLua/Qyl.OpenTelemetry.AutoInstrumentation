@@ -8,7 +8,7 @@
     "schema_id",
     "schema_version",
     "generated_at",
-    "source",
+    "sources",
     "generated_from",
     "contract_items"
   ],
@@ -17,24 +17,41 @@
       "const": "qyl-aot-autoinstrumentation-resolved-contract"
     },
     "schema_version": {
-      "type": "string"
+      "const": "2.0.0"
     },
     "generated_at": {
       "type": "string"
     },
-    "source": {
-      "type": "object"
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "upstream_otel_dotnet_auto_60",
+        "qyl_native"
+      ],
+      "properties": {
+        "upstream_otel_dotnet_auto_60": {
+          "type": "object"
+        },
+        "qyl_native": {
+          "type": "object"
+        }
+      }
     },
     "generated_from": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "upstream_contract",
+        "qyl_native_contract",
         "qyl_ownership"
       ],
       "properties": {
         "upstream_contract": {
           "const": "docs/contracts/otel-dotnet-auto-60.upstream.yaml"
+        },
+        "qyl_native_contract": {
+          "const": "docs/contracts/qyl-native-instrumentations.yaml"
         },
         "qyl_ownership": {
           "const": "docs/contracts/qyl-aot-ownership.yaml"
@@ -43,8 +60,8 @@
     },
     "contract_items": {
       "type": "array",
-      "minItems": 60,
-      "maxItems": 60,
+      "minItems": 66,
+      "maxItems": 66,
       "items": {
         "$ref": "#/$defs/contract_item"
       }
@@ -75,17 +92,23 @@
       "key": {
         "type": "string"
       },
+      "contract_origin": {
+        "enum": [
+          "upstream_otel_dotnet_auto_60",
+          "qyl_native"
+        ]
+      },
       "status": {
         "type": "string"
       },
       "index": {
         "type": "integer",
         "minimum": 1,
-        "maximum": 60
+        "maximum": 66
       },
       "contract_item_id": {
         "type": "string",
-        "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"
+        "pattern": "^(?:OTEL_DOTNET_AUTO_CONTRACT|QYL_NATIVE_CONTRACT)_[0-9]{3}$"
       },
       "upstream_sources": {
         "type": "array",
@@ -164,6 +187,7 @@
       "required": [
         "kind",
         "key",
+        "contract_origin",
         "status",
         "index",
         "contract_item_id",
@@ -200,7 +224,13 @@
         },
         "contract_item_id": {
           "type": "string",
-          "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"
+          "pattern": "^(?:OTEL_DOTNET_AUTO_CONTRACT|QYL_NATIVE_CONTRACT)_[0-9]{3}$"
+        },
+        "contract_origin": {
+          "enum": [
+            "upstream_otel_dotnet_auto_60",
+            "qyl_native"
+          ]
         },
         "documentation": {
           "type": "object"
@@ -229,7 +259,7 @@
         "index": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60
+          "maximum": 66
         },
         "instrumentation_id": {
           "type": "string"
@@ -380,6 +410,7 @@
       "required": [
         "kind",
         "key",
+        "contract_origin",
         "status",
         "index",
         "contract_item_id",
@@ -412,7 +443,13 @@
         },
         "contract_item_id": {
           "type": "string",
-          "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"
+          "pattern": "^(?:OTEL_DOTNET_AUTO_CONTRACT|QYL_NATIVE_CONTRACT)_[0-9]{3}$"
+        },
+        "contract_origin": {
+          "enum": [
+            "upstream_otel_dotnet_auto_60",
+            "qyl_native"
+          ]
         },
         "default_value": {},
         "description": {
@@ -439,7 +476,7 @@
         "index": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60
+          "maximum": 66
         },
         "is_pattern": {
           "type": "boolean"
@@ -575,6 +612,7 @@
       "required": [
         "kind",
         "key",
+        "contract_origin",
         "status",
         "index",
         "contract_item_id",
@@ -615,7 +653,13 @@
         },
         "contract_item_id": {
           "type": "string",
-          "pattern": "^OTEL_DOTNET_AUTO_CONTRACT_[0-9]{3}$"
+          "pattern": "^(?:OTEL_DOTNET_AUTO_CONTRACT|QYL_NATIVE_CONTRACT)_[0-9]{3}$"
+        },
+        "contract_origin": {
+          "enum": [
+            "upstream_otel_dotnet_auto_60",
+            "qyl_native"
+          ]
         },
         "default_behavior": {
           "type": "string"
@@ -645,7 +689,7 @@
         "index": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 60
+          "maximum": 66
         },
         "key": {
           "type": "string"
