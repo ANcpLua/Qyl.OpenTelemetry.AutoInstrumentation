@@ -98,6 +98,14 @@ def main() -> None:
     nativeaot = run_nativeaot(env)
     verify_report("managed Oracle MDA demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT Oracle MDA demo", nativeaot, "nativeaot")
+    # Statement opt-in: the failed SELECT spans must carry db.query.text when
+    # OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT=true (and never by default,
+    # asserted by the runs above).
+    optin_env = dict(env)
+    optin_env["OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT"] = "true"
+    optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
+    verify_report("managed Oracle MDA demo (statement opt-in)", run_managed(optin_env), "dynamic-code-supported")
+    verify_report("NativeAOT Oracle MDA demo (statement opt-in)", run_nativeaot(optin_env), "nativeaot")
     print("real-oraclemda-demo-ok")
 
 

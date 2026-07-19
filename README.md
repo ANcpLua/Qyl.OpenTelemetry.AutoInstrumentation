@@ -97,8 +97,11 @@ view. Its current 60 rows comprise:
 
 - 33 implemented signal rows: 26 with NativeAOT runtime evidence and 7 with managed
   runtime evidence;
-- 19 configuration rows: 12 option bindings and 7 control bindings;
-- 8 unsupported NativeAOT rows, including four CLR-profiler/.NET Framework-only options.
+- 19 configuration rows: 12 option bindings and 7 control bindings — each backed by
+  emitted-telemetry assertions in both directions (the behavior appears when opted in
+  and never appears otherwise), not merely by option parsing;
+- 8 unsupported NativeAOT rows, including four CLR-profiler/.NET Framework-only
+  options; each carries its verified blocking reason in the matrix.
 
 Those categories are intentionally separate. A configuration binding is not runtime
 instrumentation, and the matrix is generated from the declared contract rather than

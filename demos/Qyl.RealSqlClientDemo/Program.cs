@@ -136,7 +136,17 @@ internal sealed record SqlClientReport(
         RequireTag(successSelect, "db.query.summary", "Text SELECT", failures);
         RequireTag(successSelect, "server.address", "127.0.0.1", failures);
         RequireTag(successSelect, "server.port", expectedServerPort, failures);
-        RequireMissingTag(successSelect, "db.query.text", failures);
+        if (string.Equals(
+                Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT"),
+                "true",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            RequireTagPrefix(successSelect, "db.query.text", "SELECT", failures);
+        }
+        else
+        {
+            RequireMissingTag(successSelect, "db.query.text", failures);
+        }
         RequireTag(errorSelect, "error.type", "208", failures);
         RequireTag(errorSelect, "db.operation.name", "SELECT", failures);
 
@@ -174,6 +184,21 @@ internal sealed record SqlClientReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequireTagPrefix(CapturedActivity? activity, string key, string expectedPrefix, ICollection<string> failures)
+    {
+        if (activity is null)
+            return;
+
+        if (!activity.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing {key}");
+            return;
+        }
+
+        if (!actual.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            failures.Add($"expected {key} starting with {expectedPrefix}, got {actual}");
     }
 
     private static void RequireMissingTag(CapturedActivity? activity, string key, ICollection<string> failures)

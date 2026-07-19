@@ -132,8 +132,19 @@ def main() -> None:
         managed = run_managed(env)
         nativeaot = run_nativeaot(env)
 
+        # Statement opt-in inside the same container session: the successful SELECT
+        # span must carry db.query.text when SET_DBSTATEMENT_FOR_TEXT=true (and
+        # never by default, asserted by the runs above).
+        optin_env = dict(env)
+        optin_env["OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT"] = "true"
+        optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
+        managed_optin = run_managed(optin_env)
+        nativeaot_optin = run_nativeaot(optin_env)
+
     verify_report("managed SqlClient demo", managed, "dynamic-code-supported", host_port)
     verify_report("NativeAOT SqlClient demo", nativeaot, "nativeaot", host_port)
+    verify_report("managed SqlClient demo (statement opt-in)", managed_optin, "dynamic-code-supported", host_port)
+    verify_report("NativeAOT SqlClient demo (statement opt-in)", nativeaot_optin, "nativeaot", host_port)
     print("real-sqlclient-demo-ok")
 
 

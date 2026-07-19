@@ -93,7 +93,10 @@ internal sealed record OracleMdaReport(
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, "SELECT", failures);
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(InvalidOperationException), failures);
-            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
+            if (StatementOptIn)
+                RequireTagPrefix(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, "SELECT", failures);
+            else
+                RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new OracleMdaReport(runtimeMode, failures.Count is 0, failures.ToArray(), oracleSpans);
@@ -109,6 +112,23 @@ internal sealed record OracleMdaReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static bool StatementOptIn => string.Equals(
+        Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT"),
+        "true",
+        StringComparison.OrdinalIgnoreCase);
+
+    private static void RequireTagPrefix(CapturedActivity activity, string key, string expectedPrefix, ICollection<string> failures)
+    {
+        if (!activity.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing {key}");
+            return;
+        }
+
+        if (!actual.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            failures.Add($"expected {key} starting with {expectedPrefix}, got {actual}");
     }
 
     private static void RequireMissingTag(CapturedActivity activity, string key, ICollection<string> failures)
