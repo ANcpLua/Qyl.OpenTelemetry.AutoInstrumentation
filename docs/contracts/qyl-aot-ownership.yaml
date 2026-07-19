@@ -804,11 +804,12 @@ ownership_items:
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_040
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -827,44 +828,48 @@ ownership_items:
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_042
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_043
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_045
   key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
   lane: instrumentation_option
