@@ -792,11 +792,12 @@ ownership_items:
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_039
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -814,11 +815,12 @@ ownership_items:
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_managed
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - tools/verify-instrumentation-disabled-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_041
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
   lane: environment_control

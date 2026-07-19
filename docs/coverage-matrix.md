@@ -41,8 +41,8 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | Evidence level | Count |
 |---|---:|
 | `none` | 8 |
-| `option_bound` | 15 |
-| `verified_managed` | 10 |
+| `option_bound` | 13 |
+| `verified_managed` | 12 |
 | `verified_nativeaot` | 27 |
 
 ## Matrix
@@ -86,9 +86,9 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | 35 | `signals.logs.ILOGGER` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251) | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 36 | `signals.logs.LOG4NET` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L245-L254) | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 37 | `signals.logs.NLOG` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L246-L257) | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
-| 38 | `global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L128) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
+| 38 | `global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L128) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 39 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L129) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
-| 40 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L130) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
+| 40 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L130) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 41 | `global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L131) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 42 | `global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L132) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 43 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L133) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
