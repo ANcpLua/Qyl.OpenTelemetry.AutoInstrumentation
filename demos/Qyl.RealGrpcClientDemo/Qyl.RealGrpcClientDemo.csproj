@@ -15,7 +15,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
+    <!-- Interceptor lane for QYL_GRPC_DEMO_MODE=client (ClientBase<T> call sites).
+         The default invoker mode still proves the zero-code DiagnosticSource lane:
+         no intercepted call executes there, so the listener keeps signal ownership. -->
+    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+                      Condition="'$(PublishAot)' != 'true'"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+    <Analyzer Include="..\..\artifacts\bin\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\release\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
+              Condition="'$(PublishAot)' == 'true'" />
   </ItemGroup>
+
+  <Import Project="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.targets" />
 
   <ItemGroup>
     <Compile Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.Bootstrap.g.cs"

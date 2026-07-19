@@ -41,9 +41,9 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | Evidence level | Count |
 |---|---:|
 | `none` | 8 |
-| `option_bound` | 9 |
+| `option_bound` | 7 |
 | `verified_managed` | 12 |
-| `verified_nativeaot` | 31 |
+| `verified_nativeaot` | 33 |
 
 ## Matrix
 
@@ -101,8 +101,8 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | 50 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L266) | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
 | 51 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L267) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 52 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L268) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
-| 53 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L269) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
-| 54 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L270) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
+| 53 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L269) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
+| 54 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L270) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 55 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L271) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 56 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L272) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 57 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L273) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
