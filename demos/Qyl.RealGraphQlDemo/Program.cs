@@ -9,11 +9,18 @@ using GraphQL.Types;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
+var capturedLock = new Lock();
 using var listener = new ActivityListener
 {
     ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity => captured.Add(CapturedActivity.From(activity)),
+    ActivityStopped = activity =>
+    {
+        lock (capturedLock)
+        {
+            captured.Add(CapturedActivity.From(activity));
+        }
+    },
 };
 
 ActivitySource.AddActivityListener(listener);

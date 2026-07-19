@@ -33,7 +33,7 @@
         "db.operation.name": "SELECT",
         "db.query.summary": "SELECT",
         "db.system.name": "microsoft.sql_server",
-        "error.type": "InvalidOperationException",
+        "error.type": "System.InvalidOperationException",
         "qyl.instrumentation.domain": "db.client"
       }
     },
@@ -141,7 +141,7 @@
         "db.operation.name": "SELECT",
         "db.query.summary": "SELECT",
         "db.system.name": "microsoft.sql_server",
-        "error.type": "InvalidOperationException",
+        "error.type": "System.InvalidOperationException",
         "qyl.instrumentation.domain": "db.client"
       }
     }
