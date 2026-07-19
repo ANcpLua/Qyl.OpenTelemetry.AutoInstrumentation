@@ -113,13 +113,25 @@ internal sealed record EfCoreReport(
         RequireStatus(updateSpan, "Unset", failures);
         RequireStatus(errorSpan, "Error", failures);
 
+        // SET_DBSTATEMENT_FOR_TEXT is asserted in both directions: opted in, the raw
+        // statement must appear on the span; by default it must never leak.
+        var statementOptIn = string.Equals(
+            Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT"),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
         foreach (var span in efCoreSpans)
         {
-            if (span.Tags.ContainsKey("db.query.text"))
+            if (!statementOptIn && span.Tags.ContainsKey("db.query.text"))
                 failures.Add("db.query.text leaked with default privacy policy");
 
             if (!span.Name.StartsWith("DB ", StringComparison.Ordinal))
                 failures.Add($"unexpected EFCore span name: {span.Name}");
+        }
+
+        if (statementOptIn)
+        {
+            RequireTagPrefix(insertSpan, "db.query.text", "INSERT", failures);
+            RequireTagPrefix(updateSpan, "db.query.text", "UPDATE", failures);
         }
 
         return new EfCoreReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities);
@@ -136,6 +148,21 @@ internal sealed record EfCoreReport(
     {
         if (activity is null)
             failures.Add($"missing {label}");
+    }
+
+    private static void RequireTagPrefix(CapturedActivity? activity, string key, string expectedPrefix, ICollection<string> failures)
+    {
+        if (activity is null)
+            return;
+
+        if (!activity.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing {key}");
+            return;
+        }
+
+        if (!actual.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            failures.Add($"expected {key} starting with {expectedPrefix}, got {actual}");
     }
 
     private static void RequireTag(CapturedActivity? activity, string key, string expected, ICollection<string> failures)

@@ -41,9 +41,9 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | Evidence level | Count |
 |---|---:|
 | `none` | 8 |
-| `option_bound` | 13 |
+| `option_bound` | 12 |
 | `verified_managed` | 12 |
-| `verified_nativeaot` | 27 |
+| `verified_nativeaot` | 28 |
 
 ## Matrix
 
@@ -93,7 +93,7 @@ Every row carries a clickable upstream source anchored to the official OpenTelem
 | 42 | `global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L132) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 43 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L133) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 44 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L134) | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
-| 45 | `instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT` | [60-item source row](https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L156)<br>[current removal note](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L414-L418) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
+| 45 | `instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT` | [60-item source row](https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L156)<br>[current removal note](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L414-L418) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 46 | `instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L263) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 47 | `instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L264) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |
 | 48 | `instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT` | [60-item source row](https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L159)<br>[current removal note](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L416-L418) | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `option_bound` | QylAutoInstrumentationOptions |

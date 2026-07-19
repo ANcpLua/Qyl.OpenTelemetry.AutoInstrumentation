@@ -98,6 +98,16 @@ def main() -> None:
     nativeaot = run_nativeaot(env)
     verify_report("managed EFCore demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT EFCore demo", nativeaot, "nativeaot")
+
+    # Opt-in statement capture: the demo requires db.query.text on the emitted
+    # spans when SET_DBSTATEMENT_FOR_TEXT=true (and its default runs above
+    # require the same tag to be ABSENT). Reuses the already-published NativeAOT
+    # binary, so both runtime modes prove the option end-to-end.
+    optin_env = dict(env)
+    optin_env["OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT"] = "true"
+    optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
+    verify_report("managed EFCore demo (statement opt-in)", run_managed(optin_env), "dynamic-code-supported")
+    verify_report("NativeAOT EFCore demo (statement opt-in)", run_nativeaot(optin_env), "nativeaot")
     print("real-efcore-demo-ok")
 
 

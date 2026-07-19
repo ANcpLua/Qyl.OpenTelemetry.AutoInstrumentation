@@ -1764,11 +1764,13 @@ contract_items:
   qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: option_bound
+  evidence_level: verified_nativeaot
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
+  - demos/Qyl.RealEfCoreDemo
+  - tools/verify-real-efcore-demo.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
   environment_variable: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
