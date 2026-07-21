@@ -5,6 +5,16 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.0.1] - 2026-07-22
+
+### Fixed
+
+- `Qyl.Sdk` now installs the qyl ASP.NET Core startup filter as part of `builder.AddQyl()`.
+  A clean application previously booted listeners and exporters but omitted the qyl-owned
+  inbound server span unless it added a second instrumentation registration itself.
+- Updated the WCF demo's transitive `System.Security.Cryptography.Xml` floor to 10.0.10 so
+  the release graph contains the patched .NET 10 servicing line.
+
 ## [8.0.0] - 2026-07-19
 
 Intentional breaking convergence plus version-pinned telemetry paths. The new AI,

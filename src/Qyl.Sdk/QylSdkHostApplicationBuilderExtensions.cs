@@ -45,6 +45,7 @@ public static class QylSdkHostApplicationBuilderExtensions
         configure?.Invoke(options);
 
         QylAutoInstrumentationBootstrap.Boot();
+        builder.Services.AddQylAspNetCoreInstrumentation();
 
         // The exporter honors the standard OTLP environment variables on its own; discovery only
         // fills the gap when neither the app nor the environment configured an endpoint.

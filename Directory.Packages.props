@@ -58,7 +58,7 @@
     <!-- Override Microsoft.Data.Sqlite's vulnerable native transitive (GHSA-2m69-gcr7-jv3q). -->
     <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />
     <PackageVersion Include="StackExchange.Redis" Version="3.0.0" />
-    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.9" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.10" />
     <PackageVersion Include="System.ServiceModel.Http" Version="10.0.652802" />
     <PackageVersion Include="System.ServiceModel.Primitives" Version="10.0.652802" />
   </ItemGroup>

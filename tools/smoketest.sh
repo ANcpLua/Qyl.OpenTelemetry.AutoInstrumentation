@@ -71,6 +71,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 #if QYL_SDK_PACKAGE_SMOKE
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 #endif
@@ -114,6 +115,8 @@ qylBuilder.AddQyl(options =>
     options.EnableLogExport = false;
     options.EnableSessionPropagation = false;
 });
+if (!qylBuilder.Services.Any(static descriptor => descriptor.ServiceType == typeof(IStartupFilter)))
+    throw new InvalidOperationException("Qyl.Sdk AddQyl() did not register the ASP.NET Core startup filter.");
 qylBuilder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities))
     .WithMetrics(metrics => metrics.AddReader(inMemoryMetricReader));
