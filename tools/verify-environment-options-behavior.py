@@ -88,12 +88,13 @@ var serve = Task.Run(async () =>
         if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0) break;
     }
     var response = Encoding.ASCII.GetBytes(
-        "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nX-Server: srv1\r\nConnection: close\r\n\r\n");
+        "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nX-Server: srv1\r\nMcp-Param-Result: response-secret\r\nConnection: close\r\n\r\n");
     await stream.WriteAsync(response);
 });
 
 using var http = new HttpClient();
 http.DefaultRequestHeaders.Add("X-Client", "abc");
+http.DefaultRequestHeaders.Add("Mcp-Param-Region", "request-secret");
 var response = await http.GetAsync($"http://127.0.0.1:{port}/probe?user=alice&token=hunter2");
 await serve;
 tcp.Stop();
@@ -448,6 +449,18 @@ def main() -> None:
                 },
             ),
             RUNTIME_CAPTURE_EXPECTED,
+        )
+        assert_scenario(
+            "runtime: MCP argument headers excluded from generic capture",
+            run_scenario(
+                runtime_assembly,
+                env,
+                {
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "Mcp-Param-Region",
+                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "mcp-param-result",
+                },
+            ),
+            RUNTIME_DEFAULT_EXPECTED,
         )
         assert_scenario(
             "runtime: url query redaction disabled",

@@ -152,6 +152,9 @@ NativeAOT.
   runtime code generation.
 - Query text and other sensitive or high-cardinality values remain opt-in or redacted
   according to the package options and upstream OpenTelemetry controls.
+- Generic HTTP header capture never records the reserved `Mcp-Param-*` namespace.
+  Those headers mirror MCP tool arguments; any argument-content capture belongs to an
+  MCP-specific, explicitly enabled policy rather than the HTTP instrumentation layer.
 - Generator snapshots prove emitted source shape; protocol interoperability requires
   a real OTLP receiver and structural decoding of official protobuf messages.
 
