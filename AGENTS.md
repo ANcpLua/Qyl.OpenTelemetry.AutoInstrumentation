@@ -102,6 +102,30 @@ own the same call site.
 - Missing runtime values stay missing. Keep span names and metric dimensions bounded;
   sensitive values follow the repository's explicit redaction/opt-in controls.
 
+## MCP telemetry and protocol-era discipline
+
+This package emits MCP telemetry through `ActivitySource`/`Meter`, and the MCP
+2026-07-28 revision changes what several recorded fields mean. These rules bind what
+the instrumentation records.
+
+- Tag protocol era from the negotiated protocol version, never the presence of a
+  `_meta` envelope: the legacy-fallback probe also carries one.
+- MCP client and server identity is per-request and self-reported. Do not read it
+  from a session-scoped accessor, and never promote `clientInfo`/`serverInfo` to a
+  resource attribute, a span dimension, or a behavior or security decision — they are
+  display, logging, and debugging values only.
+- A multi-round tool call is N linked requests correlated by an opaque, untrusted
+  `requestState`. Correlate the rounds with `Activity` links, never a synthesized
+  parent-child tree, and trust `requestState` only after verification.
+- Derive `ActivityStatusCode` and the RPC/error attributes from the JSON-RPC and tool
+  outcome, never the HTTP status: on the modern path a well-formed JSON-RPC error
+  rides HTTP 400, and an error can arrive in-band on a committed 200.
+- Wire concepts OpenTelemetry semconv has not defined — `requestState`, round index,
+  `resultType`, `subscriptions/listen` lifetime, cache hints — are recorded under an
+  experimental `qyl.mcp.*` staging namespace in `QylSemanticAttributes`,
+  deletion-targeted on every semconv bump that lands an upstream equivalent. Never
+  mint an `mcp.*` alias for an unratified concept.
+
 ## Upstream currency
 
 This repository instruments a live ecosystem, not the one training data remembers.
