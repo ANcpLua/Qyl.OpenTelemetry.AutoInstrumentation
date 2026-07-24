@@ -17,6 +17,37 @@ GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Source
 TARGET_FRAMEWORK = "net10.0"
 REDIS_IMAGE = os.environ.get("QYL_REDIS_IMAGE", "redis:8-alpine")
 
+# Call sites whose command the generator resolves from an overload's parameter types or from an
+# argument value, plus the ExecuteAsync sites that take the command name from the call itself.
+REQUIRED_PROBES = {
+    "StringGet": "GET",
+    "StringGet.Multi": "MGET",
+    "HashGet.Single": "HGET",
+    "HashGet.Multi": "HMGET",
+    "SetContains.Single": "SISMEMBER",
+    "SetContains.Multi": "SMISMEMBER",
+    "HashIncrement.Float": "HINCRBYFLOAT",
+    "HashSet.Entries": "HMSET",
+    "StringSet.NotExists": "SETNX",
+    "StringSet.WhenNotExists": "SET",
+    "HashSet.Field": "HSET",
+    "HashSet.FieldNotExists": "HSETNX",
+    "StringIncrement.Unit": "INCR",
+    "StringIncrement.By": "INCRBY",
+    "StringIncrement.Float": "INCRBYFLOAT",
+    "StringDecrement.Unit": "DECR",
+    "StringDecrement.By": "DECRBY",
+    "ListLeftPush": "LPUSH",
+    "ListLeftPush.Exists": "LPUSHX",
+    "ListRightPush.Exists": "RPUSHX",
+    "SortedSetRange.Ascending": "ZRANGE",
+    "SortedSetRange.Descending": "ZREVRANGE",
+    "Execute.Ping": "PING",
+    "Execute.LowerCase": "PING",
+    "Execute.Unknown": "QYLNOSUCH",
+    "KeyTimeToLive": "PTTL",
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(message)
@@ -59,24 +90,28 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
-    for token in [
-        "stored=True",
-        "value=alpha",
-        "deleted=True",
-        "expected-redis-error=RedisServerException",
-    ]:
-        if token not in completed.stdout:
-            fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
-
     report = parse_report(completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
-    activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 4:
-        fail(f"{name} expected exactly 4 Redis activities, got {activities!r}")
+    probes = report.get("Probes")
+    if not isinstance(probes, list) or len(probes) < len(REQUIRED_PROBES):
+        fail(f"{name} expected at least {len(REQUIRED_PROBES)} Redis probes, got {probes!r}")
+
+    # The demo compares every span against the wire command itself. The gate additionally pins the
+    # commands whose mapping is not a plain method-name lookup, so silently dropping one of those
+    # call sites from the demo cannot quietly shrink the evidence.
+    observed = {probe.get("Label"): probe.get("SpanOperation") for probe in probes}
+    for label, expected_operation in REQUIRED_PROBES.items():
+        if label not in observed:
+            fail(f"{name} missing required probe {label!r}\n{json.dumps(report, indent=2, sort_keys=True)}")
+        if observed[label] != expected_operation:
+            fail(
+                f"{name} probe {label!r} reported db.operation.name={observed[label]!r}, "
+                f"expected {expected_operation!r}"
+            )
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

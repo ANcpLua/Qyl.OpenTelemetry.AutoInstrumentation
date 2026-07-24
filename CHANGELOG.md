@@ -5,6 +5,38 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.1.0] - 2026-07-24
+
+### Fixed
+
+- StackExchange.Redis spans now report the command the server actually received. The generator
+  previously mapped a method *name* to a command, so overloads that differ only in what they put
+  on the wire all reported the same value: `StringGetAsync(RedisKey[])` reported `GET` instead of
+  `MGET`, `HashGetAsync(key, RedisValue[])` reported `HGET` instead of `HMGET`, the
+  floating-point `StringIncrementAsync`/`StringDecrementAsync` overloads reported `INCR`/`DECR`
+  instead of `INCRBYFLOAT`, an increment by a value other than one reported `INCR` instead of
+  `INCRBY`, and `KeyTimeToLiveAsync` reported `TTL` instead of `PTTL`. Command selection now
+  resolves per overload, and the overloads whose command depends on an argument value carry a
+  call-site test.
+- `IDatabaseAsync.ExecuteAsync` no longer reports the literal `EXECUTE`, which is not a Redis
+  command. The span now names the command the caller passed, normalized the way
+  StackExchange.Redis normalizes it. Command text that is not a single token is left off the
+  span rather than becoming an unbounded span dimension.
+- `HashSetAsync(RedisKey, HashEntry[])` is instrumented. It returns a non-generic `Task`, and the
+  Redis matcher previously required `Task<T>`, so that one overload was silently skipped while
+  the neighbouring single-field overload was traced.
+
+### Added
+
+- StackExchange.Redis interceptor coverage grew from 17 methods to the string, hash, key, list,
+  set, and sorted-set surface of `IDatabaseAsync`. An overload the command table does not map is
+  not instrumented, rather than instrumented under a guessed command name.
+- `demos/Qyl.RealRedisDemo` registers a StackExchange.Redis profiling session and asserts every
+  span's `db.operation.name` against `IProfiledCommand.Command` for the same call. The command
+  table is verified against a live server instead of being maintained by hand. The one mapping a
+  compile-time interceptor cannot name exactly is a delete: StackExchange.Redis substitutes
+  `UNLINK` for `DEL` against a server that supports it, so the demo accepts either.
+
 ## [8.0.1] - 2026-07-22
 
 ### Fixed

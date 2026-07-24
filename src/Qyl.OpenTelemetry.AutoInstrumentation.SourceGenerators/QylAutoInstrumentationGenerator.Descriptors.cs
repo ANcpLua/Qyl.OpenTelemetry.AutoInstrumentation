@@ -277,7 +277,11 @@ public sealed partial class QylAutoInstrumentationGenerator
             builder.Append('.');
             builder.Append(RuntimeHelper.StartActivityMethod);
             builder.Append('(');
-            QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(builder, in target, RuntimeHelper.StartActivityArguments);
+            QylAutoInstrumentationGenerator.AppendTraceStartActivityArguments(
+                builder,
+                in target,
+                RuntimeHelper.StartActivityArguments,
+                RuntimeHelper.HelperType);
             builder.Append(')');
         }
 
@@ -316,6 +320,18 @@ public sealed partial class QylAutoInstrumentationGenerator
     }
 
     private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false, RefKind RefKind = RefKind.None);
+
+    /// <summary>
+    /// How a StackExchange.Redis call site names the command it puts on the wire.
+    /// <paramref name="AlternateCondition"/> is a C# expression over the interceptor's parameters
+    /// that selects <paramref name="AlternateCommand"/>; <paramref name="CommandTextParameter"/>
+    /// names the parameter carrying the command text for <c>IDatabaseAsync.ExecuteAsync</c>.
+    /// </summary>
+    private readonly record struct RedisOperationSpec(
+        string Command,
+        string AlternateCommand = "",
+        string AlternateCondition = "",
+        string CommandTextParameter = "");
 
     private enum TelemetrySignal
     {

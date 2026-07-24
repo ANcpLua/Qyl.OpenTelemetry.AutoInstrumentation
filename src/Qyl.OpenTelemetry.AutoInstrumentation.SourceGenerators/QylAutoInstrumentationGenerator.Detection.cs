@@ -461,10 +461,10 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static bool TryGetStackExchangeRedisInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
-        if (!IsSupportedRedisAsyncCommand(symbol.Name) ||
-            !IsOrImplementsType(symbol.ContainingType, "StackExchange.Redis", "IDatabaseAsync") ||
-            !TryGetTaskResult(symbol.ReturnType, out _) ||
-            !TryGetRedisCommandParameters(symbol, out var parameters))
+        if (!IsOrImplementsType(symbol.ContainingType, "StackExchange.Redis", "IDatabaseAsync") ||
+            !(IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _)) ||
+            !TryGetRedisCommandParameters(symbol, out var parameters) ||
+            !TryGetRedisOperation(symbol.Name, parameters, out _))
         {
             return false;
         }
@@ -481,46 +481,380 @@ public sealed partial class QylAutoInstrumentationGenerator
         return true;
     }
 
-    private static bool IsSupportedRedisAsyncCommand(string methodName)
-        => methodName is "StringGetAsync" or
-            "StringSetAsync" or
-            "StringIncrementAsync" or
-            "StringDecrementAsync" or
-            "HashGetAsync" or
-            "HashSetAsync" or
-            "HashDeleteAsync" or
-            "HashExistsAsync" or
-            "KeyDeleteAsync" or
-            "KeyExistsAsync" or
-            "ListLeftPushAsync" or
-            "ListRightPushAsync" or
-            "SetAddAsync" or
-            "SetRemoveAsync" or
-            "SortedSetAddAsync" or
-            "SortedSetRemoveAsync" or
-            "ExecuteAsync";
+    private const string RedisKeyArrayType = "global::StackExchange.Redis.RedisKey[]";
+    private const string RedisValueArrayType = "global::StackExchange.Redis.RedisValue[]";
+    private const string RedisHashEntryArrayType = "global::StackExchange.Redis.HashEntry[]";
+    private const string RedisWhenType = "global::StackExchange.Redis.When";
+    private const string RedisOrderType = "global::StackExchange.Redis.Order";
+    private const string RedisExpirationType = "global::StackExchange.Redis.Expiration";
+    private const string RedisValueConditionType = "global::StackExchange.Redis.ValueCondition";
 
-    private static string GetRedisOperationName(string methodName)
-        => methodName switch
+    /// <summary>
+    /// Resolves the Redis command an <c>IDatabaseAsync</c> overload puts on the wire. Support and
+    /// naming are the same decision, so an unmapped overload is not instrumented rather than
+    /// labelled with a guessed command. Overloads that only differ on the wire by an argument
+    /// <em>value</em> carry a discriminator the interceptor evaluates at the call site.
+    /// Every mapping is captured from a live server by <c>demos/Qyl.RealRedisDemo</c>, which
+    /// compares this name against <c>IProfiledCommand.Command</c>.
+    /// </summary>
+    private static bool TryGetRedisOperation(
+        string methodName,
+        EquatableArray<ParameterSpec> parameters,
+        out RedisOperationSpec operation)
+    {
+        operation = default;
+
+        switch (methodName)
         {
-            "StringGetAsync" => "GET",
-            "StringSetAsync" => "SET",
-            "StringIncrementAsync" => "INCR",
-            "StringDecrementAsync" => "DECR",
-            "HashGetAsync" => "HGET",
-            "HashSetAsync" => "HSET",
-            "HashDeleteAsync" => "HDEL",
-            "HashExistsAsync" => "HEXISTS",
-            "KeyDeleteAsync" => "DEL",
-            "KeyExistsAsync" => "EXISTS",
-            "ListLeftPushAsync" => "LPUSH",
-            "ListRightPushAsync" => "RPUSH",
-            "SetAddAsync" => "SADD",
-            "SetRemoveAsync" => "SREM",
-            "SortedSetAddAsync" => "ZADD",
-            "SortedSetRemoveAsync" => "ZREM",
-            _ => "EXECUTE",
-        };
+            case "ExecuteAsync":
+                operation = new RedisOperationSpec(string.Empty, CommandTextParameter: parameters[0].Name);
+                return true;
+
+            case "StringGetAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 0, RedisKeyArrayType) ? "MGET" : "GET");
+                return true;
+            case "StringSetAsync":
+                // The classic When overloads reach SET with an NX/XX argument, but the
+                // ValueCondition overload reaches SETNX outright.
+                operation = RedisDiscriminatedOperation(
+                    parameters,
+                    RedisValueConditionType,
+                    ".Equals(" + RedisValueConditionType + ".NotExists)",
+                    "SET",
+                    "SETNX");
+                return true;
+            case "StringIncrementAsync":
+                return TryGetRedisIncrementOperation(parameters, "INCR", "INCRBY", out operation);
+            case "StringDecrementAsync":
+                return TryGetRedisIncrementOperation(parameters, "DECR", "DECRBY", out operation);
+            case "StringAppendAsync":
+                operation = new RedisOperationSpec("APPEND");
+                return true;
+            case "StringLengthAsync":
+                operation = new RedisOperationSpec("STRLEN");
+                return true;
+            case "StringGetRangeAsync":
+                operation = new RedisOperationSpec("GETRANGE");
+                return true;
+            case "StringSetRangeAsync":
+                operation = new RedisOperationSpec("SETRANGE");
+                return true;
+            case "StringGetSetAsync":
+                operation = new RedisOperationSpec("GETSET");
+                return true;
+            case "StringGetDeleteAsync":
+                operation = new RedisOperationSpec("GETDEL");
+                return true;
+            case "StringGetSetExpiryAsync":
+                operation = new RedisOperationSpec("GETEX");
+                return true;
+            case "StringGetBitAsync":
+                operation = new RedisOperationSpec("GETBIT");
+                return true;
+            case "StringSetBitAsync":
+                operation = new RedisOperationSpec("SETBIT");
+                return true;
+
+            case "HashGetAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 1, RedisValueArrayType) ? "HMGET" : "HGET");
+                return true;
+            case "HashSetAsync":
+                operation = IsRedisParameter(parameters, 1, RedisHashEntryArrayType)
+                    ? new RedisOperationSpec("HMSET")
+                    : RedisWhenOperation(parameters, "HSET", "HSETNX", "NotExists");
+                return true;
+            case "HashDeleteAsync":
+                operation = new RedisOperationSpec("HDEL");
+                return true;
+            case "HashExistsAsync":
+                operation = new RedisOperationSpec("HEXISTS");
+                return true;
+            case "HashGetAllAsync":
+                operation = new RedisOperationSpec("HGETALL");
+                return true;
+            case "HashKeysAsync":
+                operation = new RedisOperationSpec("HKEYS");
+                return true;
+            case "HashValuesAsync":
+                operation = new RedisOperationSpec("HVALS");
+                return true;
+            case "HashLengthAsync":
+                operation = new RedisOperationSpec("HLEN");
+                return true;
+            case "HashStringLengthAsync":
+                operation = new RedisOperationSpec("HSTRLEN");
+                return true;
+            case "HashRandomFieldAsync":
+                operation = new RedisOperationSpec("HRANDFIELD");
+                return true;
+            case "HashIncrementAsync":
+            case "HashDecrementAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 2, "double") ? "HINCRBYFLOAT" : "HINCRBY");
+                return true;
+
+            case "KeyDeleteAsync":
+                operation = new RedisOperationSpec("DEL");
+                return true;
+            case "KeyExistsAsync":
+                operation = new RedisOperationSpec("EXISTS");
+                return true;
+            case "KeyTimeToLiveAsync":
+                operation = new RedisOperationSpec("PTTL");
+                return true;
+            case "KeyPersistAsync":
+                operation = new RedisOperationSpec("PERSIST");
+                return true;
+            case "KeyTypeAsync":
+                operation = new RedisOperationSpec("TYPE");
+                return true;
+            case "KeyRenameAsync":
+                operation = RedisWhenOperation(parameters, "RENAME", "RENAMENX", "NotExists");
+                return true;
+            case "KeyTouchAsync":
+                operation = new RedisOperationSpec("TOUCH");
+                return true;
+            case "KeyDumpAsync":
+                operation = new RedisOperationSpec("DUMP");
+                return true;
+            case "KeyCopyAsync":
+                operation = new RedisOperationSpec("COPY");
+                return true;
+            case "KeyMoveAsync":
+                operation = new RedisOperationSpec("MOVE");
+                return true;
+            case "KeyIdleTimeAsync":
+                operation = new RedisOperationSpec("OBJECT");
+                return true;
+
+            case "ListLeftPushAsync":
+                operation = RedisWhenOperation(parameters, "LPUSH", "LPUSHX", "Exists");
+                return true;
+            case "ListRightPushAsync":
+                operation = RedisWhenOperation(parameters, "RPUSH", "RPUSHX", "Exists");
+                return true;
+            case "ListLeftPopAsync":
+                return TryGetRedisSingleKeyOperation(parameters, "LPOP", out operation);
+            case "ListRightPopAsync":
+                return TryGetRedisSingleKeyOperation(parameters, "RPOP", out operation);
+            case "ListLengthAsync":
+                operation = new RedisOperationSpec("LLEN");
+                return true;
+            case "ListRangeAsync":
+                operation = new RedisOperationSpec("LRANGE");
+                return true;
+            case "ListGetByIndexAsync":
+                operation = new RedisOperationSpec("LINDEX");
+                return true;
+            case "ListRemoveAsync":
+                operation = new RedisOperationSpec("LREM");
+                return true;
+            case "ListSetByIndexAsync":
+                operation = new RedisOperationSpec("LSET");
+                return true;
+            case "ListTrimAsync":
+                operation = new RedisOperationSpec("LTRIM");
+                return true;
+            case "ListInsertBeforeAsync":
+            case "ListInsertAfterAsync":
+                operation = new RedisOperationSpec("LINSERT");
+                return true;
+            case "ListPositionAsync":
+                operation = new RedisOperationSpec("LPOS");
+                return true;
+            case "ListMoveAsync":
+                operation = new RedisOperationSpec("LMOVE");
+                return true;
+            case "ListRightPopLeftPushAsync":
+                operation = new RedisOperationSpec("RPOPLPUSH");
+                return true;
+
+            case "SetAddAsync":
+                operation = new RedisOperationSpec("SADD");
+                return true;
+            case "SetRemoveAsync":
+                operation = new RedisOperationSpec("SREM");
+                return true;
+            case "SetContainsAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 1, RedisValueArrayType) ? "SMISMEMBER" : "SISMEMBER");
+                return true;
+            case "SetMembersAsync":
+                operation = new RedisOperationSpec("SMEMBERS");
+                return true;
+            case "SetLengthAsync":
+                operation = new RedisOperationSpec("SCARD");
+                return true;
+            case "SetPopAsync":
+                operation = new RedisOperationSpec("SPOP");
+                return true;
+            case "SetRandomMemberAsync":
+            case "SetRandomMembersAsync":
+                operation = new RedisOperationSpec("SRANDMEMBER");
+                return true;
+            case "SetMoveAsync":
+                operation = new RedisOperationSpec("SMOVE");
+                return true;
+
+            case "SortedSetAddAsync":
+                operation = new RedisOperationSpec("ZADD");
+                return true;
+            case "SortedSetRemoveAsync":
+                operation = new RedisOperationSpec("ZREM");
+                return true;
+            case "SortedSetIncrementAsync":
+            case "SortedSetDecrementAsync":
+                operation = new RedisOperationSpec("ZINCRBY");
+                return true;
+            case "SortedSetLengthAsync":
+                operation = new RedisOperationSpec("ZCARD");
+                return true;
+            case "SortedSetLengthByValueAsync":
+                operation = new RedisOperationSpec("ZLEXCOUNT");
+                return true;
+            case "SortedSetScoreAsync":
+                operation = new RedisOperationSpec("ZSCORE");
+                return true;
+            case "SortedSetScoresAsync":
+                operation = new RedisOperationSpec("ZMSCORE");
+                return true;
+            case "SortedSetRankAsync":
+                operation = RedisOrderOperation(parameters, "ZRANK", "ZREVRANK");
+                return true;
+            case "SortedSetRangeByRankAsync":
+            case "SortedSetRangeByRankWithScoresAsync":
+                operation = RedisOrderOperation(parameters, "ZRANGE", "ZREVRANGE");
+                return true;
+            case "SortedSetRangeByScoreAsync":
+            case "SortedSetRangeByScoreWithScoresAsync":
+                operation = RedisOrderOperation(parameters, "ZRANGEBYSCORE", "ZREVRANGEBYSCORE");
+                return true;
+            case "SortedSetRangeByValueAsync":
+                operation = RedisOrderOperation(parameters, "ZRANGEBYLEX", "ZREVRANGEBYLEX");
+                return true;
+            case "SortedSetRemoveRangeByRankAsync":
+                operation = new RedisOperationSpec("ZREMRANGEBYRANK");
+                return true;
+            case "SortedSetRemoveRangeByScoreAsync":
+                operation = new RedisOperationSpec("ZREMRANGEBYSCORE");
+                return true;
+            case "SortedSetRemoveRangeByValueAsync":
+                operation = new RedisOperationSpec("ZREMRANGEBYLEX");
+                return true;
+            case "SortedSetPopAsync":
+                if (IsRedisParameter(parameters, 0, RedisKeyArrayType))
+                    return false;
+
+                operation = RedisOrderOperation(parameters, "ZPOPMIN", "ZPOPMAX");
+                return true;
+            case "SortedSetRandomMemberAsync":
+                operation = new RedisOperationSpec("ZRANDMEMBER");
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// StackExchange.Redis collapses an increment of exactly one onto the unit command and
+    /// routes the floating-point overload through <c>INCRBYFLOAT</c> in both directions.
+    /// </summary>
+    private static bool TryGetRedisIncrementOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string unitCommand,
+        string byCommand,
+        out RedisOperationSpec operation)
+    {
+        operation = default;
+
+        // The bounded-increment overloads are marked experimental upstream and reach a wire
+        // command this table has not pinned against a live server.
+        if (IndexOfRedisParameter(parameters, RedisExpirationType) >= 0)
+            return false;
+
+        if (IsRedisParameter(parameters, 1, "double"))
+        {
+            operation = new RedisOperationSpec("INCRBYFLOAT");
+            return true;
+        }
+
+        if (!IsRedisParameter(parameters, 1, "long"))
+            return false;
+
+        operation = new RedisOperationSpec(byCommand, unitCommand, parameters[1].Name + " == 1L");
+        return true;
+    }
+
+    /// <summary>Excludes the multi-key overloads, which reach a different wire command.</summary>
+    private static bool TryGetRedisSingleKeyOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string command,
+        out RedisOperationSpec operation)
+    {
+        operation = default;
+        if (IsRedisParameter(parameters, 0, RedisKeyArrayType))
+            return false;
+
+        operation = new RedisOperationSpec(command);
+        return true;
+    }
+
+    private static RedisOperationSpec RedisWhenOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string command,
+        string alternateCommand,
+        string whenMember)
+        => RedisDiscriminatedOperation(
+            parameters,
+            RedisWhenType,
+            " == " + RedisWhenType + "." + whenMember,
+            command,
+            alternateCommand);
+
+    private static RedisOperationSpec RedisOrderOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string ascendingCommand,
+        string descendingCommand)
+        => RedisDiscriminatedOperation(
+            parameters,
+            RedisOrderType,
+            " == " + RedisOrderType + ".Descending",
+            ascendingCommand,
+            descendingCommand);
+
+    /// <summary>
+    /// Builds the call-site test that selects <paramref name="alternateCommand"/>.
+    /// <paramref name="conditionSuffix"/> follows the parameter name, so a caller supplies either
+    /// an enum comparison or an <c>Equals</c> call for a type without an equality operator.
+    /// An overload without the discriminating parameter always reaches
+    /// <paramref name="command"/>.
+    /// </summary>
+    private static RedisOperationSpec RedisDiscriminatedOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string parameterTypeName,
+        string conditionSuffix,
+        string command,
+        string alternateCommand)
+    {
+        var index = IndexOfRedisParameter(parameters, parameterTypeName);
+        return index < 0
+            ? new RedisOperationSpec(command)
+            : new RedisOperationSpec(command, alternateCommand, parameters[index].Name + conditionSuffix);
+    }
+
+    private static bool IsRedisParameter(EquatableArray<ParameterSpec> parameters, int index, string typeName)
+        => index < parameters.Length &&
+           string.Equals(parameters[index].TypeName, typeName, StringComparison.Ordinal);
+
+    private static int IndexOfRedisParameter(EquatableArray<ParameterSpec> parameters, string typeName)
+    {
+        for (var index = 0; index < parameters.Length; index++)
+        {
+            if (string.Equals(parameters[index].TypeName, typeName, StringComparison.Ordinal))
+                return index;
+        }
+
+        return -1;
+    }
 
     private static bool TryGetGraphQlInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {

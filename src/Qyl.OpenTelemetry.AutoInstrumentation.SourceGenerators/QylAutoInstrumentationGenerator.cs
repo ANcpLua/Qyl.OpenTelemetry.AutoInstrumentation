@@ -428,7 +428,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     private static void AppendTraceStartActivityArguments(
         StringBuilder builder,
         in InterceptorTarget target,
-        TraceStartActivityArgumentKind argumentKind)
+        TraceStartActivityArgumentKind argumentKind,
+        string helperType)
     {
         switch (argumentKind)
         {
@@ -445,7 +446,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 AppendStringLiteral(builder, target.MethodName);
                 return;
             case TraceStartActivityArgumentKind.RedisOperationName:
-                AppendStringLiteral(builder, GetRedisOperationName(target.MethodName));
+                AppendRedisOperationExpression(builder, in target, helperType);
                 return;
             case TraceStartActivityArgumentKind.TargetMethodName:
                 AppendStringLiteral(builder, target.MethodName);
@@ -771,6 +772,36 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         }
 
         builder.Append("null");
+    }
+
+    private static void AppendRedisOperationExpression(
+        StringBuilder builder,
+        in InterceptorTarget target,
+        string helperType)
+    {
+        if (!TryGetRedisOperation(target.MethodName, target.Parameters, out var operation))
+            throw new InvalidOperationException("Unmapped StackExchange.Redis command: " + target.MethodName);
+
+        if (operation.CommandTextParameter.Length > 0)
+        {
+            builder.Append(helperType);
+            builder.Append(".NormalizeCommandText(");
+            builder.Append(operation.CommandTextParameter);
+            builder.Append(')');
+            return;
+        }
+
+        if (operation.AlternateCondition.Length > 0)
+        {
+            builder.Append(operation.AlternateCondition);
+            builder.Append(" ? ");
+            AppendStringLiteral(builder, operation.AlternateCommand);
+            builder.Append(" : ");
+            AppendStringLiteral(builder, operation.Command);
+            return;
+        }
+
+        AppendStringLiteral(builder, operation.Command);
     }
 
     private static void AppendRabbitMqExchangeExpression(StringBuilder builder, in InterceptorTarget target)

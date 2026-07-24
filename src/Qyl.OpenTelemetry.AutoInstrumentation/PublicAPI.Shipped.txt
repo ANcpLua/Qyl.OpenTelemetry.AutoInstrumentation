@@ -108,7 +108,8 @@ static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz.
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq.StartPublishActivity(string? exchange) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.StartCommandActivity(string! operationName) -> System.Diagnostics.Activity?
+static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
+static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.StartCommandActivity(string? operationName) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.StartActivity(string! clientType, string! methodName) -> System.Diagnostics.Activity?
 static Qyl.OpenTelemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

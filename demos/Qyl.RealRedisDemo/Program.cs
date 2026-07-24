@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Qyl.OpenTelemetry.AutoInstrumentation;
 using StackExchange.Redis;
+using StackExchange.Redis.Profiling;
 
 var configuration = Environment.GetEnvironmentVariable("QYL_REDIS_CONFIGURATION");
 if (string.IsNullOrWhiteSpace(configuration))
@@ -30,32 +31,112 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+var probes = new List<CommandProbe>();
 await using (var connection = await WaitForRedisAsync(configuration))
 {
+    ProfilingSession? session = null;
+    connection.RegisterProfiler(() => session);
     var database = connection.GetDatabase();
 
-    var stored = await database.StringSetAsync("qyl:probe", "alpha");
-    Console.WriteLine("stored=" + stored.ToString(CultureInfo.InvariantCulture));
-
-    var value = await database.StringGetAsync("qyl:probe");
-    Console.WriteLine("value=" + value);
-
-    var deleted = await database.KeyDeleteAsync("qyl:probe");
-    Console.WriteLine("deleted=" + deleted.ToString(CultureInfo.InvariantCulture));
-
-    try
+    // Each probe runs one intercepted call site, then pairs the span the generated interceptor
+    // produced with the command StackExchange.Redis actually sent. The generator's command table
+    // is only as good as this comparison — a wrong entry fails here rather than shipping a span
+    // that names a command the server never saw.
+    async Task<CommandProbe> Probe(string label, Func<IDatabaseAsync, Task> call)
     {
-        _ = await database.ExecuteAsync("QYLNOSUCH");
+        lock (capturedLock)
+        {
+            captured.Clear();
+        }
+
+        session = new ProfilingSession();
+        string? failure = null;
+        try
+        {
+            await call(database);
+        }
+        catch (RedisServerException exception)
+        {
+            failure = exception.GetType().Name;
+        }
+
+        var wireCommands = session.FinishProfiling().Select(static command => command.Command).ToArray();
+        session = null;
+
+        CapturedActivity[] spans;
+        lock (capturedLock)
+        {
+            spans = captured.ToArray();
+            captured.Clear();
+        }
+
+        return new CommandProbe(label, wireCommands, spans, failure);
     }
-    catch (RedisServerException exception)
-    {
-        Console.WriteLine("expected-redis-error=" + exception.GetType().Name);
-    }
+
+    RedisKey str = "qyl:str", str2 = "qyl:str2", strFloat = "qyl:strfloat", hash = "qyl:hash", list = "qyl:list", set = "qyl:set", zset = "qyl:zset";
+    await database.KeyDeleteAsync(new[] { str, str2, strFloat, hash, list, set, zset });
+    await database.StringSetAsync(str, "10");
+    await database.StringSetAsync(str2, "20");
+    await database.StringSetAsync(strFloat, "1.5");
+    await database.HashSetAsync(hash, "f", "v");
+    await database.ListRightPushAsync(list, "a");
+    await database.SetAddAsync(set, "m");
+    await database.SortedSetAddAsync(zset, "m", 1);
+
+    // Static single-command mappings.
+    probes.Add(await Probe("StringSet", d => d.StringSetAsync(str, "10")));
+    probes.Add(await Probe("StringGet", d => d.StringGetAsync(str)));
+    probes.Add(await Probe("StringAppend", d => d.StringAppendAsync(str, "")));
+    probes.Add(await Probe("KeyExists", d => d.KeyExistsAsync(str)));
+    probes.Add(await Probe("KeyType", d => d.KeyTypeAsync(str)));
+    probes.Add(await Probe("KeyTimeToLive", d => d.KeyTimeToLiveAsync(str)));
+    probes.Add(await Probe("HashGetAll", d => d.HashGetAllAsync(hash)));
+    probes.Add(await Probe("HashExists", d => d.HashExistsAsync(hash, "f")));
+    probes.Add(await Probe("ListLength", d => d.ListLengthAsync(list)));
+    probes.Add(await Probe("SetAdd", d => d.SetAddAsync(set, "m")));
+    probes.Add(await Probe("SetLength", d => d.SetLengthAsync(set)));
+    probes.Add(await Probe("SortedSetAdd", d => d.SortedSetAddAsync(zset, "m", 1)));
+    probes.Add(await Probe("SortedSetScore", d => d.SortedSetScoreAsync(zset, "m")));
+
+    // Overload discriminated by parameter type: the array overloads reach a different command.
+    probes.Add(await Probe("StringGet.Multi", d => d.StringGetAsync(new[] { str, str2 })));
+    probes.Add(await Probe("HashGet.Single", d => d.HashGetAsync(hash, "f")));
+    probes.Add(await Probe("HashGet.Multi", d => d.HashGetAsync(hash, new RedisValue[] { "f", "g" })));
+    probes.Add(await Probe("SetContains.Single", d => d.SetContainsAsync(set, "m")));
+    probes.Add(await Probe("SetContains.Multi", d => d.SetContainsAsync(set, new RedisValue[] { "m", "n" })));
+    probes.Add(await Probe("HashIncrement.Float", d => d.HashIncrementAsync(hash, "n", 1.5)));
+
+    // The HashEntry[] overload returns a non-generic Task; it is instrumented like the rest.
+    probes.Add(await Probe("HashSet.Entries", d => d.HashSetAsync(hash, new[] { new HashEntry("a", "1") })));
+
+    // Overload discriminated by argument value at the call site.
+    probes.Add(await Probe("StringIncrement.Unit", d => d.StringIncrementAsync(str)));
+    probes.Add(await Probe("StringIncrement.By", d => d.StringIncrementAsync(str, 5)));
+    probes.Add(await Probe("StringIncrement.Float", d => d.StringIncrementAsync(strFloat, 1.5)));
+    probes.Add(await Probe("StringDecrement.Unit", d => d.StringDecrementAsync(str)));
+    probes.Add(await Probe("StringDecrement.By", d => d.StringDecrementAsync(str, 5)));
+    probes.Add(await Probe("StringSet.NotExists", d => d.StringSetAsync(str, "10", default, ValueCondition.NotExists)));
+    probes.Add(await Probe("StringSet.WhenNotExists", d => d.StringSetAsync(str, "10", TimeSpan.FromMinutes(5), When.NotExists)));
+    probes.Add(await Probe("HashSet.Field", d => d.HashSetAsync(hash, "f", "v")));
+    probes.Add(await Probe("HashSet.FieldNotExists", d => d.HashSetAsync(hash, "f", "v", When.NotExists)));
+    probes.Add(await Probe("ListLeftPush", d => d.ListLeftPushAsync(list, "a")));
+    probes.Add(await Probe("ListLeftPush.Exists", d => d.ListLeftPushAsync(list, "a", When.Exists)));
+    probes.Add(await Probe("ListRightPush.Exists", d => d.ListRightPushAsync(list, "a", When.Exists)));
+    probes.Add(await Probe("SortedSetRange.Ascending", d => d.SortedSetRangeByRankAsync(zset)));
+    probes.Add(await Probe("SortedSetRange.Descending", d => d.SortedSetRangeByRankAsync(zset, 0, -1, Order.Descending)));
+
+    // ExecuteAsync names the command the caller passed, including a command the server rejects.
+    probes.Add(await Probe("Execute.Ping", static async d => { await d.ExecuteAsync("PING"); }));
+    probes.Add(await Probe("Execute.LowerCase", static async d => { await d.ExecuteAsync("ping"); }));
+    probes.Add(await Probe("Execute.Unknown", static async d => { await d.ExecuteAsync("QYLNOSUCH"); }));
+
+    // Delete last: the server may answer this one with UNLINK.
+    probes.Add(await Probe("KeyDelete", d => d.KeyDeleteAsync(str2)));
 }
 
 var report = RedisReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    probes.ToArray());
 
 var json = JsonSerializer.Serialize(report, RealRedisJsonContext.Default.RedisReport);
 Console.WriteLine(json);
@@ -100,74 +181,142 @@ internal sealed record CapturedActivity(
                 StringComparer.Ordinal));
 }
 
+internal sealed record CommandProbe(
+    string Label,
+    string[] WireCommands,
+    CapturedActivity[] Spans,
+    string? ServerError);
+
+internal sealed record ProbeResult(
+    string Label,
+    string WireCommand,
+    string SpanOperation,
+    string SpanStatus);
+
 internal sealed record RedisReport(
     string RuntimeMode,
     bool Pass,
     string[] Failures,
-    CapturedActivity[] Activities)
+    ProbeResult[] Probes)
 {
-    public static RedisReport Create(string runtimeMode, CapturedActivity[] activities)
+    /// <summary>
+    /// StackExchange.Redis substitutes UNLINK for DEL against a server that supports it, so the
+    /// wire command for a delete is a property of the server rather than of the call site. It is
+    /// the one mapping a compile-time interceptor cannot name exactly.
+    /// </summary>
+    private static readonly Dictionary<string, string[]> s_wireEquivalents = new(StringComparer.Ordinal)
+    {
+        ["DEL"] = ["DEL", "UNLINK"],
+    };
+
+    public static RedisReport Create(string runtimeMode, CommandProbe[] probes)
     {
         var failures = new List<string>();
-        var redisSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "db.redis"))
-            .ToArray();
+        var results = new List<ProbeResult>();
 
-        if (redisSpans.Length != 4)
-            failures.Add($"expected 4 Redis command spans, got {redisSpans.Length}");
-
-        var set = FindByOperationAndStatus(redisSpans, "SET", "Unset");
-        var get = FindByOperationAndStatus(redisSpans, "GET", "Unset");
-        var del = FindByOperationAndStatus(redisSpans, "DEL", "Unset");
-        var executeError = FindByOperationAndStatus(redisSpans, "EXECUTE", "Error");
-
-        Require(set, "successful SET span", failures);
-        Require(get, "successful GET span", failures);
-        Require(del, "successful DEL span", failures);
-        Require(executeError, "error EXECUTE span", failures);
-        RequireTag(executeError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(StackExchange.Redis.RedisServerException).FullName!, failures);
-
-        foreach (var span in redisSpans)
+        foreach (var probe in probes)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "Redis command"))
-                failures.Add($"unexpected Redis span name: {span.Name}");
+            var spans = probe.Spans
+                .Where(static span =>
+                    span.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
+                    StringComparer.Ordinal.Equals(domain, "db.redis"))
+                .ToArray();
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Redis, failures);
+            if (spans.Length != 1)
+            {
+                failures.Add($"{probe.Label}: expected 1 Redis span, got {spans.Length}");
+                continue;
+            }
+
+            if (probe.WireCommands.Length != 1)
+            {
+                failures.Add($"{probe.Label}: expected 1 wire command, got [{string.Join(", ", probe.WireCommands)}]");
+                continue;
+            }
+
+            var span = spans[0];
+            var wire = probe.WireCommands[0];
+
+            if (!StringComparer.Ordinal.Equals(span.Name, "Redis command"))
+                failures.Add($"{probe.Label}: unexpected span name {span.Name}");
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
-                failures.Add($"expected kind Client, got {span.Kind}");
+                failures.Add($"{probe.Label}: expected kind Client, got {span.Kind}");
+
+            RequireTag(
+                probe.Label,
+                span,
+                Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName,
+                Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Redis,
+                failures);
+
+            if (!span.Tags.TryGetValue(
+                    Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName,
+                    out var operation))
+            {
+                failures.Add($"{probe.Label}: span is missing db.operation.name (wire sent {wire})");
+                results.Add(new ProbeResult(probe.Label, wire, string.Empty, span.Status));
+                continue;
+            }
+
+            var accepted = s_wireEquivalents.TryGetValue(operation, out var equivalents)
+                ? equivalents
+                : [operation];
+
+            if (!accepted.Contains(wire, StringComparer.Ordinal))
+            {
+                failures.Add(
+                    $"{probe.Label}: span reported db.operation.name={operation} but the wire command was {wire}");
+            }
+
+            RequireTag(
+                probe.Label,
+                span,
+                Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary,
+                operation,
+                failures);
+
+            var expectedStatus = probe.ServerError is null ? "Unset" : "Error";
+            if (!StringComparer.Ordinal.Equals(span.Status, expectedStatus))
+                failures.Add($"{probe.Label}: expected status {expectedStatus}, got {span.Status}");
+
+            if (probe.ServerError is not null)
+            {
+                RequireTag(
+                    probe.Label,
+                    span,
+                    Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type,
+                    typeof(RedisServerException).FullName!,
+                    failures);
+            }
+
+            results.Add(new ProbeResult(probe.Label, wire, operation, span.Status));
         }
 
-        return new RedisReport(runtimeMode, failures.Count is 0, failures.ToArray(), redisSpans);
+        if (probes.Length != results.Count)
+            failures.Add($"expected every probe to produce a result, got {results.Count} of {probes.Length}");
+
+        if (!results.Any(static result => StringComparer.Ordinal.Equals(result.SpanStatus, "Error")))
+            failures.Add("expected at least one Redis span carrying a server error");
+
+        return new RedisReport(runtimeMode, failures.Count is 0, failures.ToArray(), results.ToArray());
     }
 
-    private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
-        => activities.FirstOrDefault(activity =>
-            StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
-            StringComparer.Ordinal.Equals(actual, operation));
-
-    private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
+    private static void RequireTag(
+        string label,
+        CapturedActivity activity,
+        string key,
+        string expected,
+        ICollection<string> failures)
     {
-        if (activity is null)
-            failures.Add($"missing {label}");
-    }
-
-    private static void RequireTag(CapturedActivity? activity, string key, string expected, ICollection<string> failures)
-    {
-        if (activity is null)
-            return;
-
         if (!activity.Tags.TryGetValue(key, out var actual))
         {
-            failures.Add($"missing {key}");
+            failures.Add($"{label}: missing {key}");
             return;
         }
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
-            failures.Add($"expected {key}={expected}, got {actual}");
+            failures.Add($"{label}: expected {key}={expected}, got {actual}");
     }
 }
 
