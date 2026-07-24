@@ -5,6 +5,22 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.1.1] - 2026-07-25
+
+### Changed
+
+- A `StringSetAsync` call site no longer allocates to name its command. 8.1.0 reported `SETNX`
+  for the `ValueCondition.NotExists` overload by testing the argument at the call site, but
+  `ValueCondition` carries neither an equality operator nor `IEquatable<T>`, so that test boxed
+  on every intercepted `SET` — including calls made with tracing switched off. The method now
+  reports `SET` throughout rather than charging every caller for the one branch that differs.
+- The demo's wire comparison declares its exceptions per call site instead of per command, so
+  tolerating that one `SETNX` no longer loosens the check for every other `SET`. The
+  `ValueCondition.NotExists` site accepts `SETNX` and nothing else, which keeps the deliberate
+  inaccuracy pinned: if StackExchange.Redis ever stops sending `SETNX` there, the gate fails.
+  A delete still accepts `DEL` or `UNLINK`, because that choice belongs to the server rather
+  than to the call site — a different kind of exception, and now visibly so.
+
 ## [8.1.0] - 2026-07-24
 
 ### Fixed

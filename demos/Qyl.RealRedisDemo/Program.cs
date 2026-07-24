@@ -200,13 +200,20 @@ internal sealed record RedisReport(
     ProbeResult[] Probes)
 {
     /// <summary>
-    /// StackExchange.Redis substitutes UNLINK for DEL against a server that supports it, so the
-    /// wire command for a delete is a property of the server rather than of the call site. It is
-    /// the one mapping a compile-time interceptor cannot name exactly.
+    /// The call sites whose span deliberately does not name the wire command, keyed by probe so
+    /// that no other probe's comparison is loosened. Each one pins the exact wire command it
+    /// tolerates, so a change in what StackExchange.Redis sends still fails.
+    /// A delete accepts either command because the choice belongs to the server: UNLINK is
+    /// substituted for DEL wherever it is supported, which a compile-time interceptor cannot see.
+    /// The <c>ValueCondition.NotExists</c> set is a deliberate inaccuracy rather than an unknown:
+    /// it reaches SETNX and the interceptor could say so, but <c>ValueCondition</c> carries
+    /// neither an equality operator nor <c>IEquatable</c>, so the test would box on every
+    /// intercepted SET including the calls made with tracing switched off.
     /// </summary>
-    private static readonly Dictionary<string, string[]> s_wireEquivalents = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> s_acceptedWireCommands = new(StringComparer.Ordinal)
     {
-        ["DEL"] = ["DEL", "UNLINK"],
+        ["KeyDelete"] = ["DEL", "UNLINK"],
+        ["StringSet.NotExists"] = ["SETNX"],
     };
 
     public static RedisReport Create(string runtimeMode, CommandProbe[] probes)
@@ -259,14 +266,15 @@ internal sealed record RedisReport(
                 continue;
             }
 
-            var accepted = s_wireEquivalents.TryGetValue(operation, out var equivalents)
-                ? equivalents
+            var accepted = s_acceptedWireCommands.TryGetValue(probe.Label, out var declared)
+                ? declared
                 : [operation];
 
             if (!accepted.Contains(wire, StringComparer.Ordinal))
             {
                 failures.Add(
-                    $"{probe.Label}: span reported db.operation.name={operation} but the wire command was {wire}");
+                    $"{probe.Label}: span reported db.operation.name={operation} but the wire command was {wire}; " +
+                    $"accepted [{string.Join(", ", accepted)}]");
             }
 
             RequireTag(

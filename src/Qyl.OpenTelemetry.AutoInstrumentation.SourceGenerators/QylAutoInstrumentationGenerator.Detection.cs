@@ -487,7 +487,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private const string RedisWhenType = "global::StackExchange.Redis.When";
     private const string RedisOrderType = "global::StackExchange.Redis.Order";
     private const string RedisExpirationType = "global::StackExchange.Redis.Expiration";
-    private const string RedisValueConditionType = "global::StackExchange.Redis.ValueCondition";
 
     /// <summary>
     /// Resolves the Redis command an <c>IDatabaseAsync</c> overload puts on the wire. Support and
@@ -514,14 +513,12 @@ public sealed partial class QylAutoInstrumentationGenerator
                 operation = new RedisOperationSpec(IsRedisParameter(parameters, 0, RedisKeyArrayType) ? "MGET" : "GET");
                 return true;
             case "StringSetAsync":
-                // The classic When overloads reach SET with an NX/XX argument, but the
-                // ValueCondition overload reaches SETNX outright.
-                operation = RedisDiscriminatedOperation(
-                    parameters,
-                    RedisValueConditionType,
-                    ".Equals(" + RedisValueConditionType + ".NotExists)",
-                    "SET",
-                    "SETNX");
+                // ValueCondition.NotExists reaches SETNX, but ValueCondition carries neither an
+                // equality operator nor IEquatable, so testing for it at the call site would box
+                // on every intercepted SET, including the calls that have tracing switched off.
+                // SET is reported for the whole method rather than charging every caller for the
+                // one branch that differs.
+                operation = new RedisOperationSpec("SET");
                 return true;
             case "StringIncrementAsync":
                 return TryGetRedisIncrementOperation(parameters, "INCR", "INCRBY", out operation);
@@ -803,42 +800,33 @@ public sealed partial class QylAutoInstrumentationGenerator
         string command,
         string alternateCommand,
         string whenMember)
-        => RedisDiscriminatedOperation(
-            parameters,
-            RedisWhenType,
-            " == " + RedisWhenType + "." + whenMember,
-            command,
-            alternateCommand);
+        => RedisDiscriminatedOperation(parameters, RedisWhenType, whenMember, command, alternateCommand);
 
     private static RedisOperationSpec RedisOrderOperation(
         EquatableArray<ParameterSpec> parameters,
         string ascendingCommand,
         string descendingCommand)
-        => RedisDiscriminatedOperation(
-            parameters,
-            RedisOrderType,
-            " == " + RedisOrderType + ".Descending",
-            ascendingCommand,
-            descendingCommand);
+        => RedisDiscriminatedOperation(parameters, RedisOrderType, "Descending", ascendingCommand, descendingCommand);
 
     /// <summary>
-    /// Builds the call-site test that selects <paramref name="alternateCommand"/>.
-    /// <paramref name="conditionSuffix"/> follows the parameter name, so a caller supplies either
-    /// an enum comparison or an <c>Equals</c> call for a type without an equality operator.
-    /// An overload without the discriminating parameter always reaches
-    /// <paramref name="command"/>.
+    /// Builds the call-site test that selects <paramref name="alternateCommand"/>. The test is an
+    /// enum comparison, which the call site evaluates without allocating. An overload without the
+    /// discriminating parameter always reaches <paramref name="command"/>.
     /// </summary>
     private static RedisOperationSpec RedisDiscriminatedOperation(
         EquatableArray<ParameterSpec> parameters,
-        string parameterTypeName,
-        string conditionSuffix,
+        string enumTypeName,
+        string enumMember,
         string command,
         string alternateCommand)
     {
-        var index = IndexOfRedisParameter(parameters, parameterTypeName);
+        var index = IndexOfRedisParameter(parameters, enumTypeName);
         return index < 0
             ? new RedisOperationSpec(command)
-            : new RedisOperationSpec(command, alternateCommand, parameters[index].Name + conditionSuffix);
+            : new RedisOperationSpec(
+                command,
+                alternateCommand,
+                parameters[index].Name + " == " + enumTypeName + "." + enumMember);
     }
 
     private static bool IsRedisParameter(EquatableArray<ParameterSpec> parameters, int index, string typeName)

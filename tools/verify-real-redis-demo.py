@@ -28,7 +28,8 @@ REQUIRED_PROBES = {
     "SetContains.Multi": "SMISMEMBER",
     "HashIncrement.Float": "HINCRBYFLOAT",
     "HashSet.Entries": "HMSET",
-    "StringSet.NotExists": "SETNX",
+    # Reports SET although the wire receives SETNX: see s_wireEquivalents in the demo.
+    "StringSet.NotExists": "SET",
     "StringSet.WhenNotExists": "SET",
     "HashSet.Field": "HSET",
     "HashSet.FieldNotExists": "HSETNX",
