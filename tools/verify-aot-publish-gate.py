@@ -137,6 +137,11 @@ def runtime_identifier() -> str:
 
 ERROR_LINE = re.compile(r": error |\berror IL\d|\berror CS\d|\berror MSB\d|\berror NETSDK\d")
 
+# ILC/SDK signal deaths (SIGSEGV=-11, SIGKILL=-9) are transient toolchain crashes, not AOT
+# regressions; retry a signal-killed publish before trusting the verdict. A deterministic crash
+# still fails on every attempt; a flaky one clears.
+SIGNAL_RETRIES = 2
+
 
 def publish(project: Path, output: Path, *, strict: bool, rid: str,
             env: dict[str, str], extra_props: list[str] | None = None) -> tuple[int, list[str], str]:
@@ -148,13 +153,21 @@ def publish(project: Path, output: Path, *, strict: bool, rid: str,
          f"-p:TreatWarningsAsErrors={'true' if strict else 'false'}", "-o", str(output),
          "-clp:NoSummary", "-v", "minimal", *(extra_props or [])],
     ]
-    for command in commands:
-        proc = subprocess.run(command, cwd=str(ROOT), env=env, text=True,
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if proc.returncode:
-            break
+    for attempt in range(SIGNAL_RETRIES + 1):
+        for command in commands:
+            proc = subprocess.run(command, cwd=str(ROOT), env=env, text=True,
+                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if proc.returncode:
+                break
+        if proc.returncode >= 0:
+            break  # clean pass (0) or a real non-signal failure — trust it, do not retry
+        print(f"  [retry] {project.stem} AOT publish killed by signal {-proc.returncode} "
+              f"(attempt {attempt + 1}/{SIGNAL_RETRIES + 1})", flush=True)
     lines = proc.stdout.splitlines()
     diagnostics = [ln.strip() for ln in lines if DIAGNOSTIC_LINE.search(ln)]
+    if proc.returncode < 0:
+        crash = " / ".join(ln.strip() for ln in lines if ln.strip())[-700:]
+        return proc.returncode, diagnostics, f"killed by signal {-proc.returncode}; {crash or '(no output before crash)'}"
     err = [ln.strip() for ln in lines if ERROR_LINE.search(ln)]
     tail = err[-1] if err else next((ln.strip() for ln in reversed(lines) if ln.strip()), "(no output)")
     return proc.returncode, diagnostics, tail[:240]
