@@ -1,6 +1,19 @@
 name: nuget-publish
 
+# Publishing is automatic. A push to main whose Directory.Build.props version is
+# not yet on nuget.org runs the full gate set and, only if every gate passes,
+# publishes and then tags. A push whose version is already indexed short-circuits
+# in the `version` job, so ordinary commits cost one cheap lookup rather than the
+# ~50 minute verify + aot-publish pipeline.
+#
+# The green-CI condition is enforced inside this workflow, not inferred from a
+# sibling one: `publish` needs both `verify` (full managed, real-integration and
+# NativeAOT gate) and `aot-publish` (NativeAOT publish matrix). The release tag is
+# still created last, after verify-published proves the indexed packages restore
+# into clean managed and NativeAOT consumers.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -19,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
+      should_publish: ${{ steps.published.outputs.should_publish }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
       - id: version
@@ -44,8 +58,36 @@ jobs:
           fi
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
+      # Idempotence gate. NuGet artifacts are immutable, so a version already on
+      # the index must never be rebuilt and re-pushed. A manual dispatch always
+      # proceeds, which keeps the workflow usable to re-drive a run that died
+      # after verify but before publish.
+      - id: published
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT" == "workflow_dispatch" ]]; then
+            echo "manual dispatch: proceeding with $VERSION regardless of index state"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          index="https://api.nuget.org/v3-flatcontainer/qyl.opentelemetry.autoinstrumentation/index.json"
+          # A transient nuget.org failure must not be read as "not published" —
+          # that would republish. Fail closed instead.
+          body="$(curl -sS --retry 3 --retry-delay 5 --fail-with-body "$index")"
+          if jq -e --arg v "$VERSION" 'any(.versions[]; . == $v)' >/dev/null <<<"$body"; then
+            echo "$VERSION is already indexed on nuget.org; nothing to publish"
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$VERSION is not on nuget.org; publishing"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
   verify:
     needs: version
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 240
     steps:
@@ -84,6 +126,7 @@ jobs:
 
   aot-publish:
     needs: version
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -98,6 +141,7 @@ jobs:
 
   publish:
     needs: [version, verify, aot-publish]
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     environment: nuget
     permissions:
@@ -129,6 +173,7 @@ jobs:
 
   verify-published:
     needs: [version, publish]
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -245,6 +290,7 @@ jobs:
 
   release:
     needs: [version, verify-published]
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
