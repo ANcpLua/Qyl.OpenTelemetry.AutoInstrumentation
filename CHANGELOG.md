@@ -5,6 +5,27 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.3.0] - 2026-07-25
+
+### Changed
+
+- `Qyl.OpenTelemetry.SemanticConventions` and `.Incubating` move from 3.5.1 to 4.0.0. That major
+  carries the upstream registry pin bump to semantic-conventions-genai `74fd2e0`, which adds
+  `gen_ai.request.previous_response.id` (the prior response or interaction a request continues
+  from — OpenAI Responses `previous_response_id`, Google GenAI Interactions
+  `previous_interaction_id`). 4.0.0's breaking changes are analyzer-surface deletions and
+  zero-consumer public-surface cleanup; this repository consumes only the stable attribute
+  constants (`Code`, `Cpu`, `Db`, `Dotnet`, `Error`, `Graphql`, `Http`, `Messaging`, `Rpc`,
+  `Server`, `Url`), so no call site changes.
+
+- No new attribute is emitted here. This package family instruments ASP.NET Core, HttpClient,
+  EF Core, SqlClient, Redis, Kafka, GraphQL, and the rest of its domain inventory; it does not
+  author GenAI inference or agent spans. `gen_ai.*` spans reach qyl from the
+  `Microsoft.Extensions.AI` / `Microsoft.Agents.AI` sources that `Qyl.Sdk` subscribes to, and
+  `gen_ai.request.previous_response.id` is set by whichever client builds the request. Span
+  validation in the demos uses required-tag and forbidden-key checks rather than a closed
+  allowlist, so the new attribute flows through untouched.
+
 ## [8.2.0] - 2026-07-25
 
 ### Added
