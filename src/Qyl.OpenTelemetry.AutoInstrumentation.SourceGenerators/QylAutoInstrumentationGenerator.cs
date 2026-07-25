@@ -791,14 +791,12 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             return;
         }
 
-        if (operation.AlternateCondition.Length > 0)
+        for (var index = 0; index < operation.Branches.Length; index++)
         {
-            builder.Append(operation.AlternateCondition);
+            builder.Append(operation.Branches[index].Condition);
             builder.Append(" ? ");
-            AppendStringLiteral(builder, operation.AlternateCommand);
+            AppendStringLiteral(builder, operation.Branches[index].Command);
             builder.Append(" : ");
-            AppendStringLiteral(builder, operation.Command);
-            return;
         }
 
         AppendStringLiteral(builder, operation.Command);

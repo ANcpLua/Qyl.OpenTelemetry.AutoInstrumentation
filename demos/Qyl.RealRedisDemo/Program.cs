@@ -122,6 +122,16 @@ await using (var connection = await WaitForRedisAsync(configuration))
     probes.Add(await Probe("ListLeftPush", d => d.ListLeftPushAsync(list, "a")));
     probes.Add(await Probe("ListLeftPush.Exists", d => d.ListLeftPushAsync(list, "a", When.Exists)));
     probes.Add(await Probe("ListRightPush.Exists", d => d.ListRightPushAsync(list, "a", When.Exists)));
+    // KeyExpireAsync reaches five commands from one method: a null expiry persists, and
+    // StackExchange.Redis drops to second precision when the value carries no whole milliseconds.
+    probes.Add(await Probe("KeyExpire.Seconds", d => d.KeyExpireAsync(str, TimeSpan.FromMinutes(5))));
+    probes.Add(await Probe("KeyExpire.Milliseconds", d => d.KeyExpireAsync(str, TimeSpan.FromMilliseconds(1500))));
+    probes.Add(await Probe("KeyExpire.SubMillisecondTicks", d => d.KeyExpireAsync(str, TimeSpan.FromTicks(TimeSpan.TicksPerSecond + 1))));
+    probes.Add(await Probe("KeyExpire.Persist", d => d.KeyExpireAsync(str, (TimeSpan?)null)));
+    probes.Add(await Probe("KeyExpire.At", d => d.KeyExpireAsync(str, new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc))));
+    probes.Add(await Probe("KeyExpire.AtMilliseconds", d => d.KeyExpireAsync(str, new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddMilliseconds(500))));
+    probes.Add(await Probe("KeyExpire.AtPersist", d => d.KeyExpireAsync(str, (DateTime?)null)));
+
     probes.Add(await Probe("SortedSetRange.Ascending", d => d.SortedSetRangeByRankAsync(zset)));
     probes.Add(await Probe("SortedSetRange.Descending", d => d.SortedSetRangeByRankAsync(zset, 0, -1, Order.Descending)));
 

@@ -1,4 +1,5 @@
 using ANcpLua.Roslyn.Utilities;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
 namespace Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators;
@@ -595,6 +596,8 @@ public sealed partial class QylAutoInstrumentationGenerator
             case "KeyExistsAsync":
                 operation = new RedisOperationSpec("EXISTS");
                 return true;
+            case "KeyExpireAsync":
+                return TryGetRedisExpireOperation(parameters, out operation);
             case "KeyTimeToLiveAsync":
                 operation = new RedisOperationSpec("PTTL");
                 return true;
@@ -777,7 +780,9 @@ public sealed partial class QylAutoInstrumentationGenerator
         if (!IsRedisParameter(parameters, 1, "long"))
             return false;
 
-        operation = new RedisOperationSpec(byCommand, unitCommand, parameters[1].Name + " == 1L");
+        operation = new RedisOperationSpec(
+            byCommand,
+            RedisBranches(new RedisCommandBranch(parameters[1].Name + " == 1L", unitCommand)));
         return true;
     }
 
@@ -825,9 +830,49 @@ public sealed partial class QylAutoInstrumentationGenerator
             ? new RedisOperationSpec(command)
             : new RedisOperationSpec(
                 command,
-                alternateCommand,
-                parameters[index].Name + " == " + enumTypeName + "." + enumMember);
+                RedisBranches(new RedisCommandBranch(
+                    parameters[index].Name + " == " + enumTypeName + "." + enumMember,
+                    alternateCommand)));
     }
+
+    /// <summary>
+    /// A null expiry reaches PERSIST, and StackExchange.Redis picks the second-precision command
+    /// when the value carries no whole milliseconds — <c>TimeSpan.FromTicks(TimeSpan.TicksPerSecond + 1)</c>
+    /// still reaches EXPIRE, so the test is the millisecond component rather than the tick
+    /// remainder. Both tests read the argument the call site already holds.
+    /// </summary>
+    private static bool TryGetRedisExpireOperation(
+        EquatableArray<ParameterSpec> parameters,
+        out RedisOperationSpec operation)
+    {
+        operation = default;
+        if (parameters.Length < 2)
+            return false;
+
+        var expiry = parameters[1].Name;
+        switch (parameters[1].TypeName)
+        {
+            case "global::System.TimeSpan?":
+                operation = new RedisOperationSpec(
+                    "PEXPIRE",
+                    RedisBranches(
+                        new RedisCommandBranch(expiry + " is null", "PERSIST"),
+                        new RedisCommandBranch(expiry + ".Value.Milliseconds == 0", "EXPIRE")));
+                return true;
+            case "global::System.DateTime?":
+                operation = new RedisOperationSpec(
+                    "PEXPIREAT",
+                    RedisBranches(
+                        new RedisCommandBranch(expiry + " is null", "PERSIST"),
+                        new RedisCommandBranch(expiry + ".Value.Millisecond == 0", "EXPIREAT")));
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static EquatableArray<RedisCommandBranch> RedisBranches(params RedisCommandBranch[] branches)
+        => ImmutableArray.Create(branches).AsEquatableArray();
 
     private static bool IsRedisParameter(EquatableArray<ParameterSpec> parameters, int index, string typeName)
         => index < parameters.Length &&

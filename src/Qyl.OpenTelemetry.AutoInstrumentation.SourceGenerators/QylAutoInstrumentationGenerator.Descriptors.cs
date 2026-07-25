@@ -321,16 +321,19 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private readonly record struct ParameterSpec(string TypeName, string Name, string DefaultValueExpression = "", bool IsParams = false, RefKind RefKind = RefKind.None);
 
+    /// <summary>A call-site test that selects <paramref name="Command"/> when it holds.</summary>
+    private readonly record struct RedisCommandBranch(string Condition, string Command);
+
     /// <summary>
     /// How a StackExchange.Redis call site names the command it puts on the wire.
-    /// <paramref name="AlternateCondition"/> is a C# expression over the interceptor's parameters
-    /// that selects <paramref name="AlternateCommand"/>; <paramref name="CommandTextParameter"/>
-    /// names the parameter carrying the command text for <c>IDatabaseAsync.ExecuteAsync</c>.
+    /// <paramref name="Branches"/> are C# expressions over the interceptor's parameters, evaluated
+    /// in order, each selecting its own command; <paramref name="Command"/> is the command reached
+    /// when no branch holds. <paramref name="CommandTextParameter"/> names the parameter carrying
+    /// the command text for <c>IDatabaseAsync.ExecuteAsync</c>.
     /// </summary>
     private readonly record struct RedisOperationSpec(
         string Command,
-        string AlternateCommand = "",
-        string AlternateCondition = "",
+        EquatableArray<RedisCommandBranch> Branches = default,
         string CommandTextParameter = "");
 
     private enum TelemetrySignal

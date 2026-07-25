@@ -5,6 +5,26 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.2.0] - 2026-07-25
+
+### Added
+
+- `KeyExpireAsync` is instrumented. It reaches five wire commands from one method, which is why
+  8.1.0 left it out: a null expiry reaches `PERSIST`, and StackExchange.Redis drops to
+  second precision when the value carries no whole milliseconds, so the same call is `EXPIRE` or
+  `PEXPIRE` (`EXPIREAT` or `PEXPIREAT` for the `DateTime` overload) depending on the argument.
+  Measuring the rule against a live server showed it is the millisecond component rather than the
+  tick remainder — `TimeSpan.FromTicks(TimeSpan.TicksPerSecond + 1)` still reaches `EXPIRE` — and
+  that test reads an argument the call site already holds, so naming the command costs no
+  allocation. `ExpireWhen` does not change the command; it becomes an NX/XX argument.
+  All five outcomes are pinned by demo probes, including the sub-millisecond tick case.
+
+### Changed
+
+- A Redis command's call-site test is now an ordered set of branches rather than a single
+  alternate, which is what let one method resolve five commands. No interceptor allocates to
+  choose a command name.
+
 ## [8.1.1] - 2026-07-25
 
 ### Changed
