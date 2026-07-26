@@ -59,8 +59,11 @@ Core, HttpClient, DNS, database, messaging, and runtime). It copies `session.id`
 from the nearest tagged in-process
 ancestor to descendant spans (remote parents and unrelated trace branches are not
 propagated); and exports traces, metrics, and logs over OTLP — to
-`OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to a qyl collector discovered on
-localhost (4318/4317). It also registers the exact library telemetry paths
+`OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to `QYL_ENDPOINT` when that is
+set, otherwise to a qyl collector discovered on localhost (4318/4317).
+`QYL_ENDPOINT` names a collector for the qyl exporters alone, where the standard
+variable would redirect every OTLP exporter in the process. It also registers the
+exact library telemetry paths
 listed below; wrapper-based libraries still require their explicit one-line opt-in.
 
 The rest of this section is the manual wiring for apps that want to own it.

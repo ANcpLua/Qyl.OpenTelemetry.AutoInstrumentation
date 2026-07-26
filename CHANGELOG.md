@@ -5,6 +5,24 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.5.0] - 2026-07-26
+
+### Added
+
+- Collector discovery honors `QYL_ENDPOINT`, the documented fallback between
+  `OTEL_EXPORTER_OTLP_ENDPOINT` and probing localhost. It names a collector for the qyl exporters
+  alone, where the standard variable redirects every OTLP exporter in the process.
+
+  This closes a gap the 8.4.0 fold exposed rather than caused. `QYL_ENDPOINT` was documented as an
+  automatic-instrumentation knob, but the only code that ever read it was the collector
+  repository's private copy of collector discovery — the published package never supported the
+  variable its own documentation described. Deleting that copy is what surfaced it. The knob now
+  lives with the discovery implementation, and the qyl repository stops documenting a binding it
+  does not own.
+
+  An unparseable value returns no endpoint instead of falling through to probing: "configured, but
+  wrong" must not silently export somewhere the operator did not ask for.
+
 ## [8.4.0] - 2026-07-26
 
 ### Added

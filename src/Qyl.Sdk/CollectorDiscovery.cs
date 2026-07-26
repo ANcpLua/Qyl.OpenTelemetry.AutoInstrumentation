@@ -26,6 +26,15 @@ internal static class CollectorDiscovery
 
     private static Uri? ProbeForCollector()
     {
+        // QYL_ENDPOINT names a collector without claiming OTEL_EXPORTER_OTLP_ENDPOINT, which every
+        // OTLP exporter in the process would honor. Discovery only runs when the standard variable
+        // is unset, so this stays the documented fallback rather than an override of it. An
+        // unparseable value means "configured, but wrong" — probing on would silently export
+        // somewhere the operator did not ask for.
+        var configured = Environment.GetEnvironmentVariable("QYL_ENDPOINT");
+        if (!string.IsNullOrWhiteSpace(configured))
+            return Uri.TryCreate(configured, UriKind.Absolute, out var configuredUri) ? configuredUri : null;
+
         foreach (var (host, port) in s_probeTargets)
         {
             if (TcpProbe(host, port))
