@@ -6,6 +6,31 @@ This is the repository's only editable agent/contributor instruction file.
 evidence. Do not add progress logs, continuation plans, branch archaeology, or a
 second rules file.
 
+## 1.0.0 target name
+
+This repository folds into the **`Qyl.Telemetry.*`** family:
+
+| Target | What lands there |
+| --- | --- |
+| `Qyl.Telemetry` | Primitives and the explicit instrumentation API |
+| `Qyl.Telemetry.AutoInstrumentation` (+ integrations) | Automatic capture — today's `Qyl.OpenTelemetry.AutoInstrumentation(.Hosting/.DiagnosticListeners)` |
+| `Qyl.Telemetry.Hosting` | Composition: `AddQyl()`, OTel wiring, OTLP export, collector discovery — absorbs the retired `Qyl.Sdk` (8.x) |
+
+`qyl/internal/qyl.instrumentation(.generators)` folds in from the other repo.
+Target state after the move: **`InternalsVisibleTo` count = 0**. The consumer
+contract `builder.AddQyl()` does not change.
+
+The full ledger and the boundary law live in `qyl-workspace/AGENTS.md` — that
+file is binding and this one does not restate it.
+
+**Where this family stops.** It composes the producer pipeline inside the
+customer's application and **ends at the OTLP exporter**. It never stores,
+queries, or validates telemetry. The one testable consequence: `AddQyl()` must
+be fully exercisable with **no collector running**. The conformance app's
+assertion on the inbound `Source.Name` verifies exactly that, and it is the
+signal that the split is real rather than aspirational. If a test here ever
+needs a collector package, the boundary has leaked.
+
 ## Purpose and boundary
 
 This package family provides managed .NET automatic instrumentation using Roslyn
