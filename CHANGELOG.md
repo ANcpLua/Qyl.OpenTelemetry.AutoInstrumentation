@@ -5,6 +5,31 @@ stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs tha
 proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
 matching `v*` tag and GitHub release.
 
+## [8.4.0] - 2026-07-26
+
+### Added
+
+- `QylSdkOptions.RequireConfiguredEndpoint` makes "no endpoint resolved" mean "do not export"
+  instead of falling through to the OTLP exporter's own `localhost` default. Defaults to false, so
+  an ordinary application is unaffected — that default is the local qyl collector, which is the
+  right guess. A process that is *itself* an OTLP destination needs the opposite: for the qyl
+  collector the exporter's default port is its own ingest port, so an unconfigured export would
+  feed its output back into its input. `CollectorSelfExportGuard` cannot catch that case because it
+  inspects a set `OTEL_EXPORTER_OTLP_ENDPOINT`, and here the variable is absent.
+
+- `QylSdkOptions.ServiceVersion` stamps `service.version` on the resource, and
+  `QylSdkOptions.ResourceAttributes` merges arbitrary resource attributes (schema URL, deployment
+  environment, capability flags). Previously `AddQyl()` could name a service but not version it,
+  which left a telemetry regression un-attributable to a build.
+
+- `QylSdkOptions.ConfigureTracing` runs after the qyl sources and processors are registered and
+  before the OTLP exporter, so a processor added there observes spans on their way out. It exists
+  for policy the producer side cannot know — which of *this* application's endpoints are noise.
+
+All four exist because the qyl collector consumes this package for its own self-telemetry rather
+than maintaining a second, drifting copy of the composition logic. Each has that consumer as its
+executable owner; none is speculative surface.
+
 ## [8.3.0] - 2026-07-25
 
 ### Changed

@@ -1,3 +1,5 @@
+using OpenTelemetry.Trace;
+
 namespace Qyl;
 
 /// <summary>
@@ -13,6 +15,27 @@ public sealed class QylSdkOptions
     public string? ServiceName { get; set; }
 
     /// <summary>
+    /// Version stamped on the OpenTelemetry resource as <c>service.version</c>. Leave null to omit
+    /// it. Setting it makes a telemetry regression attributable to a specific build, which is the
+    /// whole point of the attribute — a deployment that cannot name its own version cannot be
+    /// bisected.
+    /// </summary>
+    public string? ServiceVersion { get; set; }
+
+    /// <summary>
+    /// Extra attributes merged onto the OpenTelemetry resource, for facts that describe the process
+    /// rather than any one span — schema URL, deployment environment, enabled capabilities.
+    /// </summary>
+    public IList<KeyValuePair<string, object>> ResourceAttributes { get; } = [];
+
+    /// <summary>
+    /// Escape hatch for tracing configuration the typed properties do not cover — extra processors,
+    /// samplers, or instrumentation. Runs after the qyl sources and processors are registered and
+    /// before the OTLP exporter, so a processor added here observes spans on their way out.
+    /// </summary>
+    public Action<TracerProviderBuilder>? ConfigureTracing { get; set; }
+
+    /// <summary>
     /// Explicit collector endpoint. When null, the standard <c>OTEL_EXPORTER_OTLP_ENDPOINT</c>
     /// environment variable wins if present; otherwise local discovery probes for a qyl collector
     /// (see <see cref="EnableCollectorDiscovery"/>).
@@ -24,6 +47,20 @@ public sealed class QylSdkOptions
     /// endpoint is configured. Defaults to true.
     /// </summary>
     public bool EnableCollectorDiscovery { get; set; } = true;
+
+    /// <summary>
+    /// Wire the OTLP exporters only when an endpoint is actually configured — explicitly via
+    /// <see cref="CollectorEndpoint"/>, through <c>OTEL_EXPORTER_OTLP_ENDPOINT</c>, or by discovery
+    /// — instead of falling back to the exporter's own <c>localhost</c> default. Defaults to false,
+    /// which suits an ordinary application: the built-in default is the local qyl collector.
+    /// <para>
+    /// A process that is <em>itself</em> a telemetry destination must set this to true. For the
+    /// collector, the exporter's default port is its own ingest port, so an unconfigured export
+    /// would feed its output back into its input. Setting this makes "no endpoint" mean "do not
+    /// export" rather than "export to whatever is listening locally".
+    /// </para>
+    /// </summary>
+    public bool RequireConfiguredEndpoint { get; set; }
 
     /// <summary>Export application logs over OTLP alongside traces. Defaults to true.</summary>
     public bool EnableLogExport { get; set; } = true;

@@ -1,1 +1,8 @@
 #nullable enable
+Qyl.QylSdkOptions.ConfigureTracing.get -> System.Action<OpenTelemetry.Trace.TracerProviderBuilder!>?
+Qyl.QylSdkOptions.ConfigureTracing.set -> void
+Qyl.QylSdkOptions.RequireConfiguredEndpoint.get -> bool
+Qyl.QylSdkOptions.RequireConfiguredEndpoint.set -> void
+Qyl.QylSdkOptions.ResourceAttributes.get -> System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string!, object!>>!
+Qyl.QylSdkOptions.ServiceVersion.get -> string?
+Qyl.QylSdkOptions.ServiceVersion.set -> void

@@ -49,20 +49,32 @@ public static class QylSdkHostApplicationBuilderExtensions
 
         // The exporter honors the standard OTLP environment variables on its own; discovery only
         // fills the gap when neither the app nor the environment configured an endpoint.
+        var endpointFromEnvironment =
+            !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OtlpEndpointVariable));
         var endpoint = options.CollectorEndpoint;
-        if (endpoint is null
-            && options.EnableCollectorDiscovery
-            && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OtlpEndpointVariable)))
+        if (endpoint is null && options.EnableCollectorDiscovery && !endpointFromEnvironment)
         {
             endpoint = CollectorDiscovery.DiscoverEndpoint();
         }
+
+        // A null endpoint is not the same as "no destination": the exporter still reads the standard
+        // environment variables, and failing that falls back to its own localhost default. Only a
+        // caller that is itself a telemetry destination cares about the difference, and for it that
+        // fallback points at its own ingest port — so it opts out of exporting entirely.
+        var exportEnabled = !options.RequireConfiguredEndpoint || endpoint is not null || endpointFromEnvironment;
 
         var serviceName = options.ServiceName
                           ?? Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME")
                           ?? builder.Environment.ApplicationName;
 
         builder.Services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(serviceName))
+            .ConfigureResource(resource =>
+            {
+                resource.AddService(serviceName, serviceVersion: options.ServiceVersion);
+
+                if (options.ResourceAttributes.Count > 0)
+                    resource.AddAttributes(options.ResourceAttributes);
+            })
             .WithTracing(tracing =>
             {
                 tracing.AddSource(QylTelemetrySources.GetEnabledActivitySourceNames());
@@ -76,7 +88,10 @@ public static class QylSdkHostApplicationBuilderExtensions
                 if (options.EnableSessionPropagation)
                     tracing.AddProcessor(new QylSessionSpanProcessor());
 
-                tracing.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/traces"));
+                options.ConfigureTracing?.Invoke(tracing);
+
+                if (exportEnabled)
+                    tracing.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/traces"));
             });
 
         if (options.EnableMetricsExport)
@@ -93,7 +108,8 @@ public static class QylSdkHostApplicationBuilderExtensions
                 foreach (var meter in options.AdditionalMeters)
                     metrics.AddMeter(meter);
 
-                metrics.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/metrics"));
+                if (exportEnabled)
+                    metrics.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/metrics"));
             });
         }
 
@@ -103,7 +119,9 @@ public static class QylSdkHostApplicationBuilderExtensions
             {
                 logging.IncludeFormattedMessage = true;
                 logging.IncludeScopes = true;
-                logging.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/logs"));
+
+                if (exportEnabled)
+                    logging.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/logs"));
             });
         }
 
