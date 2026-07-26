@@ -20,8 +20,9 @@ This repository folds into the **`Qyl.Telemetry.*`** family:
 Target state after the move: **`InternalsVisibleTo` count = 0**. The consumer
 contract `builder.AddQyl()` does not change.
 
-The full ledger and the boundary law live in `qyl-workspace/AGENTS.md` — that
-file is binding and this one does not restate it.
+The full ledger and the boundary law live in `qyl/ARCHITECTURE-1.0.0.md` — that
+document is normative and this one does not restate it. `qyl/docs/component-taxonomy.html`
+is a human view of it, never a second source.
 
 **Where this family stops.** It composes the producer pipeline inside the
 customer's application and **ends at the OTLP exporter**. It never stores,
