@@ -103,7 +103,7 @@ internal sealed record AspNetCoreReport(
         var httpServerSpans = activities
             .Where(static activity =>
                 activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "http.server"))
+                StringComparer.Ordinal.Equals(domain, "aspnetcore.server"))
             .ToArray();
 
         if (httpServerSpans.Length != 2)

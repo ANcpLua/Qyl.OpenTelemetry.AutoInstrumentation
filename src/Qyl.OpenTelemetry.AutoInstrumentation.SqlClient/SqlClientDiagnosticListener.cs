@@ -48,12 +48,19 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
         if (!isSuccess && !isError)
             return;
 
+        // Free the WriteCommandBefore entry on every completion event, before anything that can
+        // return early. A payload shape this reader cannot parse fails deterministically, so a
+        // leak here fills PendingOperationsCap and then every later span records zero duration.
+        var pending = SqlClientPayloadReader.TryReadOperationId(payload, out var operationKey) &&
+                      PendingOperations.TryRemove(operationKey, out var removedTimestamp)
+            ? removedTimestamp
+            : (long?)null;
+
         if (!SqlClientPayloadReader.TryRead(payload, isError, out var command))
             return;
 
         var duration = TimeSpan.Zero;
-        if (command.OperationId is { } operationKey &&
-            PendingOperations.TryRemove(operationKey, out var beforeTimestamp) &&
+        if (pending is { } beforeTimestamp &&
             command.Timestamp is { } afterTimestamp &&
             afterTimestamp > beforeTimestamp)
         {

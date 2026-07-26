@@ -48,6 +48,9 @@ internal static class SqlClientPayloadReader
                TryGetPayloadStruct(payload, TimestampKey, out timestamp);
     }
 
+    public static bool TryReadOperationId(object? payload, out Guid operationId) =>
+        TryGetPayloadStruct(payload, OperationIdKey, out operationId);
+
     private static bool TryGetPayloadStruct<T>(object? payload, string key, out T value)
         where T : struct
     {

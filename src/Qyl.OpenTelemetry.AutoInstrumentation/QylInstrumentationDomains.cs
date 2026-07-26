@@ -26,8 +26,6 @@ internal static class QylInstrumentationDomains
     public const string GraphQl = "graphql";
     /// <summary>Well-known HTTP Client value used by qyl auto-instrumentation.</summary>
     public const string HttpClient = "http.client";
-    /// <summary>Well-known HTTP Server value used by qyl auto-instrumentation.</summary>
-    public const string HttpServer = "http.server";
     /// <summary>Well-known Job Quartz value used by qyl auto-instrumentation.</summary>
     public const string JobQuartz = "job.quartz";
     /// <summary>Well-known Log I Logger value used by qyl auto-instrumentation.</summary>

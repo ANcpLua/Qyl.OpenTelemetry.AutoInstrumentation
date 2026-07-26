@@ -40,7 +40,7 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
 
         using var activity = QylActivitySource.StartAtAmbientStart(QylActivityNames.HttpServer(method, route), ActivityKind.Server);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpServer);
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         SemanticTagWriter.Set(activity, SemanticAttributes.HttpRoute, route);
