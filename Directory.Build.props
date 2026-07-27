@@ -16,13 +16,15 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
-    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.OpenTelemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.Telemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
 
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-    <Version>8.5.0</Version>
+    <Version>1.0.0-beta.1</Version>
     <Authors>qyl</Authors>
+    <!-- The GitHub repository was NOT renamed with the packages; this must stay truthful to
+         the real origin or the publish workflow's provenance check rejects the nuspec. -->
     <RepositoryUrl>https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -30,7 +32,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.Hosting'">true</QylEnablePublicApiAnalyzers>
+    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.Telemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.AutoInstrumentation.SqlClient' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.Hosting'">true</QylEnablePublicApiAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>

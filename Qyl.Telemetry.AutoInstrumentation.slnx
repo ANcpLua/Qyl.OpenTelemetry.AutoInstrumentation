@@ -1,0 +1,11 @@
+<Solution>
+  <Project Path="benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks.csproj" />
+  <Project Path="src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj" />
+  <Project Path="src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj" />
+  <Project Path="src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj" />
+  <Project Path="src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore.csproj" />
+  <Project Path="src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj" />
+  <Project Path="src/Qyl.Telemetry.AutoInstrumentation.SqlClient/Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj" />
+  <Project Path="src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj" />
+  <Project Path="tests/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots/Fixture/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots.Fixture.csproj" />
+</Solution>

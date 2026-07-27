@@ -1,9 +1,0 @@
-#nullable enable
-Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber
-Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.Dispose() -> void
-Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.QylDiagnosticListenerSubscriber() -> void
-Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.Subscribe() -> void
-abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.InstrumentationId.get -> string!
-abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.ListenerName.get -> string!
-abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.OnEvent(string! name, object? payload) -> void
-abstract Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.QylDiagnosticListenerSubscriber.Signal.get -> Qyl.OpenTelemetry.AutoInstrumentation.QylAutoInstrumentationSignal

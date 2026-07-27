@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MySql.Data.MySqlClient;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var capturedActivities = new List<CapturedActivity>();
 using var activityListener = new ActivityListener

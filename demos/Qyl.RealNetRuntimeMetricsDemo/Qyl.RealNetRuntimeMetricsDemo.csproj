@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation\Qyl.Telemetry.AutoInstrumentation.csproj" />
   </ItemGroup>
 
 </Project>

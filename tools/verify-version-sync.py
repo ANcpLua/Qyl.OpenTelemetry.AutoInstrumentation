@@ -4,7 +4,8 @@
 The instrumentation-scope version is stamped onto every emitted span and metric and must match
 the shipped package. This gate enforces a single source of truth:
 
-  * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag,
+  * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag
+    in its own major lineage (see latest_stable_tag for why the retired IDs' tags are excluded),
   * any version-pinned README package-reference example must equal that version,
   * the generated-code ABI anchor and emitted references must exactly match the package major,
   * QylInstrumentation.Version must stay DERIVED from the build (no hardcoded semver literal).
@@ -21,21 +22,21 @@ ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / "Directory.Build.props"
 README = ROOT / "README.md"
 INSTRUMENTATION = (
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylInstrumentation.cs"
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylInstrumentation.cs"
 )
 GENERATED_CODE_ABI = (
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylGeneratedCodeAbi.cs"
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylGeneratedCodeAbi.cs"
 )
 GENERATOR = (
     ROOT
     / "src"
-    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
+    / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators"
     / "QylAutoInstrumentationGenerator.cs"
 )
 GENERATED_INTERCEPTOR_SNAPSHOT = (
     ROOT
     / "tests"
-    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots"
+    / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots"
     / "verified"
     / "QylAutoInstrumentation.Interceptors.g.verified.cs"
 )
@@ -61,10 +62,22 @@ def props_version() -> str:
     return match[1]
 
 
-def latest_stable_tag() -> tuple[int, int, int] | None:
+def latest_stable_tag(major: int) -> tuple[int, int, int] | None:
+    """Newest stable v* tag in the CURRENT package family's major lineage.
+
+    The floor exists so the version owner can never fall behind a version that is
+    already published and immutable on nuget.org. That constraint is per package
+    ID, and the Qyl.Telemetry.* IDs are new identities born at 1.0.0-beta.1
+    (architecture 6.2). Tags v3.x-v8.x were cut for the retired
+    Qyl.OpenTelemetry.* IDs, which stay frozen on the registry and cannot collide
+    with an ID that has never published anything. Comparing across that boundary
+    would reject every possible version of the new family, so the floor is scoped
+    to tags sharing the props major -- the lineage whose versions can still
+    collide.
+    """
     try:
         out = subprocess.run(
-            ["git", "-C", str(ROOT), "tag", "--list", "v*", "--sort=-v:refname"],
+            ["git", "-C", str(ROOT), "tag", "--list", f"v{major}.*", "--sort=-v:refname"],
             capture_output=True,
             text=True,
             check=True,
@@ -79,9 +92,10 @@ def latest_stable_tag() -> tuple[int, int, int] | None:
 
 
 def check_props_version(version: str) -> None:
-    tag = latest_stable_tag()
+    major = semver(version)[0]
+    tag = latest_stable_tag(major)
     if tag is None:
-        print("  - no stable v* tag reachable; skipping tag-floor comparison")
+        print(f"  - no stable v{major}.* tag reachable; skipping tag-floor comparison")
         return
     if semver(version) < tag:
         tag_text = ".".join(map(str, tag))
@@ -95,7 +109,7 @@ def check_props_version(version: str) -> None:
 def check_readme(version: str) -> None:
     text = README.read_text(encoding="utf-8")
     refs = re.findall(
-        r'Include="Qyl\.OpenTelemetry\.AutoInstrumentation[.\w]*"\s+Version="([^"]+)"', text
+        r'Include="Qyl\.Telemetry\.AutoInstrumentation[.\w]*"\s+Version="([^"]+)"', text
     )
     if not refs:
         print("  - README uses the version-agnostic package-install command")
@@ -122,11 +136,11 @@ def check_generated_code_abi(version: str) -> None:
         )
 
     expected_reference = (
-        "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode."
+        "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode."
         f"QylGeneratedCodeAbi.{expected_anchor}"
     )
     reference_pattern = re.compile(
-        r"global::Qyl\.OpenTelemetry\.AutoInstrumentation\.GeneratedCode\."
+        r"global::Qyl\.Telemetry\.AutoInstrumentation\.GeneratedCode\."
         r"QylGeneratedCodeAbi\.V\d+"
     )
     for label, path in [

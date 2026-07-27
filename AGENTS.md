@@ -1,4 +1,4 @@
-# Qyl.OpenTelemetry.AutoInstrumentation engineering contract
+# Qyl.Telemetry.AutoInstrumentation engineering contract
 
 This is the repository's only editable agent/contributor instruction file.
 `CLAUDE.md` is a symlink to it. `README.md` is the public package front door,
@@ -6,15 +6,32 @@ This is the repository's only editable agent/contributor instruction file.
 evidence. Do not add progress logs, continuation plans, branch archaeology, or a
 second rules file.
 
-## 1.0.0 target name
+## 1.0.0 name
 
-This repository folds into the **`Qyl.Telemetry.*`** family:
+This repository ships the **`Qyl.Telemetry.*`** family. The rename has landed;
+these are the package IDs, not a target:
 
-| Target | What lands there |
+| Package | What lives there |
 | --- | --- |
-| `Qyl.Telemetry` | Primitives and the explicit instrumentation API |
-| `Qyl.Telemetry.AutoInstrumentation` (+ integrations) | Automatic capture — today's `Qyl.OpenTelemetry.AutoInstrumentation(.Hosting/.DiagnosticListeners)` |
+| `Qyl.Telemetry` | Primitives and the explicit instrumentation API (not in this repo yet) |
+| `Qyl.Telemetry.AutoInstrumentation` (+ `.Hosting`, `.DiagnosticListeners`, `.EntityFrameworkCore`, `.SqlClient`) | Automatic capture |
 | `Qyl.Telemetry.Hosting` | Composition: `AddQyl()`, OTel wiring, OTLP export, collector discovery — absorbs the retired `Qyl.Sdk` (8.x) |
+
+The retired IDs — `Qyl.OpenTelemetry.AutoInstrumentation(.Hosting/.DiagnosticListeners/
+.EntityFrameworkCore/.SqlClient)` and `Qyl.Sdk` — stay frozen on nuget.org at
+`8.5.0` / `QylGeneratedCodeAbi.V8`. They are never republished; they are unlisted
+at launch. Nothing in this repository builds them any more.
+
+**The emitted scope name still reads `Qyl.OpenTelemetry.AutoInstrumentation`, on
+purpose.** `QylActivitySource.Name` and the two qyl-owned meter names
+(`…AutoInstrumentation.Database`, `…AutoInstrumentation.NServiceBus`) are *runtime
+vocabulary*, not package identity: they are stamped on every emitted span and
+metric, and the collector repo's conformance app asserts the inbound `Source.Name`
+literally. Renaming a package ID does not rename what it emits. Moving those three
+literals is its own slice, and it only lands together with the consumer-side
+assertions, in the publish → NuGet-index → consumer-bump order the workspace router
+mandates. Until then this mismatch is the correct state — do not "fix" it because it
+looks inconsistent with the namespace around it.
 
 `qyl/internal/qyl.instrumentation(.generators)` folds in from the other repo.
 Target state after the move: **`InternalsVisibleTo` count = 0**. The consumer
@@ -44,24 +61,29 @@ The package family is public. Existing NuGet artifacts are immutable. Make
 intentional breaking convergence in a new major version, migrate known consumers,
 and do not add compatibility shims without a proven external requirement.
 
-The following API/ABI categories define the active 8.0 architecture. Preserve them:
+The following API/ABI categories define the active 1.0 architecture. Preserve them:
 
 1. A small supported user API for bootstrap and configuration: Hosting
    `Boot()`/`AddQylAutoInstrumentation(...)`, `Qyl.Telemetry.Hosting` `AddQyl(...)`/`QylSdkOptions`,
    core `AddQylAspNetCoreInstrumentation()`, and the DiagnosticListeners subscriber
    surface with `QylAutoInstrumentationSignal`.
 2. A generated-code ABI for cross-assembly interceptor calls, living in the
-   `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` namespace, every member
+   `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace, every member
    `[EditorBrowsable(EditorBrowsableState.Never)]`, anchored by the
-   `QylGeneratedCodeAbi.V8` const that every generated interceptor file references so
+   `QylGeneratedCodeAbi.V1` const that every generated interceptor file references so
    a generator/runtime ABI mismatch fails compilation. That namespace, the anchor, and
-   the `V<major>` bump on a breaking ABI change are load-bearing: the version-sync and
-   generated-source snapshot verifiers pin the exact token. Do not rename or re-derive it.
+   the `V<major>` rule are load-bearing: the version-sync and generated-source snapshot
+   verifiers pin the exact token. Do not rename or re-derive it — `<major>` is the
+   package major, checked mechanically (`verify-version-sync.py` requires the anchor
+   declaration to equal it exactly), so the anchor moves when the package major moves
+   and never on its own. The frozen `Qyl.OpenTelemetry.*` IDs keep `V8` under their own
+   old namespace; `V1` here is a first use, not a reuse, because the fully-qualified
+   token changed namespace with the package ID.
    Generated code must not reference `QylAutoInstrumentationOptions` or
    `QylInstrumentationDomains` — gate opt-ins at the policy type and emit domain names
    as literals.
 3. A narrow generated-code/build-transitive package bootstrap ABI, also under the
-   `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` namespace and hidden with
+   `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and hidden with
    `[EditorBrowsable(EditorBrowsableState.Never)]`:
    `EntityFrameworkCoreAutoInstrumentationBootstrap` and
    `SqlClientAutoInstrumentationBootstrap`. They are public because generated source
@@ -88,11 +110,11 @@ in step when bumping.
 
 Two generated namespaces exist, four characters apart. Do not conflate them:
 
-- `Qyl.OpenTelemetry.AutoInstrumentation.Generated` — where the generator emits
+- `Qyl.Telemetry.AutoInstrumentation.Generated` — where the generator emits
   interceptor methods, and the value `buildTransitive` adds to
-  `InterceptorsNamespaces`. Compiler-facing wiring; it remains load-bearing in 8.0.
-- `Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode` — the runtime ABI helpers
-  (`QylIntercepted*` and the `QylGeneratedCodeAbi.V8` anchor) that emitted
+  `InterceptorsNamespaces`. Compiler-facing wiring; it remains load-bearing in 1.0.
+- `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` — the runtime ABI helpers
+  (`QylIntercepted*` and the `QylGeneratedCodeAbi.V1` anchor) that emitted
   interceptors call into.
 
 Emitted code lives in the first and delegates to the second. Renaming either side —

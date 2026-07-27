@@ -1,4 +1,4 @@
-# Qyl.OpenTelemetry.AutoInstrumentation
+# Qyl.Telemetry.AutoInstrumentation
 
 Managed automatic instrumentation for .NET 10 applications, including NativeAOT
 consumers. The package uses compiler-generated Roslyn interceptors, build assets,
@@ -14,8 +14,8 @@ contract.
 
 | Package | Responsibility |
 | --- | --- |
-| `Qyl.Sdk` | One-line onboarding: OpenTelemetry SDK wiring, OTLP export, collector discovery, session propagation |
-| `Qyl.OpenTelemetry.AutoInstrumentation` | Core runtime, compiler-facing ABI, build assets, and source generator |
+| `Qyl.Telemetry.Hosting` | One-line onboarding: OpenTelemetry SDK wiring, OTLP export, collector discovery, session propagation |
+| `Qyl.Telemetry.AutoInstrumentation` | Core runtime, compiler-facing ABI, build assets, and source generator |
 | `.Hosting` | Generic DI and process bootstrap |
 | `.DiagnosticListeners` | Framework/library diagnostic event consumption |
 | `.EntityFrameworkCore` | EF Core integration |
@@ -24,8 +24,19 @@ contract.
 Add the package that owns the integration you need. The supported zero-configuration
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
+**Coming from 8.x?** These are new package IDs, not new versions of the old ones.
+`Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
+updated further; change the ID and take `1.0.0-beta.1`. `builder.AddQyl()` is
+unchanged. The generated-code ABI anchor is reborn as `QylGeneratedCodeAbi.V1` in the
+`Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace, so a stale generated
+interceptor cannot bind to the new runtime — it fails to compile rather than
+misbehaving. The emitted `ActivitySource` name is deliberately still
+`Qyl.OpenTelemetry.AutoInstrumentation`: renaming a package does not rename the
+telemetry it produces, so existing `AddSource(...)` calls and collector-side
+subscriptions keep working untouched.
+
 ```bash
-dotnet add package Qyl.Sdk
+dotnet add package Qyl.Telemetry.Hosting
 ```
 
 ## How it works
@@ -44,7 +55,7 @@ ownership.
 
 ## Exporting to a collector
 
-The shortest path is `Qyl.Sdk`, which owns all of the wiring below as one call:
+The shortest path is `Qyl.Telemetry.Hosting`, which owns all of the wiring below as one call:
 
 ```csharp
 using Qyl;
@@ -69,17 +80,17 @@ listed below; wrapper-based libraries still require their explicit one-line opt-
 The rest of this section is the manual wiring for apps that want to own it.
 
 The lower-level instrumentation packages emit `Activity` and `Meter` telemetry; they
-ship no exporter. An application that does not use `Qyl.Sdk` wires the OpenTelemetry
+ship no exporter. An application that does not use `Qyl.Telemetry.Hosting` wires the OpenTelemetry
 SDK and chooses where the telemetry goes. A working setup against the qyl collector
 adds
 `OpenTelemetry.Extensions.Hosting` and `OpenTelemetry.Exporter.OpenTelemetryProtocol`
-alongside `Qyl.OpenTelemetry.AutoInstrumentation.Hosting`, then registers the sources:
+alongside `Qyl.Telemetry.AutoInstrumentation.Hosting`, then registers the sources:
 
 ```csharp
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("my-service"))
     .WithTracing(t => t
-        .AddSource("Qyl.OpenTelemetry.AutoInstrumentation") // qyl listeners
+        .AddSource("Qyl.OpenTelemetry.AutoInstrumentation") // the qyl scope name — see note below
         .AddOtlpExporter());
 builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 ```
@@ -90,18 +101,18 @@ Configure the exporter through the standard environment variables:
 
 Do not also subscribe to `Microsoft.AspNetCore` or `System.Net.Http` traces when the
 qyl listeners own those operations; doing so exports the same request twice. Azure
-SDK tracing is the first-party exception: `Qyl.Sdk` enables
+SDK tracing is the first-party exception: `Qyl.Telemetry.Hosting` enables
 `Azure.Experimental.EnableActivitySource`, subscribes `Azure.*`, and normalizes the
 exported Azure spans. A manually wired application must make those two choices
 explicitly if it wants Azure SDK spans.
 
-### AI, MCP, and CoreWCF paths in 8.0
+### AI, MCP, and CoreWCF paths in 1.0
 
 These are version-pinned library-hook claims, not provider- or protocol-wide claims.
 The exact `ModelContextProtocol` 1.4.1 client/server path has strict NativeAOT
 evidence; the other paths in this table have managed evidence only:
 
-| Library path | Application opt-in | Signals registered by `Qyl.Sdk` | Integration ID |
+| Library path | Application opt-in | Signals registered by `Qyl.Telemetry.Hosting` | Integration ID |
 | --- | --- | --- | --- |
 | `Microsoft.Extensions.AI` 10.8.0 | `chatClient.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Extensions.AI` | `MICROSOFTEXTENSIONSAI` |
 | `Microsoft.Agents.AI` 1.13.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
@@ -111,7 +122,7 @@ evidence; the other paths in this table have managed evidence only:
 
 MCP metrics are intentionally not registered: the official instruments attach
 dynamic tool and resource names as dimensions, which conflicts with qyl's bounded-cardinality
-policy. The 8.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
+policy. The 1.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
 instrumentation, `Azure.AI.Inference`, Amazon Bedrock, or A2A.
 
 Every path is enabled by default when its signal is enabled. Set the applicable

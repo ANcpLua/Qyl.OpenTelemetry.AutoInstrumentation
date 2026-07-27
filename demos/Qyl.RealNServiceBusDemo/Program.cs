@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NServiceBus;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();

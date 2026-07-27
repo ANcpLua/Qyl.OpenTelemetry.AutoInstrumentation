@@ -1,3 +1,0 @@
-#nullable enable
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.EntityFrameworkCoreAutoInstrumentationBootstrap
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.EntityFrameworkCoreAutoInstrumentationBootstrap.Boot() -> void

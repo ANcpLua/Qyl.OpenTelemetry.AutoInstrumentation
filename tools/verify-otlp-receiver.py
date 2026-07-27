@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORK = Path("/tmp/qyl-otlp-receiver-evidence")
 FEED = WORK / "feed"
 APP = WORK / "consumer"
-VERIFIED = ROOT / "tools/Qyl.OpenTelemetry.AutoInstrumentation.OtlpReceiver/verified/trace-evidence.json"
+VERIFIED = ROOT / "tools/Qyl.Telemetry.AutoInstrumentation.OtlpReceiver/verified/trace-evidence.json"
 OTEL_VERSION = "1.16.0"
 
 
@@ -172,10 +172,10 @@ def pack_local_packages() -> str:
     separator = "." if "-" in base else "-"
     version = f"{base}{separator}otlpreceiver"
     for project in (
-        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj",
-        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj",
-        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj",
-        ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj",
+        ROOT / "src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj",
+        ROOT / "src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj",
+        ROOT / "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj",
+        ROOT / "src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj",
     ):
         run(
             [
@@ -192,7 +192,7 @@ def pack_local_packages() -> str:
             cwd=ROOT,
         )
 
-    package = next(FEED.glob(f"Qyl.OpenTelemetry.AutoInstrumentation.{version}.nupkg"), None)
+    package = next(FEED.glob(f"Qyl.Telemetry.AutoInstrumentation.{version}.nupkg"), None)
     if package is None:
         raise SystemExit("runtime package was not produced")
     return version
@@ -235,7 +235,7 @@ def write_consumer(version: str, *, published: bool) -> None:
                 <RestorePackagesPath>{WORK / "packages"}</RestorePackagesPath>
               </PropertyGroup>
               <ItemGroup>
-                <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
+                <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
                 <PackageReference Include="OpenTelemetry" Version="{OTEL_VERSION}" />
                 <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="{OTEL_VERSION}" />
               </ItemGroup>
@@ -250,7 +250,7 @@ def write_consumer(version: str, *, published: bool) -> None:
             using OpenTelemetry;
             using OpenTelemetry.Exporter;
             using OpenTelemetry.Trace;
-            using Qyl.OpenTelemetry.AutoInstrumentation;
+            using Qyl.Telemetry.AutoInstrumentation;
 
             if (args.Length != 2)
                 throw new InvalidOperationException("Expected OTLP and downstream endpoints.");

@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var exportedMetrics = new List<Metric>();
 

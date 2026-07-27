@@ -1,3 +1,0 @@
-#nullable enable
-Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.SqlClientAutoInstrumentationBootstrap
-static Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.SqlClientAutoInstrumentationBootstrap.Boot() -> void

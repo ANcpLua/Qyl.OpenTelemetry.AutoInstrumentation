@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.Telemetry.AutoInstrumentation</RootNamespace>
+    <AssemblyName>Qyl.Telemetry.AutoInstrumentation</AssemblyName>
+    <PackageId>Qyl.Telemetry.AutoInstrumentation</PackageId>
+    <Description>Managed .NET 10 and NativeAOT instrumentation using Roslyn interceptors, Activity/Meter primitives, and public runtime hooks. No CLR profiler or runtime IL rewriting.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.Telemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.Hosting" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.Hosting" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.VerifierProbe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Grpc.Core.Api" />
+    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" />
+    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\Qyl.Telemetry.AutoInstrumentation.targets"
+          Pack="true"
+          PackagePath="build\" />
+    <None Include="buildTransitive\Qyl.Telemetry.AutoInstrumentation.targets"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+    <None Include="$(ArtifactsPath)\bin\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\$(Configuration.ToLowerInvariant())\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs/"
+          Visible="false" />
+  </ItemGroup>
+
+  <!-- Emit the instrumentation-scope version without runtime reflection. -->
+  <Target Name="GenerateQylVersionInfo" BeforeTargets="BeforeCompile;CoreCompile">
+    <PropertyGroup>
+      <_QylVersionInfoFile>$(IntermediateOutputPath)QylVersionInfo.g.cs</_QylVersionInfoFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <_QylVersionInfoLine Include="// &lt;auto-generated /&gt;" />
+      <_QylVersionInfoLine Include="namespace Qyl.Telemetry.AutoInstrumentation%3B" />
+      <_QylVersionInfoLine Include="internal static class QylVersionInfo" />
+      <_QylVersionInfoLine Include="{" />
+      <_QylVersionInfoLine Include="    public const string Version = &quot;$(Version)&quot;%3B" />
+      <_QylVersionInfoLine Include="}" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(_QylVersionInfoFile)"
+                      Lines="@(_QylVersionInfoLine)"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(_QylVersionInfoFile)" />
+      <FileWrites Include="$(_QylVersionInfoFile)" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup Condition="'$(PublishAot)' != 'true'">
+    <!-- NativeAOT publishes only the generated runtime code. -->
+    <ProjectReference Include="..\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+  </ItemGroup>
+
+</Project>

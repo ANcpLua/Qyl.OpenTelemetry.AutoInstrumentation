@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.RealMassTransitDemo;
 
 var uriText = Environment.GetEnvironmentVariable("QYL_RABBITMQ_URI");

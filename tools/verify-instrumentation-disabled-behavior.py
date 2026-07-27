@@ -19,9 +19,9 @@ from pathlib import Path
 from verify_helpers import clean_env, read_version, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
-DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj"
-HOSTING_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj"
+CORE_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
+DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj"
+HOSTING_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.Hosting" / "Qyl.Telemetry.AutoInstrumentation.Hosting.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
@@ -31,7 +31,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
 using var listener = new ActivityListener
@@ -177,8 +177,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>

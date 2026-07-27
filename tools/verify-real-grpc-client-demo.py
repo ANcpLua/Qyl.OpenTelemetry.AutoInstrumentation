@@ -137,10 +137,8 @@ def main() -> None:
     verify_report("managed gRPC client demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT gRPC client demo", nativeaot, "nativeaot")
 
-    # Interceptor lane (ClientBase<T> client shape): metadata capture opt-in asserts
-    # rpc.grpc.request/response.metadata.* on the emitted span; the client-mode
-    # default run asserts their ABSENCE. The invoker-lane runs above prove the
-    # DiagnosticListeners lane never captures. Reuses the published NativeAOT binary.
+    # The ClientBase<T> shape and raw CallInvoker shape share the same native
+    # DiagnosticSource owner. Metadata is opt-in in both cases.
     client_env = dict(env)
     client_env["QYL_GRPC_DEMO_MODE"] = "client"
     client_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")

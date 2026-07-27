@@ -37,12 +37,12 @@ from generator_manifest_coverage import (
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
-GENERATOR_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
-INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
+GENERATOR_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
+INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
 GENERATED_INTERCEPTOR_SNAPSHOT_PATH = (
     ROOT
     / "tests"
-    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.Snapshots"
+    / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots"
     / "verified"
     / "QylAutoInstrumentation.Interceptors.g.verified.cs"
 )
@@ -50,29 +50,29 @@ GENERATED_INTERCEPTOR_MANIFEST_ARTIFACT_PATH = (
     GENERATED_INTERCEPTOR_SNAPSHOT_PATH.parent
     / "QylAutoInstrumentation.ContractManifests.verified.jsonl"
 )
-OPTIONS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
-IDS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
-SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylSemanticAttributes.cs"
+OPTIONS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
+IDS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
+SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylSemanticAttributes.cs"
 HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
-DEMO_SOLUTION_PATH = ROOT / "Qyl.OpenTelemetry.AutoInstrumentation.Demos.slnx"
-RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
-METRIC_METERS_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylMetricMeters.cs"
-METRIC_NAMES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylMetricNames.cs"
-ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "QylActivityNames.cs"
-SENSITIVE_CAPTURE_POLICY_PATH = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
+DEMO_SOLUTION_PATH = ROOT / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx"
+RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
+METRIC_METERS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylMetricMeters.cs"
+METRIC_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylMetricNames.cs"
+ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylActivityNames.cs"
+SENSITIVE_CAPTURE_POLICY_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
 RUNTIME_EMISSION_ROOTS = [
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SqlClient",
 ]
 PRODUCTIVE_MECHANISM_ROOTS = [
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.Hosting",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators",
 ]
 # Philosophy guard: no runtime-dispatch instrumentation substrate (repo contract:
 # no CLR profiler, no runtime dispatch, no reflection-based dispatch).
@@ -221,24 +221,24 @@ SENSITIVE_RAW_SETTAG_TOKENS = [
     "SetTag(QylSemanticAttributes.GraphQlDocument",
 ]
 SENSITIVE_RAW_SETTAG_ALLOWED_PATHS = {
-    "src/Qyl.OpenTelemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
+    "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
 }
 SENSITIVE_SEMANTIC_WRITER_TOKENS = [
     "SemanticTagWriter.Set(activity, SemanticAttributes.UrlFull",
     "SemanticTagWriter.Set(activity, SemanticAttributes.UrlQuery",
     "SemanticTagWriter.Set(activity, SemanticAttributes.GraphQlDocument",
 ]
-SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH = "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs"
+SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH = "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs"
 URL_FORMAT_ALLOWED_PATHS = {
-    "src/Qyl.OpenTelemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
-    "src/Qyl.OpenTelemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
-    "src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
+    "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
+    "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
+    "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
 }
 DB_QUERY_TEXT_ALLOWED_PATHS = {
-    "src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
-    "src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
+    "src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
+    "src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
 }
-QYL_ABI_DELEGATION_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylIntercepted"
+QYL_ABI_DELEGATION_TOKEN = "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntercepted"
 
 
 def fail(message: str) -> None:
@@ -714,7 +714,7 @@ def verify_behavior_semantics_contract() -> None:
         if token in generator:
             fail(f"generator must not inline telemetry behavior instead of delegating to runtime: {token}")
 
-    behavior_sources = [*generator_partial_paths(), *sorted((ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation").glob("QylIntercepted*.cs"))]
+    behavior_sources = [*generator_partial_paths(), *sorted((ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation").glob("QylIntercepted*.cs"))]
     for path in behavior_sources:
         text = path.read_text()
         for token in FORBIDDEN_EXCEPTION_REWRITE_TOKENS:

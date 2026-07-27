@@ -9,10 +9,10 @@ from verify_helpers import clean_env, run_checked
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
-GENERATOR_DLL = ROOT / "artifacts" / "bin" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators" / "release" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
-CORE_TARGETS = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.OpenTelemetry.AutoInstrumentation.targets"
+CORE_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
+GENERATOR_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
+GENERATOR_DLL = ROOT / "artifacts" / "bin" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "release" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.dll"
+CORE_TARGETS = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.Telemetry.AutoInstrumentation.targets"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
@@ -168,7 +168,7 @@ def verify_generated_interceptor_source(directory: Path) -> None:
     text = generated_files[0].read_text(encoding="utf-8")
     for token in [
         "#nullable enable",
-        "Qyl.OpenTelemetry.AutoInstrumentation.Generated",
+        "Qyl.Telemetry.AutoInstrumentation.Generated",
         "file sealed class InterceptsLocationAttribute",
         "global::Microsoft.Extensions.Logging.ILogger",
     ]:

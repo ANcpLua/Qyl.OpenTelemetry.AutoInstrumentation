@@ -1,4 +1,4 @@
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 namespace Qyl;
 

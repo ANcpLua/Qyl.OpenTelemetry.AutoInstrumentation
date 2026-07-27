@@ -16,7 +16,7 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-CORE_PROJECT = ROOT / "src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+CORE_PROJECT = ROOT / "src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
@@ -24,7 +24,7 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 PROGRAM = r'''
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
@@ -125,7 +125,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
@@ -155,7 +155,7 @@ def verify_generated_source(directory: Path) -> None:
         fail(f"expected one generated interceptor source, found {len(generated)}")
     text = generated[0].read_text(encoding="utf-8")
     for token in [
-        "namespace Qyl.OpenTelemetry.AutoInstrumentation.Generated",
+        "namespace Qyl.Telemetry.AutoInstrumentation.Generated",
         "ILogger_Log_0",
         "QylInterceptedLogger.Log(",
         '"contractKeys":["signals.logs.ILOGGER"]',

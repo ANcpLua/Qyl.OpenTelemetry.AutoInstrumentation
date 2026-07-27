@@ -9,16 +9,16 @@ PROPS = ROOT / "Directory.Build.props"
 PACKAGES = ROOT / "Directory.Packages.props"
 
 PUBLIC_API_PROJECTS = [
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.Hosting",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SqlClient",
     ROOT / "src" / "Qyl.Telemetry.Hosting",
 ]
 
 EXCLUDED_PROJECTS = [
-    "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators",
+    "Qyl.Telemetry.AutoInstrumentation.SourceGenerators",
     "Qyl.RealAspNetCoreDemo",
     "Qyl.RealEfCoreDemo",
     "Qyl.RealGrpcClientDemo",
@@ -51,7 +51,7 @@ def verify_props() -> None:
             fail(f"Directory.Packages.props missing PublicAPI token: {token}")
 
     for project in EXCLUDED_PROJECTS:
-        if project in text and project != "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators":
+        if project in text and project != "Qyl.Telemetry.AutoInstrumentation.SourceGenerators":
             fail(f"Directory.Build.props should not explicitly enable PublicAPI analyzers for {project}")
 
 

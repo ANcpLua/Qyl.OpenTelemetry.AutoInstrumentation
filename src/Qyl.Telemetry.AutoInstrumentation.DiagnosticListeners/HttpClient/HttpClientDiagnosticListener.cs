@@ -1,0 +1,49 @@
+using System.Diagnostics;
+using Qyl.Telemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+
+namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
+
+/// <summary>
+/// Subscribes to <c>HttpHandlerDiagnosticListener</c>, the listener emitted by
+/// <c>System.Net.Http.HttpClient</c>'s <see cref="System.Diagnostics.DiagnosticSource"/> integration,
+/// and emits bounded HttpClient telemetry through the managed AOT-compatible path.
+/// </summary>
+internal sealed class HttpClientDiagnosticListener : QylDiagnosticListenerSubscriber
+{
+    /// <inheritdoc/>
+    protected override string ListenerName => "HttpHandlerDiagnosticListener";
+
+    /// <inheritdoc/>
+    protected override QylAutoInstrumentationSignal Signal => QylAutoInstrumentationSignal.Traces;
+
+    /// <inheritdoc/>
+    protected override string InstrumentationId => QylAutoInstrumentationIds.HttpClient;
+
+    /// <inheritdoc/>
+    protected override void OnEvent(string name, object? payload)
+    {
+        if (!StringComparer.Ordinal.Equals(name, "qyl.http.client") &&
+            !StringComparer.Ordinal.Equals(name, "System.Net.Http.HttpRequestOut.Stop"))
+        {
+            return;
+        }
+
+        var method = HttpSemantics.NormalizeMethod(
+            DiagnosticPayloadReader.GetString(payload, "http.request.method", "http.method"),
+            out var originalMethod);
+        var url = DiagnosticPayloadReader.GetString(payload, "url.full", "http.url");
+        var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "peer.hostname");
+        var serverPort = DiagnosticPayloadReader.GetInt32(payload, "server.port", "peer.port");
+        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
+        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
+
+        using var activity = QylActivitySource.StartAtAmbientStart(QylActivityNames.HttpClient(method), ActivityKind.Client);
+
+        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
+        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);
+        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
+        HttpSemantics.SetUrlTags(activity, url, serverAddress, serverPort);
+        HttpSemantics.SetStatus(activity, ActivityKind.Client, statusCode, errorType);
+    }
+}

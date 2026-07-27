@@ -21,17 +21,17 @@ from verify_helpers import clean_env, run_checked
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CORE_PROJECT = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj"
+CORE_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
 GENERATOR_PROJECT = (
     ROOT
     / "src"
-    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
-    / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+    / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators"
+    / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
 )
-TARGETS = ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.OpenTelemetry.AutoInstrumentation.targets"
+TARGETS = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.Telemetry.AutoInstrumentation.targets"
 TARGET_FRAMEWORK = "net10.0"
 REQUEST_DELEGATE_INTERCEPTOR_TOKEN = "AspNetCoreRequestDelegate_Invoke"
-CONTROL_INTERCEPTOR_TOKEN = "global::Qyl.OpenTelemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log("
+CONTROL_INTERCEPTOR_TOKEN = "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log("
 
 # Convention-based middleware whose next-hop call is a delegate invocation (`next(context)`),
 # plus a never-executed ILogger call as a control so we can prove the generator still emits

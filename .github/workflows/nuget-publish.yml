@@ -79,7 +79,7 @@ jobs:
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          index="https://api.nuget.org/v3-flatcontainer/qyl.opentelemetry.autoinstrumentation/index.json"
+          index="https://api.nuget.org/v3-flatcontainer/qyl.telemetry.autoinstrumentation/index.json"
           # A transient nuget.org failure must not be read as "not published" —
           # that would republish. Fail closed instead.
           body="$(curl -sS --retry 3 --retry-delay 5 --fail-with-body "$index")"
@@ -115,12 +115,12 @@ jobs:
           set -euo pipefail
           mkdir -p artifacts/release
           for project in \
-            src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj \
-            src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj \
-            src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj \
+            src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj \
+            src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj \
+            src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj \
             src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj \
-            src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj \
-            src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj; do
+            src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore.csproj \
+            src/Qyl.Telemetry.AutoInstrumentation.SqlClient/Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj; do
             dotnet pack "$project" -c Release --no-restore -o artifacts/release -p:Version="$VERSION"
           done
           test "$(find artifacts/release -maxdepth 1 -name '*.nupkg' | wc -l)" -eq 6
@@ -202,12 +202,12 @@ jobs:
         run: |
           set -euo pipefail
           packages=(
-            qyl.opentelemetry.autoinstrumentation
-            qyl.opentelemetry.autoinstrumentation.diagnosticlisteners
-            qyl.opentelemetry.autoinstrumentation.hosting
+            qyl.telemetry.autoinstrumentation
+            qyl.telemetry.autoinstrumentation.diagnosticlisteners
+            qyl.telemetry.autoinstrumentation.hosting
             qyl.telemetry.hosting
-            qyl.opentelemetry.autoinstrumentation.entityframeworkcore
-            qyl.opentelemetry.autoinstrumentation.sqlclient
+            qyl.telemetry.autoinstrumentation.entityframeworkcore
+            qyl.telemetry.autoinstrumentation.sqlclient
           )
           mkdir -p artifacts/indexed
           deadline=$((SECONDS + 1200))

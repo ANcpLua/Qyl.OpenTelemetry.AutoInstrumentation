@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.SqlClient;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var connectionString = Environment.GetEnvironmentVariable("QYL_SQLCLIENT_CONNECTION_STRING");
 if (string.IsNullOrWhiteSpace(connectionString))

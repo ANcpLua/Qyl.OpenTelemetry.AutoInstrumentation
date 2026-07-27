@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using OpenTelemetry;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 namespace Qyl;
 

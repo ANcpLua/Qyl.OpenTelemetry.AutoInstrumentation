@@ -19,8 +19,8 @@ from verify_helpers import artifacts_publish_dir, remove_publish_outputs
 
 ROOT = Path(__file__).resolve().parents[1]
 DEMOS_DIR = ROOT / "demos"
-GENERATOR_PROJECT = (ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
-                     / "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj")
+GENERATOR_PROJECT = (ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators"
+                     / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj")
 
 CLEAN_DEMOS: list[str] = [
     "Qyl.RealAdoNetDemo",

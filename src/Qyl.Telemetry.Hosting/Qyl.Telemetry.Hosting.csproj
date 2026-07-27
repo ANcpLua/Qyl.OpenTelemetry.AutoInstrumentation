@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Qyl.OpenTelemetry.AutoInstrumentation.Hosting\Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj"
+    <ProjectReference Include="..\Qyl.Telemetry.AutoInstrumentation.Hosting\Qyl.Telemetry.AutoInstrumentation.Hosting.csproj"
                       IncludeAssets="all"
                       PrivateAssets="none" />
   </ItemGroup>

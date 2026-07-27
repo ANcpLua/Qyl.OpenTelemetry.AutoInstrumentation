@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var bootstrapServers = Environment.GetEnvironmentVariable("QYL_KAFKA_BOOTSTRAP_SERVERS");
 if (string.IsNullOrWhiteSpace(bootstrapServers))

@@ -20,16 +20,16 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-pack.lock"
-VERIFIED_PATH = ROOT / "tools" / "Qyl.OpenTelemetry.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
+VERIFIED_PATH = ROOT / "tools" / "Qyl.Telemetry.AutoInstrumentation.WebApiAotDemo" / "verified" / "report.json"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 TARGET_FRAMEWORK = "net10.0"
 
 PROJECTS_TO_PACK = [
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation" / "Qyl.OpenTelemetry.AutoInstrumentation.csproj",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting" / "Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" / "Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj",
-    ROOT / "src" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" / "Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.Hosting" / "Qyl.Telemetry.AutoInstrumentation.Hosting.csproj",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore.csproj",
+    ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SqlClient" / "Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj",
 ]
 
 EFCORE_COMPILED_MODEL_SOURCES = [
@@ -41,7 +41,7 @@ EFCORE_COMPILED_MODEL_SOURCES = [
     ROOT / "demos" / "Qyl.RealEfCoreDemo" / "CompiledModels" / "ProbeItemUnsafeAccessors.cs",
 ]
 
-PROGRAM_TEMPLATE_PATH = ROOT / "tools" / "Qyl.OpenTelemetry.AutoInstrumentation.WebApiAotDemo" / "Program.cs"
+PROGRAM_TEMPLATE_PATH = ROOT / "tools" / "Qyl.Telemetry.AutoInstrumentation.WebApiAotDemo" / "Program.cs"
 
 
 def fail(message: str) -> None:
@@ -99,9 +99,9 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" Version="{version}" />
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" Version="{version}" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />

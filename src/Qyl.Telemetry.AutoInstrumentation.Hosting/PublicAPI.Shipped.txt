@@ -1,0 +1,5 @@
+#nullable enable
+Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap
+Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions
+static Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap.Boot() -> void
+static Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions.AddQylAutoInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

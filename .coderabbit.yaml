@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 #
-# CodeRabbit configuration for ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation — maxed advisory.
+# CodeRabbit configuration for ANcpLua/Qyl.Telemetry.AutoInstrumentation — maxed advisory.
 #
 # Posture: advisory, never blocking. CodeRabbit comments on every PR but never
 # submits CHANGES_REQUESTED, never fails a commit status, and never gates a merge.

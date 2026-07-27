@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using GraphQL;
 using GraphQL.Resolvers;
 using GraphQL.Types;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();

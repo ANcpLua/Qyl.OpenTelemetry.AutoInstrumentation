@@ -6,11 +6,11 @@ ARTIFACTS="${TMPDIR:-/tmp}/qyl-benchmarkdotnet-artifacts"
 
 rm -rf "$ARTIFACTS"
 
-dotnet build "$ROOT/benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks.csproj" -c Release -v quiet
-dotnet run -c Release --project "$ROOT/benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks.csproj" -- --smoke
+dotnet build "$ROOT/benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks.csproj" -c Release -v quiet
+dotnet run -c Release --project "$ROOT/benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks.csproj" -- --smoke
 dotnet run \
   -c Release \
-  --project "$ROOT/benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks/Qyl.OpenTelemetry.AutoInstrumentation.Benchmarks.csproj" \
+  --project "$ROOT/benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks.csproj" \
   -- \
   --filter '*' \
   --artifacts "$ARTIFACTS"

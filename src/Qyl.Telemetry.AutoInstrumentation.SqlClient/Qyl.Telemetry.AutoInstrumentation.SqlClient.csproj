@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.Telemetry.AutoInstrumentation.SqlClient</RootNamespace>
+    <AssemblyName>Qyl.Telemetry.AutoInstrumentation.SqlClient</AssemblyName>
+    <PackageId>Qyl.Telemetry.AutoInstrumentation.SqlClient</PackageId>
+    <Description>Zero-code AOT-native Microsoft.Data.SqlClient DiagnosticSource instrumentation for qyl.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="buildTransitive\Qyl.Telemetry.AutoInstrumentation.SqlClient.targets"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+    <None Include="buildTransitive\Qyl.Telemetry.AutoInstrumentation.SqlClient.Bootstrap.g.cs"
+          Pack="true"
+          PackagePath="buildTransitive\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qyl.Telemetry.AutoInstrumentation\Qyl.Telemetry.AutoInstrumentation.csproj"
+                      IncludeAssets="all"
+                      PrivateAssets="none" />
+    <ProjectReference Include="..\Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners\Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj" />
+  </ItemGroup>
+
+</Project>

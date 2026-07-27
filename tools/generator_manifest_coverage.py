@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 MANIFEST_PREFIX = "// qyl-interceptor-manifest: "
 GENERATED_INTERCEPTOR_FILE = "QylAutoInstrumentation.Interceptors.g.cs"
-GENERATOR_OUTPUT_SEGMENT = "Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators"
+GENERATOR_OUTPUT_SEGMENT = "Qyl.Telemetry.AutoInstrumentation.SourceGenerators"
 MANIFEST_FIELDS = (
     "interceptorKind",
     "signal",

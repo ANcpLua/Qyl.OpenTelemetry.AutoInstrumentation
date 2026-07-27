@@ -15,16 +15,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\Qyl.OpenTelemetry.AutoInstrumentation.csproj" />
-    <ProjectReference Include="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation\Qyl.Telemetry.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
                       Condition="'$(PublishAot)' != 'true'"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
-    <Analyzer Include="..\..\artifacts\bin\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators\release\Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
+    <Analyzer Include="..\..\artifacts\bin\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\release\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.dll"
               Condition="'$(PublishAot)' == 'true'" />
   </ItemGroup>
 
-  <Import Project="..\..\src\Qyl.OpenTelemetry.AutoInstrumentation\buildTransitive\Qyl.OpenTelemetry.AutoInstrumentation.targets" />
+  <Import Project="..\..\src\Qyl.Telemetry.AutoInstrumentation\buildTransitive\Qyl.Telemetry.AutoInstrumentation.targets" />
 
 </Project>

@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();

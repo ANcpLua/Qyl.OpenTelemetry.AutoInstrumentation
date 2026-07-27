@@ -25,8 +25,8 @@ PACKAGE_SOURCES="$FEED;$NUGET_ORG"
 if [[ "$MODE" == "published" ]]; then
   PACKAGE_SOURCES="$NUGET_ORG"
 fi
-VERIFIED="$ROOT/tools/Qyl.OpenTelemetry.AutoInstrumentation.SmokeTest/verified/stdout.txt"
-GENERATOR_DLL="$ROOT/artifacts/bin/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/release/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.dll"
+VERIFIED="$ROOT/tools/Qyl.Telemetry.AutoInstrumentation.SmokeTest/verified/stdout.txt"
+GENERATOR_DLL="$ROOT/artifacts/bin/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/release/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.dll"
 
 case "$(uname -s)-$(uname -m)" in
   Darwin-arm64|Darwin-aarch64) RID="osx-arm64" ;;
@@ -52,11 +52,11 @@ rm -rf "$WORK"
 mkdir -p "$FEED" "$PACKAGES"
 
 if [[ "$MODE" == "local" ]]; then
-  dotnet build "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
-  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
-  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
-  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" -c Release -o "$FEED" -v quiet
-  dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
+  dotnet build "$ROOT/src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj" -c Release -v quiet
+  dotnet pack "$ROOT/src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.Telemetry.AutoInstrumentation.SqlClient/Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
   dotnet pack "$ROOT/src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj" -c Release -o "$FEED" -v quiet
 fi
 
@@ -82,9 +82,9 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Qyl;
 #endif
-using Qyl.OpenTelemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation;
 #if QYL_PROJECTREFERENCE_SMOKE
-using Qyl.OpenTelemetry.AutoInstrumentation.Hosting;
+using Qyl.Telemetry.AutoInstrumentation.Hosting;
 #endif
 
 #if QYL_PROJECTREFERENCE_SMOKE
@@ -425,8 +425,8 @@ write_projectreference_consumer() {
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" />
-    <ProjectReference Include="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators/Qyl.OpenTelemetry.AutoInstrumentation.SourceGenerators.csproj"
+    <ProjectReference Include="$ROOT/src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj" />
+    <ProjectReference Include="$ROOT/src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
                       Condition="'\$(PublishAot)' != 'true'"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
@@ -436,7 +436,7 @@ write_projectreference_consumer() {
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 
-  <Import Project="$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation/buildTransitive/Qyl.OpenTelemetry.AutoInstrumentation.targets" />
+  <Import Project="$ROOT/src/Qyl.Telemetry.AutoInstrumentation/buildTransitive/Qyl.Telemetry.AutoInstrumentation.targets" />
 </Project>
 EOF
   write_program "$dir"
@@ -460,7 +460,7 @@ write_sqlclient_package_consumer() {
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" Version="$VERSION" />
+    <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" Version="$VERSION" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
