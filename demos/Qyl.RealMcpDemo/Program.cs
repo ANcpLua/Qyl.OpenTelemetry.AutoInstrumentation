@@ -16,7 +16,9 @@ using ModelContextProtocol.Server;
 using OpenTelemetry.Trace;
 using Qyl;
 using GenAiAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
+using McpAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Mcp.McpAttributes;
 using NetworkAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
+using SessionAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
 const string mcpSourceName = "Experimental.ModelContextProtocol";
 const string rootSourceName = "Qyl.RealMcpDemo";
@@ -79,7 +81,7 @@ using (var rootSource = new ActivitySource(rootSourceName))
 using (var root = rootSource.StartActivity("mcp evidence", ActivityKind.Internal)
                   ?? throw new InvalidOperationException("qyl did not register the demo root ActivitySource"))
 {
-    root.SetTag("session.id", sessionId);
+    root.SetTag(SessionAttributes.Id, sessionId);
     rootTraceId = root.TraceId.ToString();
     rootSpanId = root.SpanId.ToString();
 
@@ -220,19 +222,31 @@ internal sealed record McpReport(
                 activities);
         }
 
-        RequireOperationPair(activities, "initialize", "initialize", rootTraceId, rootSpanId, failures);
         RequireOperationPair(
             activities,
-            "notifications/initialized",
-            "notifications/initialized",
+            McpAttributes.MethodNameValues.Initialize,
+            McpAttributes.MethodNameValues.Initialize,
             rootTraceId,
             rootSpanId,
             failures);
-        RequireOperationPair(activities, "tools/list", "tools/list", rootTraceId, rootSpanId, failures);
         RequireOperationPair(
             activities,
-            $"tools/call {ProbeTools.ToolName}",
-            "tools/call",
+            McpAttributes.MethodNameValues.NotificationsInitialized,
+            McpAttributes.MethodNameValues.NotificationsInitialized,
+            rootTraceId,
+            rootSpanId,
+            failures);
+        RequireOperationPair(
+            activities,
+            McpAttributes.MethodNameValues.ToolsList,
+            McpAttributes.MethodNameValues.ToolsList,
+            rootTraceId,
+            rootSpanId,
+            failures);
+        RequireOperationPair(
+            activities,
+            $"{McpAttributes.MethodNameValues.ToolsCall} {ProbeTools.ToolName}",
+            McpAttributes.MethodNameValues.ToolsCall,
             rootTraceId,
             rootSpanId,
             failures);
@@ -255,7 +269,7 @@ internal sealed record McpReport(
         var toolActivities = activities
             .Where(static activity => StringComparer.Ordinal.Equals(
                 activity.Name,
-                $"tools/call {ProbeTools.ToolName}"))
+                $"{McpAttributes.MethodNameValues.ToolsCall} {ProbeTools.ToolName}"))
             .ToArray();
         foreach (var activity in toolActivities)
         {
@@ -300,8 +314,8 @@ internal sealed record McpReport(
             return;
         }
 
-        RequireTag(client, "mcp.method.name", method, failures);
-        RequireTag(server, "mcp.method.name", method, failures);
+        RequireTag(client, McpAttributes.MethodName, method, failures);
+        RequireTag(server, McpAttributes.MethodName, method, failures);
         if (!StringComparer.Ordinal.Equals(client.TraceId, rootTraceId)
             || !StringComparer.Ordinal.Equals(client.ParentSpanId, rootSpanId))
         {
@@ -314,11 +328,11 @@ internal sealed record McpReport(
             failures.Add($"server {activityName} did not continue the client trace context");
         }
 
-        RequireTag(client, "session.id", "qyl-mcp-evidence-session", failures);
-        if (!StringComparer.Ordinal.Equals(method, "initialize"))
+        RequireTag(client, SessionAttributes.Id, "qyl-mcp-evidence-session", failures);
+        if (!StringComparer.Ordinal.Equals(method, McpAttributes.MethodNameValues.Initialize))
         {
-            RequireTag(client, "mcp.protocol.version", "2025-11-25", failures);
-            RequireTag(server, "mcp.protocol.version", "2025-11-25", failures);
+            RequireTag(client, McpAttributes.ProtocolVersion, "2025-11-25", failures);
+            RequireTag(server, McpAttributes.ProtocolVersion, "2025-11-25", failures);
         }
     }
 
@@ -329,7 +343,7 @@ internal sealed record McpReport(
     {
         var sessionIds = activities
             .Where(activity => StringComparer.Ordinal.Equals(activity.Kind, kind))
-            .Select(activity => activity.Tags.GetValueOrDefault("mcp.session.id"))
+            .Select(activity => activity.Tags.GetValueOrDefault(McpAttributes.SessionId))
             .Where(static value => !string.IsNullOrEmpty(value))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
