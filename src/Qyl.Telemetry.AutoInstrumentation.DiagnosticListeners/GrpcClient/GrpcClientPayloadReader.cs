@@ -26,7 +26,7 @@ internal static class GrpcClientPayloadReader
 
     [UnconditionalSuppressMessage(
         "Trimming",
-        "IL2075",
+        "IL2070",
         Justification = "Grpc.Net.Client preserves the public properties on its DiagnosticSource payload types.")]
     private static PropertyInfo? GetProperty<T>(Type payloadType, string name)
     {
