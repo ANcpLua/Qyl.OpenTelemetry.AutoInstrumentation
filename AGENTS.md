@@ -22,16 +22,23 @@ The retired IDs — `Qyl.OpenTelemetry.AutoInstrumentation(.Hosting/.DiagnosticL
 `8.5.0` / `QylGeneratedCodeAbi.V8`. They are never republished; they are unlisted
 at launch. Nothing in this repository builds them any more.
 
-**The emitted scope name still reads `Qyl.OpenTelemetry.AutoInstrumentation`, on
-purpose.** `QylActivitySource.Name` and the two qyl-owned meter names
-(`…AutoInstrumentation.Database`, `…AutoInstrumentation.NServiceBus`) are *runtime
-vocabulary*, not package identity: they are stamped on every emitted span and
-metric, and the collector repo's conformance app asserts the inbound `Source.Name`
-literally. Renaming a package ID does not rename what it emits. Moving those three
-literals is its own slice, and it only lands together with the consumer-side
-assertions, in the publish → NuGet-index → consumer-bump order the workspace router
-mandates. Until then this mismatch is the correct state — do not "fix" it because it
-looks inconsistent with the namespace around it.
+**The emitted scope name still reads `Qyl.OpenTelemetry.AutoInstrumentation` — a
+deliberate deferral, not the end state.** `QylActivitySource.Name` and the two
+qyl-owned meter names (`…AutoInstrumentation.Database`,
+`…AutoInstrumentation.NServiceBus`) are *runtime vocabulary*: they are stamped on
+every emitted span and metric, so renaming a package ID does not rename what it
+emits, and they did not move with the 9.0.0 rename.
+
+Architecture gate **G5 specifies that they must** — it asserts the conformance app's
+inbound span on the `Qyl.Telemetry.AutoInstrumentation` source. So the current
+strings are a known divergence with a scheduled fix, not a settled design. Do not
+record them as correct, and do not "fix" them opportunistically either: the three
+literals, the semconv `qyl-registry.json` `scope_names` that feed the QYL0200
+allowlist, the recorded OTLP trace evidence (regenerate by real execution, never by
+hand), and the collector repo's conformance assertion all have to move in one
+coordinated slice, ordered publish → NuGet-index → consumer-bump. That slice is
+scheduled against a 9.1.0-era release because semconv 1.0.0 must describe the
+published 9.0.0 producer.
 
 `qyl/internal/qyl.instrumentation(.generators)` folds in from the other repo.
 Target state after the move: **`InternalsVisibleTo` count = 0**. The consumer

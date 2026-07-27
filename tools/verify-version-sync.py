@@ -4,8 +4,7 @@
 The instrumentation-scope version is stamped onto every emitted span and metric and must match
 the shipped package. This gate enforces a single source of truth:
 
-  * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag
-    in its own major lineage (see latest_stable_tag for why the retired IDs' tags are excluded),
+  * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag,
   * any version-pinned README package-reference example must equal that version,
   * the generated-code ABI anchor and emitted references must exactly match the package major,
   * QylInstrumentation.Version must stay DERIVED from the build (no hardcoded semver literal).
@@ -62,22 +61,21 @@ def props_version() -> str:
     return match[1]
 
 
-def latest_stable_tag(major: int) -> tuple[int, int, int] | None:
-    """Newest stable v* tag in the CURRENT package family's major lineage.
+def latest_stable_tag() -> tuple[int, int, int] | None:
+    """Newest stable v* tag across the whole repository.
 
-    The floor exists so the version owner can never fall behind a version that is
-    already published and immutable on nuget.org. That constraint is per package
-    ID, and the Qyl.Telemetry.* IDs are new identities born at 9.0.0
-    (architecture 6.2). Tags v3.x-v8.x were cut for the retired
-    Qyl.OpenTelemetry.* IDs, which stay frozen on the registry and cannot collide
-    with an ID that has never published anything. Comparing across that boundary
-    would reject every possible version of the new family, so the floor is scoped
-    to tags sharing the props major -- the lineage whose versions can still
-    collide.
+    Deliberately NOT scoped to the props major. This was briefly narrowed to the
+    current major lineage while the Qyl.Telemetry.* rename was expected to restart
+    versioning at 1.0.0-beta.N, where a global floor would have rejected every
+    possible version of the new family. That premise died: the rename shipped at
+    9.0.0, continuing the 8.x lineage rather than restarting it, so the global
+    floor is both correct and strictly stronger. Scoping by major would let a
+    downgrade slip through -- with v9.0.0 published, a props version of 8.9.0
+    would find only v8.5.0 and pass, and 2.0.0 would find no tags and skip.
     """
     try:
         out = subprocess.run(
-            ["git", "-C", str(ROOT), "tag", "--list", f"v{major}.*", "--sort=-v:refname"],
+            ["git", "-C", str(ROOT), "tag", "--list", "v*", "--sort=-v:refname"],
             capture_output=True,
             text=True,
             check=True,
@@ -92,10 +90,9 @@ def latest_stable_tag(major: int) -> tuple[int, int, int] | None:
 
 
 def check_props_version(version: str) -> None:
-    major = semver(version)[0]
-    tag = latest_stable_tag(major)
+    tag = latest_stable_tag()
     if tag is None:
-        print(f"  - no stable v{major}.* tag reachable; skipping tag-floor comparison")
+        print("  - no stable v* tag reachable; skipping tag-floor comparison")
         return
     if semver(version) < tag:
         tag_text = ".".join(map(str, tag))
