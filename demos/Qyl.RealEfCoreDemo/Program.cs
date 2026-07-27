@@ -6,6 +6,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.RealEfCoreDemo;
+using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
+using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
@@ -103,19 +106,19 @@ internal sealed record EfCoreReport(
         var insertSpan = FindByOperation(efCoreSpans, "INSERT");
         var updateSpan = FindByOperation(efCoreSpans, "UPDATE");
         var errorSpan = efCoreSpans.FirstOrDefault(static activity =>
-            activity.Tags.TryGetValue("error.type", out var errorType) &&
+            activity.Tags.TryGetValue(ErrorAttributes.Type, out var errorType) &&
             StringComparer.Ordinal.Equals(errorType, "Microsoft.Data.Sqlite.SqliteException"));
 
         Require(insertSpan, "INSERT span", failures);
         Require(updateSpan, "UPDATE span", failures);
         Require(errorSpan, "SqliteException span", failures);
-        RequireTag(insertSpan, "db.system.name", "sqlite", failures);
-        RequireTag(updateSpan, "db.system.name", "sqlite", failures);
-        RequireTag(insertSpan, "db.operation.name", "INSERT", failures);
-        RequireTag(updateSpan, "db.operation.name", "UPDATE", failures);
-        RequireTag(insertSpan, "db.query.summary", "ExecuteSqlRaw INSERT", failures);
-        RequireTag(updateSpan, "db.query.summary", "ExecuteSqlRaw UPDATE", failures);
-        RequireTag(errorSpan, "db.operation.name", "SELECT", failures);
+        RequireTag(insertSpan, DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Sqlite, failures);
+        RequireTag(updateSpan, DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Sqlite, failures);
+        RequireTag(insertSpan, DbAttributes.OperationName, "INSERT", failures);
+        RequireTag(updateSpan, DbAttributes.OperationName, "UPDATE", failures);
+        RequireTag(insertSpan, DbAttributes.QuerySummary, "ExecuteSqlRaw INSERT", failures);
+        RequireTag(updateSpan, DbAttributes.QuerySummary, "ExecuteSqlRaw UPDATE", failures);
+        RequireTag(errorSpan, DbAttributes.OperationName, "SELECT", failures);
         RequireStatus(insertSpan, "Unset", failures);
         RequireStatus(updateSpan, "Unset", failures);
         RequireStatus(errorSpan, "Error", failures);
@@ -128,7 +131,7 @@ internal sealed record EfCoreReport(
             StringComparison.OrdinalIgnoreCase);
         foreach (var span in efCoreSpans)
         {
-            if (!statementOptIn && span.Tags.ContainsKey("db.query.text"))
+            if (!statementOptIn && span.Tags.ContainsKey(DbAttributes.QueryText))
                 failures.Add("db.query.text leaked with default privacy policy");
 
             if (!span.Name.StartsWith("DB ", StringComparison.Ordinal))
@@ -137,8 +140,8 @@ internal sealed record EfCoreReport(
 
         if (statementOptIn)
         {
-            RequireTagPrefix(insertSpan, "db.query.text", "INSERT", failures);
-            RequireTagPrefix(updateSpan, "db.query.text", "UPDATE", failures);
+            RequireTagPrefix(insertSpan, DbAttributes.QueryText, "INSERT", failures);
+            RequireTagPrefix(updateSpan, DbAttributes.QueryText, "UPDATE", failures);
         }
 
         return new EfCoreReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities);
@@ -148,7 +151,7 @@ internal sealed record EfCoreReport(
         IEnumerable<CapturedActivity> activities,
         string operation)
         => activities.FirstOrDefault(activity =>
-            activity.Tags.TryGetValue("db.operation.name", out var actual) &&
+            activity.Tags.TryGetValue(DbAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

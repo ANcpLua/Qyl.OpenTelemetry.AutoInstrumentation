@@ -15,6 +15,9 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Qyl;
 using static ProbeContract;
+using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using GenAiAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
+using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var activities = new ConcurrentQueue<CapturedActivity>();
 var measurements = new ConcurrentQueue<CapturedMeasurement>();
@@ -435,7 +438,7 @@ internal sealed record GenAiReport(
             ValidateChatSpan(span, failures);
 
         Require(
-            spans.Any(static span => span.Tags.TryGetValue("gen_ai.request.stream", out var value) && value == "True"),
+            spans.Any(static span => span.Tags.TryGetValue(GenAiAttributes.RequestStream, out var value) && value == "True"),
             "missing streaming MEAI span",
             failures);
     }
@@ -448,10 +451,10 @@ internal sealed record GenAiReport(
             .Where(static activity => StringComparer.Ordinal.Equals(activity.SourceName, AgentsSourceName))
             .ToArray();
         var invokeSpans = spans
-            .Where(static span => HasTag(span, "gen_ai.operation.name", "invoke_agent"))
+            .Where(static span => HasTag(span, GenAiAttributes.OperationName, GenAiAttributes.OperationNameValues.InvokeAgent))
             .ToArray();
         var chatSpans = spans
-            .Where(static span => HasTag(span, "gen_ai.operation.name", "chat"))
+            .Where(static span => HasTag(span, GenAiAttributes.OperationName, GenAiAttributes.OperationNameValues.Chat))
             .ToArray();
 
         Require(invokeSpans.Length == 1, $"expected 1 invoke_agent span, got {invokeSpans.Length.ToString(CultureInfo.InvariantCulture)}", failures);
@@ -459,10 +462,10 @@ internal sealed record GenAiReport(
 
         foreach (var span in invokeSpans)
         {
-            ValidateChatSpan(span, failures, "invoke_agent");
-            RequireTag(span, "gen_ai.agent.id", "fixed-agent-id", failures);
-            RequireTag(span, "gen_ai.agent.name", "fixed-agent", failures);
-            RequireTag(span, "gen_ai.agent.description", "fixed agent telemetry probe", failures);
+            ValidateChatSpan(span, failures, GenAiAttributes.OperationNameValues.InvokeAgent);
+            RequireTag(span, GenAiAttributes.AgentId, "fixed-agent-id", failures);
+            RequireTag(span, GenAiAttributes.AgentName, "fixed-agent", failures);
+            RequireTag(span, GenAiAttributes.AgentDescription, "fixed agent telemetry probe", failures);
         }
 
         foreach (var span in chatSpans)
@@ -501,9 +504,9 @@ internal sealed record GenAiReport(
     {
         string[] forbiddenKeys =
         [
-            "gen_ai.input.messages",
-            "gen_ai.output.messages",
-            "gen_ai.system_instructions",
+            GenAiAttributes.InputMessages,
+            GenAiAttributes.OutputMessages,
+            GenAiAttributes.SystemInstructions,
             "executor.input",
             "executor.output",
             "message.content",
@@ -575,20 +578,20 @@ internal sealed record GenAiReport(
 
         string[] allowedMetricTags =
         [
-            "error.type",
-            "gen_ai.operation.name",
-            "gen_ai.provider.name",
-            "gen_ai.request.model",
-            "gen_ai.response.model",
-            "gen_ai.token.type",
-            "server.address",
-            "server.port",
+            ErrorAttributes.Type,
+            GenAiAttributes.OperationName,
+            GenAiAttributes.ProviderName,
+            GenAiAttributes.RequestModel,
+            GenAiAttributes.ResponseModel,
+            GenAiAttributes.TokenType,
+            ServerAttributes.Address,
+            ServerAttributes.Port,
         ];
         foreach (var measurement in measurements)
         {
-            RequireTag(measurement, "gen_ai.operation.name", "chat", failures);
-            RequireTag(measurement, "gen_ai.request.model", FixedModel, failures);
-            RequireTag(measurement, "gen_ai.provider.name", FixedProvider, failures);
+            RequireTag(measurement, GenAiAttributes.OperationName, GenAiAttributes.OperationNameValues.Chat, failures);
+            RequireTag(measurement, GenAiAttributes.RequestModel, FixedModel, failures);
+            RequireTag(measurement, GenAiAttributes.ProviderName, FixedProvider, failures);
             foreach (var key in measurement.Tags.Keys)
             {
                 if (!allowedMetricTags.Contains(key, StringComparer.Ordinal))
@@ -600,18 +603,18 @@ internal sealed record GenAiReport(
     private static void ValidateChatSpan(
         CapturedActivity span,
         ICollection<string> failures,
-        string operation = "chat")
+        string operation = GenAiAttributes.OperationNameValues.Chat)
     {
         Require(
             StringComparer.Ordinal.Equals(span.Kind, ActivityKind.Client.ToString()),
             $"expected Client activity kind for {span.SourceName}:{span.Name}, got {span.Kind}",
             failures);
-        RequireTag(span, "gen_ai.operation.name", operation, failures);
-        RequireTag(span, "gen_ai.request.model", FixedModel, failures);
-        RequireTag(span, "gen_ai.response.model", FixedModel, failures);
-        RequireTag(span, "gen_ai.provider.name", FixedProvider, failures);
-        RequireTag(span, "gen_ai.usage.input_tokens", "7", failures);
-        RequireTag(span, "gen_ai.usage.output_tokens", "3", failures);
+        RequireTag(span, GenAiAttributes.OperationName, operation, failures);
+        RequireTag(span, GenAiAttributes.RequestModel, FixedModel, failures);
+        RequireTag(span, GenAiAttributes.ResponseModel, FixedModel, failures);
+        RequireTag(span, GenAiAttributes.ProviderName, FixedProvider, failures);
+        RequireTag(span, GenAiAttributes.UsageInputTokens, "7", failures);
+        RequireTag(span, GenAiAttributes.UsageOutputTokens, "3", failures);
     }
 
     private static void RequireActivity(
@@ -650,11 +653,11 @@ internal sealed record GenAiReport(
                 StringComparer.Ordinal.Equals(measurement.InstrumentName, TokenUsage))
             .ToArray();
         Require(
-            tokens.Any(static measurement => measurement.Value == "7" && HasTag(measurement, "gen_ai.token.type", "input")),
+            tokens.Any(static measurement => measurement.Value == "7" && HasTag(measurement, GenAiAttributes.TokenType, GenAiAttributes.TokenTypeValues.Input)),
             $"missing bounded input token measurement for {meterName}",
             failures);
         Require(
-            tokens.Any(static measurement => measurement.Value == "3" && HasTag(measurement, "gen_ai.token.type", "output")),
+            tokens.Any(static measurement => measurement.Value == "3" && HasTag(measurement, GenAiAttributes.TokenType, GenAiAttributes.TokenTypeValues.Output)),
             $"missing bounded output token measurement for {meterName}",
             failures);
     }

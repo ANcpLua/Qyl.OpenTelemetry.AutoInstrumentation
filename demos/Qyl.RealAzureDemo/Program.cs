@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Trace;
 using Qyl;
+using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var exportedActivities = new List<Activity>();
 var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
@@ -134,8 +136,8 @@ internal sealed record AzureReport(
         {
             if (!StringComparer.Ordinal.Equals(span.Name, "GET"))
                 failures.Add($"unexpected Azure transport span name: {span.Name}");
-            RequireTag(span, "http.request.method", "GET", failures);
-            RequireTag(span, "server.address", "127.0.0.1", failures);
+            RequireTag(span, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
+            RequireTag(span, ServerAttributes.Address, "127.0.0.1", failures);
         }
 
         foreach (var span in operationSpans)

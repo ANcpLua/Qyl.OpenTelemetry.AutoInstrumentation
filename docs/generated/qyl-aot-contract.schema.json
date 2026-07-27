@@ -147,6 +147,7 @@
       },
       "payload_access": {
         "enum": [
+          "aot_reflection",
           "not_applicable",
           "reflection_required",
           "typed_public"
@@ -307,6 +308,7 @@
         },
         "payload_access": {
           "enum": [
+            "aot_reflection",
             "not_applicable",
             "reflection_required",
             "typed_public"
@@ -361,7 +363,26 @@
           "then": {
             "properties": {
               "payload_access": {
-                "const": "typed_public"
+                "enum": [
+                  "aot_reflection",
+                  "typed_public"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "payload_access": {
+                "const": "aot_reflection"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence_level": {
+                "const": "verified_nativeaot"
               }
             }
           }
@@ -506,6 +527,7 @@
         },
         "payload_access": {
           "enum": [
+            "aot_reflection",
             "not_applicable",
             "reflection_required",
             "typed_public"
@@ -563,7 +585,26 @@
           "then": {
             "properties": {
               "payload_access": {
-                "const": "typed_public"
+                "enum": [
+                  "aot_reflection",
+                  "typed_public"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "payload_access": {
+                "const": "aot_reflection"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence_level": {
+                "const": "verified_nativeaot"
               }
             }
           }
@@ -722,6 +763,7 @@
         },
         "payload_access": {
           "enum": [
+            "aot_reflection",
             "not_applicable",
             "reflection_required",
             "typed_public"
@@ -782,7 +824,26 @@
           "then": {
             "properties": {
               "payload_access": {
-                "const": "typed_public"
+                "enum": [
+                  "aot_reflection",
+                  "typed_public"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "payload_access": {
+                "const": "aot_reflection"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "evidence_level": {
+                "const": "verified_nativeaot"
               }
             }
           }
@@ -914,7 +975,10 @@
               "then": {
                 "properties": {
                   "payload_access": {
-                    "const": "typed_public"
+                    "enum": [
+                      "aot_reflection",
+                      "typed_public"
+                    ]
                   }
                 }
               }

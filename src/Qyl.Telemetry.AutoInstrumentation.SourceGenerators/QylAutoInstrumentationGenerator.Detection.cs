@@ -238,12 +238,13 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static bool TryGetWcfClientInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {
         target = default;
+        var contractType = GetWcfContractType(symbol.ContainingType);
         if (symbol.IsStatic ||
             symbol.MethodKind is not MethodKind.Ordinary ||
             symbol.IsGenericMethod ||
             IsWcfInfrastructureMethod(symbol.Name) ||
             !CanEmitByValueOrInParameters(symbol) ||
-            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::System.ServiceModel.ClientBase<TChannel>") ||
+            contractType is null ||
             IsSystemServiceModelType(symbol.ContainingType))
         {
             return false;
@@ -257,8 +258,66 @@ public sealed partial class QylAutoInstrumentationGenerator
             symbol.Name,
             CleanTypeName(symbol.ReturnType, symbol),
             BuildParameters(symbol),
-            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _));
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _),
+            SemanticName: GetWcfMethodName(contractType, symbol));
         return true;
+    }
+
+    private static INamedTypeSymbol? GetWcfContractType(INamedTypeSymbol clientType)
+    {
+        for (var current = clientType; current is not null; current = current.BaseType)
+        {
+            if (IsType(current.ConstructedFrom, "global::System.ServiceModel.ClientBase<TChannel>") &&
+                current.TypeArguments is [INamedTypeSymbol contractType])
+            {
+                return contractType;
+            }
+        }
+
+        return null;
+    }
+
+    private static string GetWcfMethodName(INamedTypeSymbol contractType, IMethodSymbol implementation)
+    {
+        var serviceName = GetAttributeName(
+                              contractType,
+                              "System.ServiceModel.ServiceContractAttribute") ??
+                          contractType.Name;
+        var operationName = implementation.Name;
+        foreach (var member in contractType.GetMembers(implementation.Name))
+        {
+            if (member is IMethodSymbol contractMethod &&
+                contractMethod.Parameters.Length == implementation.Parameters.Length)
+            {
+                operationName = GetAttributeName(
+                                    contractMethod,
+                                    "System.ServiceModel.OperationContractAttribute") ??
+                                contractMethod.Name;
+                break;
+            }
+        }
+
+        return serviceName + "/" + operationName;
+    }
+
+    private static string? GetAttributeName(ISymbol symbol, string attributeType)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), attributeType, StringComparison.Ordinal))
+                continue;
+
+            foreach (var argument in attribute.NamedArguments)
+            {
+                if (string.Equals(argument.Key, "Name", StringComparison.Ordinal) &&
+                    argument.Value.Value is string { Length: > 0 } name)
+                {
+                    return name;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static bool IsWcfInfrastructureMethod(string methodName)
@@ -277,63 +336,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static bool IsSystemServiceModelType(ITypeSymbol? symbol)
         => symbol is INamedTypeSymbol named &&
            named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("System.ServiceModel");
-
-    private static bool TryGetGrpcNetClientAsyncUnaryInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        if (!IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncUnaryCall<TResponse>") ||
-            !InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            InterceptorKind.GrpcNetClientAsyncUnaryCall,
-            TelemetrySignal.Traces,
-            "GRPCNETCLIENT",
-            CleanTypeName(symbol.ContainingType),
-            symbol.Name,
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            false);
-        return true;
-    }
-
-    private static bool TryGetGrpcNetClientStreamingInvocation(IMethodSymbol symbol, out InterceptorTarget target)
-    {
-        target = default;
-        if (!InheritsFromConstructedGeneric(symbol.ContainingType, "global::Grpc.Core.ClientBase<T>"))
-            return false;
-
-        var kind = default(InterceptorKind);
-        if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncServerStreamingCall<TResponse>"))
-        {
-            kind = InterceptorKind.GrpcNetClientAsyncServerStreamingCall;
-        }
-        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>"))
-        {
-            kind = InterceptorKind.GrpcNetClientAsyncClientStreamingCall;
-        }
-        else if (IsConstructedFrom(symbol.ReturnType, "global::Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>"))
-        {
-            kind = InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall;
-        }
-        else
-        {
-            return false;
-        }
-
-        target = new InterceptorTarget(
-            kind,
-            TelemetrySignal.Traces,
-            "GRPCNETCLIENT",
-            CleanTypeName(symbol.ContainingType),
-            symbol.Name,
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            false);
-        return true;
-    }
 
     private static bool TryGetKafkaInvocation(IMethodSymbol symbol, out InterceptorTarget target)
     {

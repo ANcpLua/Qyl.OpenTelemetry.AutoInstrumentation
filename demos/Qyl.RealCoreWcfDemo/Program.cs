@@ -9,6 +9,8 @@ using OpenTelemetry.Trace;
 using Qyl;
 using ClientBasicHttpBinding = System.ServiceModel.BasicHttpBinding;
 using ClientEndpointAddress = System.ServiceModel.EndpointAddress;
+using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
+using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using ServerBasicHttpBinding = CoreWCF.BasicHttpBinding;
 
 var exportedActivities = new List<Activity>();
@@ -155,12 +157,13 @@ internal sealed record CoreWcfReport(
         {
             if (!StringComparer.Ordinal.Equals(activity.Kind, nameof(ActivityKind.Server)))
                 failures.Add($"expected CoreWCF Server activity, got {activity.Kind}");
-            RequireTag(activity, "rpc.system", "dotnet_wcf", failures);
-            RequirePresentTag(activity, "server.address", failures);
-            RequirePresentTag(activity, "server.port", failures);
+            RequireTag(activity, RpcAttributes.SystemName, "dotnet_wcf", failures);
+            RequireMissingTag(activity, "rpc.system", failures);
+            RequirePresentTag(activity, ServerAttributes.Address, failures);
+            RequirePresentTag(activity, ServerAttributes.Port, failures);
             RequireTag(activity, "wcf.channel.path", "/probe.svc", failures);
 
-            if (activity.Tags.TryGetValue("rpc.method", out var rpcMethod))
+            if (activity.Tags.TryGetValue(RpcAttributes.Method, out var rpcMethod))
             {
                 var expectedStatus = rpcMethod.EndsWith("/Fail", StringComparison.Ordinal) ? "Error" : "Unset";
                 if (!StringComparer.Ordinal.Equals(activity.Status, expectedStatus))
@@ -188,7 +191,7 @@ internal sealed record CoreWcfReport(
         ICollection<string> failures)
     {
         if (!activities.Any(activity =>
-                activity.Tags.TryGetValue("rpc.method", out var actual) &&
+                activity.Tags.TryGetValue(RpcAttributes.Method, out var actual) &&
                 actual.EndsWith("/" + method, StringComparison.Ordinal)))
         {
             failures.Add($"missing CoreWCF rpc.method={method} span");
@@ -218,6 +221,15 @@ internal sealed record CoreWcfReport(
     {
         if (!activity.Tags.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
             failures.Add($"missing {key}");
+    }
+
+    private static void RequireMissingTag(
+        CapturedActivity activity,
+        string key,
+        ICollection<string> failures)
+    {
+        if (activity.Tags.ContainsKey(key))
+            failures.Add($"unexpected deprecated {key}");
     }
 }
 

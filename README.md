@@ -26,8 +26,8 @@ consumer path is a `PackageReference`; build and analyzer assets flow through Nu
 
 **Coming from 8.x?** These are new package IDs, not new versions of the old ones.
 `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
-updated further; change the ID and take `1.0.0-beta.1`. `builder.AddQyl()` is
-unchanged. The generated-code ABI anchor is reborn as `QylGeneratedCodeAbi.V1` in the
+updated further; change the ID and take `9.0.0`. `builder.AddQyl()` is
+unchanged. The generated-code ABI anchor is reborn as `QylGeneratedCodeAbi.V9` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace, so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
 misbehaving. The emitted `ActivitySource` name is deliberately still
@@ -106,7 +106,7 @@ SDK tracing is the first-party exception: `Qyl.Telemetry.Hosting` enables
 exported Azure spans. A manually wired application must make those two choices
 explicitly if it wants Azure SDK spans.
 
-### AI, MCP, and CoreWCF paths in 1.0
+### AI, MCP, and CoreWCF paths in 9.0
 
 These are version-pinned library-hook claims, not provider- or protocol-wide claims.
 The exact `ModelContextProtocol` 1.4.1 client/server path has strict NativeAOT
@@ -122,7 +122,7 @@ evidence; the other paths in this table have managed evidence only:
 
 MCP metrics are intentionally not registered: the official instruments attach
 dynamic tool and resource names as dimensions, which conflicts with qyl's bounded-cardinality
-policy. The 1.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
+policy. The 9.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
 instrumentation, `Azure.AI.Inference`, Amazon Bedrock, or A2A.
 
 Every path is enabled by default when its signal is enabled. Set the applicable

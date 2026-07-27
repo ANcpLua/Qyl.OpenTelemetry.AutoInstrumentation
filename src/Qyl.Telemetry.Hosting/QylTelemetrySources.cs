@@ -34,13 +34,18 @@ internal static class QylTelemetrySources
         AddIfEnabled(names, options, QylAutoInstrumentationIds.WcfCore, CoreWcf);
         AddIfEnabled(names, options, QylAutoInstrumentationIds.Azure, Azure);
 
-        return names.ToArray();
+        return [.. names];
     }
 
     internal static bool IsAzureTracingEnabled()
         => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(
             QylAutoInstrumentationSignal.Traces,
             QylAutoInstrumentationIds.Azure);
+
+    internal static bool IsCoreWcfTracingEnabled()
+        => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(
+            QylAutoInstrumentationSignal.Traces,
+            QylAutoInstrumentationIds.WcfCore);
 
     internal static string[] GetEnabledMeterNames()
     {
@@ -59,7 +64,7 @@ internal static class QylTelemetrySources
             QylAutoInstrumentationIds.MicrosoftAgentsAi,
             MicrosoftAgentsAi,
             QylAutoInstrumentationSignal.Metrics);
-        return names.ToArray();
+        return [.. names];
     }
 
     private static void AddIfEnabled(

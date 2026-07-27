@@ -1,9 +1,24 @@
 # Changelog
 
-Notable changes to `Qyl.OpenTelemetry.AutoInstrumentation`. Versions track the Qyl.OpenTelemetry
-stack line and are owned by `<Version>` in `Directory.Build.props`. CI packs that exact version,
-proves the indexed packages in clean managed and NativeAOT consumers, and only then creates the
-matching `v*` tag and GitHub release.
+Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `<Version>` in
+`Directory.Build.props`. A matching `v*` tag runs the release gate; CI packs that exact version,
+publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
+NativeAOT consumers, and only then creates the GitHub release.
+
+## [9.0.0] - 2026-07-27
+
+### Changed
+
+- The package family now ships under the `Qyl.Telemetry.*` IDs. The retired
+  `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` packages remain frozen at `8.5.0`.
+- gRPC client spans now follow OpenTelemetry semantic conventions 1.43: full `rpc.method`,
+  string `rpc.response.status_code`, configured `server.*`, IP `network.peer.*`, and
+  `error.type` for failures. Deprecated `rpc.service`, `rpc.grpc.status_code`,
+  `peer.hostname`, and `peer.port` attributes are no longer emitted.
+- The native `Grpc.Net.Client` DiagnosticSource is the sole gRPC telemetry owner. The imprecise
+  source-generated gRPC wrapper and its runtime ABI were deleted.
+- Real integration demos now verify semantic-convention keys through the generated
+  `Qyl.OpenTelemetry.SemanticConventions` constants.
 
 ## [8.5.0] - 2026-07-26
 

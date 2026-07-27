@@ -6,7 +6,7 @@ This is the repository's only editable agent/contributor instruction file.
 evidence. Do not add progress logs, continuation plans, branch archaeology, or a
 second rules file.
 
-## 1.0.0 name
+## Package identity
 
 This repository ships the **`Qyl.Telemetry.*`** family. The rename has landed;
 these are the package IDs, not a target:
@@ -61,7 +61,7 @@ The package family is public. Existing NuGet artifacts are immutable. Make
 intentional breaking convergence in a new major version, migrate known consumers,
 and do not add compatibility shims without a proven external requirement.
 
-The following API/ABI categories define the active 1.0 architecture. Preserve them:
+The following API/ABI categories define the active architecture. Preserve them:
 
 1. A small supported user API for bootstrap and configuration: Hosting
    `Boot()`/`AddQylAutoInstrumentation(...)`, `Qyl.Telemetry.Hosting` `AddQyl(...)`/`QylSdkOptions`,
@@ -70,14 +70,14 @@ The following API/ABI categories define the active 1.0 architecture. Preserve th
 2. A generated-code ABI for cross-assembly interceptor calls, living in the
    `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace, every member
    `[EditorBrowsable(EditorBrowsableState.Never)]`, anchored by the
-   `QylGeneratedCodeAbi.V1` const that every generated interceptor file references so
+   `QylGeneratedCodeAbi.V9` const that every generated interceptor file references so
    a generator/runtime ABI mismatch fails compilation. That namespace, the anchor, and
    the `V<major>` rule are load-bearing: the version-sync and generated-source snapshot
    verifiers pin the exact token. Do not rename or re-derive it — `<major>` is the
    package major, checked mechanically (`verify-version-sync.py` requires the anchor
    declaration to equal it exactly), so the anchor moves when the package major moves
    and never on its own. The frozen `Qyl.OpenTelemetry.*` IDs keep `V8` under their own
-   old namespace; `V1` here is a first use, not a reuse, because the fully-qualified
+   old namespace; `V9` here is a first use, not a reuse, because the fully-qualified
    token changed namespace with the package ID.
    Generated code must not reference `QylAutoInstrumentationOptions` or
    `QylInstrumentationDomains` — gate opt-ins at the policy type and emit domain names
@@ -112,9 +112,9 @@ Two generated namespaces exist, four characters apart. Do not conflate them:
 
 - `Qyl.Telemetry.AutoInstrumentation.Generated` — where the generator emits
   interceptor methods, and the value `buildTransitive` adds to
-  `InterceptorsNamespaces`. Compiler-facing wiring; it remains load-bearing in 1.0.
+  `InterceptorsNamespaces`. Compiler-facing wiring; it remains load-bearing.
 - `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` — the runtime ABI helpers
-  (`QylIntercepted*` and the `QylGeneratedCodeAbi.V1` anchor) that emitted
+  (`QylIntercepted*` and the `QylGeneratedCodeAbi.V9` anchor) that emitted
   interceptors call into.
 
 Emitted code lives in the first and delegates to the second. Renaming either side —
@@ -206,7 +206,7 @@ EntityFrameworkCore, SqlClient — and that set is owned by `.github/workflows/n
 - Core contains shared runtime and compiler-facing ABI only.
 - Hosting contains generic bootstrap/DI activation.
 - DiagnosticListeners contains public diagnostic-payload consumption.
-- `Qyl.Telemetry.Hosting` (the retired `Qyl.Sdk` under its 1.0.0 identity: PackageId and AssemblyName changed, namespace `Qyl` and `AddQyl()` unchanged) is the opinionated one-call onboarding surface (`AddQyl(...)`/`QylSdkOptions`)
+- `Qyl.Telemetry.Hosting` (the retired `Qyl.Sdk` under its new identity: PackageId and AssemblyName changed, namespace `Qyl` and `AddQyl()` unchanged) is the opinionated one-call onboarding surface (`AddQyl(...)`/`QylSdkOptions`)
   layered over Hosting's `Boot()`, plus qyl-specific export concerns: collector
   discovery and session span enrichment. It defines no interceptors.
 - EntityFrameworkCore and SqlClient isolate their dependency-heavy integrations.
@@ -257,9 +257,9 @@ Two invariants survive any edit to the workflow:
 
 - **Idempotence.** The `version` job checks nuget.org and short-circuits when the
   version is already indexed, so a re-pushed or re-run tag costs one lookup rather
-  than the full pipeline. Published artifacts are immutable; never rebuild and
-  re-push one. A failed index lookup fails closed rather than assuming "not
-  published".
+  than the full pipeline. A missing package index is the expected first-publish
+  state; every other failed lookup fails closed. Published artifacts are immutable;
+  never rebuild and re-push one.
 - **Green before publish.** `publish` depends on both `verify` and `aot-publish`, so
   the gate is enforced inside this workflow rather than inferred from a sibling run.
   The GitHub release is still created last, after `verify-published`.

@@ -12,6 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.RealGrpcClientDemo;
+using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using NetworkAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
+using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
+using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
@@ -55,16 +59,16 @@ app.MapPost("/qyl.LiveProbe/Collect", static async context =>
 
 await app.StartAsync();
 
-// Two lanes, one binary. "invoker" (default) drives raw CallInvoker calls, which the
-// interceptor cannot see — the DiagnosticListeners lane emits. "client" drives a
-// ClientBase<T>-derived client (the protoc-generated shape); the source interceptor
-// owns the signal and the listener defers, so metadata capture is provable there.
+var address = new Uri(app.Urls.Single());
+
+// Two public call shapes, one telemetry owner. Both raw CallInvoker calls and the
+// protoc-generated ClientBase<T> shape are completed by Grpc.Net.Client's native
+// DiagnosticSource, which exposes the protocol method, channel address, and status.
 var clientMode = string.Equals(
     Environment.GetEnvironmentVariable("QYL_GRPC_DEMO_MODE"), "client", StringComparison.OrdinalIgnoreCase);
 
 try
 {
-    var address = app.Urls.Single();
     var method = new Method<byte[], byte[]>(
         MethodType.Unary,
         "qyl.LiveProbe",
@@ -78,18 +82,6 @@ try
     {
         var client = new LiveProbeClient(channel);
         _ = await client.CollectAsync(Array.Empty<byte>(), requestMetadata);
-
-        // Compile-binding coverage for the three streaming interceptor shapes. The generated
-        // interceptor manifest (and its contract invariant) requires every catalog kind to bind a
-        // real ClientBase<T> call site in demo evidence; the loopback server only speaks unary, so
-        // these call sites are guarded behind an env flag no verifier sets and never execute here.
-        if (string.Equals(
-                Environment.GetEnvironmentVariable("QYL_GRPC_DEMO_STREAMING_SHAPES"), "1", StringComparison.Ordinal))
-        {
-            using var serverStreaming = client.CollectStream(Array.Empty<byte>());
-            using var clientStreaming = client.CollectClientStream();
-            using var duplexStreaming = client.CollectDuplex();
-        }
     }
     else
     {
@@ -124,7 +116,7 @@ finally
 var report = GrpcClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
     captured.ToArray(),
-    clientMode);
+    address);
 
 var json = JsonSerializer.Serialize(report, RealGrpcClientJsonContext.Default.GrpcClientReport);
 Console.WriteLine(json);
@@ -159,7 +151,10 @@ internal sealed record GrpcClientReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
-    public static GrpcClientReport Create(string runtimeMode, CapturedActivity[] activities, bool clientMode)
+    private const string RequestMetadata = RpcAttributes.RequestMetadata + ".x-demo-md";
+    private const string ResponseMetadata = RpcAttributes.ResponseMetadata + ".x-demo-res-md";
+
+    public static GrpcClientReport Create(string runtimeMode, CapturedActivity[] activities, Uri serverAddress)
     {
         var failures = new List<string>();
         var grpcSpans = activities
@@ -171,49 +166,56 @@ internal sealed record GrpcClientReport(
         if (grpcSpans.Length != 2)
             failures.Add($"expected 2 real gRPC client spans, got {grpcSpans.Length}");
 
-        var expectedService = clientMode ? "LiveProbe" : "qyl.LiveProbe";
-        var expectedMethod = clientMode ? "CollectAsync" : "Collect";
-        var expectedName = $"{expectedService}/{expectedMethod}";
+        const string expectedMethod = "qyl.LiveProbe/Collect";
 
-        var successSpan = FindByStatus(grpcSpans, "0");
-        var failureSpan = grpcSpans.FirstOrDefault(static activity =>
-            StringComparer.Ordinal.Equals(activity.Status, "Error"));
+        var successSpan = FindByStatus(grpcSpans, "OK");
+        var failureSpan = FindByStatus(grpcSpans, "UNAVAILABLE");
 
         Require(successSpan, "OK span", failures);
         Require(failureSpan, "failure span", failures);
-        RequireTag(successSpan, "rpc.system.name", "grpc", failures);
-        RequireTag(successSpan, "rpc.service", expectedService, failures);
-        RequireTag(successSpan, "rpc.method", expectedMethod, failures);
-        RequireTag(successSpan, "rpc.grpc.status_code", "0", failures);
+        RequireTag(successSpan, RpcAttributes.SystemName, RpcAttributes.SystemNameValues.Grpc, failures);
+        RequireTag(successSpan, RpcAttributes.Method, expectedMethod, failures);
+        RequireTag(successSpan, RpcAttributes.ResponseStatusCode, "OK", failures);
+        RequireTag(successSpan, ServerAttributes.Address, serverAddress.Host, failures);
+        RequireTag(successSpan, ServerAttributes.Port, serverAddress.Port.ToString(System.Globalization.CultureInfo.InvariantCulture), failures);
+        RequireTag(successSpan, NetworkAttributes.PeerAddress, serverAddress.Host, failures);
+        RequireTag(successSpan, NetworkAttributes.PeerPort, serverAddress.Port.ToString(System.Globalization.CultureInfo.InvariantCulture), failures);
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
-        if (!clientMode)
-        {
-            RequireTag(failureSpan, "rpc.grpc.status_code", "14", failures);
-            RequireTag(failureSpan, "error.type", "14", failures);
-        }
+        RequireTag(failureSpan, RpcAttributes.SystemName, RpcAttributes.SystemNameValues.Grpc, failures);
+        RequireTag(failureSpan, RpcAttributes.Method, expectedMethod, failures);
+        RequireTag(failureSpan, RpcAttributes.ResponseStatusCode, "UNAVAILABLE", failures);
+        RequireTag(failureSpan, ServerAttributes.Address, "127.0.0.1", failures);
+        RequireTag(failureSpan, ServerAttributes.Port, "1", failures);
+        RequireTag(failureSpan, NetworkAttributes.PeerAddress, "127.0.0.1", failures);
+        RequireTag(failureSpan, NetworkAttributes.PeerPort, "1", failures);
+        RequireTag(failureSpan, ErrorAttributes.Type, "UNAVAILABLE", failures);
+        RequireMissingTag(successSpan, ErrorAttributes.Type, failures);
 
         // Metadata capture is asserted in both directions, keyed off the env vars
-        // the runtime honors. The interceptor lane (client mode) is the one that
-        // owns capture; the listener lane must never capture.
+        // the runtime honors.
         var captureOptIn = !string.IsNullOrEmpty(
             Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"));
-        if (clientMode && captureOptIn)
+        if (captureOptIn)
         {
-            RequireTag(successSpan, "rpc.request.metadata.x-demo-md", "mv1", failures);
-            RequireTag(successSpan, "rpc.response.metadata.x-demo-res-md", "sv1", failures);
+            RequireTag(successSpan, RequestMetadata, "mv1", failures);
+            RequireTag(successSpan, ResponseMetadata, "sv1", failures);
         }
         else if (successSpan is not null &&
-                 (successSpan.Tags.ContainsKey("rpc.request.metadata.x-demo-md") ||
-                  successSpan.Tags.ContainsKey("rpc.response.metadata.x-demo-res-md")))
+                 (successSpan.Tags.ContainsKey(RequestMetadata) ||
+                  successSpan.Tags.ContainsKey(ResponseMetadata)))
         {
             failures.Add("gRPC metadata captured without opt-in");
         }
 
         foreach (var span in grpcSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, expectedName))
+            if (!StringComparer.Ordinal.Equals(span.Kind, nameof(ActivityKind.Client)))
+                failures.Add($"expected gRPC Client span, got {span.Kind}");
+            if (!StringComparer.Ordinal.Equals(span.Name, expectedMethod))
                 failures.Add($"unexpected gRPC span name: {span.Name}");
+            RequireMissingTag(span, "rpc.service", failures);
+            RequireMissingTag(span, "rpc.grpc.status_code", failures);
         }
 
         return new GrpcClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities);
@@ -221,7 +223,7 @@ internal sealed record GrpcClientReport(
 
     private static CapturedActivity? FindByStatus(IEnumerable<CapturedActivity> activities, string statusCode)
         => activities.FirstOrDefault(activity =>
-            activity.Tags.TryGetValue("rpc.grpc.status_code", out var actual) &&
+            activity.Tags.TryGetValue(RpcAttributes.ResponseStatusCode, out var actual) &&
             StringComparer.Ordinal.Equals(actual, statusCode));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
@@ -252,6 +254,12 @@ internal sealed record GrpcClientReport(
 
         if (!StringComparer.Ordinal.Equals(activity.Status, expected))
             failures.Add($"expected span status {expected}, got {activity.Status}");
+    }
+
+    private static void RequireMissingTag(CapturedActivity? activity, string key, ICollection<string> failures)
+    {
+        if (activity?.Tags.ContainsKey(key) is true)
+            failures.Add($"unexpected deprecated {key}");
     }
 }
 

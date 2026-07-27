@@ -13,10 +13,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         ElasticsearchClient,
         ElasticTransport,
         WcfClient,
-        GrpcNetClientAsyncUnaryCall,
-        GrpcNetClientAsyncServerStreamingCall,
-        GrpcNetClientAsyncClientStreamingCall,
-        GrpcNetClientAsyncDuplexStreamingCall,
         KafkaProducer,
         KafkaConsumer,
         MassTransitMessageOperation,
@@ -43,7 +39,7 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         None,
         InstrumentationIdAndTargetMethodName,
-        ReceiverTypeAndTargetMethodName,
+        SemanticName,
         RedisOperationName,
         TargetMethodName,
         RabbitMqExchange,
@@ -73,15 +69,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         InstrumentationIdAndTargetMethodName,
     }
 
-    private enum GrpcClientCallShape
-    {
-        None,
-        Unary,
-        ServerStreaming,
-        ClientStreaming,
-        DuplexStreaming,
-    }
-
     private readonly record struct InterceptorEmissionDescriptor(
         InterceptorKind Kind,
         InterceptorBodyDescriptor Body);
@@ -94,16 +81,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private abstract record InterceptorBodyDescriptor
     {
         public abstract void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index);
-    }
-
-    private sealed record GrpcClientBodyDescriptor(
-        GrpcClientCallShape Shape,
-        string MethodPrefix,
-        string ReceiverName,
-        string HelperType) : InterceptorBodyDescriptor
-    {
-        public override void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index)
-            => EmitGrpcNetClientInterceptor(builder, in invocation, index, this);
     }
 
     private sealed record DbCommandBodyDescriptor(
@@ -355,7 +332,8 @@ public sealed partial class QylAutoInstrumentationGenerator
         string TypeParameterList = "",
         string ConstraintClauses = "",
         string ExtensionContainingType = "",
-        EquatableArray<string> AdditionalMetricIds = default);
+        EquatableArray<string> AdditionalMetricIds = default,
+        string SemanticName = "");
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 }

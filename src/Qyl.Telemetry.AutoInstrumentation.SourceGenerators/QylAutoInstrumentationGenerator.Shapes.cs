@@ -644,17 +644,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool InheritsFromConstructedGeneric(ITypeSymbol? symbol, string fullyQualifiedConstructedFromName)
-    {
-        for (var current = symbol; current is not null; current = (current as INamedTypeSymbol)?.BaseType)
-        {
-            if (current is INamedTypeSymbol named && IsType(named.ConstructedFrom, fullyQualifiedConstructedFromName))
-                return true;
-        }
-
-        return false;
-    }
-
     private static bool IsOrImplementsConstructedGeneric(ITypeSymbol? symbol, string namespaceName, string metadataName)
     {
         if (symbol is not INamedTypeSymbol named)
@@ -781,32 +770,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             default:
                 return CleanTypeName(symbol);
         }
-    }
-
-    private static string GetGrpcStreamReaderHelperType(InterceptedInvocation[] invocations)
-    {
-        var helperType = "";
-        foreach (var invocation in invocations)
-        {
-            if (invocation.Target.Kind is not (InterceptorKind.GrpcNetClientAsyncServerStreamingCall or
-                    InterceptorKind.GrpcNetClientAsyncDuplexStreamingCall))
-            {
-                continue;
-            }
-
-            if (GetEmissionDescriptor(invocation.Target).Body is not GrpcClientBodyDescriptor descriptor)
-                throw new InvalidOperationException("gRPC streaming interceptor kind has no gRPC body descriptor: " + invocation.Target.Kind);
-            if (string.IsNullOrEmpty(helperType))
-            {
-                helperType = descriptor.HelperType;
-                continue;
-            }
-
-            if (!string.Equals(helperType, descriptor.HelperType, StringComparison.Ordinal))
-                throw new InvalidOperationException("gRPC streaming helper types disagree.");
-        }
-
-        return helperType;
     }
 
     private static void AppendStringLiteral(StringBuilder builder, string value)

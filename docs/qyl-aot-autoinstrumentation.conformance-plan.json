@@ -185,13 +185,16 @@
           "kind": "span",
           "name": "grpc.client",
           "required_attributes": [
-            "rpc.system",
-            "rpc.service",
+            "rpc.system.name",
             "rpc.method",
-            "rpc.grpc.status_code",
+            "rpc.response.status_code",
+            "server.address",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
+            "server.port",
+            "network.peer.address",
+            "network.peer.port",
             "error.type"
           ],
           "opt_in_attributes": []

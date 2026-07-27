@@ -44,8 +44,11 @@ internal static class QylActivityNames
     }
 
     /// <summary>Composes the gRPC client span name: the full <c>{service}/{method}</c> RPC method name, or <c>gRPC</c> when unknown.</summary>
-    public static string GrpcClient(string? service, string? method)
-        => string.IsNullOrEmpty(service) || string.IsNullOrEmpty(method) ? GrpcFallback : service + "/" + method;
+    public static string GrpcClient(string? method)
+        => string.IsNullOrWhiteSpace(method) ||
+           StringComparer.Ordinal.Equals(method, Internal.QylGrpcSemantics.OtherMethod)
+            ? GrpcFallback
+            : method;
 
     /// <summary>Composes the database command span name: <c>DB {operation}</c>, or <c>DB CLIENT</c> when the operation is unknown.</summary>
     public static string DbCommand(string? operation)

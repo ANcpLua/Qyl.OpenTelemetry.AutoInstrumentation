@@ -4,27 +4,19 @@ namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 internal static class SemanticTagWriter
 {
-    public static void Set(Activity? activity, SemanticAttributeDefinition attribute, string? value)
+    public static void Set(Activity? activity, string key, string? value)
     {
-        if (activity is null ||
-            string.IsNullOrWhiteSpace(value) ||
-            !SemanticAttributePolicy.Current.ShouldWrite(attribute))
-        {
+        if (activity is null || string.IsNullOrWhiteSpace(value))
             return;
-        }
 
-        activity.SetTag(attribute.Key, value);
+        activity.SetTag(key, value);
     }
 
-    public static void Set(Activity? activity, SemanticAttributeDefinition attribute, int? value)
+    public static void Set(Activity? activity, string key, int? value)
     {
-        if (activity is null ||
-            value is null ||
-            !SemanticAttributePolicy.Current.ShouldWrite(attribute))
-        {
+        if (activity is null || value is null)
             return;
-        }
 
-        activity.SetTag(attribute.Key, value.Value);
+        activity.SetTag(key, value.Value);
     }
 }

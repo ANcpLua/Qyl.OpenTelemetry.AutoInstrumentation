@@ -28,23 +28,23 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
 
         var method = HttpSemantics.NormalizeMethod(
             AspNetCorePayloadReader.GetMethod(payload) ??
-            DiagnosticPayloadReader.GetString(payload, "http.request.method", "http.method"),
+            DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.HttpRequestMethod),
             out var originalMethod);
         var route = AspNetCorePayloadReader.GetRoute(payload) ??
-                    DiagnosticPayloadReader.GetString(payload, "http.route");
+                    DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.HttpRoute);
         var path = AspNetCorePayloadReader.GetPath(payload) ??
-                   DiagnosticPayloadReader.GetString(payload, "url.path", "http.target");
+                   DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.UrlPath);
         var statusCode = AspNetCorePayloadReader.GetStatusCode(payload) ??
-                         DiagnosticPayloadReader.GetInt32(payload, "http.response.status_code", "http.status_code");
-        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
+                         DiagnosticPayloadReader.GetInt32(payload, QylSemanticAttributes.HttpResponseStatusCode);
+        var errorType = DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.ErrorType);
 
         using var activity = QylActivitySource.StartAtAmbientStart(QylActivityNames.HttpServer(method, route), ActivityKind.Server);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
-        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethod, method);
-        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRequestMethodOriginal, originalMethod);
-        SemanticTagWriter.Set(activity, SemanticAttributes.HttpRoute, route);
-        SemanticTagWriter.Set(activity, SemanticAttributes.UrlPath, path);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethod, method);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethodOriginal, originalMethod);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRoute, route);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlPath, path);
 
         // Option parity with the explicit middleware lane: url.query obeys the ASP.NET Core
         // redaction control; header capture obeys the configured capture lists.

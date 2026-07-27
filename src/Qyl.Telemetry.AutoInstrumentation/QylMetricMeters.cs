@@ -97,7 +97,7 @@ internal static class QylMetricMeters
         if (options.MetricsEnabled)
             AddDistinct(names, options.AdditionalMetricMeterNames);
 
-        return names.ToArray();
+        return [.. names];
     }
 
     private static void AddDistinct(List<string> target, IEnumerable<string> names)

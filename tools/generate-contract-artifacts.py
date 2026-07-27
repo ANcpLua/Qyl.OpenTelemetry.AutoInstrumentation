@@ -167,7 +167,7 @@ STATUSES = {
     "unsupported_nativeaot",
 }
 CALL_SITE_VISIBILITIES = {"user_code", "library_internal", "both", "not_applicable"}
-PAYLOAD_ACCESS_VALUES = {"typed_public", "reflection_required", "not_applicable"}
+PAYLOAD_ACCESS_VALUES = {"typed_public", "aot_reflection", "reflection_required", "not_applicable"}
 EVIDENCE_LEVELS = {"none", "verified_nativeaot", "verified_managed", "compile_binding_only", "option_bound"}
 CONFORMANCE_KINDS = {"span", "metric", "log"}
 QYL_NATIVE_8_SIGNAL_CONTRACT = [
@@ -256,13 +256,10 @@ MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
 }
 IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST: set[str] = set()
 # Signals whose contract row is owned by the runtime_public_telemetry listener/meter lane while a
-# source interceptor also binds their call sites. QylSignalOwnership hands the emitted span to the
-# interceptor lane when it is present; the listener lane stays the contract owner because it covers
-# call sites the interceptor cannot see (raw CallInvoker, HttpMessageInvoker, DI-injected clients).
+# source interceptor also binds their call sites.
 GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = {
     "signals.traces.HTTPCLIENT",
     "signals.metrics.HTTPCLIENT",
-    "signals.traces.GRPCNETCLIENT",
 }
 GENERATED_INTERCEPTOR_CATALOG_REQUIRED_SIGNAL_KEYS = {
     "signals.logs.ILOGGER",
@@ -683,8 +680,10 @@ def verify_contract_item(item: dict[str, Any]) -> None:
 
     if visibility == "library_internal" and lane == "source_interceptor":
         fail(f"library_internal item cannot use source_interceptor lane: {key}")
-    if lane == "runtime_public_telemetry" and payload != "typed_public":
-        fail(f"runtime_public_telemetry item must use typed_public payload access: {key}")
+    if lane == "runtime_public_telemetry" and payload not in {"typed_public", "aot_reflection"}:
+        fail(f"runtime_public_telemetry item must use typed_public or aot_reflection payload access: {key}")
+    if payload == "aot_reflection" and evidence_level != "verified_nativeaot":
+        fail(f"aot_reflection item must carry verified_nativeaot evidence: {key}")
     if payload == "reflection_required" and status not in {"research_required", "unsupported_nativeaot"}:
         fail(f"reflection_required item must be research_required or unsupported_nativeaot: {key}")
     if key == "signals.traces.SQLCLIENT" and lane != "source_interceptor":
@@ -981,7 +980,7 @@ def render_schema() -> str:
         "allOf": [
             {
                 "if": {"properties": {"contract_items": {"contains": {"properties": {"lane": {"const": "runtime_public_telemetry"}}}}}},
-                "then": {"properties": {"contract_items": {"items": {"if": {"properties": {"lane": {"const": "runtime_public_telemetry"}}}, "then": {"properties": {"payload_access": {"const": "typed_public"}}}}}}},
+                "then": {"properties": {"contract_items": {"items": {"if": {"properties": {"lane": {"const": "runtime_public_telemetry"}}}, "then": {"properties": {"payload_access": {"enum": ["aot_reflection", "typed_public"]}}}}}}},
             }
         ],
     }
@@ -1052,7 +1051,11 @@ def item_schema(kind: str, required: list[str], allowed_properties: set[str]) ->
         "allOf": [
             {
                 "if": {"properties": {"lane": {"const": "runtime_public_telemetry"}}},
-                "then": {"properties": {"payload_access": {"const": "typed_public"}}},
+                "then": {"properties": {"payload_access": {"enum": ["aot_reflection", "typed_public"]}}},
+            },
+            {
+                "if": {"properties": {"payload_access": {"const": "aot_reflection"}}},
+                "then": {"properties": {"evidence_level": {"const": "verified_nativeaot"}}},
             },
             {
                 "if": {"properties": {"call_site_visibility": {"const": "library_internal"}}},

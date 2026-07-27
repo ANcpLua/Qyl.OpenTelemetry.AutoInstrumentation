@@ -14,9 +14,6 @@ internal static class DiagnosticPayloadReader
         return currentValue is null ? null : Convert.ToString(currentValue, CultureInfo.InvariantCulture);
     }
 
-    public static string? GetString(object? payload, string key, string alias)
-        => GetString(payload, key) ?? GetString(payload, alias);
-
     public static int? GetInt32(object? payload, string key)
     {
         if (!TryGetPayloadValue(payload, key, out var value) || value is null)
@@ -35,9 +32,6 @@ internal static class DiagnosticPayloadReader
             _ => null,
         };
     }
-
-    public static int? GetInt32(object? payload, string key, string alias)
-        => GetInt32(payload, key) ?? GetInt32(payload, alias);
 
     private static bool TryGetPayloadValue(object? payload, string key, out object? value)
     {

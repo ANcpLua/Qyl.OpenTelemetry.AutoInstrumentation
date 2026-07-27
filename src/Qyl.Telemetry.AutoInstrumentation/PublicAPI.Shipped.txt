@@ -4,7 +4,6 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElastic
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedExternalLogger
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger
@@ -20,7 +19,7 @@ Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V1 = 1 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V9 = 9 -> int
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
@@ -36,13 +35,6 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.Obs
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.RecordExecutionOptions(System.Diagnostics.Activity? activity, string? operationName, string? document) -> void
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.StartActivity() -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.CaptureCompletedResponseHeaders(System.Threading.Tasks.Task<Grpc.Core.Metadata!>? responseHeadersTask, System.Diagnostics.Activity? activity) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.Dispose(System.Diagnostics.Activity? activity) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.ObserveResponseHeadersAsync(System.Threading.Tasks.Task<Grpc.Core.Metadata!>! responseHeadersTask, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<Grpc.Core.Metadata!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.ObserveUnaryResponseAsync<TResponse>(System.Threading.Tasks.Task<TResponse>! responseTask, System.Threading.Tasks.Task<Grpc.Core.Metadata!>! responseHeadersTask, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<TResponse>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.RecordStreamingComplete(System.Diagnostics.Activity? activity) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGrpcNetClient.StartActivity(string! clientTypeName, string! methodName, Grpc.Core.Metadata? requestMetadata) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, string? requestUri) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
@@ -111,5 +103,5 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.Recor
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.StartCommandActivity(string? operationName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.StartActivity(string! clientType, string! methodName) -> System.Diagnostics.Activity?
+static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.StartActivity(string! method) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

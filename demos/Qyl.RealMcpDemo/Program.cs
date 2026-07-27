@@ -15,6 +15,8 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using OpenTelemetry.Trace;
 using Qyl;
+using GenAiAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
+using NetworkAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
 
 const string mcpSourceName = "Experimental.ModelContextProtocol";
 const string rootSourceName = "Qyl.RealMcpDemo";
@@ -244,7 +246,7 @@ internal sealed record McpReport(
                 failures.Add($"unexpected MCP ActivitySource: {activity.Source}");
             if (!StringComparer.Ordinal.Equals(activity.Status, "Unset"))
                 failures.Add($"expected successful status for {activity.Name}/{activity.Kind}, got {activity.Status}");
-            RequireTag(activity, "network.transport", "pipe", failures);
+            RequireTag(activity, NetworkAttributes.Transport, NetworkAttributes.TransportValues.Pipe, failures);
 
             if (ContainsSensitiveValue(activity))
                 failures.Add($"sensitive tool argument or result leaked into {activity.Name}/{activity.Kind}");
@@ -257,8 +259,8 @@ internal sealed record McpReport(
             .ToArray();
         foreach (var activity in toolActivities)
         {
-            RequireTag(activity, "gen_ai.tool.name", ProbeTools.ToolName, failures);
-            RequireTag(activity, "gen_ai.operation.name", "execute_tool", failures);
+            RequireTag(activity, GenAiAttributes.ToolName, ProbeTools.ToolName, failures);
+            RequireTag(activity, GenAiAttributes.OperationName, GenAiAttributes.OperationNameValues.ExecuteTool, failures);
         }
 
         return new McpReport(

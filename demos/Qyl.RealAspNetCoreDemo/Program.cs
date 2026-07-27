@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Qyl.Telemetry.AutoInstrumentation;
+using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
@@ -97,6 +100,9 @@ internal sealed record AspNetCoreReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    private const string RequestHeader = HttpAttributes.RequestHeader + ".x-demo-req";
+    private const string ResponseHeader = HttpAttributes.ResponseHeader + ".x-demo-res";
+
     public static AspNetCoreReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
@@ -110,18 +116,18 @@ internal sealed record AspNetCoreReport(
             failures.Add($"expected 2 real ASP.NET Core server spans, got {httpServerSpans.Length}");
 
         var successSpan = httpServerSpans.FirstOrDefault(static activity =>
-            activity.Tags.TryGetValue("http.response.status_code", out var statusCode) &&
+            activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "204"));
         var failureSpan = httpServerSpans.FirstOrDefault(static activity =>
-            activity.Tags.TryGetValue("http.response.status_code", out var statusCode) &&
+            activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "500"));
 
         Require(successSpan, "204 route span", failures);
         Require(failureSpan, "500 route span", failures);
-        RequireTag(successSpan, "http.request.method", "GET", failures);
-        RequireTag(successSpan, "http.route", "/items/{id:int}", failures);
-        RequireTag(failureSpan, "http.route", "/fail/{id:int}", failures);
-        RequireTag(failureSpan, "error.type", "500", failures);
+        RequireTag(successSpan, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
+        RequireTag(successSpan, HttpAttributes.Route, "/items/{id:int}", failures);
+        RequireTag(failureSpan, HttpAttributes.Route, "/fail/{id:int}", failures);
+        RequireTag(failureSpan, ErrorAttributes.Type, "500", failures);
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
 
@@ -134,25 +140,25 @@ internal sealed record AspNetCoreReport(
             "true",
             StringComparison.OrdinalIgnoreCase);
 
-        RequireTag(successSpan, "url.query", redactionDisabled ? "sample=1" : "sample=Redacted", failures);
+        RequireTag(successSpan, UrlAttributes.Query, redactionDisabled ? "sample=1" : "sample=Redacted", failures);
         if (captureOptIn)
         {
-            RequireTag(successSpan, "http.request.header.x-demo-req", "rv1", failures);
-            RequireTag(successSpan, "http.response.header.x-demo-res", "sv1", failures);
+            RequireTag(successSpan, RequestHeader, "rv1", failures);
+            RequireTag(successSpan, ResponseHeader, "sv1", failures);
         }
         else if (successSpan is not null &&
-                 (successSpan.Tags.ContainsKey("http.request.header.x-demo-req") ||
-                  successSpan.Tags.ContainsKey("http.response.header.x-demo-res")))
+                 (successSpan.Tags.ContainsKey(RequestHeader) ||
+                  successSpan.Tags.ContainsKey(ResponseHeader)))
         {
             failures.Add("header attributes captured without opt-in");
         }
 
         foreach (var span in httpServerSpans)
         {
-            if (!span.Tags.ContainsKey("url.path"))
+            if (!span.Tags.ContainsKey(UrlAttributes.Path))
                 failures.Add("url.path missing on server span");
 
-            var expectedName = span.Tags.TryGetValue("http.route", out var spanRoute)
+            var expectedName = span.Tags.TryGetValue(HttpAttributes.Route, out var spanRoute)
                 ? $"GET {spanRoute}"
                 : "GET";
             if (!StringComparer.Ordinal.Equals(span.Name, expectedName))

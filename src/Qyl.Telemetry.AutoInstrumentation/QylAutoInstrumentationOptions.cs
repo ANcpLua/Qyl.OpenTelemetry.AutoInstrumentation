@@ -335,12 +335,14 @@ internal sealed class QylAutoInstrumentationOptions
             if (string.IsNullOrWhiteSpace(value))
                 return [];
 
-            return value
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(static item => item.Length > 0)
-                .Select(static item => item.ToLower(CultureInfo.InvariantCulture))
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
+            return
+            [
+                .. value
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(static item => item.Length > 0)
+                    .Select(static item => item.ToLower(CultureInfo.InvariantCulture))
+                    .Distinct(StringComparer.Ordinal)
+            ];
         }
 
         internal static string[] ReadCaseSensitiveList(string variable)
@@ -349,11 +351,13 @@ internal sealed class QylAutoInstrumentationOptions
             if (string.IsNullOrWhiteSpace(value))
                 return [];
 
-            return value
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(static item => item.Length > 0)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
+            return
+            [
+                .. value
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Where(static item => item.Length > 0)
+                    .Distinct(StringComparer.Ordinal)
+            ];
         }
     }
 

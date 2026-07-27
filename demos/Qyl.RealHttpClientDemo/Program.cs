@@ -7,6 +7,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Qyl.Telemetry.AutoInstrumentation;
+using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
@@ -155,25 +159,25 @@ internal sealed record HttpClientReport(
             failures.Add($"expected 2 real HttpClient spans, got {httpClientSpans.Length}");
 
         var statusSpan = httpClientSpans.FirstOrDefault(static activity =>
-            activity.Tags.TryGetValue("http.response.status_code", out var statusCode) &&
+            activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "503"));
         var failureSpan = httpClientSpans.FirstOrDefault(static activity =>
-            activity.Tags.TryGetValue("error.type", out var errorType) &&
+            activity.Tags.TryGetValue(ErrorAttributes.Type, out var errorType) &&
             StringComparer.Ordinal.Equals(errorType, "connection_error"));
 
         Require(statusSpan, "503 status span", failures);
         Require(failureSpan, "connection failure span", failures);
-        RequireTag(statusSpan, "http.request.method", "GET", failures);
-        RequireTag(statusSpan, "server.address", "127.0.0.1", failures);
-        RequireTag(statusSpan, "error.type", "503", failures);
+        RequireTag(statusSpan, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
+        RequireTag(statusSpan, ServerAttributes.Address, "127.0.0.1", failures);
+        RequireTag(statusSpan, ErrorAttributes.Type, "503", failures);
         RequireStatus(statusSpan, "Error", failures);
         RequireStatus(failureSpan, "Error", failures);
 
         foreach (var span in httpClientSpans)
         {
-            if (!span.Tags.ContainsKey("url.full"))
+            if (!span.Tags.ContainsKey(UrlAttributes.Full))
                 failures.Add("url.full missing on client span");
-            else if (span.Tags["url.full"].Contains('?') && !span.Tags["url.full"].Contains("=Redacted", StringComparison.Ordinal))
+            else if (span.Tags[UrlAttributes.Full].Contains('?') && !span.Tags[UrlAttributes.Full].Contains("=Redacted", StringComparison.Ordinal))
                 failures.Add("url.full query not redacted by default");
 
             if (!StringComparer.Ordinal.Equals(span.Name, "GET"))

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <!-- The consumer contract is the namespace and the one-liner: namespace Qyl,
-         builder.AddQyl(). The 1.0.0 rename changes PackageId and AssemblyName only
+         builder.AddQyl(). The package-family rename changes PackageId and AssemblyName only
          (architecture §6.2, ABI-free slice); the retired Qyl.Sdk id stays frozen on
          nuget.org until unlisted at launch. -->
     <RootNamespace>Qyl</RootNamespace>

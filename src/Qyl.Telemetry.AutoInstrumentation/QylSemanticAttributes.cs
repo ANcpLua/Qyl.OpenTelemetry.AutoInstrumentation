@@ -9,6 +9,7 @@ using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.E
 using GraphqlAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using MessagingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
+using NetworkAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
 using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
@@ -112,20 +113,14 @@ internal static class QylSemanticAttributes
     public const string RpcSystem = RpcAttributes.SystemName;
     /// <summary>Well-known Rpc System Grpc value used by qyl auto-instrumentation.</summary>
     public const string RpcSystemGrpc = RpcAttributes.SystemNameValues.Grpc;
-#pragma warning disable CS0618 // DotnetWcf exists only on the deprecated value set in the current semconv package.
     /// <summary>Well-known Rpc System Dot Net Wcf value used by qyl auto-instrumentation.</summary>
-    public const string RpcSystemDotNetWcf = RpcAttributes.SystemValues.DotnetWcf;
-#pragma warning restore CS0618
-#pragma warning disable CS0618 // Qyl still mirrors the current OTEL .NET auto gRPC status attribute contract.
-    /// <summary>Well-known Rpc Service value used by qyl auto-instrumentation.</summary>
-    public const string RpcService = RpcAttributes.Service;
+    public const string RpcSystemDotNetWcf = "dotnet_wcf";
     /// <summary>Well-known Rpc Method value used by qyl auto-instrumentation.</summary>
     public const string RpcMethod = RpcAttributes.Method;
-    /// <summary>Well-known Rpc gRPC Status Code value used by qyl auto-instrumentation.</summary>
-    public const string RpcGrpcStatusCode = RpcAttributes.GrpcStatusCode;
-    /// <summary>Well-known Rpc gRPC Status Code Ok value used by qyl auto-instrumentation.</summary>
-    public static readonly int RpcGrpcStatusCodeOk = GetRpcGrpcStatusCodeOk();
-#pragma warning restore CS0618
+    /// <summary>Well-known Rpc Method Original value used by qyl auto-instrumentation.</summary>
+    public const string RpcMethodOriginal = RpcAttributes.MethodOriginal;
+    /// <summary>Well-known Rpc Response Status Code value used by qyl auto-instrumentation.</summary>
+    public const string RpcResponseStatusCode = RpcAttributes.ResponseStatusCode;
     /// <summary>Well-known gRPC Request Metadata Prefix value used by qyl auto-instrumentation.</summary>
     public const string GrpcRequestMetadataPrefix = RpcAttributes.RequestMetadata + ".";
     /// <summary>Well-known gRPC Response Metadata Prefix value used by qyl auto-instrumentation.</summary>
@@ -179,14 +174,10 @@ internal static class QylSemanticAttributes
     public const string ServerAddress = ServerAttributes.Address;
     /// <summary>Well-known Server Port value used by qyl auto-instrumentation.</summary>
     public const string ServerPort = ServerAttributes.Port;
+    /// <summary>Well-known Network Peer Address value used by qyl auto-instrumentation.</summary>
+    public const string NetworkPeerAddress = NetworkAttributes.PeerAddress;
+    /// <summary>Well-known Network Peer Port value used by qyl auto-instrumentation.</summary>
+    public const string NetworkPeerPort = NetworkAttributes.PeerPort;
     /// <summary>Well-known Error Type value used by qyl auto-instrumentation.</summary>
     public const string ErrorType = ErrorAttributes.Type;
-    private static int GetRpcGrpcStatusCodeOk()
-        => global::System.Int32.TryParse(
-            RpcAttributes.GrpcStatusCodeValues.Ok,
-            global::System.Globalization.NumberStyles.Integer,
-            global::System.Globalization.CultureInfo.InvariantCulture,
-            out var value)
-            ? value
-            : default;
 }

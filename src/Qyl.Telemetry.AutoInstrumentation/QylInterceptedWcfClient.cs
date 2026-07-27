@@ -10,7 +10,7 @@ public static class QylInterceptedWcfClient
 {
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity(string clientType, string methodName)
+    public static Activity? StartActivity(string method)
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.WcfClient,
@@ -23,8 +23,7 @@ public static class QylInterceptedWcfClient
         QylActivityTags.SetRpc(
             activity,
             QylSemanticAttributes.RpcSystemDotNetWcf,
-            clientType,
-            methodName);
+            method);
         return activity;
     }
 

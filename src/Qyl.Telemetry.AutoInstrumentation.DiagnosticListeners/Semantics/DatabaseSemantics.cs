@@ -38,7 +38,10 @@ internal static class DatabaseSemantics
         if (string.IsNullOrWhiteSpace(errorType))
             return;
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.ErrorType, errorType);
+        SemanticTagWriter.Set(
+            activity,
+            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.ErrorType,
+            errorType);
         activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error);
     }
 

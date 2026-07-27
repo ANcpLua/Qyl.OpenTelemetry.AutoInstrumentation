@@ -97,6 +97,8 @@ internal sealed record WcfClientReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    private const string DotNetWcf = "dotnet_wcf";
+
     public static WcfClientReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
@@ -121,7 +123,8 @@ internal sealed record WcfClientReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected WCF span status Error, got {span.Status}");
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemValues.DotnetWcf, failures);
+            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemName, DotNetWcf, failures);
+            RequireMissingTag(span, "rpc.system", failures);
             RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(CommunicationException).FullName!, failures);
             RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
         }
@@ -131,11 +134,12 @@ internal sealed record WcfClientReport(
 
     private static void RequireMethod(IEnumerable<CapturedActivity> activities, string expectedMethod, ICollection<string> failures)
     {
+        var expectedRpcMethod = $"{nameof(IProbeService)}/{expectedMethod}";
         if (!activities.Any(activity =>
                 activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.Method, out var method) &&
-                StringComparer.Ordinal.Equals(method, expectedMethod)))
+                StringComparer.Ordinal.Equals(method, expectedRpcMethod)))
         {
-            failures.Add($"missing WCF method span {expectedMethod}");
+            failures.Add($"missing WCF method span {expectedRpcMethod}");
         }
     }
 

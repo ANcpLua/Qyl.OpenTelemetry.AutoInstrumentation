@@ -6,6 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.SqlClient;
 using Qyl.Telemetry.AutoInstrumentation;
+using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var connectionString = Environment.GetEnvironmentVariable("QYL_SQLCLIENT_CONNECTION_STRING");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -204,28 +207,28 @@ internal sealed record SqlClientReport(
 
         Require(successSelect, "successful SELECT span", failures);
         Require(errorSelect, "error SELECT span", failures);
-        RequireTag(successSelect, "db.system.name", "microsoft.sql_server", failures);
-        RequireTag(successSelect, "db.namespace", "tempdb", failures);
-        RequireTag(successSelect, "db.operation.name", "SELECT", failures);
-        RequireTag(successSelect, "db.query.summary", sourceInterceptorExpected ? "SELECT" : "Text SELECT", failures);
+        RequireTag(successSelect, DbAttributes.SystemName, DbAttributes.SystemNameValues.MicrosoftSqlServer, failures);
+        RequireTag(successSelect, DbAttributes.Namespace, "tempdb", failures);
+        RequireTag(successSelect, DbAttributes.OperationName, "SELECT", failures);
+        RequireTag(successSelect, DbAttributes.QuerySummary, sourceInterceptorExpected ? "SELECT" : "Text SELECT", failures);
         if (!sourceInterceptorExpected)
         {
-            RequireTag(successSelect, "server.address", "127.0.0.1", failures);
-            RequireTag(successSelect, "server.port", expectedServerPort, failures);
+            RequireTag(successSelect, ServerAttributes.Address, "127.0.0.1", failures);
+            RequireTag(successSelect, ServerAttributes.Port, expectedServerPort, failures);
         }
         if (string.Equals(
                 Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT"),
                 "true",
                 StringComparison.OrdinalIgnoreCase))
         {
-            RequireTagPrefix(successSelect, "db.query.text", "SELECT", failures);
+            RequireTagPrefix(successSelect, DbAttributes.QueryText, "SELECT", failures);
         }
         else
         {
-            RequireMissingTag(successSelect, "db.query.text", failures);
+            RequireMissingTag(successSelect, DbAttributes.QueryText, failures);
         }
-        RequireTag(errorSelect, "error.type", sourceInterceptorExpected ? typeof(SqlException).FullName! : "208", failures);
-        RequireTag(errorSelect, "db.operation.name", "SELECT", failures);
+        RequireTag(errorSelect, ErrorAttributes.Type, sourceInterceptorExpected ? typeof(SqlException).FullName! : "208", failures);
+        RequireTag(errorSelect, DbAttributes.OperationName, "SELECT", failures);
 
         foreach (var span in sqlSpans)
         {
@@ -250,7 +253,7 @@ internal sealed record SqlClientReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue("db.operation.name", out var actual) &&
+            activity.Tags.TryGetValue(DbAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

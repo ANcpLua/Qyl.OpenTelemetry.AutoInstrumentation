@@ -74,6 +74,14 @@ PRODUCTIVE_MECHANISM_ROOTS = [
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore",
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators",
 ]
+GRPC_AOT_REFLECTION_BOUNDARY = (
+    ROOT
+    / "src"
+    / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners"
+    / "GrpcClient"
+    / "GrpcClientPayloadReader.cs"
+)
+GRPC_AOT_REFLECTION_TOKENS = {"System.Reflection", "GetProperty(", "PropertyInfo"}
 # Philosophy guard: no runtime-dispatch instrumentation substrate (repo contract:
 # no CLR profiler, no runtime dispatch, no reflection-based dispatch).
 FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
@@ -224,9 +232,9 @@ SENSITIVE_RAW_SETTAG_ALLOWED_PATHS = {
     "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
 }
 SENSITIVE_SEMANTIC_WRITER_TOKENS = [
-    "SemanticTagWriter.Set(activity, SemanticAttributes.UrlFull",
-    "SemanticTagWriter.Set(activity, SemanticAttributes.UrlQuery",
-    "SemanticTagWriter.Set(activity, SemanticAttributes.GraphQlDocument",
+    "SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlFull",
+    "SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlQuery",
+    "SemanticTagWriter.Set(activity, QylSemanticAttributes.GraphQlDocument",
 ]
 SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH = "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs"
 URL_FORMAT_ALLOWED_PATHS = {
@@ -647,13 +655,13 @@ def verify_sensitive_attribute_emission_policy() -> None:
             if "QylCaptureHelpers.RedactQueryValues(" in text and relative_path not in URL_FORMAT_ALLOWED_PATHS:
                 fail(f"url query redaction must stay centralized behind sensitive capture policy/helpers: {relative_path}")
 
-            if "SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText" not in text:
+            if "SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText" not in text:
                 continue
 
             if relative_path not in DB_QUERY_TEXT_ALLOWED_PATHS:
                 fail(f"db.query.text writes must be owned by typed DB listener paths: {relative_path}")
 
-            for match in re.finditer(r"SemanticTagWriter\.Set\(activity,\s*SemanticAttributes\.DbQueryText", text):
+            for match in re.finditer(r"SemanticTagWriter\.Set\(activity,\s*QylSemanticAttributes\.DbQueryText", text):
                 guard_window = text[max(0, match.start() - 260):match.start()]
                 if "if (DatabaseSemantics.ShouldWriteQueryText(" not in guard_window:
                     fail(f"db.query.text write must be guarded by DatabaseSemantics.ShouldWriteQueryText: {relative_path}")
@@ -769,6 +777,8 @@ def verify_productive_mechanism_contract() -> None:
             text = path.read_text()
             scan_text = strip_csharp_comments(text) if path.suffix == ".cs" else text
             for token in FORBIDDEN_MECHANISM_TOKENS:
+                if path == GRPC_AOT_REFLECTION_BOUNDARY and token in GRPC_AOT_REFLECTION_TOKENS:
+                    continue
                 if token in scan_text:
                     fail(f"productive code must not use forbidden instrumentation mechanism {token}: {path.relative_to(ROOT)}")
 

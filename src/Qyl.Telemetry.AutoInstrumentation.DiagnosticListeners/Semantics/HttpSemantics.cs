@@ -40,7 +40,7 @@ internal static class HttpSemantics
     {
         SemanticTagWriter.Set(
             activity,
-            SemanticAttributes.UrlFull,
+            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.UrlFull,
             url is null
                 ? null
                 : global::Qyl.Telemetry.AutoInstrumentation.Internal.QylCaptureHelpers.FormatUrlFull(
@@ -51,13 +51,22 @@ internal static class HttpSemantics
         if (!string.IsNullOrWhiteSpace(url))
             Uri.TryCreate(url, UriKind.Absolute, out uri);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, serverAddress ?? uri?.Host);
-        SemanticTagWriter.Set(activity, SemanticAttributes.ServerPort, serverPort ?? GetPort(uri));
+        SemanticTagWriter.Set(
+            activity,
+            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.ServerAddress,
+            serverAddress ?? uri?.Host);
+        SemanticTagWriter.Set(
+            activity,
+            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.ServerPort,
+            serverPort ?? GetPort(uri));
     }
 
     public static void SetStatus(Activity? activity, ActivityKind kind, int? statusCode, string? errorType)
     {
-        SemanticTagWriter.Set(activity, SemanticAttributes.HttpResponseStatusCode, statusCode);
+        SemanticTagWriter.Set(
+            activity,
+            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpResponseStatusCode,
+            statusCode);
         ErrorStatusSemantics.SetError(
             activity,
             ErrorStatusSemantics.ResolveHttpErrorType(kind, statusCode, errorType));

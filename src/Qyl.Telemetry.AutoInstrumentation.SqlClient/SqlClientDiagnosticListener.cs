@@ -78,21 +78,21 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
             endTime - duration);
         activity?.SetEndTime(endTime.UtcDateTime);
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbSqlClient);
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbSystem, QylSemanticAttributes.DbSystemMicrosoftSqlServer);
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbNamespace, command.Namespace);
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbOperationName, command.Operation);
-        SemanticTagWriter.Set(activity, SemanticAttributes.DbQuerySummary, command.QuerySummary);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbSqlClient);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMicrosoftSqlServer);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbNamespace, command.Namespace);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbOperationName, command.Operation);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQuerySummary, command.QuerySummary);
         if (DatabaseSemantics.ShouldWriteQueryText(
                 command.QueryText,
                 command.Operation,
                 QylAutoInstrumentationOptions.Current.SqlClientSetDbStatementForText))
         {
-            SemanticTagWriter.Set(activity, SemanticAttributes.DbQueryText, command.QueryText);
+            SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText, command.QueryText);
         }
 
-        SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, command.ServerAddress);
-        SemanticTagWriter.Set(activity, SemanticAttributes.ServerPort, command.ServerPort);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerAddress, command.ServerAddress);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerPort, command.ServerPort);
         DatabaseSemantics.SetError(activity, command.ErrorType);
     }
 

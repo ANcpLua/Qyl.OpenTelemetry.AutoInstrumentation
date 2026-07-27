@@ -67,7 +67,7 @@ def latest_stable_tag(major: int) -> tuple[int, int, int] | None:
 
     The floor exists so the version owner can never fall behind a version that is
     already published and immutable on nuget.org. That constraint is per package
-    ID, and the Qyl.Telemetry.* IDs are new identities born at 1.0.0-beta.1
+    ID, and the Qyl.Telemetry.* IDs are new identities born at 9.0.0
     (architecture 6.2). Tags v3.x-v8.x were cut for the retired
     Qyl.OpenTelemetry.* IDs, which stay frozen on the registry and cannot collide
     with an ID that has never published anything. Comparing across that boundary

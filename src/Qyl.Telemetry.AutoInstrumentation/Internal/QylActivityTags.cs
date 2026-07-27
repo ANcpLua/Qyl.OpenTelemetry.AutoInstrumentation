@@ -38,11 +38,9 @@ internal static class QylActivityTags
     public static void SetRpc(
         Activity activity,
         string system,
-        string service,
         string method)
     {
         activity.SetTag(QylSemanticAttributes.RpcSystem, system);
-        activity.SetTag(QylSemanticAttributes.RpcService, service);
         activity.SetTag(QylSemanticAttributes.RpcMethod, method);
     }
 

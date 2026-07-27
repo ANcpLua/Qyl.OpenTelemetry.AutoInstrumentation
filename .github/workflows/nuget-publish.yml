@@ -80,10 +80,26 @@ jobs:
             exit 0
           fi
           index="https://api.nuget.org/v3-flatcontainer/qyl.telemetry.autoinstrumentation/index.json"
-          # A transient nuget.org failure must not be read as "not published" —
-          # that would republish. Fail closed instead.
-          body="$(curl -sS --retry 3 --retry-delay 5 --fail-with-body "$index")"
-          if jq -e --arg v "$VERSION" 'any(.versions[]; . == $v)' >/dev/null <<<"$body"; then
+          body="$RUNNER_TEMP/qyl-telemetry-autoinstrumentation-index.json"
+          http_status="$(
+            curl --silent --show-error \
+              --retry 3 \
+              --retry-delay 5 \
+              --retry-all-errors \
+              --output "$body" \
+              --write-out "%{http_code}" \
+              "$index"
+          )"
+          if [[ "$http_status" == "404" ]]; then
+            echo "Qyl.Telemetry.AutoInstrumentation has no NuGet index yet; publishing first version $VERSION"
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$http_status" != "200" ]]; then
+            echo "nuget.org package-index lookup failed with HTTP $http_status" >&2
+            exit 1
+          elif ! jq -e '(.versions | type) == "array" and all(.versions[]; type == "string")' "$body" >/dev/null; then
+            echo "nuget.org package-index response has an invalid shape" >&2
+            exit 1
+          elif jq -e --arg v "$VERSION" 'any(.versions[]; . == $v)' "$body" >/dev/null; then
             echo "$VERSION is already indexed on nuget.org; nothing to publish"
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
           else

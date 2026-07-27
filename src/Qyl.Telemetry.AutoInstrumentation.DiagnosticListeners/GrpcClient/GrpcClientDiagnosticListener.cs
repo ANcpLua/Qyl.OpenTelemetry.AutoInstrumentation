@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 
@@ -9,6 +10,10 @@ namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 /// </summary>
 internal sealed class GrpcClientDiagnosticListener : QylDiagnosticListenerSubscriber
 {
+    private const string StopEventName = "Grpc.Net.Client.GrpcOut.Stop";
+    private const string GrpcMethodTagName = "grpc.method";
+    private const string GrpcStatusCodeTagName = "grpc.status_code";
+
     /// <inheritdoc/>
     protected override string ListenerName => "Grpc.Net.Client";
 
@@ -21,31 +26,44 @@ internal sealed class GrpcClientDiagnosticListener : QylDiagnosticListenerSubscr
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
-        if (!StringComparer.Ordinal.Equals(name, "qyl.rpc.grpc") &&
-            !StringComparer.Ordinal.Equals(name, "Grpc.Net.Client.GrpcOut.Stop"))
-        {
+        if (!StringComparer.Ordinal.Equals(name, StopEventName))
             return;
+
+        var method = QylGrpcSemantics.NormalizeMethod(
+            DiagnosticPayloadReader.GetString(payload, GrpcMethodTagName),
+            out var originalMethod);
+        var statusCode = DiagnosticPayloadReader.GetInt32(payload, GrpcStatusCodeTagName);
+        var (request, response) = GrpcClientPayloadReader.GetMessages(payload);
+        var requestUri = request?.RequestUri;
+
+        using var activity = QylActivitySource.StartAtAmbientStart(
+            QylActivityNames.GrpcClient(method),
+            ActivityKind.Client);
+
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcMethod, method);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcMethodOriginal, originalMethod);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerAddress, requestUri?.Host);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerPort, requestUri?.Port);
+        if (requestUri is not null &&
+            Uri.CheckHostName(requestUri.Host) is UriHostNameType.IPv4 or UriHostNameType.IPv6)
+        {
+            SemanticTagWriter.Set(activity, QylSemanticAttributes.NetworkPeerAddress, requestUri.Host);
+            SemanticTagWriter.Set(activity, QylSemanticAttributes.NetworkPeerPort, requestUri.Port);
         }
 
-        var grpcMethod = DiagnosticPayloadReader.GetString(payload, "grpc.method");
-        var service = DiagnosticPayloadReader.GetString(payload, "rpc.service") ??
-                      RpcSemantics.GetService(grpcMethod);
-        var method = DiagnosticPayloadReader.GetString(payload, "rpc.method") ??
-                     RpcSemantics.GetMethod(grpcMethod);
-        var serverAddress = DiagnosticPayloadReader.GetString(payload, "server.address", "peer.hostname");
-        var serverPort = DiagnosticPayloadReader.GetInt32(payload, "server.port", "peer.port");
-        var statusCode = DiagnosticPayloadReader.GetInt32(payload, "rpc.grpc.status_code") ??
-                         DiagnosticPayloadReader.GetInt32(payload, "grpc.status_code");
-        var errorType = DiagnosticPayloadReader.GetString(payload, "error.type", "exception.type");
-
-        using var activity = QylActivitySource.StartAtAmbientStart(QylActivityNames.GrpcClient(service, method), ActivityKind.Client);
-
-        SemanticTagWriter.Set(activity, SemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
-        SemanticTagWriter.Set(activity, SemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
-        SemanticTagWriter.Set(activity, SemanticAttributes.RpcService, service);
-        SemanticTagWriter.Set(activity, SemanticAttributes.RpcMethod, method);
-        SemanticTagWriter.Set(activity, SemanticAttributes.ServerAddress, serverAddress);
-        SemanticTagWriter.Set(activity, SemanticAttributes.ServerPort, serverPort);
-        RpcSemantics.SetGrpcStatus(activity, statusCode, errorType);
+        QylCaptureHelpers.SetHttpHeaders(
+            activity,
+            QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedRequestMetadataMap,
+            request?.Headers,
+            request?.Content?.Headers);
+        QylCaptureHelpers.SetHttpHeaders(
+            activity,
+            QylAutoInstrumentationOptions.Current.GrpcNetClientCapturedResponseMetadataMap,
+            response?.Headers,
+            response?.TrailingHeaders,
+            response?.Content?.Headers);
+        QylGrpcSemantics.SetStatus(activity, statusCode);
     }
 }

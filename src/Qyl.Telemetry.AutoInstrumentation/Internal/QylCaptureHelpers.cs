@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
-using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
@@ -39,31 +38,6 @@ internal static class QylCaptureHelpers
                 continue;
 
             TrySetHeaderTag(activity, configuredHeaders, index, lookupName, contentHeaders);
-        }
-    }
-
-    public static void SetMetadataHeaders(
-        Activity? activity,
-        QylCapturedNameMap configuredMetadata,
-        Metadata? metadata)
-    {
-        if (activity is null || metadata is null || configuredMetadata.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredMetadata.Count; index++)
-        {
-            var lookupName = configuredMetadata.GetLookupName(index);
-            List<string>? values = null;
-            foreach (var entry in metadata)
-            {
-                if (entry.IsBinary || !string.Equals(entry.Key, lookupName, StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                (values ??= []).Add(entry.Value);
-            }
-
-            if (values is { Count: > 0 })
-                activity.SetTag(configuredMetadata.GetTagName(index), values.ToArray());
         }
     }
 
@@ -133,10 +107,10 @@ internal static class QylCaptureHelpers
     private static string[] ToTagValues(StringValues values)
         => values.Count is 0
             ? []
-            : values.Where(static value => value is not null).Select(static value => value!).ToArray();
+            : [.. values.Where(static value => value is not null).Select(static value => value!)];
 
     private static string[] ToTagValues(IEnumerable<string> values)
-        => values as string[] ?? values.ToArray();
+        => values as string[] ?? [.. values];
 
     private static bool TrySetHeaderTag(
         Activity activity,

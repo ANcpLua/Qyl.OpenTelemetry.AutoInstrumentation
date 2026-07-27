@@ -85,6 +85,9 @@ public static class QylSdkHostApplicationBuilderExtensions
                 if (QylTelemetrySources.IsAzureTracingEnabled())
                     tracing.AddProcessor(new QylAzureSpanProcessor());
 
+                if (QylTelemetrySources.IsCoreWcfTracingEnabled())
+                    tracing.AddProcessor(new QylCoreWcfSpanProcessor());
+
                 if (options.EnableSessionPropagation)
                     tracing.AddProcessor(new QylSessionSpanProcessor());
 
