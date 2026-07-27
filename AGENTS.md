@@ -223,24 +223,24 @@ NuGet publication is GitHub Actions OIDC trusted publishing through
 `.github/workflows/nuget-publish.yml`. Never add a long-lived NuGet API-key secret or
 publish locally. The workflow must verify before push, use the repository's version
 owner, wait for registry availability, smoke the published artifacts, and only then
-create the final tag/release.
+create the final release.
 
-Publication is automatic on push to `main`, so `<Version>` in `Directory.Build.props`
-is the release trigger: bump it and merge, and the version ships once every gate
-passes. Releasing is therefore a property of committed state, not of someone
-remembering to dispatch a workflow — the previous dispatch-only trigger let a bumped
-version sit unpublished on `main` indefinitely, which is how consumers silently fell
-behind.
+Publication triggers on version tags only (qyl architecture §5): pushing the tag
+`v<version>` — which must equal `<Version>` in `Directory.Build.props` at that
+commit — is the human act that publishes. A push to `main` builds and verifies
+through the sibling workflows and never publishes, so a rename or any other change
+lands on `main` with zero registry effect until someone tags.
 
-Two invariants keep that safe, and both must survive any edit to the workflow:
+Two invariants survive any edit to the workflow:
 
 - **Idempotence.** The `version` job checks nuget.org and short-circuits when the
-  version is already indexed, so ordinary commits cost one lookup rather than the
-  full pipeline. Published artifacts are immutable; never rebuild and re-push one. A
-  failed index lookup fails closed rather than assuming "not published".
+  version is already indexed, so a re-pushed or re-run tag costs one lookup rather
+  than the full pipeline. Published artifacts are immutable; never rebuild and
+  re-push one. A failed index lookup fails closed rather than assuming "not
+  published".
 - **Green before publish.** `publish` depends on both `verify` and `aot-publish`, so
   the gate is enforced inside this workflow rather than inferred from a sibling run.
-  The tag is still created last, after `verify-published`.
+  The GitHub release is still created last, after `verify-published`.
 
 `workflow_dispatch` remains, and it bypasses the index check so a run that died after
 `verify` but before `publish` can be re-driven.

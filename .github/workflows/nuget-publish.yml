@@ -1,19 +1,19 @@
 name: nuget-publish
 
-# Publishing is automatic. A push to main whose Directory.Build.props version is
-# not yet on nuget.org runs the full gate set and, only if every gate passes,
-# publishes and then tags. A push whose version is already indexed short-circuits
-# in the `version` job, so ordinary commits cost one cheap lookup rather than the
-# ~50 minute verify + aot-publish pipeline.
+# Publishing requires a human act (qyl architecture §5): the publish lane triggers
+# on version tags only. A push to main builds and verifies through the sibling
+# workflows, never publishes. Pushing the tag v<version> — which must equal the
+# Directory.Build.props version at that commit — runs the full gate set and, only
+# if every gate passes, publishes and then creates the release.
 #
 # The green-CI condition is enforced inside this workflow, not inferred from a
 # sibling one: `publish` needs both `verify` (full managed, real-integration and
-# NativeAOT gate) and `aot-publish` (NativeAOT publish matrix). The release tag is
-# still created last, after verify-published proves the indexed packages restore
+# NativeAOT gate) and `aot-publish` (NativeAOT publish matrix). The GitHub release
+# is still created last, after verify-published proves the indexed packages restore
 # into clean managed and NativeAOT consumers.
 on:
   push:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
@@ -54,6 +54,12 @@ jobs:
           fi
           if [[ -n "$REQUESTED_VERSION" && "$REQUESTED_VERSION" != "$VERSION" ]]; then
             echo "requested version $REQUESTED_VERSION does not equal Directory.Build.props $VERSION" >&2
+            exit 1
+          fi
+          # A version tag is the human act that authorizes publishing; it must
+          # name the committed version exactly.
+          if [[ "${GITHUB_REF}" == refs/tags/* && "${GITHUB_REF_NAME}" != "v$VERSION" ]]; then
+            echo "tag ${GITHUB_REF_NAME} does not equal Directory.Build.props v$VERSION" >&2
             exit 1
           fi
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
