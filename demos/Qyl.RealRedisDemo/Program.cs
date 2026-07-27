@@ -263,12 +263,12 @@ internal sealed record RedisReport(
             RequireTag(
                 probe.Label,
                 span,
-                Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName,
-                Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Redis,
+                Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName,
+                Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Redis,
                 failures);
 
             if (!span.Tags.TryGetValue(
-                    Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName,
+                    Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName,
                     out var operation))
             {
                 failures.Add($"{probe.Label}: span is missing db.operation.name (wire sent {wire})");
@@ -290,7 +290,7 @@ internal sealed record RedisReport(
             RequireTag(
                 probe.Label,
                 span,
-                Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary,
+                Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary,
                 operation,
                 failures);
 
@@ -303,7 +303,7 @@ internal sealed record RedisReport(
                 RequireTag(
                     probe.Label,
                     span,
-                    Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type,
+                    Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type,
                     typeof(RedisServerException).FullName!,
                     failures);
             }

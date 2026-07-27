@@ -130,14 +130,14 @@ internal sealed record GraphQlReport(
         }
         else
         {
-            ExpectTag(success, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.OperationName, OperationName, failures);
-            ExpectTag(success, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.Document, QueryText, failures);
+            ExpectTag(success, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.OperationName, OperationName, failures);
+            ExpectTag(success, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.Document, QueryText, failures);
         }
 
         if (error is null)
             failures.Add("missing error GraphQL execute span");
         else
-            ExpectTag(error, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentNullException).FullName!, failures);
+            ExpectTag(error, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentNullException).FullName!, failures);
 
         foreach (var span in graphQlSpans)
         {

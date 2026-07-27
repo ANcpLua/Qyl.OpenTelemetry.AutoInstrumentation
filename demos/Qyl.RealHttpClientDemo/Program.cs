@@ -7,10 +7,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Qyl.Telemetry.AutoInstrumentation;
-using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
-using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
-using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
-using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
@@ -194,15 +194,15 @@ internal sealed record HttpClientReport(
             failures.Add($"expected 2 real HttpClient duration metrics, got {httpClientMetrics.Length}");
 
         var statusMetric = httpClientMetrics.FirstOrDefault(static metric =>
-            metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes.ResponseStatusCode, out var statusCode) &&
+            metric.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "503"));
         var failureMetric = httpClientMetrics.FirstOrDefault(static metric =>
-            metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, out var errorType) &&
+            metric.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, out var errorType) &&
             errorType.Length > 0);
 
         Require(statusMetric, "503 status metric", failures);
         Require(failureMetric, "connection failure metric", failures);
-        RequireMetricTag(statusMetric, Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes.RequestMethod, Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes.RequestMethodValues.Get, failures);
+        RequireMetricTag(statusMetric, Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes.RequestMethod, Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes.RequestMethodValues.Get, failures);
 
         foreach (var metric in httpClientMetrics)
         {

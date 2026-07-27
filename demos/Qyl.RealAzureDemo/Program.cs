@@ -10,8 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Trace;
 using Qyl;
-using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
-using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var exportedActivities = new List<Activity>();
 var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
@@ -127,9 +127,9 @@ internal sealed record AzureReport(
                 failures.Add($"expected Azure span status Error, got {span.Status}");
 
             RequireTag(span, "qyl.instrumentation.domain", "azure.sdk", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(RequestFailedException), failures);
-            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
-            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Path, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(RequestFailedException), failures);
+            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
+            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Path, failures);
         }
 
         foreach (var span in transportSpans)

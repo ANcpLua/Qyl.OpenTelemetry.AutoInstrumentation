@@ -9,8 +9,8 @@ using OpenTelemetry.Trace;
 using Qyl;
 using ClientBasicHttpBinding = System.ServiceModel.BasicHttpBinding;
 using ClientEndpointAddress = System.ServiceModel.EndpointAddress;
-using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
-using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using ServerBasicHttpBinding = CoreWCF.BasicHttpBinding;
 
 var exportedActivities = new List<Activity>();

@@ -72,8 +72,8 @@ internal sealed record OracleMdaReport(
         var failures = new List<string>();
         var oracleSpans = activities
             .Where(static activity =>
-                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var dbSystem) &&
-                StringComparer.Ordinal.Equals(dbSystem, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb))
+                activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var dbSystem) &&
+                StringComparer.Ordinal.Equals(dbSystem, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb))
             .ToArray();
 
         if (oracleSpans.Length != 2)
@@ -89,14 +89,14 @@ internal sealed record OracleMdaReport(
                 failures.Add($"expected Oracle MDA span status Error, got {span.Status}");
 
             RequireTag(span, "qyl.instrumentation.domain", "db.client", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb, failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, "SELECT", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, "SELECT", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
             if (StatementOptIn)
-                RequireTagPrefix(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, "SELECT", failures);
+                RequireTagPrefix(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, "SELECT", failures);
             else
-                RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
+                RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new OracleMdaReport(runtimeMode, failures.Count is 0, failures.ToArray(), oracleSpans);

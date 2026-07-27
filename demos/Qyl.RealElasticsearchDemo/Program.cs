@@ -94,10 +94,10 @@ internal sealed record ElasticsearchReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected Elasticsearch span status Error, got {span.Status}");
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Elasticsearch, failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "request", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(TransportException).FullName!, failures);
-            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Elasticsearch, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "request", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(TransportException).FullName!, failures);
+            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new ElasticsearchReport(runtimeMode, failures.Count is 0, failures.ToArray(), elasticsearchSpans);

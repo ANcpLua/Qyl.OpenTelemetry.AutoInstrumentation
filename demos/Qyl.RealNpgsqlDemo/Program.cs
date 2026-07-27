@@ -101,14 +101,14 @@ internal sealed record NpgsqlReport(
             .Where(static activity =>
                 activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
                 StringComparer.Ordinal.Equals(domain, "db.client") &&
-                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
-                StringComparer.Ordinal.Equals(system, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql))
+                activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql))
             .ToArray();
         var npgsqlMetrics = metrics
             .Where(static metric =>
                 StringComparer.Ordinal.Equals(metric.Name, "db.client.operation.duration") &&
-                metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
-                StringComparer.Ordinal.Equals(system, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql))
+                metric.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql))
             .ToArray();
 
         if (npgsqlSpans.Length != 2)
@@ -125,10 +125,10 @@ internal sealed record NpgsqlReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected Npgsql span status Error, got {span.Status}");
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql, failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
-            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.Postgresql, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
+            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         foreach (var metric in npgsqlMetrics)

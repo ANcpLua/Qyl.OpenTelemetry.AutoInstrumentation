@@ -5,6 +5,17 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [9.0.1] - 2026-07-27
+
+### Changed
+
+- Semantic-convention constants now come from `Qyl.Telemetry.SemanticConventions(.Incubating)`
+  `1.0.0`, the family's renamed IDs, replacing the retired
+  `Qyl.OpenTelemetry.SemanticConventions*` `4.0.0` pins.
+- The last two hand-written vocabulary literals (`qyl.instrumentation.domain`,
+  `qyl.http.client`) now flow from the generated constants; the G1 vocabulary smoke
+  reports zero hits in producer scope.
+
 ## [9.0.0] - 2026-07-27
 
 ### Changed

@@ -6,9 +6,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Data.SqlClient;
 using Qyl.Telemetry.AutoInstrumentation;
-using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
-using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
-using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var connectionString = Environment.GetEnvironmentVariable("QYL_SQLCLIENT_CONNECTION_STRING");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -188,8 +188,8 @@ internal sealed record SqlClientReport(
         var sqlMetrics = metrics
             .Where(static metric =>
                 StringComparer.Ordinal.Equals(metric.Name, "db.client.operation.duration") &&
-                metric.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
-                StringComparer.Ordinal.Equals(system, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.MicrosoftSqlServer))
+                metric.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, out var system) &&
+                StringComparer.Ordinal.Equals(system, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemNameValues.MicrosoftSqlServer))
             .ToArray();
 
         var expectedMetricCount = sourceInterceptorExpected ? 4 : 0;

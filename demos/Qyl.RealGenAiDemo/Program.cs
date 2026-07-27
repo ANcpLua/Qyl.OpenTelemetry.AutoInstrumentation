@@ -15,9 +15,9 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Qyl;
 using static ProbeContract;
-using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
-using GenAiAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
-using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using GenAiAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 var activities = new ConcurrentQueue<CapturedActivity>();
 var measurements = new ConcurrentQueue<CapturedMeasurement>();

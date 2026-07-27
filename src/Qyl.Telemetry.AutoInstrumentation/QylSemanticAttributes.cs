@@ -1,25 +1,26 @@
 namespace Qyl.Telemetry.AutoInstrumentation;
 
-using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
-using DbIncubatingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
-using CodeAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Code.CodeAttributes;
-using CpuAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Cpu.CpuAttributes;
-using DotnetAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Dotnet.DotnetAttributes;
-using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
-using GraphqlAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
-using HttpAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Http.HttpAttributes;
-using MessagingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
-using NetworkAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
-using RpcAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
-using ServerAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Server.ServerAttributes;
-using UrlAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using QylIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
+using CodeAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Code.CodeAttributes;
+using CpuAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Cpu.CpuAttributes;
+using DotnetAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Dotnet.DotnetAttributes;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using GraphqlAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using MessagingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
+using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 /// <summary>Defines the qyl auto-instrumentation surface for qyl Semantic Attributes.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 internal static class QylSemanticAttributes
 {
     /// <summary>Well-known qyl Instrumentation Domain value used by qyl auto-instrumentation.</summary>
-    public const string QylInstrumentationDomain = "qyl.instrumentation.domain";
+    public const string QylInstrumentationDomain = QylIncubatingAttributes.InstrumentationDomain;
     /// <summary>Well-known HTTP Request Method value used by qyl auto-instrumentation.</summary>
     public const string HttpRequestMethod = HttpAttributes.RequestMethod;
     /// <summary>Well-known HTTP Request Method Original value used by qyl auto-instrumentation.</summary>

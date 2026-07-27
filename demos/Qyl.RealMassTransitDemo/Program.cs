@@ -137,21 +137,21 @@ internal sealed record MassTransitReport(
             failures.Add($"expected 3 MassTransit message spans, got {massTransitSpans.Length}");
 
         var publishSuccess = FindByOperationAndStatus(massTransitSpans, "publish", "Unset");
-        var sendSuccess = FindByOperationAndStatus(massTransitSpans, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Unset");
+        var sendSuccess = FindByOperationAndStatus(massTransitSpans, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Unset");
         var publishError = FindByOperationAndStatus(massTransitSpans, "publish", "Error");
 
         Require(publishSuccess, "successful publish span", failures);
         Require(sendSuccess, "successful send span", failures);
         Require(publishError, "error publish span", failures);
-        RequireTag(publishError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentException).FullName!, failures);
+        RequireTag(publishError, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentException).FullName!, failures);
 
         foreach (var span in massTransitSpans)
         {
             if (!StringComparer.Ordinal.Equals(span.Name, "MassTransit message"))
                 failures.Add($"unexpected MassTransit span name: {span.Name}");
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "masstransit", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "masstransit", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");
@@ -163,7 +163,7 @@ internal sealed record MassTransitReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

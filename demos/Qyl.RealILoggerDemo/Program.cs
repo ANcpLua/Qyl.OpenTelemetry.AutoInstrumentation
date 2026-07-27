@@ -117,7 +117,7 @@ internal sealed record ILoggerReport(
         var error = FindBySeverity(loggerSpans, "Error");
         Require(information, "information span", failures);
         Require(error, "error span", failures);
-        RequireTag(error, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
+        RequireTag(error, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
 
         foreach (var span in loggerSpans)
         {

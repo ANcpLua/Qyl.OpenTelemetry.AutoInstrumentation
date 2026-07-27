@@ -123,10 +123,10 @@ internal sealed record WcfClientReport(
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
                 failures.Add($"expected WCF span status Error, got {span.Status}");
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemName, DotNetWcf, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.SystemName, DotNetWcf, failures);
             RequireMissingTag(span, "rpc.system", failures);
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(CommunicationException).FullName!, failures);
-            RequireMissingTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(CommunicationException).FullName!, failures);
+            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
         }
 
         return new WcfClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), wcfSpans);
@@ -136,7 +136,7 @@ internal sealed record WcfClientReport(
     {
         var expectedRpcMethod = $"{nameof(IProbeService)}/{expectedMethod}";
         if (!activities.Any(activity =>
-                activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.Method, out var method) &&
+                activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.Method, out var method) &&
                 StringComparer.Ordinal.Equals(method, expectedRpcMethod)))
         {
             failures.Add($"missing WCF method span {expectedRpcMethod}");

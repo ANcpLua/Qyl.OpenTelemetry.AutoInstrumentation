@@ -15,10 +15,10 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using OpenTelemetry.Trace;
 using Qyl;
-using GenAiAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
-using McpAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Mcp.McpAttributes;
-using NetworkAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
-using SessionAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
+using GenAiAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.GenAi.GenAiAttributes;
+using McpAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Mcp.McpAttributes;
+using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
+using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
 const string mcpSourceName = "Experimental.ModelContextProtocol";
 const string rootSourceName = "Qyl.RealMcpDemo";

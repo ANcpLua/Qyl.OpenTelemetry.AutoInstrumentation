@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
 
@@ -23,7 +24,7 @@ internal sealed class HttpClientDiagnosticListener : QylDiagnosticListenerSubscr
     /// <inheritdoc/>
     protected override void OnEvent(string name, object? payload)
     {
-        if (!StringComparer.Ordinal.Equals(name, "qyl.http.client") &&
+        if (!StringComparer.Ordinal.Equals(name, QylTelemetryNames.Events.QylHttpClient) &&
             !StringComparer.Ordinal.Equals(name, "System.Net.Http.HttpRequestOut.Stop"))
         {
             return;

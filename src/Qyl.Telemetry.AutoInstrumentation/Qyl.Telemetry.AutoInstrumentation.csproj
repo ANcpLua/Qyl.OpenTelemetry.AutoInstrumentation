@@ -22,8 +22,8 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions" />
-    <PackageReference Include="Qyl.OpenTelemetry.SemanticConventions.Incubating" />
+    <PackageReference Include="Qyl.Telemetry.SemanticConventions" />
+    <PackageReference Include="Qyl.Telemetry.SemanticConventions.Incubating" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,9 +6,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.RealEfCoreDemo;
-using DbAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes;
-using DbIncubatingAttributes = Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
-using ErrorAttributes = Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();

@@ -135,14 +135,14 @@ internal sealed record MongoDbReport(
         Require(insertError, "error insert span", failures);
         Require(countSuccess, "successful count span", failures);
         Require(deleteSuccess, "successful delete span", failures);
-        RequireTag(insertError, Qyl.OpenTelemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(MongoDB.Driver.MongoWriteException).FullName!, failures);
+        RequireTag(insertError, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(MongoDB.Driver.MongoWriteException).FullName!, failures);
 
         foreach (var span in mongoSpans)
         {
             if (!StringComparer.Ordinal.Equals(span.Name, "MongoDB command"))
                 failures.Add($"unexpected MongoDB span name: {span.Name}");
 
-            RequireTag(span, Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Mongodb, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Mongodb, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected kind Client, got {span.Kind}");
@@ -154,7 +154,7 @@ internal sealed record MongoDbReport(
     private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
         => activities.FirstOrDefault(activity =>
             StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(Qyl.OpenTelemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
+            activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
             StringComparer.Ordinal.Equals(actual, operation));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

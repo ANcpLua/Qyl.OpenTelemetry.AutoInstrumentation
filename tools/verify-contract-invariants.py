@@ -518,15 +518,15 @@ def verify_semconv_attribute_contract() -> None:
     runtime_project = RUNTIME_PROJECT_PATH.read_text()
 
     for package in [
-        'Include="Qyl.OpenTelemetry.SemanticConventions"',
-        'Include="Qyl.OpenTelemetry.SemanticConventions.Incubating"',
+        'Include="Qyl.Telemetry.SemanticConventions"',
+        'Include="Qyl.Telemetry.SemanticConventions.Incubating"',
     ]:
         if package not in runtime_project:
             fail(f"runtime project must reference generated semconv package: {package}")
 
     for namespace in [
-        "Qyl.OpenTelemetry.SemanticConventions.Attributes.",
-        "Qyl.OpenTelemetry.SemanticConventions.Incubating.Attributes.",
+        "Qyl.Telemetry.SemanticConventions.Attributes.",
+        "Qyl.Telemetry.SemanticConventions.Incubating.Attributes.",
     ]:
         if namespace not in attributes:
             fail(f"QylSemanticAttributes must alias generated semconv constants from {namespace}")
