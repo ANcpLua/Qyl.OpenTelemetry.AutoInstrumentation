@@ -181,9 +181,9 @@ contract_items:
   primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Sdk with Qyl enrichment
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylInstrumentation.cs
-  - src/Qyl.Sdk/QylTelemetrySources.cs
-  - src/Qyl.Sdk/QylAzureSpanProcessor.cs
-  - src/Qyl.Sdk/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylAzureSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealAzureDemo
   - tools/verify-real-azure-demo.py
   conformance_signals:
@@ -1071,7 +1071,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk CoreWCF.Primitives ActivitySource registration
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealCoreWcfDemo
   - tools/verify-real-corewcf-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -2305,7 +2305,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk source registration plus Microsoft.Extensions.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
   contract_origin: qyl_native
@@ -2341,7 +2341,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk meter registration plus Microsoft.Extensions.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
   contract_origin: qyl_native
@@ -2377,7 +2377,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
   contract_origin: qyl_native
@@ -2413,7 +2413,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk meter registration plus Microsoft.Agents.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
   contract_origin: qyl_native
@@ -2449,7 +2449,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI.Workflows WithOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
   contract_origin: qyl_native
@@ -2486,7 +2486,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl.Sdk source registration plus automatic ModelContextProtocol telemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealMcpDemo
   - tools/verify-real-mcp-demo.py
   conformance_signals:

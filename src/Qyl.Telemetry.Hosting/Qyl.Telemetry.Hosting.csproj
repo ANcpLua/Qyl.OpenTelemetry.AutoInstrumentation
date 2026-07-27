@@ -2,9 +2,13 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <!-- The consumer contract is the namespace and the one-liner: namespace Qyl,
+         builder.AddQyl(). The 1.0.0 rename changes PackageId and AssemblyName only
+         (architecture §6.2, ABI-free slice); the retired Qyl.Sdk id stays frozen on
+         nuget.org until unlisted at launch. -->
     <RootNamespace>Qyl</RootNamespace>
-    <AssemblyName>Qyl.Sdk</AssemblyName>
-    <PackageId>Qyl.Sdk</PackageId>
+    <AssemblyName>Qyl.Telemetry.Hosting</AssemblyName>
+    <PackageId>Qyl.Telemetry.Hosting</PackageId>
     <Description>One-line qyl onboarding for .NET applications: builder.AddQyl() wires the OpenTelemetry SDK, qyl listeners, version-pinned GenAI, Azure SDK, MCP and CoreWCF sources, OTLP export with local collector discovery, and session propagation.</Description>
   </PropertyGroup>
 

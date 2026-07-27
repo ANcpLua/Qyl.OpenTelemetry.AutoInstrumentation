@@ -47,7 +47,7 @@ and do not add compatibility shims without a proven external requirement.
 The following API/ABI categories define the active 8.0 architecture. Preserve them:
 
 1. A small supported user API for bootstrap and configuration: Hosting
-   `Boot()`/`AddQylAutoInstrumentation(...)`, `Qyl.Sdk` `AddQyl(...)`/`QylSdkOptions`,
+   `Boot()`/`AddQylAutoInstrumentation(...)`, `Qyl.Telemetry.Hosting` `AddQyl(...)`/`QylSdkOptions`,
    core `AddQylAspNetCoreInstrumentation()`, and the DiagnosticListeners subscriber
    surface with `QylAutoInstrumentationSignal`.
 2. A generated-code ABI for cross-assembly interceptor calls, living in the
@@ -178,13 +178,13 @@ about an external library as dated the moment it is written.
 
 ## Package boundaries
 
-Six projects pack and publish — core, Hosting, DiagnosticListeners, `Qyl.Sdk`,
+Six projects pack and publish — core, Hosting, DiagnosticListeners, `Qyl.Telemetry.Hosting`,
 EntityFrameworkCore, SqlClient — and that set is owned by `.github/workflows/nuget-publish.yml`.
 
 - Core contains shared runtime and compiler-facing ABI only.
 - Hosting contains generic bootstrap/DI activation.
 - DiagnosticListeners contains public diagnostic-payload consumption.
-- `Qyl.Sdk` is the opinionated one-call onboarding surface (`AddQyl(...)`/`QylSdkOptions`)
+- `Qyl.Telemetry.Hosting` (the retired `Qyl.Sdk` under its 1.0.0 identity: PackageId and AssemblyName changed, namespace `Qyl` and `AddQyl()` unchanged) is the opinionated one-call onboarding surface (`AddQyl(...)`/`QylSdkOptions`)
   layered over Hosting's `Boot()`, plus qyl-specific export concerns: collector
   discovery and session span enrichment. It defines no interceptors.
 - EntityFrameworkCore and SqlClient isolate their dependency-heavy integrations.

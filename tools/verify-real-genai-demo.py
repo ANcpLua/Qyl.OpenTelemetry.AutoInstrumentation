@@ -82,14 +82,14 @@ def verify_report(
 
     qyl_sources = report.get("QylExportedActivitySources")
     if qyl_sources != sorted(expected_qyl_sources):
-        fail(f"{name} Qyl.Sdk exported source mismatch: expected={sorted(expected_qyl_sources)!r} actual={qyl_sources!r}")
+        fail(f"{name} Qyl.Telemetry.Hosting exported source mismatch: expected={sorted(expected_qyl_sources)!r} actual={qyl_sources!r}")
 
     qyl_meters = report.get("QylExportedMeterNames")
     if not isinstance(qyl_meters, list):
-        fail(f"{name} Qyl.Sdk exported meters must be a list: {qyl_meters!r}")
+        fail(f"{name} Qyl.Telemetry.Hosting exported meters must be a list: {qyl_meters!r}")
     actual_qyl_meters = set(qyl_meters) & GENAI_METERS
     if actual_qyl_meters != expected_qyl_meters:
-        fail(f"{name} Qyl.Sdk exported meter mismatch: expected={sorted(expected_qyl_meters)!r} actual={qyl_meters!r}")
+        fail(f"{name} Qyl.Telemetry.Hosting exported meter mismatch: expected={sorted(expected_qyl_meters)!r} actual={qyl_meters!r}")
 
 
 def run_demo(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

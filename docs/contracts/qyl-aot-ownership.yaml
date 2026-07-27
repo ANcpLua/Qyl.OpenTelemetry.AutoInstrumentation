@@ -74,9 +74,9 @@ ownership_items:
   primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Sdk with Qyl enrichment
   evidence:
   - src/Qyl.OpenTelemetry.AutoInstrumentation/QylInstrumentation.cs
-  - src/Qyl.Sdk/QylTelemetrySources.cs
-  - src/Qyl.Sdk/QylAzureSpanProcessor.cs
-  - src/Qyl.Sdk/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylAzureSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealAzureDemo
   - tools/verify-real-azure-demo.py
   conformance_signals:
@@ -538,7 +538,7 @@ ownership_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk CoreWCF.Primitives ActivitySource registration
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealCoreWcfDemo
   - tools/verify-real-corewcf-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026

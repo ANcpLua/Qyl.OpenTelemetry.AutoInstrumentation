@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.Sdk\Qyl.Sdk.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.Hosting\Qyl.Telemetry.Hosting.csproj" />
   </ItemGroup>
 
 </Project>

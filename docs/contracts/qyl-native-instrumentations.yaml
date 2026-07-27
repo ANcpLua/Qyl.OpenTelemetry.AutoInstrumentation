@@ -38,7 +38,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk source registration plus Microsoft.Extensions.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -72,7 +72,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk meter registration plus Microsoft.Extensions.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -106,7 +106,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -140,7 +140,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk meter registration plus Microsoft.Agents.AI UseOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -175,7 +175,7 @@ contract_items:
   evidence_level: verified_managed
   primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI.Workflows WithOpenTelemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
   - tools/verify-real-genai-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -210,7 +210,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: Qyl.Sdk source registration plus automatic ModelContextProtocol telemetry
   evidence:
-  - src/Qyl.Sdk/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealMcpDemo
   - tools/verify-real-mcp-demo.py
   conformance_signals:

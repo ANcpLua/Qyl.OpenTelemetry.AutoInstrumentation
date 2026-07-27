@@ -16,7 +16,7 @@
     <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.Hosting" />
     <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore" />
     <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.SqlClient" />
-    <InternalsVisibleTo Include="Qyl.Sdk" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.Hosting" />
     <InternalsVisibleTo Include="Qyl.OpenTelemetry.AutoInstrumentation.VerifierProbe" />
   </ItemGroup>
 

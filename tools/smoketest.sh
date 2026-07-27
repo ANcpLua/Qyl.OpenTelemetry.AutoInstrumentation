@@ -57,7 +57,7 @@ if [[ "$MODE" == "local" ]]; then
   dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj" -c Release -o "$FEED" -v quiet
   dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj" -c Release -o "$FEED" -v quiet
   dotnet pack "$ROOT/src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj" -c Release -o "$FEED" -v quiet
-  dotnet pack "$ROOT/src/Qyl.Sdk/Qyl.Sdk.csproj" -c Release -o "$FEED" -v quiet
+  dotnet pack "$ROOT/src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj" -c Release -o "$FEED" -v quiet
 fi
 
 write_program() {
@@ -116,7 +116,7 @@ qylBuilder.AddQyl(options =>
     options.EnableSessionPropagation = false;
 });
 if (!qylBuilder.Services.Any(static descriptor => descriptor.ServiceType == typeof(IStartupFilter)))
-    throw new InvalidOperationException("Qyl.Sdk AddQyl() did not register the ASP.NET Core startup filter.");
+    throw new InvalidOperationException("Qyl.Telemetry.Hosting AddQyl() did not register the ASP.NET Core startup filter.");
 qylBuilder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities))
     .WithMetrics(metrics => metrics.AddReader(inMemoryMetricReader));
@@ -216,7 +216,7 @@ if (exportedQylHttpClientSpanCount != 1 ||
     exportedHttpClientDurationMeasurementCount != 1)
 {
     throw new InvalidOperationException(
-        "Unexpected Qyl.Sdk telemetry composition: " +
+        "Unexpected Qyl.Telemetry.Hosting telemetry composition: " +
         $"qylHttpClientSpans={exportedQylHttpClientSpanCount}, " +
         $"nativeHttpClientSpans={exportedNativeHttpClientSpanCount}, " +
         $"rawHttpClientDurationMeasurements={rawHttpClientDurationMeasurementCount}, " +
@@ -395,7 +395,7 @@ write_package_consumer() {
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Qyl.Sdk" Version="$VERSION" />
+    <PackageReference Include="Qyl.Telemetry.Hosting" Version="$VERSION" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
     <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="$INMEMORY_EXPORTER_VERSION" />

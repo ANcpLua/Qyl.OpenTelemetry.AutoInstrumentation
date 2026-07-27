@@ -118,7 +118,7 @@ jobs:
             src/Qyl.OpenTelemetry.AutoInstrumentation/Qyl.OpenTelemetry.AutoInstrumentation.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners/Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.Hosting/Qyl.OpenTelemetry.AutoInstrumentation.Hosting.csproj \
-            src/Qyl.Sdk/Qyl.Sdk.csproj \
+            src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore.csproj \
             src/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient/Qyl.OpenTelemetry.AutoInstrumentation.SqlClient.csproj; do
             dotnet pack "$project" -c Release --no-restore -o artifacts/release -p:Version="$VERSION"
@@ -205,7 +205,7 @@ jobs:
             qyl.opentelemetry.autoinstrumentation
             qyl.opentelemetry.autoinstrumentation.diagnosticlisteners
             qyl.opentelemetry.autoinstrumentation.hosting
-            qyl.sdk
+            qyl.telemetry.hosting
             qyl.opentelemetry.autoinstrumentation.entityframeworkcore
             qyl.opentelemetry.autoinstrumentation.sqlclient
           )

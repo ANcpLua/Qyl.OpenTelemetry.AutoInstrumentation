@@ -30,7 +30,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient' or '$(MSBuildProjectName)' == 'Qyl.Sdk'">true</QylEnablePublicApiAnalyzers>
+    <QylEnablePublicApiAnalyzers Condition="'$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.DiagnosticListeners' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.Hosting' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.EntityFrameworkCore' or '$(MSBuildProjectName)' == 'Qyl.OpenTelemetry.AutoInstrumentation.SqlClient' or '$(MSBuildProjectName)' == 'Qyl.Telemetry.Hosting'">true</QylEnablePublicApiAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>
