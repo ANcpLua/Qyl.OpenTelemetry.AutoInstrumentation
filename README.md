@@ -24,9 +24,15 @@ contract.
 Add the package that owns the integration you need. The supported zero-configuration
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
+The family ships as one line, currently `9.0.1`, against semantic conventions `1.0.0`.
+Its major is the compile-time ABI: a `9.x` package pairs with `QylGeneratedCodeAbi.V9`
+and nothing else, which is why the number is ahead of the rest of qyl and does not move
+with the product version.
+
 **Coming from 8.x?** These are new package IDs, not new versions of the old ones.
 `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
-updated further; change the ID and take `9.0.0`. `builder.AddQyl()` is
+updated further; change the ID and take `9.0.1`. `Qyl.Telemetry.Hosting` is the
+successor to `Qyl.Sdk`, and `builder.AddQyl()` is
 unchanged. The generated-code ABI anchor is reborn as `QylGeneratedCodeAbi.V9` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace, so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
