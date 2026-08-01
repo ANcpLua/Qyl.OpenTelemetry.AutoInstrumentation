@@ -130,16 +130,40 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/release
-          for project in \
-            src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj \
-            src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj \
-            src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj \
-            src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj \
-            src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore.csproj \
-            src/Qyl.Telemetry.AutoInstrumentation.SqlClient/Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj; do
+
+          projects=(
+            src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj
+            src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj
+            src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj
+            src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj
+            src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore.csproj
+            src/Qyl.Telemetry.AutoInstrumentation.SqlClient/Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj
+          )
+
+          # Totality gate: every packable project under src/ must appear in the list above.
+          # A count check cannot stand in for this — counting packed output against a literal
+          # only re-proves the list against itself, so a project absent from both is invisible.
+          in_list() {
+            local needle=$1 p
+            for p in "${projects[@]}"; do [ "$p" = "$needle" ] && return 0; done
+            return 1
+          }
+          missing=()
+          while IFS= read -r csproj; do
+            grep -q '<IsPackable>false</IsPackable>' "$csproj" && continue
+            in_list "$csproj" || missing+=("$csproj")
+          done < <(find src -mindepth 2 -maxdepth 2 -name '*.csproj' | sort)
+          if [ ${#missing[@]} -ne 0 ]; then
+            printf 'packable project missing from the publish list: %s\n' "${missing[@]}" >&2
+            exit 1
+          fi
+
+          for project in "${projects[@]}"; do
             dotnet pack "$project" -c Release --no-restore -o artifacts/release -p:Version="$VERSION"
           done
-          test "$(find artifacts/release -maxdepth 1 -name '*.nupkg' | wc -l)" -eq 6
+
+          # Expected count derives from the list, never a literal.
+          test "$(find artifacts/release -maxdepth 1 -name '*.nupkg' | wc -l)" -eq "${#projects[@]}"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: packages
