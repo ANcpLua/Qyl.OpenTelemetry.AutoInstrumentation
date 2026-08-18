@@ -142,7 +142,7 @@ def write_project(directory: Path, packages: Path) -> Path:
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
     <Analyzer Include="{GENERATOR_DLL}" Condition="'$(PublishAot)' == 'true'" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 

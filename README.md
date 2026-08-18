@@ -6,7 +6,7 @@ BCL telemetry primitives, public diagnostic hooks, and module-initializer bootst
 It does not use a CLR profiler, startup hooks, ReJIT, runtime IL rewriting, or dynamic
 plugin loading.
 
-Roslyn interceptors are supported by this repository's .NET SDK 10.0.302. See the official
+Roslyn interceptors are supported by this repository's .NET SDK 10.0.400. See the official
 [`interceptors.md`](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md)
 contract.
 
@@ -24,14 +24,14 @@ contract.
 Add the package that owns the integration you need. The supported zero-configuration
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
-The family ships as one line, currently `9.0.1`, against semantic conventions `1.0.0`.
+The family ships as one line, currently `9.1.0`, against semantic conventions `4.2.0`.
 Its major is the compile-time ABI: a `9.x` package pairs with `QylGeneratedCodeAbi.V9`
 and nothing else, which is why the number is ahead of the rest of qyl and does not move
 with the product version.
 
 **Coming from 8.x?** These are new package IDs, not new versions of the old ones.
 `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
-updated further; change the ID and take `9.0.1`. `Qyl.Telemetry.Hosting` is the
+updated further; change the ID and take `9.1.0`. `Qyl.Telemetry.Hosting` is the
 successor to `Qyl.Sdk`, and `builder.AddQyl()` is
 unchanged. The generated-code ABI anchor is reborn as `QylGeneratedCodeAbi.V9` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace, so a stale generated
@@ -115,15 +115,15 @@ explicitly if it wants Azure SDK spans.
 ### AI, MCP, and CoreWCF paths in 9.0
 
 These are version-pinned library-hook claims, not provider- or protocol-wide claims.
-The exact `ModelContextProtocol` 1.4.1 client/server path has strict NativeAOT
+The exact `ModelContextProtocol` 2.2.0 client/server path has strict NativeAOT
 evidence; the other paths in this table have managed evidence only:
 
 | Library path | Application opt-in | Signals registered by `Qyl.Telemetry.Hosting` | Integration ID |
 | --- | --- | --- | --- |
-| `Microsoft.Extensions.AI` 10.8.0 | `chatClient.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Extensions.AI` | `MICROSOFTEXTENSIONSAI` |
-| `Microsoft.Agents.AI` 1.13.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
-| `Microsoft.Agents.AI.Workflows` 1.13.0 | `WorkflowBuilder.WithOpenTelemetry()` | traces from `Microsoft.Agents.AI.Workflows` | `MICROSOFTAGENTSAIWORKFLOWS` |
-| `ModelContextProtocol` 1.4.1 | none; the official client/server SDK emits automatically | managed and strict NativeAOT traces from `Experimental.ModelContextProtocol` | `MCP` |
+| `Microsoft.Extensions.AI` 10.9.0 | `chatClient.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Extensions.AI` | `MICROSOFTEXTENSIONSAI` |
+| `Microsoft.Agents.AI` 1.17.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
+| `Microsoft.Agents.AI.Workflows` 1.17.0 | `WorkflowBuilder.WithOpenTelemetry()` | traces from `Microsoft.Agents.AI.Workflows` | `MICROSOFTAGENTSAIWORKFLOWS` |
+| `ModelContextProtocol` 2.2.0 | none; the official client/server SDK emits automatically | managed and strict NativeAOT traces from `Experimental.ModelContextProtocol` | `MCP` |
 | `CoreWCF.Http` 1.9.1 | none; CoreWCF emits server activities | managed traces from `CoreWCF.Primitives` | `WCFCORE` |
 
 MCP metrics are intentionally not registered: the official instruments attach

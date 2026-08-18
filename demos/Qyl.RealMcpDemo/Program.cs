@@ -190,6 +190,8 @@ internal sealed record McpReport(
     string RootSpanId,
     CapturedActivity[] Activities)
 {
+    internal const string ServerDiscoverMethodName = "server/discover";
+
     internal static McpReport Create(
         string runtimeMode,
         bool toolListed,
@@ -204,7 +206,7 @@ internal sealed record McpReport(
             failures.Add("the client did not list exactly the rooted probe tool");
         if (!toolCalled)
             failures.Add("the rooted probe tool did not return its deterministic result");
-        var expectedCount = registrationEnabled ? 8 : 0;
+        var expectedCount = registrationEnabled ? 6 : 0;
         if (activities.Length != expectedCount)
             failures.Add($"expected {expectedCount} MCP activities, got {activities.Length.ToString(CultureInfo.InvariantCulture)}");
 
@@ -224,15 +226,8 @@ internal sealed record McpReport(
 
         RequireOperationPair(
             activities,
-            McpAttributes.MethodNameValues.Initialize,
-            McpAttributes.MethodNameValues.Initialize,
-            rootTraceId,
-            rootSpanId,
-            failures);
-        RequireOperationPair(
-            activities,
-            McpAttributes.MethodNameValues.NotificationsInitialized,
-            McpAttributes.MethodNameValues.NotificationsInitialized,
+            McpReport.ServerDiscoverMethodName,
+            McpReport.ServerDiscoverMethodName,
             rootTraceId,
             rootSpanId,
             failures);
@@ -329,11 +324,7 @@ internal sealed record McpReport(
         }
 
         RequireTag(client, SessionAttributes.Id, "qyl-mcp-evidence-session", failures);
-        if (!StringComparer.Ordinal.Equals(method, McpAttributes.MethodNameValues.Initialize))
-        {
-            RequireTag(client, McpAttributes.ProtocolVersion, "2025-11-25", failures);
-            RequireTag(server, McpAttributes.ProtocolVersion, "2025-11-25", failures);
-        }
+        RequireTag(client, McpAttributes.ProtocolVersion, "2026-07-28", failures);
     }
 
     private static void RequireStableSession(

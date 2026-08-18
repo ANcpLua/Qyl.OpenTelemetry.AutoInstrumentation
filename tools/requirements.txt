@@ -1,2 +1,2 @@
 PyYAML>=6.0,<7
-opentelemetry-proto==1.43.0
+opentelemetry-proto==1.44.0

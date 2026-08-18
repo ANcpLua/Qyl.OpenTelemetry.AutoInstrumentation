@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import subprocess
 import tempfile
 import zipfile
 from pathlib import Path

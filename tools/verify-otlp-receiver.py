@@ -27,7 +27,7 @@ WORK = Path("/tmp/qyl-otlp-receiver-evidence")
 FEED = WORK / "feed"
 APP = WORK / "consumer"
 VERIFIED = ROOT / "tools/Qyl.Telemetry.AutoInstrumentation.OtlpReceiver/verified/trace-evidence.json"
-OTEL_VERSION = "1.16.0"
+OTEL_VERSION = "1.17.0"
 
 
 @dataclass(frozen=True)

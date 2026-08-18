@@ -5,6 +5,25 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [9.1.0] - 2026-08-15
+
+### Changed
+
+- Rebuilt the family against `Qyl.Telemetry.SemanticConventions` and
+  `Qyl.Telemetry.SemanticConventions.Incubating` `4.2.0`, keeping generated telemetry values tied
+  to the current owner-generated vocabulary instead of the compatible but stale `1.0.0` floor.
+- Aligned the OpenTelemetry SDK, in-memory and OTLP exporters, hosting extensions, and runtime
+  instrumentation on the coordinated `1.17.0` release line, and updated the Python OTLP verifier's
+  `opentelemetry-proto` dependency to `1.44.0`.
+- Refreshed the exact NativeAOT vendor-warning provenance for the .NET `10.0.11` ASP.NET Core and
+  NativeAOT runtime packs after confirming that diagnostic IDs, owning assemblies, and counts are
+  unchanged.
+- Removed an unused central `Microsoft.Extensions.Hosting.Abstractions` version and the superseded
+  repository-local G1 vocabulary smoke script; the active vocabulary gate remains owner-driven by
+  the qyl repository.
+- Updated every workflow to the current commit-pinned `actions/checkout` v7 and
+  `actions/setup-dotnet` v6 releases after restoring the repository's Renovate inheritance.
+
 ## [9.0.1] - 2026-07-27
 
 ### Changed

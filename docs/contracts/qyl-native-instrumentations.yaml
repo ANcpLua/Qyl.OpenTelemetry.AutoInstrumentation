@@ -15,8 +15,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Extensions.AI
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
-  supported_versions: Microsoft.Extensions.AI ==10.8.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
+  supported_versions: Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -27,8 +27,8 @@ contract_items:
   index: 61
   contract_item_id: QYL_NATIVE_CONTRACT_001
   upstream_sources:
-  - label: Microsoft.Extensions.AI 10.8.0
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
+  - label: Microsoft.Extensions.AI 10.9.0
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
   - label: official UseOpenTelemetry documentation
     url: https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai
   lane: official_library_hook
@@ -49,8 +49,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Extensions.AI
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
-  supported_versions: Microsoft.Extensions.AI ==10.8.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
+  supported_versions: Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -61,8 +61,8 @@ contract_items:
   index: 62
   contract_item_id: QYL_NATIVE_CONTRACT_002
   upstream_sources:
-  - label: Microsoft.Extensions.AI 10.8.0
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.8.0
+  - label: Microsoft.Extensions.AI 10.9.0
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
   - label: official UseOpenTelemetry documentation
     url: https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai
   lane: official_library_hook
@@ -83,8 +83,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
-  supported_versions: Microsoft.Agents.AI ==1.13.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
+  supported_versions: Microsoft.Agents.AI ==1.17.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -95,8 +95,8 @@ contract_items:
   index: 63
   contract_item_id: QYL_NATIVE_CONTRACT_003
   upstream_sources:
-  - label: Microsoft.Agents.AI 1.13.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
+  - label: Microsoft.Agents.AI 1.17.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
   - label: official UseOpenTelemetry API
     url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
   lane: official_library_hook
@@ -117,8 +117,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
-  supported_versions: Microsoft.Agents.AI ==1.13.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
+  supported_versions: Microsoft.Agents.AI ==1.17.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -129,8 +129,8 @@ contract_items:
   index: 64
   contract_item_id: QYL_NATIVE_CONTRACT_004
   upstream_sources:
-  - label: Microsoft.Agents.AI 1.13.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.13.0
+  - label: Microsoft.Agents.AI 1.17.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
   - label: official UseOpenTelemetry API
     url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
   lane: official_library_hook
@@ -151,8 +151,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI.Workflows
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.13.0
-  supported_versions: Microsoft.Agents.AI.Workflows ==1.13.0; WorkflowBuilder.WithOpenTelemetry() path only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.17.0
+  supported_versions: Microsoft.Agents.AI.Workflows ==1.17.0; WorkflowBuilder.WithOpenTelemetry() path only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -164,8 +164,8 @@ contract_items:
   index: 65
   contract_item_id: QYL_NATIVE_CONTRACT_005
   upstream_sources:
-  - label: Microsoft.Agents.AI.Workflows 1.13.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.13.0
+  - label: Microsoft.Agents.AI.Workflows 1.17.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.17.0
   - label: official Agent Framework repository
     url: https://github.com/microsoft/agent-framework
   lane: official_library_hook
@@ -186,8 +186,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: ModelContextProtocol
-    url: https://www.nuget.org/packages/ModelContextProtocol/1.4.1
-  supported_versions: ModelContextProtocol ==1.4.1; automatic official client/server ActivitySource path only
+    url: https://www.nuget.org/packages/ModelContextProtocol/2.2.0
+  supported_versions: ModelContextProtocol ==2.2.0; automatic official client/server ActivitySource path only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -199,8 +199,8 @@ contract_items:
   index: 66
   contract_item_id: QYL_NATIVE_CONTRACT_006
   upstream_sources:
-  - label: ModelContextProtocol 1.4.1
-    url: https://www.nuget.org/packages/ModelContextProtocol/1.4.1
+  - label: ModelContextProtocol 2.2.0
+    url: https://www.nuget.org/packages/ModelContextProtocol/2.2.0
   - label: official MCP C# SDK
     url: https://github.com/modelcontextprotocol/csharp-sdk
   lane: official_library_hook

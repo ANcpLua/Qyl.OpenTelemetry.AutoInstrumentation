@@ -661,7 +661,7 @@ contract_items:
   status: experimental
   documentation:
     name: Runtime metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.15.1/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.17.0/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
   index: 30
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_030
   upstream_sources:

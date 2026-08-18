@@ -19,8 +19,7 @@ SENSITIVE_VALUES = (
     "mcp-sensitive-result-9d20c4",
 )
 EXPECTED_OPERATIONS = {
-    "initialize": "initialize",
-    "notifications/initialized": "notifications/initialized",
+    "server/discover": "server/discover",
     "tools/list": "tools/list",
     "tools/call qyl_sensitive_probe": "tools/call",
 }
@@ -99,7 +98,7 @@ def verify_report(
         fail(f"{name} registration state mismatch: {report!r}")
 
     activities = report.get("Activities")
-    expected_count = 8 if registration_enabled else 0
+    expected_count = 6 if registration_enabled else 0
     if not isinstance(activities, list) or len(activities) != expected_count:
         fail(f"{name} expected exactly {expected_count} activities, got {activities!r}")
     if not registration_enabled:
@@ -160,7 +159,7 @@ def verify_report(
             {
                 "gen_ai.tool.name": "qyl_sensitive_probe",
                 "gen_ai.operation.name": "execute_tool",
-                "mcp.protocol.version": "2025-11-25",
+                "mcp.protocol.version": "2026-07-28",
             },
         )
 

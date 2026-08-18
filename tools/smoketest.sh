@@ -396,8 +396,8 @@ write_package_consumer() {
 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.Hosting" Version="$VERSION" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="$INMEMORY_EXPORTER_VERSION" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
@@ -432,7 +432,7 @@ write_projectreference_consumer() {
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
     <Analyzer Include="$GENERATOR_DLL" Condition="'\$(PublishAot)' == 'true'" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 

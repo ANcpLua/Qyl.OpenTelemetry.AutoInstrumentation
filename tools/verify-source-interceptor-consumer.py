@@ -126,7 +126,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>

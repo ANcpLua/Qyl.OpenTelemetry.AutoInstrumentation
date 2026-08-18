@@ -102,9 +102,9 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" Version="{version}" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.9" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
-    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.50.3" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
+        <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
   </ItemGroup>
 
   <ItemGroup>

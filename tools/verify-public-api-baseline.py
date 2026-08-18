@@ -43,7 +43,7 @@ def verify_props() -> None:
             fail(f"Directory.Build.props missing PublicAPI token: {token}")
 
     package_tokens = [
-        '<PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" />',
+        '<PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />',
         "<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>",
     ]
     for token in package_tokens:
