@@ -10,8 +10,9 @@ NativeAOT consumers, and only then creates the GitHub release.
 ### Changed
 
 - Rebuilt the family against `Qyl.Telemetry.SemanticConventions` and
-  `Qyl.Telemetry.SemanticConventions.Incubating` `4.2.0`, keeping generated telemetry values tied
-  to the current owner-generated vocabulary instead of the compatible but stale `1.0.0` floor.
+  `Qyl.Telemetry.SemanticConventions.Incubating` `4.3.0` (OpenTelemetry semantic conventions
+  `1.44.0`), keeping generated telemetry values tied to the current owner-generated vocabulary
+  instead of the compatible but stale `1.0.0` floor.
 - Aligned the OpenTelemetry SDK, in-memory and OTLP exporters, hosting extensions, and runtime
   instrumentation on the coordinated `1.17.0` release line, and updated the Python OTLP verifier's
   `opentelemetry-proto` dependency to `1.44.0`.
