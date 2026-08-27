@@ -7,7 +7,6 @@ internal static class QylMessagingActivityPolicy
     private const string Send = "send";
     private const string Publish = "publish";
     private const string Receive = "receive";
-    private const string RabbitMqDefaultExchange = "amq.default";
 
     public static Activity? StartKafkaProducerActivity()
         => Start(
@@ -57,7 +56,7 @@ internal static class QylMessagingActivityPolicy
             QylSemanticAttributes.MessagingSystemRabbitMq,
             QylSemanticAttributes.MessagingOperationTypeSend,
             Publish,
-            string.IsNullOrEmpty(exchange) ? RabbitMqDefaultExchange : exchange);
+            string.IsNullOrEmpty(exchange) ? null : exchange);
 
     public static string OperationName(string method)
         => string.Equals(method, "Send", StringComparison.Ordinal) ? Send : Publish;

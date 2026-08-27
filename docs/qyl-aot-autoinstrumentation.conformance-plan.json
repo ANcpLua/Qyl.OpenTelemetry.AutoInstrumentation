@@ -303,11 +303,11 @@
             "messaging.system",
             "messaging.operation.type",
             "messaging.operation.name",
-            "qyl.instrumentation.domain",
-            "messaging.destination.name"
+            "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "error.type",
+            "messaging.destination.name"
           ],
           "opt_in_attributes": []
         }

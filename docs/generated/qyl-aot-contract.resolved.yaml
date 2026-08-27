@@ -840,9 +840,9 @@ contract_items:
     - messaging.operation.type
     - messaging.operation.name
     - qyl.instrumentation.domain
-    - messaging.destination.name
     recommended_attributes:
     - error.type
+    - messaging.destination.name
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.QUARTZ

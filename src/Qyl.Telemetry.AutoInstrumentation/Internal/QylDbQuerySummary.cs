@@ -1,27 +1,44 @@
 using System.Data;
-using System.Text;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
 /// <summary>
-/// Derives <c>db.operation.name</c> and <c>db.query.summary</c> from a command: every recognised
-/// operation keyword, each followed by the schema object it targets, in query order and bounded to
-/// a few pairs. Only identifiers are copied — literals, parameters, and comments are skipped — so
-/// the result is a grouping key, never a value.
+/// Derives <c>db.operation.name</c> and <c>db.query.summary</c> from a command without parsing SQL:
+/// the leading keyword, and the first schema object that follows FROM, INTO, JOIN, TABLE, UPDATE, or
+/// EXEC in the statement's opening clause. The scan is fail-closed — it ends at the first character
+/// it does not understand (any quote, comment, parameter, temp-table, or dialect marker), and a
+/// candidate it cannot classify as a plain identifier is dropped, never guessed — so a value can
+/// never reach the summary. The result is at most two tokens.
 /// </summary>
 internal static class QylDbQuerySummary
 {
     private const string Call = "CALL";
-    private const int MaxOperations = 4;
+    private const int MaxKeywordLength = 32;
+    private const int MaxTargetLength = 128;
+    private const int MaxWordsBeforeTarget = 64;
+
+    // Words that may stand between the target keyword and the target itself.
+    private static readonly HashSet<string> Skippable = new(StringComparer.Ordinal)
+    {
+        "IF", "NOT", "EXISTS", "ONLY", "TEMP", "TEMPORARY", "UNIQUE", "CLUSTERED", "NONCLUSTERED",
+        "OR", "REPLACE", "GLOBAL", "LOCAL", "LOW_PRIORITY", "HIGH_PRIORITY", "DELAYED", "IGNORE", "QUICK",
+    };
+
+    // Words that are never a target; meeting one where a target is expected ends the search.
+    private static readonly HashSet<string> Reserved = new(StringComparer.Ordinal)
+    {
+        "SELECT", "INSERT", "UPDATE", "DELETE", "MERGE", "SET", "WHERE", "VALUES", "ON", "AS", "USING",
+        "WHEN", "FROM", "INTO", "JOIN", "TABLE", "VIEW", "INDEX", "PROCEDURE", "FUNCTION", "TRIGGER",
+        "SEQUENCE", "SCHEMA", "DATABASE", "STDIN", "STDOUT", "DEFAULT", "NULL", "WITH", "RETURNING",
+    };
 
     public static (string? Operation, string? Summary) Describe(CommandType commandType, string? commandText)
     {
         if (commandType is not CommandType.StoredProcedure)
             return Describe(commandText);
 
-        var position = 0;
-        var procedure = commandText is not null && TryReadName(commandText, ref position, out var name, out _) ? name : null;
-        return (Call, procedure is null ? Call : Call + " " + procedure);
+        var procedure = commandText?.Trim();
+        return (Call, procedure is not null && IsTarget(procedure) ? Call + " " + procedure : Call);
     }
 
     public static (string? Operation, string? Summary) Describe(string? commandText)
@@ -29,162 +46,183 @@ internal static class QylDbQuerySummary
         if (string.IsNullOrWhiteSpace(commandText))
             return (null, null);
 
-        string? operation = null;
-        var summary = new StringBuilder();
-        var operations = 0;
-        var targetExpected = false;
-        var position = 0;
+        var scanner = new Scanner(commandText);
+        var operation = scanner.NextWord()?.ToUpperInvariant();
+        if (operation is null || operation.Length > MaxKeywordLength)
+            return (null, null);
 
-        while (operations < MaxOperations && TryReadName(commandText, ref position, out var name, out var quoted))
+        // A common-table-expression prefix names no operation; the statement's keyword follows it.
+        if (operation is "WITH")
         {
-            if (targetExpected)
+            string? word;
+            while ((word = scanner.NextWord()) is not null)
             {
-                targetExpected = false;
-                if (quoted || IsIdentifier(name))
+                var upper = word.ToUpperInvariant();
+                if (upper is "SELECT" or "INSERT" or "UPDATE" or "DELETE" or "MERGE")
                 {
-                    summary.Append(' ').Append(name);
-                    continue;
+                    operation = upper;
+                    break;
                 }
             }
-
-            if (quoted)
-                continue;
-
-            var keyword = name.ToUpperInvariant();
-            if (IsOperation(keyword))
-            {
-                operation ??= keyword;
-                operations++;
-                if (summary.Length > 0)
-                    summary.Append(' ');
-                summary.Append(keyword);
-                targetExpected = keyword is "UPDATE" or Call or "EXEC" or "EXECUTE";
-                continue;
-            }
-
-            targetExpected = keyword is "FROM" or "INTO" or "JOIN" or "TABLE" or "VIEW" or "INDEX" or "PROCEDURE" or "FUNCTION";
         }
 
-        return operation is null ? (null, null) : (operation, summary.ToString());
+        var target = Target(ref scanner, operation);
+        return (operation, target is null ? operation : operation + " " + target);
     }
 
-    private static bool IsOperation(string keyword)
-        => keyword is "SELECT" or "INSERT" or "UPDATE" or "DELETE" or "MERGE" or "CREATE" or "ALTER" or "DROP" or "TRUNCATE" or Call or "EXEC" or "EXECUTE";
-
-    private static bool IsIdentifier(string name)
-        => name.Length > 0 && (char.IsLetter(name[0]) || name[0] is '_' or '#' or '@' or '$');
-
-    private static bool IsIdentifierCharacter(char character)
-        => char.IsLetterOrDigit(character) || character is '_' or '#' or '@' or '$';
-
-    // A name is one or more dot-joined segments; a segment is a plain word or a delimited identifier.
-    private static bool TryReadName(string text, ref int position, out string name, out bool quoted)
+    private static string? Target(ref Scanner scanner, string operation)
     {
-        name = string.Empty;
-        quoted = false;
-
-        while (position < text.Length)
+        var expected = operation is "UPDATE" or Call or "EXEC" or "EXECUTE";
+        for (var words = 0; words < MaxWordsBeforeTarget; words++)
         {
-            var current = text[position];
-            if (char.IsWhiteSpace(current))
+            var word = scanner.NextWord();
+            if (word is null)
+                return null;
+
+            var upper = word.ToUpperInvariant();
+            if (!expected)
             {
-                position++;
+                expected = upper is "FROM" or "INTO" or "JOIN" or "TABLE" or "VIEW" or "INDEX" or "PROCEDURE" or "FUNCTION";
                 continue;
             }
 
-            if (current is '\'')
-            {
-                SkipLiteral(text, ref position);
-                continue;
-            }
-
-            if (current is '-' && position + 1 < text.Length && text[position + 1] is '-')
-            {
-                while (position < text.Length && text[position] is not '\n')
-                    position++;
-                continue;
-            }
-
-            if (current is '/' && position + 1 < text.Length && text[position + 1] is '*')
-            {
-                var end = text.IndexOf("*/", position + 2, StringComparison.Ordinal);
-                position = end < 0 ? text.Length : end + 2;
-                continue;
-            }
-
-            if (!IsSegmentStart(current))
-            {
-                position++;
-                continue;
-            }
-
-            var builder = new StringBuilder();
-            while (ReadSegment(text, ref position, builder, ref quoted) && position < text.Length && text[position] is '.')
-            {
-                builder.Append('.');
-                position++;
-            }
-
-            if (builder.Length is 0)
+            if (Skippable.Contains(upper))
                 continue;
 
-            name = builder.ToString();
-            return true;
+            return !Reserved.Contains(upper) && IsTarget(word) ? word : null;
         }
 
-        return false;
+        return null;
     }
 
-    private static bool IsSegmentStart(char character)
-        => IsIdentifierCharacter(character) || character is '[' or '"' or '`';
-
-    private static bool ReadSegment(string text, ref int position, StringBuilder builder, ref bool quoted)
+    // schema.object: dot-joined plain identifiers, letters/digits/underscore, starting with a letter or underscore.
+    private static bool IsTarget(string word)
     {
-        if (position >= text.Length)
+        if (word.Length is 0 || word.Length > MaxTargetLength)
             return false;
 
-        var current = text[position];
-        if (current is '[' or '"' or '`')
+        var segmentStart = true;
+        foreach (var character in word)
         {
-            var close = current is '[' ? ']' : current;
-            var start = position + 1;
-            var end = text.IndexOf(close, start);
-            if (end < 0)
-                end = text.Length;
-            builder.Append(text, start, end - start);
-            position = Math.Min(end + 1, text.Length);
-            quoted = true;
-            return true;
+            if (character is '.')
+            {
+                if (segmentStart)
+                    return false;
+                segmentStart = true;
+                continue;
+            }
+
+            if (segmentStart ? !(char.IsLetter(character) || character is '_') : !(char.IsLetterOrDigit(character) || character is '_'))
+                return false;
+            segmentStart = false;
         }
 
-        if (!IsIdentifierCharacter(current))
-            return false;
-
-        var wordStart = position;
-        while (position < text.Length && IsIdentifierCharacter(text[position]))
-            position++;
-        builder.Append(text, wordStart, position - wordStart);
-        return true;
+        return !segmentStart;
     }
 
-    private static void SkipLiteral(string text, ref int position)
+    /// <summary>
+    /// Yields the words of the opening clause. Whitespace, comments, numbers, harmless operators, and
+    /// balanced parenthesised groups are skipped; the first character outside that grammar — a quote,
+    /// a parameter or variable marker, a temp-table or dollar marker, a statement separator — ends the
+    /// scan for good.
+    /// </summary>
+    private ref struct Scanner(string text)
     {
-        position++;
-        while (position < text.Length)
+        private readonly string _text = text;
+        private int _position;
+        private bool _stopped;
+
+        public string? NextWord()
         {
-            if (text[position] is '\'')
+            while (!_stopped && _position < _text.Length)
             {
-                position++;
-                if (position < text.Length && text[position] is '\'')
+                var current = _text[_position];
+
+                if (char.IsWhiteSpace(current) || current is ',' or '*' or '=' or '<' or '>' or '+')
                 {
-                    position++;
+                    _position++;
                     continue;
                 }
 
-                return;
+                if (current is '-' && Peek(1) is '-')
+                {
+                    while (_position < _text.Length && _text[_position] is not '\n')
+                        _position++;
+                    continue;
+                }
+
+                if (current is '/' && Peek(1) is '*')
+                {
+                    var end = _text.IndexOf("*/", _position + 2, StringComparison.Ordinal);
+                    _position = end < 0 ? _text.Length : end + 2;
+                    continue;
+                }
+
+                if (current is '-' or '/')
+                {
+                    _position++;
+                    continue;
+                }
+
+                if (char.IsDigit(current))
+                {
+                    while (_position < _text.Length && (char.IsDigit(_text[_position]) || _text[_position] is '.'))
+                        _position++;
+                    continue;
+                }
+
+                if (current is '(')
+                {
+                    SkipGroup();
+                    continue;
+                }
+
+                if (char.IsLetter(current) || current is '_')
+                {
+                    var start = _position;
+                    while (_position < _text.Length && (char.IsLetterOrDigit(_text[_position]) || _text[_position] is '_' or '.'))
+                        _position++;
+                    return _text[start.._position];
+                }
+
+                _stopped = true;
             }
 
-            position++;
+            return null;
+        }
+
+        private char Peek(int offset)
+            => _position + offset < _text.Length ? _text[_position + offset] : '\0';
+
+        // A balanced group holds sub-queries, column lists, and argument lists; nothing inside it is a
+        // target, and a quote or marker inside it ends the scan exactly as it would outside.
+        private void SkipGroup()
+        {
+            var depth = 0;
+            while (_position < _text.Length)
+            {
+                var current = _text[_position++];
+                if (current is '(')
+                {
+                    depth++;
+                    continue;
+                }
+
+                if (current is ')')
+                {
+                    if (--depth is 0)
+                        return;
+                    continue;
+                }
+
+                if (!(char.IsLetterOrDigit(current) || char.IsWhiteSpace(current) || current is '_' or '.' or ',' or '*' or '=' or '<' or '>' or '+' or '-' or '/'))
+                {
+                    _stopped = true;
+                    return;
+                }
+            }
+
+            _stopped = true;
         }
     }
 }

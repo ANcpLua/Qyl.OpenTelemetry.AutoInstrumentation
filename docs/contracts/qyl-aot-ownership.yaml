@@ -430,9 +430,9 @@ ownership_items:
     - messaging.operation.type
     - messaging.operation.name
     - qyl.instrumentation.domain
-    - messaging.destination.name
     recommended_attributes:
     - error.type
+    - messaging.destination.name
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ

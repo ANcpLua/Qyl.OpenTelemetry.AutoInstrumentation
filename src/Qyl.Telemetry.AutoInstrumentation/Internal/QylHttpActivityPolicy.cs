@@ -79,7 +79,7 @@ internal static class QylHttpActivityPolicy
     public static void SetProtocolVersion(Activity activity, Version version)
         => activity.SetTag(
             QylSemanticAttributes.NetworkProtocolVersion,
-            version.Minor is 0 ? version.Major.ToString(CultureInfo.InvariantCulture) : version.ToString(2));
+            version.Major >= 2 && version.Minor is 0 ? version.Major.ToString(CultureInfo.InvariantCulture) : version.ToString(2));
 
     private static void SetRequestMethod(Activity activity, string method, string? methodOriginal)
     {

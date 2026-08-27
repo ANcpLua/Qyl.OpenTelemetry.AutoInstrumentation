@@ -131,10 +131,14 @@ internal sealed record RabbitMqReport(
 
         foreach (var span in rabbitSpans)
         {
-            var destination = StringComparer.Ordinal.Equals(span.Status, "Error") ? "qyl.missing.exchange" : "amq.default";
-            if (!StringComparer.Ordinal.Equals(span.Name, "publish " + destination))
+            // The default exchange's destination is its routing key, which the helper does not receive.
+            var destination = StringComparer.Ordinal.Equals(span.Status, "Error") ? "qyl.missing.exchange" : null;
+            if (!StringComparer.Ordinal.Equals(span.Name, destination is null ? "publish" : "publish " + destination))
                 failures.Add($"unexpected RabbitMQ span name: {span.Name}");
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, destination, failures);
+            if (destination is null && span.Tags.ContainsKey(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName))
+                failures.Add("a default-exchange publish must not claim a destination");
+            if (destination is not null)
+                RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, destination, failures);
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Rabbitmq, failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);

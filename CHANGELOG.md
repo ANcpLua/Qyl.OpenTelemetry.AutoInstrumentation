@@ -11,18 +11,25 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 - Span names are derived from the span's own attributes, following each OpenTelemetry family's
   naming rule, and `QylActivityNames` is deleted. Database spans are named by `db.query.summary`
-  (`SELECT Probe`, `INSERT Items`), which is now a real summary — each operation keyword with the
-  schema object it targets, bounded, with literals, parameters, and comments skipped — instead of
+  (`SELECT Probe`, `INSERT Items`), which is now a real summary — the leading keyword and the first
+  schema object it targets, found by a fail-closed scan that ends at the first quote, comment,
+  parameter, temp-table, or dialect marker so a value can never reach it — instead of
   the bare verb, or the EF Core command source / SqlClient command type that used to be smuggled
   into it. Redis, MongoDB, and Elasticsearch spans are named by their operation; WCF by `rpc.method`;
-  GraphQL by `graphql.operation.type` (`query`, `mutation`, `subscription`), which is now emitted, or
-  `GraphQL Operation` when the document has none; messaging by `{operation} {destination}`. When a
-  query has no recognisable operation, `db.operation.name` is omitted rather than guessed.
+  GraphQL by `graphql.operation.type` (`query`, `mutation`, `subscription`) of the operation the request
+  executes — the one `operationName` selects, else the first — which is now emitted, or
+  `GraphQL Operation` when the document has none; messaging by `{operation} {destination}`.
+  `db.operation.name` is the statement's leading keyword (`PRAGMA`, `BEGIN`, `SET` included) rather
+  than a guess from the ADO.NET method name or `_OTHER`. GraphQL spans stay `Internal`: they nest
+  inside the HTTP server span, and a second server span per request would be wrong, so the
+  registry's `graphql.server` kind is not applied to them.
 - Messaging: Kafka produce spans carry `messaging.operation.name = send` (the convention's first
   choice for Kafka); `Consume()` spans are `receive` operations and therefore `Client` spans, as the
-  messaging conventions require for pull-based consumers, not `Consumer` spans. RabbitMQ publish spans
-  emit `messaging.destination.name` — the exchange that was already passed to the helper and dropped,
-  `amq.default` for the default exchange. The two conflated operation-name constants in the facade go.
+  messaging conventions require for pull-based consumers, not `Consumer` spans. RabbitMQ publishes to
+  a named exchange emit `messaging.destination.name` — the exchange that was already passed to the
+  helper and dropped; the default exchange's destination is its routing key, which the helper does
+  not receive yet, so those spans claim no destination. The two conflated operation-name constants
+  in the facade go.
 - HTTP client spans on both lanes emit `network.protocol.version`; ASP.NET Core server spans on the
   listener lane emit `url.scheme`, which the convention requires. EF Core maps `IBM.EntityFrameworkCore`
   to `ibm.db2` (the registry value, not `db2`) and unmapped relational providers to `other_sql`.
