@@ -5,6 +5,28 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [Unreleased]
+
+### Changed
+
+- `QylRuntimeProcessMetrics` is deleted. The .NET 10 runtime's built-in `System.Runtime` meter
+  publishes every instrument that class hand-wrote (and eleven more), with units and descriptions,
+  and `AddQyl()` already subscribed to that meter — so an application ran two producers on one
+  meter name. They disagreed: qyl's `dotnet.gc.heap.total_allocated` was a gauge over
+  `GC.GetTotalMemory(false)` where the runtime emits a counter over `GC.GetTotalAllocatedBytes()`,
+  and qyl's `dotnet.gc.last_collection.heap.size` was one untagged point where the runtime emits
+  one per generation. The OpenTelemetry SDK either merges such pairs into one aggregator or exports
+  both streams under a `DuplicateMetricInstrument` warning; either way the series was wrong. qyl now
+  subscribes and produces nothing on `System.Runtime`. `OTEL_DOTNET_AUTO_METRICS_NETRUNTIME_…` and
+  `…_PROCESS_…` still gate the subscription. The two same-valued meter constants collapse into
+  `QylMetricMeters.RuntimeMeterName`; `QylMetricNames` keeps only the two instruments qyl produces.
+- `Qyl.RealNetRuntimeMetricsDemo` no longer references `OpenTelemetry.Instrumentation.Runtime`,
+  whose net10.0 build emits only the legacy `process.runtime.dotnet.*` names. The gate now proves
+  the runtime's own meter under NativeAOT — the fact the NETRUNTIME and PROCESS contract rows cite.
+  As shipped in .NET 10.0.11, `dotnet.thread_pool.thread.count` and `dotnet.thread_pool.queue.length`
+  are `ObservableCounter`s rather than the `updowncounter` the semantic conventions specify; qyl
+  reports what the runtime emits.
+
 ## [9.1.0] - 2026-08-15
 
 ### Changed

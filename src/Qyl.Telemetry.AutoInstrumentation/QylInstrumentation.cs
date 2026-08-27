@@ -1,5 +1,3 @@
-using Qyl.Telemetry.AutoInstrumentation.Internal;
-
 namespace Qyl.Telemetry.AutoInstrumentation;
 
 /// <summary>
@@ -22,7 +20,7 @@ internal static class QylInstrumentation
     private static int _activated;
 
     /// <summary>
-    /// Activate qyl runtime metrics.
+    /// Applies the process-wide runtime switches qyl instrumentation depends on.
     /// </summary>
     /// <returns><c>true</c> on the first activation, <c>false</c> on subsequent calls.</returns>
     public static bool Activate()
@@ -42,8 +40,6 @@ internal static class QylInstrumentation
         {
             AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
         }
-
-        QylRuntimeProcessMetrics.Initialize();
 
         return true;
     }

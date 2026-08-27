@@ -4,14 +4,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
-using Qyl.Telemetry.AutoInstrumentation;
 
 var exportedMetrics = new List<Metric>();
 
 using var meterProvider = Sdk
     .CreateMeterProviderBuilder()
     .AddMeter(DemoMetricNames.Runtime)
-    .AddRuntimeInstrumentation()
     .AddInMemoryExporter(exportedMetrics)
     .Build();
 

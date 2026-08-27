@@ -42,10 +42,8 @@ internal static class QylMetricMeters
     internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
     /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
     internal const string NServiceBusNativeIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
-    /// <summary>Well-known Net Runtime Meter Name value used by qyl auto-instrumentation.</summary>
-    internal const string NetRuntimeMeterName = "System.Runtime";
-    /// <summary>Well-known Process Meter Name value used by qyl auto-instrumentation.</summary>
-    internal const string ProcessMeterName = "System.Runtime";
+    /// <summary>The runtime's built-in meter (GC, JIT, thread pool, exceptions, process CPU and memory). qyl subscribes to it and produces nothing on it.</summary>
+    internal const string RuntimeMeterName = "System.Runtime";
 
     internal static string[] GetEnabledMeterNames()
     {
@@ -87,12 +85,9 @@ internal static class QylMetricMeters
         if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
             names.Add(NServiceBusMeterName);
 
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NetRuntime))
-            names.Add(NetRuntimeMeterName);
-
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Process)
-            && !names.Contains(ProcessMeterName, StringComparer.Ordinal))
-            names.Add(ProcessMeterName);
+        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NetRuntime) ||
+            options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Process))
+            names.Add(RuntimeMeterName);
 
         if (options.MetricsEnabled)
             AddDistinct(names, options.AdditionalMetricMeterNames);

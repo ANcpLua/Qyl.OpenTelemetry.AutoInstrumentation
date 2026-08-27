@@ -202,19 +202,11 @@ FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
     "NServiceBus.Core.Pipeline.Incoming",
 }
 # External contract: instrument names emitted by qyl-owned metric producers.
-# Native System.Net and ASP.NET Core instruments are selected by meter name and
-# must not be mirrored as dead QylMetricNames constants.
+# Native System.Net, ASP.NET Core, and System.Runtime instruments are selected
+# by meter name and must not be mirrored as dead QylMetricNames constants.
 QYL_OWNED_METRIC_NAME_VALUES = {
     "db.client.operation.duration",
     "nservicebus.messaging.operation.duration",
-    "dotnet.process.cpu.time",
-    "dotnet.process.memory.working_set",
-    "dotnet.process.cpu.count",
-    "dotnet.gc.collections",
-    "dotnet.gc.last_collection.heap.size",
-    "dotnet.gc.heap.total_allocated",
-    "dotnet.thread_pool.queue.length",
-    "dotnet.thread_pool.thread.count",
 }
 # External contract: upstream OTEL .NET auto-instrumentation environment
 # variable for additional metric sources.

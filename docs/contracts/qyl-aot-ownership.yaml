@@ -628,10 +628,9 @@ ownership_items:
   call_site_visibility: library_internal
   payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: Qyl public telemetry listeners/meters
+  primary_owner: .NET runtime System.Runtime meter, subscribed by QylMetricMeters
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
   conformance_signals:
@@ -694,10 +693,9 @@ ownership_items:
   call_site_visibility: library_internal
   payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: Qyl public telemetry listeners/meters
+  primary_owner: .NET runtime System.Runtime meter, subscribed by QylMetricMeters
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylMetricNames.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
   - tools/verify-real-netruntime-metrics-demo.py
   conformance_signals:

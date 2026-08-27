@@ -4,8 +4,6 @@ using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttribute
 using QylIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
 using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 using CodeAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Code.CodeAttributes;
-using CpuAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Cpu.CpuAttributes;
-using DotnetAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Dotnet.DotnetAttributes;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using GraphqlAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
@@ -64,22 +62,6 @@ internal static class QylSemanticAttributes
     public const string UrlScheme = UrlAttributes.Scheme;
     /// <summary>Well-known Code Function Name value used by qyl auto-instrumentation.</summary>
     public const string CodeFunctionName = CodeAttributes.FunctionName;
-
-    /// <summary>Well-known Dotnet Gc Heap Generation value used by qyl auto-instrumentation.</summary>
-    public const string DotnetGcHeapGeneration = DotnetAttributes.GcHeapGeneration;
-    /// <summary>Well-known Dotnet Gc Heap Generation Gen0 value used by qyl auto-instrumentation.</summary>
-    public const string DotnetGcHeapGenerationGen0 = DotnetAttributes.GcHeapGenerationValues.Gen0;
-    /// <summary>Well-known Dotnet Gc Heap Generation Gen1 value used by qyl auto-instrumentation.</summary>
-    public const string DotnetGcHeapGenerationGen1 = DotnetAttributes.GcHeapGenerationValues.Gen1;
-    /// <summary>Well-known Dotnet Gc Heap Generation Gen2 value used by qyl auto-instrumentation.</summary>
-    public const string DotnetGcHeapGenerationGen2 = DotnetAttributes.GcHeapGenerationValues.Gen2;
-
-    /// <summary>Well-known Cpu Mode value used by qyl auto-instrumentation.</summary>
-    public const string CpuMode = CpuAttributes.Mode;
-    /// <summary>Well-known Cpu Mode System value used by qyl auto-instrumentation.</summary>
-    public const string CpuModeSystem = CpuAttributes.ModeValues.System;
-    /// <summary>Well-known Cpu Mode User value used by qyl auto-instrumentation.</summary>
-    public const string CpuModeUser = CpuAttributes.ModeValues.User;
 
     /// <summary>Well-known database System Name value used by qyl auto-instrumentation.</summary>
     public const string DbSystemName = DbAttributes.SystemName;
