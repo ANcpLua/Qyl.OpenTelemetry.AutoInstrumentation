@@ -3,19 +3,21 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Rabbit Mq.</summary>
+/// <summary>RabbitMQ.Client publish spans.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.RabbitMq, QylInstrumentationDomains.MessagingRabbitMq)]
+[QylIntercept("RabbitMQ.Client.IModel", "BasicPublish", "BasicPublishAsync", Shape = QylShapes.RabbitMqPublish, Start = nameof(Publish))]
+[QylIntercept("RabbitMQ.Client.IChannel", "BasicPublish", "BasicPublishAsync", Shape = QylShapes.RabbitMqPublish, Start = nameof(Publish))]
 public static class QylInterceptedRabbitMq
 {
-
-    /// <summary>Runs the Start Publish Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartPublishActivity(string? exchange)
-        => QylMessagingActivityPolicy.StartRabbitMqPublishActivity(exchange);
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
-    }
+    /// <summary>Starts the publish span for an exchange and routing key.</summary>
+    public static Activity? Publish(
+        [QylFromArgument(0, Type = "string")]
+        [QylFromArgument(0, Type = "RabbitMQ.Client.PublicationAddress", Convert = "{0}.ExchangeName")]
+        string? exchange,
+        [QylFromArgument(1, Type = "string")]
+        [QylFromArgument(0, Type = "RabbitMQ.Client.PublicationAddress", Convert = "{0}.RoutingKey")]
+        string? routingKey)
+        => QylMessagingActivityPolicy.StartRabbitMqPublishActivity(exchange, routingKey);
 }

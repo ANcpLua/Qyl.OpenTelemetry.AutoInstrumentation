@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -7,16 +8,23 @@ internal static class QylMessagingActivityPolicy
     private const string Send = "send";
     private const string Publish = "publish";
     private const string Receive = "receive";
+    private const string RabbitMqDefaultDestination = "amq.default";
 
-    public static Activity? StartKafkaProducerActivity()
-        => Start(
+    public static Activity? StartKafkaProducerActivity(string? topic, int? partitionId)
+    {
+        var activity = Start(
             QylAutoInstrumentationIds.Kafka,
             ActivityKind.Producer,
             QylInstrumentationDomains.MessagingKafka,
             QylSemanticAttributes.MessagingSystemKafka,
             QylSemanticAttributes.MessagingOperationTypeSend,
             Send,
-            destination: null);
+            destination: string.IsNullOrEmpty(topic) ? null : topic);
+        if (activity is not null && partitionId is int id)
+            activity.SetTag(QylSemanticAttributes.MessagingDestinationPartitionId, id.ToString(CultureInfo.InvariantCulture));
+
+        return activity;
+    }
 
     public static Activity? StartKafkaConsumerActivity()
         => Start(
@@ -48,15 +56,37 @@ internal static class QylMessagingActivityPolicy
             OperationName(method),
             destination: null);
 
-    public static Activity? StartRabbitMqPublishActivity(string? exchange)
-        => Start(
+    public static Activity? StartRabbitMqPublishActivity(string? exchange, string? routingKey)
+    {
+        var activity = Start(
             QylAutoInstrumentationIds.RabbitMq,
             ActivityKind.Producer,
             QylInstrumentationDomains.MessagingRabbitMq,
             QylSemanticAttributes.MessagingSystemRabbitMq,
             QylSemanticAttributes.MessagingOperationTypeSend,
             Publish,
-            string.IsNullOrEmpty(exchange) ? null : exchange);
+            RabbitMqDestination(exchange, routingKey));
+        if (activity is not null && !string.IsNullOrEmpty(routingKey))
+            activity.SetTag(QylSemanticAttributes.MessagingRabbitMqRoutingKey, routingKey);
+
+        return activity;
+    }
+
+    // RabbitMQ destination convention: {exchange}:{routing_key}; the available one alone when the
+    // other is empty; amq.default only when both are empty.
+    private static string RabbitMqDestination(string? exchange, string? routingKey)
+    {
+        var hasExchange = !string.IsNullOrEmpty(exchange);
+        var hasRoutingKey = !string.IsNullOrEmpty(routingKey);
+        if (!hasExchange && !hasRoutingKey)
+            return RabbitMqDefaultDestination;
+        if (!hasExchange)
+            return routingKey!;
+        if (!hasRoutingKey)
+            return exchange!;
+
+        return exchange + ":" + routingKey;
+    }
 
     public static string OperationName(string method)
         => string.Equals(method, "Send", StringComparison.Ordinal) ? Send : Publish;

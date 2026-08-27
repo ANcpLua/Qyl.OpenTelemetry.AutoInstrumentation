@@ -4,10 +4,18 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Logger.</summary>
+/// <summary>Microsoft.Extensions.Logging log-as-span activities.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-public static class QylInterceptedLogger
+[QylIntegration(QylAutoInstrumentationIds.ILogger, QylInstrumentationDomains.LogILogger, Signal = QylAutoInstrumentationSignal.Logs)]
+[QylIntercept("Microsoft.Extensions.Logging.ILogger", "Log", Shape = QylShapes.LoggerLog, Body = QylInterceptorBody.Log, Start = nameof(Log))]
+[QylIntercept(
+    "Microsoft.Extensions.Logging.ILogger",
+    "Log", "LogTrace", "LogDebug", "LogInformation", "LogWarning", "LogError", "LogCritical",
+    Shape = QylShapes.LoggerExtension,
+    Body = QylInterceptorBody.LogExtension,
+    Start = nameof(LogExtension))]
+public static class QylInterceptedILogger
 {
     private const string ActivityName = "ILogger log";
 
@@ -30,7 +38,7 @@ public static class QylInterceptedLogger
         }
         catch (Exception caughtException)
         {
-            RecordException(activity, caughtException);
+            QylInterceptedActivity.RecordException(activity, caughtException);
             throw;
         }
         finally
@@ -55,7 +63,7 @@ public static class QylInterceptedLogger
         }
         catch (Exception caughtException)
         {
-            RecordException(activity, caughtException);
+            QylInterceptedActivity.RecordException(activity, caughtException);
             throw;
         }
         finally
@@ -84,7 +92,7 @@ public static class QylInterceptedLogger
         QylActivityTags.SetLogSeverity(activity, severity);
 
         if (exception is not null)
-            RecordException(activity, exception);
+            QylInterceptedActivity.RecordException(activity, exception);
 
         return activity;
     }
@@ -101,9 +109,4 @@ public static class QylInterceptedLogger
             LogLevel.None => null,
             _ => QylSemanticAttributes.LogSeverityOther,
         };
-
-    private static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
-    }
 }

@@ -204,6 +204,7 @@ internal sealed record KafkaReport(
         {
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Kafka, failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, "send", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, "qyl-probe", failures);
             RequireKind(span, "Producer", failures);
         }
 
@@ -221,9 +222,14 @@ internal sealed record KafkaReport(
 
         foreach (var span in kafkaSpans)
         {
-            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName) ||
-                !StringComparer.Ordinal.Equals(span.Name, operationName))
-                failures.Add($"expected the Kafka span to be named after messaging.operation.name, got {span.Name}");
+            span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName);
+            // Producers name the span "{operation} {destination}"; the pull-based Consume() span has no
+            // destination and is named after the operation alone.
+            var expectedName = span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, out var destination) && destination.Length > 0
+                ? operationName + " " + destination
+                : operationName;
+            if (!StringComparer.Ordinal.Equals(span.Name, expectedName))
+                failures.Add($"expected the Kafka span to be named '{expectedName}', got {span.Name}");
         }
 
         return new KafkaReport(runtimeMode, failures.Count is 0, failures.ToArray(), kafkaSpans);

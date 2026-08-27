@@ -264,6 +264,14 @@ internal sealed record RedisReport(
                 Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Redis,
                 failures);
 
+            // The demo connects with GetDatabase() (the default database), so db.namespace is "0".
+            RequireTag(
+                probe.Label,
+                span,
+                Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.Namespace,
+                "0",
+                failures);
+
             if (!span.Tags.TryGetValue(
                     Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName,
                     out var operation))

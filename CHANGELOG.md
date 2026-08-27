@@ -9,6 +9,54 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 ### Changed
 
+- **BREAKING (generated-code ABI):** the generated-code ABI anchor moved from
+  `QylGeneratedCodeAbi.V9` to `QylGeneratedCodeAbi.V10`, and the package major moved to `10.0.0`.
+  Generated interceptors now reference the `V10` runtime anchor, so a stale generated interceptor
+  from a `9.x` generator fails to compile against the `10.x` runtime instead of binding to changed
+  behavior.
+- **BREAKING (generated-code ABI):** the interceptor catalog is declarative. Each intercepted
+  integration is one `QylIntercepted*` class in the runtime carrying `[QylIntegration(id, domain)]`
+  and one `[QylIntercept(receiverType, methods…, Shape = QylShapes.X, Start = nameof(…))]` per call
+  shape; the helper's parameters carry `[QylFromArgument]`, `[QylFromReceiver]`,
+  `[QylFromMethodName]`, `[QylFromInstrumentationId]`, or `[QylFromShape]` bindings. The source
+  generator reads those declarations from the referenced runtime assembly's metadata at compile
+  time (ordinary Roslyn symbol reading — no runtime reflection) and derives the interceptor kind,
+  the receiver and method matcher, the emitted body, the `Start`/`Enrich`/`Metric` arguments, the
+  instrumentation id, domain, signal, and the contract manifest from them. The hand-coded
+  `InterceptorKind` enum, the per-integration `TryGet*Invocation` matchers, and the two catalog
+  tables are gone; what remains in the generator is the closed set of body templates
+  (`QylInterceptorBody`: `Trace`, `Forward`, `Log`, `LogExtension`, `ExternalLog`, `DbCommand`)
+  and the named shape predicates (`QylShapes`) that validate a library overload. The runtime's
+  per-signal enabled-id sets are generated from the same declarations plus `[QylSignal]` rows for
+  the listener, middleware, meter, and library-native lanes, so an integration cannot be added
+  without its environment toggle. Consequences for the ABI surface: `QylInterceptedElastic` split
+  into `QylInterceptedElasticsearch`/`QylInterceptedElasticTransport`, `QylInterceptedExternalLogger`
+  into `QylInterceptedNLog`/`QylInterceptedLog4Net`, `QylInterceptedLogger` is `QylInterceptedILogger`,
+  the fourteen `RecordException` copies and four `ObserveAsync` forwarders collapsed into
+  `QylInterceptedActivity`, and each helper's start method is named for its operation (`Send`,
+  `Publish`, `Command`, `Execute`, `Request`, `Call`, `Operation`, `Log`). The manifest's
+  `interceptorKind` is now `{Integration}.{Start}` (for example `Kafka.Send`, `ILogger.Log`,
+  `HttpClient.Forward`). `HttpClient` keeps the forwarding body: its helper mirrors the BCL's null
+  semantics before any span starts, resolves the request URI against `BaseAddress`, enriches from
+  the typed response, and maps `HttpRequestException.StatusCode`, none of which the trace template
+  expresses. A synchronous `IMongoCollection<T>` call intercepted with runtime task observation
+  previously never disposed its activity; the trace template now observes only asynchronous calls
+  and disposes synchronous ones in `finally`.
+- Messaging destinations are now emitted from the call site. Kafka produce spans carry
+  `messaging.destination.name` (the topic, taken from the `string` or `TopicPartition` argument) and
+  `messaging.destination.partition.id` when a `TopicPartition` is given; the span name is
+  `send {topic}`. RabbitMQ publish spans carry `messaging.rabbitmq.destination.routing_key` and set
+  `messaging.destination.name` to `{exchange}:{routing_key}` per the RabbitMQ convention — the
+  available one alone when the other is empty, `amq.default` only when both are empty — with the span
+  name `publish {destination}`. The message key is never emitted (unbounded).
+- MongoDB spans carry `db.collection.name` (from the `IMongoCollection<T>` receiver's
+  `CollectionNamespace.CollectionName`) and `db.namespace` (from `Database.DatabaseNamespace.DatabaseName`);
+  the span name and `db.query.summary` become `{operation} {collection}`. Redis spans carry
+  `db.namespace` set to the receiving database's index (never in the span name). WCF client spans
+  carry `server.address` and `server.port` from `ClientBase<T>.Endpoint.Address.Uri`. Quartz execute
+  spans are named `{JobDetail.Key.Group}.{JobDetail.Key.Name}` from the `IJobExecutionContext`
+  argument and keep `Internal` kind. Elasticsearch's registry `http.request.method`/`url.full` are
+  not observable at the client-method call site and are deliberately not emitted.
 - Span names are derived from the span's own attributes, following each OpenTelemetry family's
   naming rule, and `QylActivityNames` is deleted. Database spans are named by `db.query.summary`
   (`SELECT Probe`, `INSERT Items`), which is now a real summary — the leading keyword and the first

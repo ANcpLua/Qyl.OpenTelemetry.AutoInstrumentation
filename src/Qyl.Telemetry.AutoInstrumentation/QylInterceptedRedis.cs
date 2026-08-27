@@ -1,16 +1,18 @@
 using System.Diagnostics;
+using System.Globalization;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Redis.</summary>
+/// <summary>StackExchange.Redis command spans.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.StackExchangeRedis, QylInstrumentationDomains.DbRedis)]
+[QylIntercept("StackExchange.Redis.IDatabaseAsync", Shape = QylShapes.RedisCommand, Start = nameof(Command))]
 public static class QylInterceptedRedis
 {
-
-    /// <summary>Runs the Start Command Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartCommandActivity(string? operationName)
+    /// <summary>Starts the client span for the resolved wire command on the receiving database.</summary>
+    public static Activity? Command([QylFromShape] string? operationName, [QylFromReceiver("Database")] int databaseIndex)
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.StackExchangeRedis,
@@ -23,6 +25,8 @@ public static class QylInterceptedRedis
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
         if (operationName is not null)
             QylActivityTags.SetDbOperation(activity, operationName, operationName);
+        if (databaseIndex >= 0)
+            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseIndex.ToString(CultureInfo.InvariantCulture));
 
         return activity;
     }
@@ -49,11 +53,5 @@ public static class QylInterceptedRedis
         }
 
         return trimmed.ToUpperInvariant();
-    }
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
     }
 }

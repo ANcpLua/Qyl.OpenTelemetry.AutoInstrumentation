@@ -1,23 +1,16 @@
 using System.Diagnostics;
-using Qyl.Telemetry.AutoInstrumentation.Internal;
 
-namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
+namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted External Logger.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
-[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-public static class QylInterceptedExternalLogger
+internal static class QylExternalLogActivityPolicy
 {
-    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity(string instrumentationId, string domain, string methodName, string? severityName)
+    public static Activity? Start(string instrumentationId, string domain, string activityName, string methodName, string? severityName)
     {
-        ArgumentNullException.ThrowIfNull(instrumentationId);
-        ArgumentNullException.ThrowIfNull(domain);
         ArgumentNullException.ThrowIfNull(methodName);
 
         var activity = QylActivityFactory.StartLogActivity(
             instrumentationId,
-            GetActivityName(instrumentationId),
+            activityName,
             ActivityKind.Internal,
             domain);
         if (activity is null)
@@ -27,12 +20,6 @@ public static class QylInterceptedExternalLogger
             activity,
             NormalizeSeverity(string.IsNullOrWhiteSpace(severityName) ? methodName : severityName));
         return activity;
-    }
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
     }
 
     private static string NormalizeSeverity(string methodName)
@@ -52,12 +39,4 @@ public static class QylInterceptedExternalLogger
 
         return QylSemanticAttributes.LogSeverityOther;
     }
-
-    private static string GetActivityName(string instrumentationId)
-        => instrumentationId switch
-        {
-            QylAutoInstrumentationIds.NLog => "NLog log",
-            QylAutoInstrumentationIds.Log4Net => "log4net log",
-            _ => "external log",
-        };
 }

@@ -259,33 +259,6 @@ GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = {
     "signals.traces.HTTPCLIENT",
     "signals.metrics.HTTPCLIENT",
 }
-GENERATED_INTERCEPTOR_CATALOG_REQUIRED_SIGNAL_KEYS = {
-    "signals.logs.ILOGGER",
-    "signals.logs.LOG4NET",
-    "signals.logs.NLOG",
-    "signals.metrics.NPGSQL",
-    "signals.metrics.NSERVICEBUS",
-    "signals.metrics.SQLCLIENT",
-    "signals.traces.ADONET",
-    "signals.traces.ELASTICSEARCH",
-    "signals.traces.ELASTICTRANSPORT",
-    "signals.traces.GRAPHQL",
-    "signals.traces.KAFKA",
-    "signals.traces.MASSTRANSIT",
-    "signals.traces.MYSQLCONNECTOR",
-    "signals.traces.MYSQLDATA",
-    "signals.traces.MONGODB",
-    "signals.traces.NSERVICEBUS",
-    "signals.traces.NPGSQL",
-    "signals.traces.ORACLEMDA",
-    "signals.traces.QUARTZ",
-    "signals.traces.RABBITMQ",
-    "signals.traces.SQLCLIENT",
-    "signals.traces.SQLITE",
-    "signals.traces.STACKEXCHANGEREDIS",
-    "signals.traces.WCFCLIENT",
-}
-
 COMMON_ITEM_PROPERTIES = {
     "kind",
     "key",

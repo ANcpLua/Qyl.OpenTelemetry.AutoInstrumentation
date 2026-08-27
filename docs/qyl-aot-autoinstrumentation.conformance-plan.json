@@ -303,11 +303,12 @@
             "messaging.system",
             "messaging.operation.type",
             "messaging.operation.name",
-            "qyl.instrumentation.domain"
+            "qyl.instrumentation.domain",
+            "messaging.destination.name"
           ],
           "recommended_attributes": [
             "error.type",
-            "messaging.destination.name"
+            "messaging.rabbitmq.destination.routing_key"
           ],
           "opt_in_attributes": []
         }
@@ -327,7 +328,8 @@
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "error.type",
+            "db.namespace"
           ],
           "opt_in_attributes": [
             "db.query.text"

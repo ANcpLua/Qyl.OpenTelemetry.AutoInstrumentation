@@ -161,60 +161,8 @@ internal sealed class QylAutoInstrumentationOptions
 
     /// <summary>Runs the Has Any Activity Instrumentation Enabled runtime helper used by source-generated qyl interceptors.</summary>
     public bool HasAnyActivityInstrumentationEnabled()
-        => HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, TraceInstrumentationIds) ||
-           HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, LogInstrumentationIds);
-
-    private static readonly string[] TraceInstrumentationIds =
-    [
-        QylAutoInstrumentationIds.AdoNet,
-        QylAutoInstrumentationIds.AspNetCore,
-        QylAutoInstrumentationIds.Azure,
-        QylAutoInstrumentationIds.Elasticsearch,
-        QylAutoInstrumentationIds.ElasticTransport,
-        QylAutoInstrumentationIds.EntityFrameworkCore,
-        QylAutoInstrumentationIds.GraphQl,
-        QylAutoInstrumentationIds.GrpcNetClient,
-        QylAutoInstrumentationIds.HttpClient,
-        QylAutoInstrumentationIds.Kafka,
-        QylAutoInstrumentationIds.MassTransit,
-        QylAutoInstrumentationIds.MicrosoftAgentsAi,
-        QylAutoInstrumentationIds.MicrosoftAgentsAiWorkflows,
-        QylAutoInstrumentationIds.MicrosoftExtensionsAi,
-        QylAutoInstrumentationIds.ModelContextProtocol,
-        QylAutoInstrumentationIds.MongoDb,
-        QylAutoInstrumentationIds.MySqlConnector,
-        QylAutoInstrumentationIds.MySqlData,
-        QylAutoInstrumentationIds.Npgsql,
-        QylAutoInstrumentationIds.NServiceBus,
-        QylAutoInstrumentationIds.OracleMda,
-        QylAutoInstrumentationIds.RabbitMq,
-        QylAutoInstrumentationIds.Quartz,
-        QylAutoInstrumentationIds.SqlClient,
-        QylAutoInstrumentationIds.Sqlite,
-        QylAutoInstrumentationIds.StackExchangeRedis,
-        QylAutoInstrumentationIds.WcfClient,
-        QylAutoInstrumentationIds.WcfCore,
-    ];
-
-    private static readonly string[] MetricInstrumentationIds =
-    [
-        QylAutoInstrumentationIds.AspNetCore,
-        QylAutoInstrumentationIds.HttpClient,
-        QylAutoInstrumentationIds.MicrosoftAgentsAi,
-        QylAutoInstrumentationIds.MicrosoftExtensionsAi,
-        QylAutoInstrumentationIds.NetRuntime,
-        QylAutoInstrumentationIds.Npgsql,
-        QylAutoInstrumentationIds.NServiceBus,
-        QylAutoInstrumentationIds.Process,
-        QylAutoInstrumentationIds.SqlClient,
-    ];
-
-    private static readonly string[] LogInstrumentationIds =
-    [
-        QylAutoInstrumentationIds.ILogger,
-        QylAutoInstrumentationIds.Log4Net,
-        QylAutoInstrumentationIds.NLog,
-    ];
+        => HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylDeclaredInstrumentations.Traces) ||
+           HasAnyInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, QylDeclaredInstrumentations.Logs);
 
     private static class CurrentHolder
     {
@@ -229,9 +177,9 @@ internal sealed class QylAutoInstrumentationOptions
         var logsEnabled = EnvironmentOptions.ReadBoolean(LogsEnabledVariable) ?? globalEnabled;
         var instrumentationEnabled = new Dictionary<InstrumentationLookupKey, bool>();
 
-        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Traces, tracesEnabled, TraceInstrumentationIds);
-        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Metrics, metricsEnabled, MetricInstrumentationIds);
-        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Logs, logsEnabled, LogInstrumentationIds);
+        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Traces, tracesEnabled, QylDeclaredInstrumentations.Traces);
+        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Metrics, metricsEnabled, QylDeclaredInstrumentations.Metrics);
+        AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Logs, logsEnabled, QylDeclaredInstrumentations.Logs);
 
         return new QylAutoInstrumentationOptions(
             globalEnabled,

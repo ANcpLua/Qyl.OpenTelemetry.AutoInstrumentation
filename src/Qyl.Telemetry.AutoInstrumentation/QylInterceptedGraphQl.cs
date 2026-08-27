@@ -3,28 +3,26 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Graph Ql.</summary>
+/// <summary>GraphQL.NET document execution spans.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.GraphQl, QylInstrumentationDomains.GraphQl)]
+[QylIntercept("GraphQL.IDocumentExecuter", "ExecuteAsync", Shape = QylShapes.GraphQlExecute, Start = nameof(Execute), Enrich = nameof(RecordExecutionOptions), ObserveAsync = true)]
 public static class QylInterceptedGraphQl
 {
-
-    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity()
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
+    /// <summary>Starts the internal span; the operation type names it once the document is read.</summary>
+    public static Activity? Execute()
+        => QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.GraphQl,
             QylSpanNames.GraphQl(null),
             ActivityKind.Internal,
             QylInstrumentationDomains.GraphQl);
-        if (activity is null)
-            return null;
 
-        return activity;
-    }
-
-    /// <summary>Runs the Record Execution Options runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordExecutionOptions(Activity? activity, string? operationName, string? document)
+    /// <summary>Records the operation name and type, and the document behind its opt-in.</summary>
+    public static void RecordExecutionOptions(
+        Activity? activity,
+        [QylFromArgument(0, Type = "GraphQL.ExecutionOptions", Convert = "{0} is not null ? {0}.OperationName : null")] string? operationName,
+        [QylFromArgument(0, Type = "GraphQL.ExecutionOptions", Convert = "{0} is not null ? {0}.Query : null")] string? document)
     {
         if (activity is null)
             return;
@@ -40,10 +38,6 @@ public static class QylInterceptedGraphQl
 
         QylSensitiveCapturePolicy.SetGraphQlDocument(activity, document);
     }
-
-    /// <summary>Observes an asynchronous GraphQL operation and records qyl exception telemetry.</summary>
-    public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
-        => QylActivityObserver.ObserveAsync(task, activity);
 
     // The type of the operation the request executes: the definition operationName selects, else the
     // first operation; a shorthand document is a query. Fragments, strings, comments, variable lists,
@@ -189,11 +183,5 @@ public static class QylInterceptedGraphQl
         }
 
         return false;
-    }
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
     }
 }

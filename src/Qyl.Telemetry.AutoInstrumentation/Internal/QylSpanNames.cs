@@ -9,6 +9,7 @@ internal static class QylSpanNames
     private const string HttpFallback = "HTTP";
     private const string GrpcFallback = "gRPC";
     private const string GraphQlFallback = "GraphQL Operation";
+    private const string JobFallback = "job";
 
     public static string Http(string? method)
         => method is null or QylSemanticAttributes.HttpRequestMethodOther ? HttpFallback : method;
@@ -35,4 +36,10 @@ internal static class QylSpanNames
 
     public static string Rpc(string? method, string systemName)
         => string.IsNullOrEmpty(method) ? systemName : method;
+
+    public static string Job(string? group, string? name)
+    {
+        var qualifier = string.IsNullOrEmpty(group) ? string.Empty : group + ".";
+        return string.IsNullOrEmpty(name) ? JobFallback : qualifier + name;
+    }
 }

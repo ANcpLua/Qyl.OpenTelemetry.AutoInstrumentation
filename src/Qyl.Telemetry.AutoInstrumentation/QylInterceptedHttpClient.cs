@@ -9,7 +9,21 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 /// Runtime target for compile-time generated HttpClient interceptors. Each method calls the original
 /// BCL API so qyl observes HttpClient behavior without reimplementing transport semantics.
 /// </summary>
+/// <remarks>
+/// Declared with the forwarding body rather than the trace template: the helper mirrors the BCL's
+/// null-receiver semantics before any span starts, resolves the request URI against the client's
+/// base address, enriches the span from the typed response (status, protocol version, headers),
+/// maps <see cref="HttpRequestException.StatusCode"/> to the response status instead of an
+/// exception, and completes synchronously-finished tasks without an await — none of which the
+/// argument-bound trace template expresses.
+/// </remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.HttpClient, QylInstrumentationDomains.HttpClient, MetricIds = [QylAutoInstrumentationIds.HttpClient])]
+[QylIntercept(
+    "System.Net.Http.HttpClient",
+    "Send", "SendAsync", "GetAsync", "DeleteAsync", "PostAsync", "PutAsync", "PatchAsync", "GetStringAsync", "GetByteArrayAsync", "GetStreamAsync",
+    Shape = QylShapes.HttpClient,
+    Body = QylInterceptorBody.Forward)]
 public static class QylInterceptedHttpClient
 {
     // Registered on first use — which is inside an intercepted HttpClient call, before that call reaches

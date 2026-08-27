@@ -134,7 +134,10 @@ internal sealed record QuartzReport(
 
         foreach (var span in quartzSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "Quartz execute"))
+            // The intercepted ProbeJob/FailingJob calls receive the scheduler-fired OuterJob's
+            // context, so both spans are named after that job's {group}.{name} identity. OuterJob
+            // is scheduled WithIdentity("qyl-outer") with no group, i.e. Quartz's DEFAULT group.
+            if (!StringComparer.Ordinal.Equals(span.Name, "DEFAULT.qyl-outer"))
                 failures.Add($"unexpected Quartz span name: {span.Name}");
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Internal"))

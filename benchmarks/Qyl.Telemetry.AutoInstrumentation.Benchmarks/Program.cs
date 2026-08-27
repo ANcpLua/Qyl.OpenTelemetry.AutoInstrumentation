@@ -42,7 +42,7 @@ public class DbCommandHotPathBenchmarks
     [Benchmark]
     public int InterceptedSqlClientCommand()
     {
-        using var activity = QylInterceptedDbCommand.StartActivity(
+        using var activity = QylInterceptedDbCommand.Execute(
             command,
             "SQLCLIENT",
             "ExecuteScalar");

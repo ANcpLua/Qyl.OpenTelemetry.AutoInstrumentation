@@ -127,6 +127,8 @@ internal sealed record WcfClientReport(
             RequireMissingTag(span, "rpc.system", failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(CommunicationException).FullName!, failures);
             RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes.Address, IPAddress.Loopback.ToString(), failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes.Port, "9", failures);
         }
 
         return new WcfClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), wcfSpans);
