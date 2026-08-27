@@ -2,38 +2,13 @@
   "Activities": [
     {
       "Kind": "Client",
-      "Name": "DB CREATE",
+      "Name": "CREATE Items",
       "Signal": "activity",
       "Status": "Unset",
       "Tags": {
         "db.operation.name": "CREATE",
-        "db.query.summary": "CREATE",
+        "db.query.summary": "CREATE Items",
         "db.system.name": "sqlite",
-        "qyl.instrumentation.domain": "db.client"
-      }
-    },
-    {
-      "Kind": "Client",
-      "Name": "DB INSERT",
-      "Signal": "activity",
-      "Status": "Unset",
-      "Tags": {
-        "db.operation.name": "INSERT",
-        "db.query.summary": "ExecuteSqlRaw INSERT",
-        "db.system.name": "sqlite",
-        "qyl.instrumentation.domain": "db.efcore"
-      }
-    },
-    {
-      "Kind": "Client",
-      "Name": "DB SELECT",
-      "Signal": "activity",
-      "Status": "Error",
-      "Tags": {
-        "db.operation.name": "SELECT",
-        "db.query.summary": "SELECT",
-        "db.system.name": "microsoft.sql_server",
-        "error.type": "System.InvalidOperationException",
         "qyl.instrumentation.domain": "db.client"
       }
     },
@@ -74,6 +49,31 @@
         "http.route": "/probe/{id:int}",
         "qyl.instrumentation.domain": "aspnetcore.server",
         "url.scheme": "http"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "INSERT Items",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "db.operation.name": "INSERT",
+        "db.query.summary": "INSERT Items",
+        "db.system.name": "sqlite",
+        "qyl.instrumentation.domain": "db.efcore"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "SELECT",
+      "Signal": "activity",
+      "Status": "Error",
+      "Tags": {
+        "db.operation.name": "SELECT",
+        "db.query.summary": "SELECT",
+        "db.system.name": "microsoft.sql_server",
+        "error.type": "System.InvalidOperationException",
+        "qyl.instrumentation.domain": "db.client"
       }
     }
   ],
@@ -96,12 +96,12 @@
     },
     {
       "Kind": "Client",
-      "Name": "DB INSERT",
+      "Name": "INSERT Items",
       "Signal": "efcore.sqlite",
       "Status": "Unset",
       "Tags": {
         "db.operation.name": "INSERT",
-        "db.query.summary": "ExecuteSqlRaw INSERT",
+        "db.query.summary": "INSERT Items",
         "db.system.name": "sqlite",
         "qyl.instrumentation.domain": "db.efcore"
       }
@@ -134,7 +134,7 @@
     },
     {
       "Kind": "Client",
-      "Name": "DB SELECT",
+      "Name": "SELECT",
       "Signal": "sqlclient.command",
       "Status": "Error",
       "Tags": {
