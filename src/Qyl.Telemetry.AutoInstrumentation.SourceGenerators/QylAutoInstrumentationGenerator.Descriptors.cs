@@ -39,10 +39,13 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         None,
         InstrumentationIdAndTargetMethodName,
-        SemanticName,
-        RedisOperationName,
         TargetMethodName,
-        RabbitMqExchange,
+        WcfClientEndpoint,
+        RedisCommandNamespace,
+        KafkaProduceDestination,
+        RabbitMqDestination,
+        MongoDbCollection,
+        QuartzJob,
     }
 
     private enum TraceDurationMetricArgumentKind
@@ -258,7 +261,8 @@ public sealed partial class QylAutoInstrumentationGenerator
                 builder,
                 in target,
                 RuntimeHelper.StartActivityArguments,
-                RuntimeHelper.HelperType);
+                RuntimeHelper.HelperType,
+                ReceiverName);
             builder.Append(')');
         }
 

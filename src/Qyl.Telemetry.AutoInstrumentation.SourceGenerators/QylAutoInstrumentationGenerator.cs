@@ -425,7 +425,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         StringBuilder builder,
         in InterceptorTarget target,
         TraceStartActivityArgumentKind argumentKind,
-        string helperType)
+        string helperType,
+        string receiverName)
     {
         switch (argumentKind)
         {
@@ -436,17 +437,45 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 builder.Append(", ");
                 AppendStringLiteral(builder, target.MethodName);
                 return;
-            case TraceStartActivityArgumentKind.SemanticName:
-                AppendStringLiteral(builder, target.SemanticName);
-                return;
-            case TraceStartActivityArgumentKind.RedisOperationName:
-                AppendRedisOperationExpression(builder, in target, helperType);
-                return;
             case TraceStartActivityArgumentKind.TargetMethodName:
                 AppendStringLiteral(builder, target.MethodName);
                 return;
-            case TraceStartActivityArgumentKind.RabbitMqExchange:
+            case TraceStartActivityArgumentKind.WcfClientEndpoint:
+                AppendStringLiteral(builder, target.SemanticName);
+                builder.Append(", ");
+                builder.Append(receiverName);
+                builder.Append(".Endpoint?.Address?.Uri");
+                return;
+            case TraceStartActivityArgumentKind.RedisCommandNamespace:
+                AppendRedisOperationExpression(builder, in target, helperType);
+                builder.Append(", ");
+                builder.Append(receiverName);
+                builder.Append(".Database");
+                return;
+            case TraceStartActivityArgumentKind.KafkaProduceDestination:
+                AppendKafkaTopicExpression(builder, in target);
+                builder.Append(", ");
+                AppendKafkaPartitionExpression(builder, in target);
+                return;
+            case TraceStartActivityArgumentKind.RabbitMqDestination:
                 AppendRabbitMqExchangeExpression(builder, in target);
+                builder.Append(", ");
+                AppendRabbitMqRoutingKeyExpression(builder, in target);
+                return;
+            case TraceStartActivityArgumentKind.MongoDbCollection:
+                AppendStringLiteral(builder, target.MethodName);
+                builder.Append(", ");
+                builder.Append(receiverName);
+                builder.Append(".CollectionNamespace?.CollectionName");
+                builder.Append(", ");
+                builder.Append(receiverName);
+                builder.Append(".Database?.DatabaseNamespace?.DatabaseName");
+                return;
+            case TraceStartActivityArgumentKind.QuartzJob:
+                builder.Append(target.Parameters[0].Name);
+                builder.Append(".JobDetail?.Key?.Group, ");
+                builder.Append(target.Parameters[0].Name);
+                builder.Append(".JobDetail?.Key?.Name");
                 return;
             default:
                 throw new InvalidOperationException("Unknown trace start activity argument kind: " + argumentKind);
@@ -607,6 +636,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         AppendStringLiteral(builder, operation.Command);
     }
 
+    // The (string exchange, string routingKey, ...) overload carries both on the call site;
+    // the PublicationAddress overload carries them on parameters[0].ExchangeName/.RoutingKey.
     private static void AppendRabbitMqExchangeExpression(StringBuilder builder, in InterceptorTarget target)
     {
         if (target.Parameters.Length > 0 &&
@@ -616,7 +647,50 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             return;
         }
 
-        builder.Append("null");
+        builder.Append(target.Parameters[0].Name);
+        builder.Append(".ExchangeName");
+    }
+
+    private static void AppendRabbitMqRoutingKeyExpression(StringBuilder builder, in InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 1 &&
+            string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[1].Name);
+            return;
+        }
+
+        builder.Append(target.Parameters[0].Name);
+        builder.Append(".RoutingKey");
+    }
+
+    // The topic overload carries the topic string directly; the TopicPartition overload carries
+    // the topic and partition on parameters[0].
+    private static void AppendKafkaTopicExpression(StringBuilder builder, in InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 0 &&
+            string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal))
+        {
+            builder.Append(target.Parameters[0].Name);
+            return;
+        }
+
+        builder.Append(target.Parameters[0].Name);
+        builder.Append(".Topic");
+    }
+
+    private static void AppendKafkaPartitionExpression(StringBuilder builder, in InterceptorTarget target)
+    {
+        if (target.Parameters.Length > 0 &&
+            string.Equals(target.Parameters[0].TypeName, "string", StringComparison.Ordinal))
+        {
+            builder.Append("(int?)null");
+            return;
+        }
+
+        builder.Append("(int?)");
+        builder.Append(target.Parameters[0].Name);
+        builder.Append(".Partition.Value");
     }
 
     private static void EmitLoggerInterceptor(

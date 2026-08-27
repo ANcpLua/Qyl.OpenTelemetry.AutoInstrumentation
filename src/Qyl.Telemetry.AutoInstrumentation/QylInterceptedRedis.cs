@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
@@ -10,7 +11,7 @@ public static class QylInterceptedRedis
 {
 
     /// <summary>Runs the Start Command Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartCommandActivity(string? operationName)
+    public static Activity? StartCommandActivity(string? operationName, int databaseIndex)
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.StackExchangeRedis,
@@ -23,6 +24,8 @@ public static class QylInterceptedRedis
         activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
         if (operationName is not null)
             QylActivityTags.SetDbOperation(activity, operationName, operationName);
+        if (databaseIndex >= 0)
+            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseIndex.ToString(CultureInfo.InvariantCulture));
 
         return activity;
     }

@@ -10,14 +10,15 @@ public static class QylInterceptedMongoDb
 {
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity(string operationName)
+    public static Activity? StartActivity(string operationName, string? collectionName, string? databaseName)
     {
         ArgumentNullException.ThrowIfNull(operationName);
 
         var operation = NormalizeOperation(operationName);
+        var summary = string.IsNullOrEmpty(collectionName) ? operation : operation + " " + collectionName;
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.MongoDb,
-            QylSpanNames.Db(operation, QylSemanticAttributes.DbSystemMongodb),
+            QylSpanNames.Db(summary, QylSemanticAttributes.DbSystemMongodb),
             ActivityKind.Client,
             QylInstrumentationDomains.DbMongoDb);
         if (activity is null)
@@ -27,7 +28,12 @@ public static class QylInterceptedMongoDb
             activity,
             QylSemanticAttributes.DbSystemMongodb,
             operation,
-            operation);
+            summary);
+        if (!string.IsNullOrEmpty(collectionName))
+            activity.SetTag(QylSemanticAttributes.DbCollectionName, collectionName);
+        if (!string.IsNullOrEmpty(databaseName))
+            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
+
         return activity;
     }
 

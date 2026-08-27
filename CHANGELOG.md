@@ -9,6 +9,31 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 ### Changed
 
+- **BREAKING (generated-code ABI):** the generated-code ABI anchor moved from
+  `QylGeneratedCodeAbi.V9` to `QylGeneratedCodeAbi.V10`, and the package major moved to `10.0.0`.
+  Generated interceptors now reference the `V10` runtime anchor, so a stale generated interceptor
+  from a `9.x` generator fails to compile against the `10.x` runtime instead of binding to changed
+  behavior. The break carries the interceptor argument-binding work below: the source generator now
+  binds the arguments each `QylIntercepted*.Start*` helper receives — from an intercepted argument
+  by index, from the receiver via a member path, from the intercepted method name, or from the
+  instrumentation id — so a call site's own low-cardinality values reach the span. Several
+  `QylIntercepted*` helper signatures gained parameters for those values; the helpers stay
+  `EditorBrowsable(Never)` ABI surface.
+- Messaging destinations are now emitted from the call site. Kafka produce spans carry
+  `messaging.destination.name` (the topic, taken from the `string` or `TopicPartition` argument) and
+  `messaging.destination.partition.id` when a `TopicPartition` is given; the span name is
+  `send {topic}`. RabbitMQ publish spans carry `messaging.rabbitmq.destination.routing_key` and set
+  `messaging.destination.name` to `{exchange}:{routing_key}` per the RabbitMQ convention — the
+  available one alone when the other is empty, `amq.default` only when both are empty — with the span
+  name `publish {destination}`. The message key is never emitted (unbounded).
+- MongoDB spans carry `db.collection.name` (from the `IMongoCollection<T>` receiver's
+  `CollectionNamespace.CollectionName`) and `db.namespace` (from `Database.DatabaseNamespace.DatabaseName`);
+  the span name and `db.query.summary` become `{operation} {collection}`. Redis spans carry
+  `db.namespace` set to the receiving database's index (never in the span name). WCF client spans
+  carry `server.address` and `server.port` from `ClientBase<T>.Endpoint.Address.Uri`. Quartz execute
+  spans are named `{JobDetail.Key.Group}.{JobDetail.Key.Name}` from the `IJobExecutionContext`
+  argument and keep `Internal` kind. Elasticsearch's registry `http.request.method`/`url.full` are
+  not observable at the client-method call site and are deliberately not emitted.
 - Span names are derived from the span's own attributes, following each OpenTelemetry family's
   naming rule, and `QylActivityNames` is deleted. Database spans are named by `db.query.summary`
   (`SELECT Probe`, `INSERT Items`), which is now a real summary — each operation keyword with the

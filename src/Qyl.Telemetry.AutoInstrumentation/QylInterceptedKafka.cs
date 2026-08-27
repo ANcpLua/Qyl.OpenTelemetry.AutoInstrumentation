@@ -9,8 +9,8 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 public static class QylInterceptedKafka
 {
     /// <summary>Runs the Start Producer Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartProducerActivity()
-        => QylMessagingActivityPolicy.StartKafkaProducerActivity();
+    public static Activity? StartProducerActivity(string? topic, int? partitionId)
+        => QylMessagingActivityPolicy.StartKafkaProducerActivity(topic, partitionId);
 
     /// <summary>Runs the Start Consumer Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartConsumerActivity()

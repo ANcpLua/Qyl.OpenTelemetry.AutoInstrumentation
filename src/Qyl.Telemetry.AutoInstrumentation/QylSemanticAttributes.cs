@@ -67,6 +67,8 @@ internal static class QylSemanticAttributes
     public const string DbSystemName = DbAttributes.SystemName;
     /// <summary>Well-known database Namespace value used by qyl auto-instrumentation.</summary>
     public const string DbNamespace = DbAttributes.Namespace;
+    /// <summary>Well-known database Collection Name value used by qyl auto-instrumentation.</summary>
+    public const string DbCollectionName = DbIncubatingAttributes.CollectionName;
     /// <summary>Well-known database Operation Name value used by qyl auto-instrumentation.</summary>
     public const string DbOperationName = DbAttributes.OperationName;
     /// <summary>Well-known database Query Summary value used by qyl auto-instrumentation.</summary>
@@ -117,6 +119,10 @@ internal static class QylSemanticAttributes
     public const string MessagingOperationName = MessagingAttributes.OperationName;
     /// <summary>Well-known Messaging Destination Name value used by qyl auto-instrumentation.</summary>
     public const string MessagingDestinationName = MessagingAttributes.DestinationName;
+    /// <summary>Well-known Messaging Destination Partition Id value used by qyl auto-instrumentation.</summary>
+    public const string MessagingDestinationPartitionId = MessagingAttributes.DestinationPartitionId;
+    /// <summary>Well-known Messaging Rabbit Mq Destination Routing Key value used by qyl auto-instrumentation.</summary>
+    public const string MessagingRabbitMqRoutingKey = MessagingAttributes.RabbitmqDestinationRoutingKey;
     /// <summary>Well-known Messaging Operation Type value used by qyl auto-instrumentation.</summary>
     public const string MessagingOperationType = MessagingAttributes.OperationType;
     /// <summary>Well-known Messaging Operation Type Receive value used by qyl auto-instrumentation.</summary>

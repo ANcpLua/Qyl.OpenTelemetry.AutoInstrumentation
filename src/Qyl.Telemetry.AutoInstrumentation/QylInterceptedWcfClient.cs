@@ -10,7 +10,7 @@ public static class QylInterceptedWcfClient
 {
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity(string method)
+    public static Activity? StartActivity(string method, Uri? endpointUri)
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.WcfClient,
@@ -24,6 +24,13 @@ public static class QylInterceptedWcfClient
             activity,
             QylSemanticAttributes.RpcSystemDotNetWcf,
             method);
+        if (endpointUri is { IsAbsoluteUri: true })
+        {
+            activity.SetTag(QylSemanticAttributes.ServerAddress, endpointUri.Host);
+            if (!endpointUri.IsDefaultPort)
+                activity.SetTag(QylSemanticAttributes.ServerPort, endpointUri.Port);
+        }
+
         return activity;
     }
 

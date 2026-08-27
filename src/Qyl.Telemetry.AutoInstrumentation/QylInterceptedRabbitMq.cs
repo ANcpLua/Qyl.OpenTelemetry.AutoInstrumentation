@@ -10,8 +10,8 @@ public static class QylInterceptedRabbitMq
 {
 
     /// <summary>Runs the Start Publish Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartPublishActivity(string? exchange)
-        => QylMessagingActivityPolicy.StartRabbitMqPublishActivity(exchange);
+    public static Activity? StartPublishActivity(string? exchange, string? routingKey)
+        => QylMessagingActivityPolicy.StartRabbitMqPublishActivity(exchange, routingKey);
 
     /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
     public static void RecordException(Activity? activity, Exception exception)
