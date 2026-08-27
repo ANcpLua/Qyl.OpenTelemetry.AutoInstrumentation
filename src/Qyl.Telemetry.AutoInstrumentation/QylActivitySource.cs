@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -9,12 +10,9 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 /// </summary>
 internal static class QylActivitySource
 {
-    /// <summary>The well-known source name. Mirror this in <c>AddSource(...)</c> on a TracerProvider
+    /// <summary>The registry-owned scope name. Mirror it in <c>AddSource(...)</c> on a TracerProvider
     /// or in <c>OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES</c>.</summary>
-    /// <remarks>Emitted vocabulary, not package identity: it survived the package rename to
-    /// <c>Qyl.Telemetry.*</c> unchanged because out-of-repo consumers assert this literal. See
-    /// the scope-name note in AGENTS.md before touching it.</remarks>
-    public const string Name = "Qyl.OpenTelemetry.AutoInstrumentation";
+    public const string Name = QylTelemetryNames.Scopes.QylOpenTelemetryAutoInstrumentation;
 
     /// <summary>The single source instance.</summary>
     public static readonly ActivitySource Source = new(

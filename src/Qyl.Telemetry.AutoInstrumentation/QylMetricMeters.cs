@@ -1,3 +1,5 @@
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
+
 namespace Qyl.Telemetry.AutoInstrumentation;
 
 internal static class QylMetricMeters
@@ -30,20 +32,18 @@ internal static class QylMetricMeters
     internal const string HttpClientMeterName = "System.Net.Http";
     /// <summary>Well-known System.Net DNS name resolution Meter Name value used by qyl auto-instrumentation.</summary>
     internal const string NameResolutionMeterName = "System.Net.NameResolution";
-    // The two qyl-owned meter names below are emitted vocabulary, not package identity, and are
-    // pinned across the Qyl.Telemetry.* rename. See the scope-name note in AGENTS.md.
-    /// <summary>Well-known Database Meter Name value used by qyl auto-instrumentation.</summary>
-    internal const string DatabaseMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
+    /// <summary>The qyl database meter (<c>db.client.operation.duration</c>).</summary>
+    internal const string DatabaseMeterName = QylTelemetryNames.Scopes.QylOpenTelemetryAutoInstrumentationDatabase;
     /// <summary>Npgsql's library-native Meter, carrying its connection-pool and command instruments.</summary>
     internal const string NpgsqlNativeMeterName = "Npgsql";
-    /// <summary>Well-known N Service Bus Meter Name value used by qyl auto-instrumentation.</summary>
-    internal const string NServiceBusMeterName = "Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus";
+    /// <summary>The qyl NServiceBus meter (<c>nservicebus.messaging.operation.duration</c>).</summary>
+    internal const string NServiceBusMeterName = QylTelemetryNames.Scopes.QylOpenTelemetryAutoInstrumentationNServiceBus;
     /// <summary>NServiceBus's library-native core Meter.</summary>
     internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
     /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
     internal const string NServiceBusNativeIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
     /// <summary>The runtime's built-in meter (GC, JIT, thread pool, exceptions, process CPU and memory). qyl subscribes to it and produces nothing on it.</summary>
-    internal const string RuntimeMeterName = "System.Runtime";
+    internal const string RuntimeMeterName = QylTelemetryNames.Scopes.SystemRuntime;
 
     internal static string[] GetEnabledMeterNames()
     {

@@ -9,6 +9,10 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 ### Changed
 
+- The qyl scope names — the `Qyl.OpenTelemetry.AutoInstrumentation` source, the `.Database` and
+  `.NServiceBus` meters, and the `System.Runtime` subscription — read from the registry-generated
+  `QylTelemetryNames.Scopes` constants instead of literals kept in sync by comments. The invariant
+  gate resolves those symbols the way the registry emitter forms them.
 - `QylRuntimeProcessMetrics` is deleted. The .NET 10 runtime's built-in `System.Runtime` meter
   publishes every instrument that class hand-wrote (and eleven more), with units and descriptions,
   and `AddQyl()` already subscribed to that meter — so an application ran two producers on one

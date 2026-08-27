@@ -293,10 +293,26 @@ def parse_options_id_array(options: str, name: str, id_constants: dict[str, str]
 
 
 def parse_string_constants(text: str) -> dict[str, str]:
-    return {
+    """Literal values, plus registry scope symbols resolved through the emitter's PascalCase rule
+    (QylTelemetryNames.Scopes.SystemRuntime is the constant "System.Runtime")."""
+    constants = {
         match.group(1): match.group(2)
         for match in re.finditer(r'const string ([A-Za-z0-9_]+) = "([^"]*)";', text)
     }
+    scope_symbols = {
+        registry_scope_symbol(value): value
+        for value in REQUIRED_REGISTERED_METER_NAME_VALUES
+    }
+    for match in re.finditer(r'const string ([A-Za-z0-9_]+) = QylTelemetryNames\.Scopes\.([A-Za-z0-9_]+);', text):
+        if match.group(2) not in scope_symbols:
+            fail(f"unknown registry scope symbol QylTelemetryNames.Scopes.{match.group(2)} in {match.group(1)}")
+        constants[match.group(1)] = scope_symbols[match.group(2)]
+    return constants
+
+
+def registry_scope_symbol(value: str) -> str:
+    # Mirrors the semantic-conventions emitter: split on ".-_ ", capitalise each piece, keep the rest.
+    return "".join(piece[:1].upper() + piece[1:] for piece in re.split(r"[.\-_ ]", value) if piece)
 
 
 def verify_contract_artifacts(artifacts: ModuleType, contract: dict[str, Any]) -> None:
