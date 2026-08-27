@@ -19,7 +19,7 @@ Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V9 = 9 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V10 = 10 -> int
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void

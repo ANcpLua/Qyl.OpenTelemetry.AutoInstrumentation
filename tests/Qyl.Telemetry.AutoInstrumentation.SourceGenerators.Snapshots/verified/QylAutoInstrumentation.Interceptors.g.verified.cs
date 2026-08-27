@@ -16,7 +16,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
 {
     internal static class QylGeneratedInterceptors
     {
-        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V9;
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V10;
 
         // qyl-interceptor-manifest: {"interceptorKind":"ILoggerLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(5,8)
