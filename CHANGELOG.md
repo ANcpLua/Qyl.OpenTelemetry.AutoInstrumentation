@@ -85,6 +85,11 @@ NativeAOT consumers, and only then creates the GitHub release.
   `.NServiceBus` meters, and the `System.Runtime` subscription — read from the registry-generated
   `QylTelemetryNames.Scopes` constants instead of literals kept in sync by comments. The invariant
   gate resolves those symbols the way the registry emitter forms them.
+- Doc comments that restated their identifier ("Well-known … value", "Runs the … runtime helper",
+  "Defines the qyl auto-instrumentation surface") and the NativeAOT remark repeated on 24 types
+  are gone; the NativeAOT invariant lives in AGENTS.md. `QylInterceptedHttpClient`'s overloads
+  inherit the documentation of the `HttpClient` overload each one mirrors. The README no longer
+  states versions the props files own.
 - `QylRuntimeProcessMetrics` is deleted. The .NET 10 runtime's built-in `System.Runtime` meter
   publishes every instrument that class hand-wrote (and eleven more), with units and descriptions,
   and `AddQyl()` already subscribed to that meter — so an application ran two producers on one

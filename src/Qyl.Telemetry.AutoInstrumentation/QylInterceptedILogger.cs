@@ -5,7 +5,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Microsoft.Extensions.Logging log-as-span activities.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.ILogger, QylInstrumentationDomains.LogILogger, Signal = QylAutoInstrumentationSignal.Logs)]
 [QylIntercept("Microsoft.Extensions.Logging.ILogger", "Log", Shape = QylShapes.LoggerLog, Body = QylInterceptorBody.Log, Start = nameof(Log))]
@@ -47,7 +46,7 @@ public static class QylInterceptedILogger
         }
     }
 
-    /// <summary>Runs the Log Extension runtime helper used by source-generated qyl interceptors.</summary>
+    /// <inheritdoc cref="LoggerExtensions.Log(ILogger, LogLevel, EventId, Exception, string, object[])"/>
     public static void LogExtension(
         ILogger logger,
         LogLevel logLevel,

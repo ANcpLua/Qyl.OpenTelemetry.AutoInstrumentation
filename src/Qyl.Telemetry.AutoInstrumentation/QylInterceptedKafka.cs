@@ -4,7 +4,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Confluent.Kafka producer and consumer spans.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.Kafka, QylInstrumentationDomains.MessagingKafka)]
 [QylIntercept("Confluent.Kafka.IProducer`2", "Produce", "ProduceAsync", Shape = QylShapes.KafkaProduce, Start = nameof(Send))]

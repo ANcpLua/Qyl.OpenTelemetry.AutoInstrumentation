@@ -4,7 +4,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Elastic.Clients.Elasticsearch client request spans.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.Elasticsearch, QylInstrumentationDomains.DbElasticsearch)]
 [QylIntercept("", Shape = QylShapes.ElasticsearchClient, Start = nameof(Request), ObserveAsync = true, ObserveByRefOnly = true)]

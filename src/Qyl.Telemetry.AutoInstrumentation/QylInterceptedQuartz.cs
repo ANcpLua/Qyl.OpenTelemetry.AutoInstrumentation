@@ -4,7 +4,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Quartz job execution spans.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.Quartz, QylInstrumentationDomains.JobQuartz)]
 [QylIntercept("Quartz.IJob", "Execute", Shape = QylShapes.QuartzJob, Start = nameof(Execute), ObserveAsync = true)]

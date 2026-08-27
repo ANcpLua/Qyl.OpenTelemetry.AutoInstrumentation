@@ -4,7 +4,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Elastic.Transport request spans.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.ElasticTransport, QylInstrumentationDomains.ElasticTransport)]
 [QylIntercept("Elastic.Transport.ITransport", "Request", "RequestAsync", Shape = QylShapes.ElasticTransport, Start = nameof(Request), ObserveAsync = true, ObserveByRefOnly = true)]

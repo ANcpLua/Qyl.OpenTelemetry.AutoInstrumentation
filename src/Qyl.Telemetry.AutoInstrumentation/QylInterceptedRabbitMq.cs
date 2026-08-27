@@ -4,7 +4,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>RabbitMQ.Client publish spans.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.RabbitMq, QylInstrumentationDomains.MessagingRabbitMq)]
 [QylIntercept("RabbitMQ.Client.IModel", "BasicPublish", "BasicPublishAsync", Shape = QylShapes.RabbitMqPublish, Start = nameof(Publish))]

@@ -4,7 +4,6 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>NServiceBus publish and send spans, with the qyl operation-duration metric.</summary>
-/// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.NServiceBus, QylInstrumentationDomains.MessagingNServiceBus, MetricIds = [QylAutoInstrumentationIds.NServiceBus])]
 [QylIntercept("NServiceBus.IMessageSession", "Publish", "Send", Shape = QylShapes.NServiceBusOperation, Start = nameof(Send), Metric = nameof(RecordDuration))]
