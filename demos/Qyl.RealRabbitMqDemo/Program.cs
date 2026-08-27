@@ -131,10 +131,26 @@ internal sealed record RabbitMqReport(
 
         foreach (var span in rabbitSpans)
         {
-            var destination = StringComparer.Ordinal.Equals(span.Status, "Error") ? "qyl.missing.exchange" : "amq.default";
+            span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, out var destination);
+            span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.RabbitmqDestinationRoutingKey, out var routingKey);
+            if (StringComparer.Ordinal.Equals(span.Status, "Error"))
+            {
+                // publish to a named exchange with routing key "qyl": destination is exchange:routing_key.
+                if (!StringComparer.Ordinal.Equals(destination, "qyl.missing.exchange:qyl"))
+                    failures.Add($"unexpected RabbitMQ error destination: {destination}");
+                if (!StringComparer.Ordinal.Equals(routingKey, "qyl"))
+                    failures.Add($"unexpected RabbitMQ error routing key: {routingKey}");
+            }
+            else
+            {
+                // publish to the default exchange with the generated queue as the routing key:
+                // the empty exchange drops out, so destination is the routing key (the queue).
+                if (string.IsNullOrEmpty(destination) || !StringComparer.Ordinal.Equals(destination, routingKey))
+                    failures.Add($"expected RabbitMQ default-exchange destination to equal the routing key, got destination={destination} routingKey={routingKey}");
+            }
+
             if (!StringComparer.Ordinal.Equals(span.Name, "publish " + destination))
                 failures.Add($"unexpected RabbitMQ span name: {span.Name}");
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, destination, failures);
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Rabbitmq, failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);

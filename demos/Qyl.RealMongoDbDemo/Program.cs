@@ -140,10 +140,13 @@ internal sealed record MongoDbReport(
         foreach (var span in mongoSpans)
         {
             if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var operation) ||
-                !StringComparer.Ordinal.Equals(span.Name, operation))
-                failures.Add($"expected the MongoDB span to be named after db.operation.name, got {span.Name}");
+                !StringComparer.Ordinal.Equals(span.Name, operation + " probe"))
+                failures.Add($"expected the MongoDB span to be named '{{operation}} probe', got {span.Name}");
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Mongodb, failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.CollectionName, "probe", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.Namespace, "qyl", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, operation + " probe", failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected kind Client, got {span.Kind}");
