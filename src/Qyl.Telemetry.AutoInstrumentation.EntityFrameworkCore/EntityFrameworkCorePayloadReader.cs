@@ -1,6 +1,5 @@
-using System.Data;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore;
 
@@ -14,14 +13,12 @@ internal static class EntityFrameworkCorePayloadReader
             return false;
         }
 
-        var operation = commandEvent.Command.CommandType is CommandType.StoredProcedure
-            ? "CALL"
-            : DatabaseSemantics.NormalizeOperation(null, commandEvent.Command.CommandText);
+        var (operation, summary) = QylDbQuerySummary.Describe(commandEvent.Command.CommandType, commandEvent.Command.CommandText);
         command = new EntityFrameworkCoreCommand(
             DbSystem: MapProviderName(commandEvent.Context?.Database.ProviderName),
             Namespace: NormalizeEmpty(commandEvent.Command.Connection?.Database),
             Operation: operation,
-            QuerySummary: DatabaseSemantics.CreateSummary(operation, commandEvent.CommandSource.ToString()),
+            QuerySummary: summary,
             QueryText: commandEvent.Command.CommandText,
             ErrorType: payload is CommandErrorEventData errorEvent
                 ? errorEvent.Exception.GetType().FullName
@@ -32,7 +29,8 @@ internal static class EntityFrameworkCorePayloadReader
         return true;
     }
 
-    private static string? MapProviderName(string? providerName)
+    // Every provider that raises relational command events speaks SQL; an unmapped one is other_sql.
+    private static string MapProviderName(string? providerName)
         => providerName switch
         {
             "Microsoft.EntityFrameworkCore.Sqlite" => QylSemanticAttributes.DbSystemSqlite,
@@ -41,8 +39,8 @@ internal static class EntityFrameworkCorePayloadReader
             "Pomelo.EntityFrameworkCore.MySql" => QylSemanticAttributes.DbSystemMysql,
             "MySql.EntityFrameworkCore" => QylSemanticAttributes.DbSystemMysql,
             "Oracle.EntityFrameworkCore" => QylSemanticAttributes.DbSystemOracleDb,
-            "IBM.EntityFrameworkCore" => "db2",
-            _ => null,
+            "IBM.EntityFrameworkCore" => QylSemanticAttributes.DbSystemIbmDb2,
+            _ => QylSemanticAttributes.DbSystemOtherSql,
         };
 
     private static string? NormalizeEmpty(string? value)
@@ -50,7 +48,7 @@ internal static class EntityFrameworkCorePayloadReader
 }
 
 internal readonly record struct EntityFrameworkCoreCommand(
-    string? DbSystem,
+    string DbSystem,
     string? Namespace,
     string? Operation,
     string? QuerySummary,

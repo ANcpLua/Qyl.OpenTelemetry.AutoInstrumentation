@@ -62,6 +62,7 @@ ownership_items:
     - http.response.status_code
     - http.route
     - qyl.instrumentation.domain
+    - url.scheme
     recommended_attributes: []
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_004
@@ -179,6 +180,7 @@ ownership_items:
     - qyl.instrumentation.domain
     recommended_attributes:
     - error.type
+    - graphql.operation.type
     opt_in_attributes:
     - graphql.document
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
@@ -230,7 +232,8 @@ ownership_items:
     - http.response.status_code
     - server.address
     - qyl.instrumentation.domain
-    recommended_attributes: []
+    recommended_attributes:
+    - network.protocol.version
     opt_in_attributes: []
   - kind: span
     name: httpclient.self
@@ -240,7 +243,8 @@ ownership_items:
     - server.address
     - server.port
     - qyl.instrumentation.domain
-    recommended_attributes: []
+    recommended_attributes:
+    - network.protocol.version
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_011
   key: signals.traces.KAFKA
@@ -426,6 +430,7 @@ ownership_items:
     - messaging.operation.type
     - messaging.operation.name
     - qyl.instrumentation.domain
+    - messaging.destination.name
     recommended_attributes:
     - error.type
     opt_in_attributes: []

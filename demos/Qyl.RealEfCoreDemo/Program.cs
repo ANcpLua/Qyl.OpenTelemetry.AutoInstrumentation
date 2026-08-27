@@ -116,8 +116,8 @@ internal sealed record EfCoreReport(
         RequireTag(updateSpan, DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Sqlite, failures);
         RequireTag(insertSpan, DbAttributes.OperationName, "INSERT", failures);
         RequireTag(updateSpan, DbAttributes.OperationName, "UPDATE", failures);
-        RequireTag(insertSpan, DbAttributes.QuerySummary, "ExecuteSqlRaw INSERT", failures);
-        RequireTag(updateSpan, DbAttributes.QuerySummary, "ExecuteSqlRaw UPDATE", failures);
+        RequireTag(insertSpan, DbAttributes.QuerySummary, "INSERT Items", failures);
+        RequireTag(updateSpan, DbAttributes.QuerySummary, "UPDATE Items", failures);
         RequireTag(errorSpan, DbAttributes.OperationName, "SELECT", failures);
         RequireStatus(insertSpan, "Unset", failures);
         RequireStatus(updateSpan, "Unset", failures);
@@ -134,7 +134,7 @@ internal sealed record EfCoreReport(
             if (!statementOptIn && span.Tags.ContainsKey(DbAttributes.QueryText))
                 failures.Add("db.query.text leaked with default privacy policy");
 
-            if (!span.Name.StartsWith("DB ", StringComparison.Ordinal))
+            if (span.Name is not "INSERT Items" and not "UPDATE Items" and not "SELECT missing_table")
                 failures.Add($"unexpected EFCore span name: {span.Name}");
         }
 

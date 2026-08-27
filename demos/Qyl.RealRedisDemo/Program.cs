@@ -254,9 +254,6 @@ internal sealed record RedisReport(
             var span = spans[0];
             var wire = probe.WireCommands[0];
 
-            if (!StringComparer.Ordinal.Equals(span.Name, "Redis command"))
-                failures.Add($"{probe.Label}: unexpected span name {span.Name}");
-
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"{probe.Label}: expected kind Client, got {span.Kind}");
 
@@ -275,6 +272,9 @@ internal sealed record RedisReport(
                 results.Add(new ProbeResult(probe.Label, wire, string.Empty, span.Status));
                 continue;
             }
+
+            if (!StringComparer.Ordinal.Equals(span.Name, operation))
+                failures.Add($"{probe.Label}: expected span name {operation}, got {span.Name}");
 
             var accepted = s_acceptedWireCommands.TryGetValue(probe.Label, out var declared)
                 ? declared

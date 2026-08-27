@@ -218,8 +218,9 @@ internal sealed record NServiceBusReport(
 
         foreach (var span in nServiceBusSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "NServiceBus message"))
-                failures.Add($"unexpected NServiceBus span name: {span.Name}");
+            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName) ||
+                !StringComparer.Ordinal.Equals(span.Name, operationName))
+                failures.Add($"expected the NServiceBus span to be named after messaging.operation.name, got {span.Name}");
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "nservicebus", failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);

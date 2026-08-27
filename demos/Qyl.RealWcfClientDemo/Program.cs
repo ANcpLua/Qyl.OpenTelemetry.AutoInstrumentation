@@ -116,8 +116,8 @@ internal sealed record WcfClientReport(
 
         foreach (var span in wcfSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "WCF CLIENT"))
-                failures.Add($"unexpected WCF span name: {span.Name}");
+            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes.Method, out var method) || !StringComparer.Ordinal.Equals(span.Name, method))
+                failures.Add($"expected the WCF span to be named after rpc.method, got {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected WCF span kind Client, got {span.Kind}");
             if (!StringComparer.Ordinal.Equals(span.Status, "Error"))

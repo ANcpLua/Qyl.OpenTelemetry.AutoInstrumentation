@@ -131,8 +131,10 @@ internal sealed record RabbitMqReport(
 
         foreach (var span in rabbitSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "RabbitMQ publish"))
+            var destination = StringComparer.Ordinal.Equals(span.Status, "Error") ? "qyl.missing.exchange" : "amq.default";
+            if (!StringComparer.Ordinal.Equals(span.Name, "publish " + destination))
                 failures.Add($"unexpected RabbitMQ span name: {span.Name}");
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, destination, failures);
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Rabbitmq, failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);

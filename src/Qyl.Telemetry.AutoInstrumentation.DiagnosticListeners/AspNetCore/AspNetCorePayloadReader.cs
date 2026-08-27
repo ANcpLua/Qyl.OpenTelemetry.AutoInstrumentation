@@ -19,6 +19,9 @@ internal static class AspNetCorePayloadReader
     public static string? GetPath(object? payload)
         => GetHttpContext(payload)?.Request.Path.Value;
 
+    public static string? GetScheme(object? payload)
+        => GetHttpContext(payload)?.Request.Scheme;
+
     public static int? GetStatusCode(object? payload)
         => GetHttpContext(payload)?.Response.StatusCode;
 

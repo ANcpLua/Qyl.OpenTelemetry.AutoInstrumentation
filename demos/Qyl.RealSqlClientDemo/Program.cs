@@ -210,7 +210,7 @@ internal sealed record SqlClientReport(
         RequireTag(successSelect, DbAttributes.SystemName, DbAttributes.SystemNameValues.MicrosoftSqlServer, failures);
         RequireTag(successSelect, DbAttributes.Namespace, "tempdb", failures);
         RequireTag(successSelect, DbAttributes.OperationName, "SELECT", failures);
-        RequireTag(successSelect, DbAttributes.QuerySummary, sourceInterceptorExpected ? "SELECT" : "Text SELECT", failures);
+        RequireTag(successSelect, DbAttributes.QuerySummary, "SELECT #QylProbe", failures);
         if (!sourceInterceptorExpected)
         {
             RequireTag(successSelect, ServerAttributes.Address, "127.0.0.1", failures);
@@ -232,8 +232,7 @@ internal sealed record SqlClientReport(
 
         foreach (var span in sqlSpans)
         {
-            var expectedPrefix = sourceInterceptorExpected ? "DB " : "SQL ";
-            if (!span.Name.StartsWith(expectedPrefix, StringComparison.Ordinal))
+            if (span.Name is not "CREATE #QylProbe" and not "INSERT #QylProbe" and not "SELECT #QylProbe" and not "SELECT dbo.QylMissingTable")
                 failures.Add($"unexpected SqlClient span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, ActivityKind.Client.ToString()))
                 failures.Add($"expected SqlClient span kind Client, got {span.Kind}");

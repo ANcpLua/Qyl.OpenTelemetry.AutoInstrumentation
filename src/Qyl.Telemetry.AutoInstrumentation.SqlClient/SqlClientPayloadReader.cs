@@ -1,7 +1,6 @@
-using System.Data;
 using System.Globalization;
 using Microsoft.Data.SqlClient;
-using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.SqlClient;
 
@@ -23,14 +22,14 @@ internal static class SqlClientPayloadReader
 
         _ = TryGetPayloadValue<Exception>(payload, ExceptionKey, out var exception);
 
-        var operation = NormalizeOperation(sqlCommand.CommandType, sqlCommand.CommandText);
+        var (operation, summary) = QylDbQuerySummary.Describe(sqlCommand.CommandType, sqlCommand.CommandText);
         var endpoint = ParseDataSource(sqlCommand.Connection?.DataSource);
 
         command = new SqlClientCommand(
             Command: sqlCommand,
             Namespace: NormalizeEmpty(sqlCommand.Connection?.Database),
             Operation: operation,
-            QuerySummary: DatabaseSemantics.CreateSummary(operation, sqlCommand.CommandType.ToString()),
+            QuerySummary: summary,
             QueryText: sqlCommand.CommandText,
             ServerAddress: endpoint.Address,
             ServerPort: endpoint.Port,
@@ -90,14 +89,6 @@ internal static class SqlClientPayloadReader
         value = null;
         return false;
     }
-
-    private static string? NormalizeOperation(CommandType commandType, string? queryText)
-        => commandType switch
-        {
-            CommandType.StoredProcedure => "CALL",
-            CommandType.Text => DatabaseSemantics.NormalizeOperation(null, queryText),
-            _ => DatabaseSemantics.NormalizeOperation(null, queryText),
-        };
 
     private static string? GetErrorType(Exception? exception)
         => exception switch

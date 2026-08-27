@@ -147,8 +147,9 @@ internal sealed record MassTransitReport(
 
         foreach (var span in massTransitSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "MassTransit message"))
-                failures.Add($"unexpected MassTransit span name: {span.Name}");
+            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName) ||
+                !StringComparer.Ordinal.Equals(span.Name, operationName))
+                failures.Add($"expected the MassTransit span to be named after messaging.operation.name, got {span.Name}");
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "masstransit", failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);

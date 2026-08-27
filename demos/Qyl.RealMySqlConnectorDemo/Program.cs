@@ -76,7 +76,7 @@ internal sealed record MySqlConnectorReport(
 
         foreach (var span in mysqlSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "DB SELECT"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "SELECT"))
                 failures.Add($"unexpected MySqlConnector span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected MySqlConnector span kind Client, got {span.Kind}");

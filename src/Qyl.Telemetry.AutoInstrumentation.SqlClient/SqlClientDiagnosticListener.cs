@@ -73,7 +73,7 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
 
         var endTime = TimeProvider.System.GetUtcNow();
         using var activity = QylActivitySource.StartAt(
-            QylActivityNames.SqlClientCommand(command.Operation),
+            QylSpanNames.Db(command.QuerySummary, QylSemanticAttributes.DbSystemMicrosoftSqlServer),
             ActivityKind.Client,
             endTime - duration);
         activity?.SetEndTime(endTime.UtcDateTime);
@@ -85,7 +85,6 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQuerySummary, command.QuerySummary);
         if (DatabaseSemantics.ShouldWriteQueryText(
                 command.QueryText,
-                command.Operation,
                 QylAutoInstrumentationOptions.Current.SqlClientSetDbStatementForText))
         {
             SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText, command.QueryText);
@@ -93,7 +92,7 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
 
         SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerAddress, command.ServerAddress);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerPort, command.ServerPort);
-        DatabaseSemantics.SetError(activity, command.ErrorType);
+        ErrorStatusSemantics.SetError(activity, command.ErrorType);
     }
 
 }

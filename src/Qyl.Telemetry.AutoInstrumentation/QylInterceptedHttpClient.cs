@@ -624,6 +624,7 @@ public static class QylInterceptedHttpClient
         if (activity is not null)
         {
             QylHttpActivityPolicy.SetResponseStatus(activity, statusCode, 400);
+            QylHttpActivityPolicy.SetProtocolVersion(activity, response.Version);
             QylCaptureHelpers.SetHttpHeaders(
                 activity,
                 QylAutoInstrumentationOptions.Current.HttpClientCapturedResponseHeaderMap,

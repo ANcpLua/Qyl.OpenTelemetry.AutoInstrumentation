@@ -95,7 +95,7 @@ internal sealed record ElasticTransportReport(
 
         foreach (var span in elasticSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "Elastic transport request"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "request"))
                 failures.Add($"unexpected Elastic.Transport span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected Elastic.Transport span kind Client, got {span.Kind}");

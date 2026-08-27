@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 
@@ -38,13 +39,14 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
                          DiagnosticPayloadReader.GetInt32(payload, QylSemanticAttributes.HttpResponseStatusCode);
         var errorType = DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.ErrorType);
 
-        using var activity = QylActivitySource.StartAtAmbientStart(QylActivityNames.HttpServer(method, route), ActivityKind.Server);
+        using var activity = QylActivitySource.StartAtAmbientStart(QylSpanNames.HttpServer(method, route), ActivityKind.Server);
 
         SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRoute, route);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlPath, path);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlScheme, AspNetCorePayloadReader.GetScheme(payload));
 
         // Option parity with the explicit middleware lane: url.query obeys the ASP.NET Core
         // redaction control; header capture obeys the configured capture lists.

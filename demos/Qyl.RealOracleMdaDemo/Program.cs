@@ -81,7 +81,7 @@ internal sealed record OracleMdaReport(
 
         foreach (var span in oracleSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "DB SELECT"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "SELECT DUAL"))
                 failures.Add($"unexpected Oracle MDA span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected Oracle MDA span kind Client, got {span.Kind}");
@@ -91,7 +91,7 @@ internal sealed record OracleMdaReport(
             RequireTag(span, "qyl.instrumentation.domain", "db.client", failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.OracleDb, failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "SELECT", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, "SELECT", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, "SELECT DUAL", failures);
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
             if (StatementOptIn)
                 RequireTagPrefix(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, "SELECT", failures);

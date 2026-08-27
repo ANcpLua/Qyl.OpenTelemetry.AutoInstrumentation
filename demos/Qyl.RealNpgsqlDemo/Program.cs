@@ -118,7 +118,7 @@ internal sealed record NpgsqlReport(
 
         foreach (var span in npgsqlSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "DB SELECT"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "SELECT"))
                 failures.Add($"unexpected Npgsql span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected Npgsql span kind Client, got {span.Kind}");

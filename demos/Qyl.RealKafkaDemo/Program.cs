@@ -203,7 +203,7 @@ internal sealed record KafkaReport(
         foreach (var span in sendSuccess)
         {
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Kafka, failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, "publish", failures);
+            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, "send", failures);
             RequireKind(span, "Producer", failures);
         }
 
@@ -216,13 +216,14 @@ internal sealed record KafkaReport(
         foreach (var span in receive)
         {
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Kafka, failures);
-            RequireKind(span, "Consumer", failures);
+            RequireKind(span, "Client", failures);
         }
 
         foreach (var span in kafkaSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "Kafka message"))
-                failures.Add($"unexpected Kafka span name: {span.Name}");
+            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName) ||
+                !StringComparer.Ordinal.Equals(span.Name, operationName))
+                failures.Add($"expected the Kafka span to be named after messaging.operation.name, got {span.Name}");
         }
 
         return new KafkaReport(runtimeMode, failures.Count is 0, failures.ToArray(), kafkaSpans);

@@ -14,7 +14,7 @@ public static class QylInterceptedRedis
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.StackExchangeRedis,
-            QylActivityNames.RedisCommand,
+            QylSpanNames.Db(operationName, QylSemanticAttributes.DbSystemRedis),
             ActivityKind.Client,
             QylInstrumentationDomains.DbRedis);
         if (activity is null)

@@ -9,6 +9,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylInterceptedLogger
 {
+    private const string ActivityName = "ILogger log";
 
     /// <summary>Runs the generic Microsoft.Extensions.Logging log helper used by source-generated qyl interceptors.</summary>
     public static void Log<TState>(
@@ -74,7 +75,7 @@ public static class QylInterceptedLogger
 
         var activity = QylActivityFactory.StartLogActivity(
             QylAutoInstrumentationIds.ILogger,
-            QylActivityNames.LoggerLog,
+            ActivityName,
             ActivityKind.Internal,
             QylInstrumentationDomains.LogILogger);
         if (activity is null)

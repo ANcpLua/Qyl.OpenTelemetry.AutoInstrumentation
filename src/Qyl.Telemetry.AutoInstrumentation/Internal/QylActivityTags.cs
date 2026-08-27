@@ -8,31 +8,35 @@ internal static class QylActivityTags
         Activity activity,
         string system,
         string operationType,
-        string operationName)
+        string operationName,
+        string? destination)
     {
         activity.SetTag(QylSemanticAttributes.MessagingSystem, system);
         activity.SetTag(QylSemanticAttributes.MessagingOperationType, operationType);
         activity.SetTag(QylSemanticAttributes.MessagingOperationName, operationName);
+        if (destination is not null)
+            activity.SetTag(QylSemanticAttributes.MessagingDestinationName, destination);
     }
 
     public static void SetDb(
         Activity activity,
         string systemName,
-        string operationName,
-        string querySummary)
+        string? operationName,
+        string? querySummary)
     {
         activity.SetTag(QylSemanticAttributes.DbSystemName, systemName);
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, querySummary);
+        SetDbOperation(activity, operationName, querySummary);
     }
 
     public static void SetDbOperation(
         Activity activity,
-        string operationName,
-        string querySummary)
+        string? operationName,
+        string? querySummary)
     {
-        activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
-        activity.SetTag(QylSemanticAttributes.DbQuerySummary, querySummary);
+        if (operationName is not null)
+            activity.SetTag(QylSemanticAttributes.DbOperationName, operationName);
+        if (querySummary is not null)
+            activity.SetTag(QylSemanticAttributes.DbQuerySummary, querySummary);
     }
 
     public static void SetRpc(
@@ -46,6 +50,9 @@ internal static class QylActivityTags
 
     public static void SetGraphQlOperationName(Activity activity, string operationName)
         => activity.SetTag(QylSemanticAttributes.GraphQlOperationName, operationName);
+
+    public static void SetGraphQlOperationType(Activity activity, string operationType)
+        => activity.SetTag(QylSemanticAttributes.GraphQlOperationType, operationType);
 
     public static void SetLogSeverity(Activity activity, string severity)
         => activity.SetTag(QylSemanticAttributes.LogSeverity, severity);

@@ -9,6 +9,23 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 ### Changed
 
+- Span names are derived from the span's own attributes, following each OpenTelemetry family's
+  naming rule, and `QylActivityNames` is deleted. Database spans are named by `db.query.summary`
+  (`SELECT Probe`, `INSERT Items`), which is now a real summary — each operation keyword with the
+  schema object it targets, bounded, with literals, parameters, and comments skipped — instead of
+  the bare verb, or the EF Core command source / SqlClient command type that used to be smuggled
+  into it. Redis, MongoDB, and Elasticsearch spans are named by their operation; WCF by `rpc.method`;
+  GraphQL by `graphql.operation.type` (`query`, `mutation`, `subscription`), which is now emitted, or
+  `GraphQL Operation` when the document has none; messaging by `{operation} {destination}`. When a
+  query has no recognisable operation, `db.operation.name` is omitted rather than guessed.
+- Messaging: Kafka produce spans carry `messaging.operation.name = send` (the convention's first
+  choice for Kafka); `Consume()` spans are `receive` operations and therefore `Client` spans, as the
+  messaging conventions require for pull-based consumers, not `Consumer` spans. RabbitMQ publish spans
+  emit `messaging.destination.name` — the exchange that was already passed to the helper and dropped,
+  `amq.default` for the default exchange. The two conflated operation-name constants in the facade go.
+- HTTP client spans on both lanes emit `network.protocol.version`; ASP.NET Core server spans on the
+  listener lane emit `url.scheme`, which the convention requires. EF Core maps `IBM.EntityFrameworkCore`
+  to `ibm.db2` (the registry value, not `db2`) and unmapped relational providers to `other_sql`.
 - The qyl scope names — the `Qyl.OpenTelemetry.AutoInstrumentation` source, the `.Database` and
   `.NServiceBus` meters, and the `System.Runtime` subscription — read from the registry-generated
   `QylTelemetryNames.Scopes` constants instead of literals kept in sync by comments. The invariant

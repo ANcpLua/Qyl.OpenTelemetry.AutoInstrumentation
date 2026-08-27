@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore;
 
@@ -32,7 +33,7 @@ internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListe
             return;
 
         using var activity = QylActivitySource.StartAt(
-            QylActivityNames.DbCommand(command.Operation),
+            QylSpanNames.Db(command.QuerySummary, command.DbSystem),
             ActivityKind.Client,
             command.StartTime);
         activity?.SetEndTime((command.StartTime + command.Duration).UtcDateTime);
@@ -44,12 +45,11 @@ internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListe
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQuerySummary, command.QuerySummary);
         if (DatabaseSemantics.ShouldWriteQueryText(
                 command.QueryText,
-                command.Operation,
                 QylAutoInstrumentationOptions.Current.EntityFrameworkCoreSetDbStatementForText))
         {
             SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText, command.QueryText);
         }
 
-        DatabaseSemantics.SetError(activity, command.ErrorType);
+        ErrorStatusSemantics.SetError(activity, command.ErrorType);
     }
 }

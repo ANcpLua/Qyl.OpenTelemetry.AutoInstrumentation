@@ -139,8 +139,9 @@ internal sealed record MongoDbReport(
 
         foreach (var span in mongoSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "MongoDB command"))
-                failures.Add($"unexpected MongoDB span name: {span.Name}");
+            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var operation) ||
+                !StringComparer.Ordinal.Equals(span.Name, operation))
+                failures.Add($"expected the MongoDB span to be named after db.operation.name, got {span.Name}");
 
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Mongodb, failures);
 

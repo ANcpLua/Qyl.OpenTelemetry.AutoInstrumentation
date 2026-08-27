@@ -58,7 +58,7 @@ DEMO_SOLUTION_PATH = ROOT / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylMetricMeters.cs"
 METRIC_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylMetricNames.cs"
-ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylActivityNames.cs"
+ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Internal" / "QylSpanNames.cs"
 SENSITIVE_CAPTURE_POLICY_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
 RUNTIME_EMISSION_ROOTS = [
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation",
@@ -690,7 +690,7 @@ def verify_bounded_activity_name_policy() -> None:
             lowered = parameter.lower()
             for fragment in forbidden_parameter_fragments:
                 if fragment in lowered:
-                    fail(f"QylActivityNames public span-name composer must not accept unbounded parameter '{parameter}'")
+                    fail(f"QylSpanNames composer must not accept unbounded parameter '{parameter}'")
 
 
 def find_catch_blocks(text: str) -> list[str]:

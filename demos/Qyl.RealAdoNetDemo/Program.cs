@@ -119,7 +119,7 @@ internal sealed record AdoNetReport(
 
         foreach (var span in adoNetSpans)
         {
-            if (span.Name is not "DB CREATE" and not "DB INSERT" and not "DB SELECT")
+            if (span.Name is not "CREATE Probe" and not "INSERT Probe" and not "SELECT Probe" and not "SELECT MissingProbe")
                 failures.Add($"unexpected ADO.NET span name: {span.Name}");
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))

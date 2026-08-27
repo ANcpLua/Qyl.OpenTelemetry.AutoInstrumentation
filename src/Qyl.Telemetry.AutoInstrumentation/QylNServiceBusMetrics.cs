@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -26,16 +27,11 @@ internal static class QylNServiceBusMetrics
                 elapsed.TotalSeconds,
                 new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus),
                 new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend),
-                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationName, NormalizeOperation(operationName)));
+                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationName, QylMessagingActivityPolicy.OperationName(operationName)));
         }
     }
 
     internal static bool IsRecordingEnabled
         => OperationDuration.Enabled &&
            QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus);
-
-    private static string NormalizeOperation(string operationName)
-        => string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? QylSemanticAttributes.MessagingOperationNameSend
-            : QylSemanticAttributes.MessagingOperationNamePublish;
 }

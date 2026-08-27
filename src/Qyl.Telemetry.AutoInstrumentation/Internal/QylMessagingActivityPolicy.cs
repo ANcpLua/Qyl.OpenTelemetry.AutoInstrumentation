@@ -4,79 +4,82 @@ namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
 internal static class QylMessagingActivityPolicy
 {
+    private const string Send = "send";
+    private const string Publish = "publish";
+    private const string Receive = "receive";
+    private const string RabbitMqDefaultExchange = "amq.default";
+
     public static Activity? StartKafkaProducerActivity()
-        => StartMessagingActivity(
+        => Start(
             QylAutoInstrumentationIds.Kafka,
-            QylActivityNames.KafkaMessage,
             ActivityKind.Producer,
             QylInstrumentationDomains.MessagingKafka,
             QylSemanticAttributes.MessagingSystemKafka,
             QylSemanticAttributes.MessagingOperationTypeSend,
-            QylSemanticAttributes.MessagingOperationNamePublish);
+            Send,
+            destination: null);
 
     public static Activity? StartKafkaConsumerActivity()
-        => StartMessagingActivity(
+        => Start(
             QylAutoInstrumentationIds.Kafka,
-            QylActivityNames.KafkaMessage,
-            ActivityKind.Consumer,
+            ActivityKind.Client,
             QylInstrumentationDomains.MessagingKafka,
             QylSemanticAttributes.MessagingSystemKafka,
             QylSemanticAttributes.MessagingOperationTypeReceive,
-            QylSemanticAttributes.MessagingOperationTypeReceive);
+            Receive,
+            destination: null);
 
-    public static Activity? StartMassTransitActivity(string operationName)
-        => StartMessagingActivity(
+    public static Activity? StartMassTransitActivity(string method)
+        => Start(
             QylAutoInstrumentationIds.MassTransit,
-            QylActivityNames.MassTransitMessage,
             ActivityKind.Producer,
             QylInstrumentationDomains.MessagingMassTransit,
             QylSemanticAttributes.MessagingSystemMassTransit,
             QylSemanticAttributes.MessagingOperationTypeSend,
-            NormalizeSendPublishOperation(operationName));
+            OperationName(method),
+            destination: null);
 
-    public static Activity? StartNServiceBusActivity(string operationName)
-        => StartMessagingActivity(
+    public static Activity? StartNServiceBusActivity(string method)
+        => Start(
             QylAutoInstrumentationIds.NServiceBus,
-            QylActivityNames.NServiceBusMessage,
             ActivityKind.Producer,
             QylInstrumentationDomains.MessagingNServiceBus,
             QylSemanticAttributes.MessagingSystemNServiceBus,
             QylSemanticAttributes.MessagingOperationTypeSend,
-            NormalizeSendPublishOperation(operationName));
+            OperationName(method),
+            destination: null);
 
     public static Activity? StartRabbitMqPublishActivity(string? exchange)
-        => StartMessagingActivity(
+        => Start(
             QylAutoInstrumentationIds.RabbitMq,
-            QylActivityNames.RabbitMqPublish,
             ActivityKind.Producer,
             QylInstrumentationDomains.MessagingRabbitMq,
             QylSemanticAttributes.MessagingSystemRabbitMq,
             QylSemanticAttributes.MessagingOperationTypeSend,
-            QylSemanticAttributes.MessagingOperationNamePublish);
+            Publish,
+            string.IsNullOrEmpty(exchange) ? RabbitMqDefaultExchange : exchange);
 
-    private static Activity? StartMessagingActivity(
+    public static string OperationName(string method)
+        => string.Equals(method, "Send", StringComparison.Ordinal) ? Send : Publish;
+
+    private static Activity? Start(
         string instrumentationId,
-        string activityName,
-        ActivityKind activityKind,
-        string instrumentationDomain,
-        string messagingSystem,
+        ActivityKind kind,
+        string domain,
+        string system,
         string operationType,
-        string operationName)
+        string operationName,
+        string? destination)
     {
         var activity = QylActivityFactory.StartTraceActivity(
             instrumentationId,
-            activityName,
-            activityKind,
-            instrumentationDomain);
+            QylSpanNames.Messaging(operationName, destination),
+            kind,
+            domain);
         if (activity is null)
             return null;
 
-        QylActivityTags.SetMessaging(activity, messagingSystem, operationType, operationName);
+        QylActivityTags.SetMessaging(activity, system, operationType, operationName, destination);
         return activity;
     }
-
-    private static string NormalizeSendPublishOperation(string operationName)
-        => string.Equals(operationName, "Send", StringComparison.Ordinal)
-            ? QylSemanticAttributes.MessagingOperationNameSend
-            : QylSemanticAttributes.MessagingOperationNamePublish;
 }

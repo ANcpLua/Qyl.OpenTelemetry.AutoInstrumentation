@@ -37,7 +37,7 @@ internal sealed class GrpcClientDiagnosticListener : QylDiagnosticListenerSubscr
         var requestUri = request?.RequestUri;
 
         using var activity = QylActivitySource.StartAtAmbientStart(
-            QylActivityNames.GrpcClient(method),
+            QylSpanNames.Grpc(method),
             ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);

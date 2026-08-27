@@ -76,7 +76,7 @@ internal sealed record MySqlDataReport(
 
         foreach (var span in mysqlSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "DB SELECT"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "SELECT"))
                 failures.Add($"unexpected MySql.Data span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected MySql.Data span kind Client, got {span.Kind}");

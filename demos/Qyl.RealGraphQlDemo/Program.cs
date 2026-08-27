@@ -131,6 +131,7 @@ internal sealed record GraphQlReport(
         else
         {
             ExpectTag(success, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.OperationName, OperationName, failures);
+            ExpectTag(success, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.OperationTypeValues.Query, failures);
             ExpectTag(success, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes.Document, QueryText, failures);
         }
 
@@ -141,7 +142,8 @@ internal sealed record GraphQlReport(
 
         foreach (var span in graphQlSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "GraphQL execute"))
+            var expectedName = StringComparer.Ordinal.Equals(span.Status, "Error") ? "GraphQL Operation" : "query";
+            if (!StringComparer.Ordinal.Equals(span.Name, expectedName))
                 failures.Add($"unexpected GraphQL span name: {span.Name}");
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Internal"))

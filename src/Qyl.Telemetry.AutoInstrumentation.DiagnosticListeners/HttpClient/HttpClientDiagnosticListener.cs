@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
+using Qyl.Telemetry.AutoInstrumentation.Internal;
 using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
@@ -39,11 +40,12 @@ internal sealed class HttpClientDiagnosticListener : QylDiagnosticListenerSubscr
         var statusCode = DiagnosticPayloadReader.GetInt32(payload, QylSemanticAttributes.HttpResponseStatusCode);
         var errorType = DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.ErrorType);
 
-        using var activity = QylActivitySource.StartAtAmbientStart(QylActivityNames.HttpClient(method), ActivityKind.Client);
+        using var activity = QylActivitySource.StartAtAmbientStart(QylSpanNames.Http(method), ActivityKind.Client);
 
         SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethodOriginal, originalMethod);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.NetworkProtocolVersion, DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.NetworkProtocolVersion));
         HttpSemantics.SetUrlTags(activity, url, serverAddress, serverPort);
         HttpSemantics.SetStatus(activity, ActivityKind.Client, statusCode, errorType);
     }

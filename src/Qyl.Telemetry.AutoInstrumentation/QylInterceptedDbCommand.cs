@@ -17,7 +17,7 @@ public static class QylInterceptedDbCommand
         ArgumentNullException.ThrowIfNull(instrumentationId);
         ArgumentNullException.ThrowIfNull(operationName);
 
-        return QylDbActivityPolicy.StartDbCommandActivity(command, instrumentationId, operationName);
+        return QylDbActivityPolicy.StartDbCommandActivity(command, instrumentationId);
     }
 
     /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>

@@ -87,7 +87,7 @@ internal sealed record ElasticsearchReport(
 
         foreach (var span in elasticsearchSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "Elasticsearch request"))
+            if (!StringComparer.Ordinal.Equals(span.Name, "request"))
                 failures.Add($"unexpected Elasticsearch span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected Elasticsearch span kind Client, got {span.Kind}");

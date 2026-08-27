@@ -151,6 +151,7 @@ contract_items:
     - http.response.status_code
     - http.route
     - qyl.instrumentation.domain
+    - url.scheme
     recommended_attributes: []
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
@@ -364,6 +365,7 @@ contract_items:
     - qyl.instrumentation.domain
     recommended_attributes:
     - error.type
+    - graphql.operation.type
     opt_in_attributes:
     - graphql.document
 - kind: signal_specific_instrumentation_promise
@@ -455,7 +457,8 @@ contract_items:
     - http.response.status_code
     - server.address
     - qyl.instrumentation.domain
-    recommended_attributes: []
+    recommended_attributes:
+    - network.protocol.version
     opt_in_attributes: []
   - kind: span
     name: httpclient.self
@@ -465,7 +468,8 @@ contract_items:
     - server.address
     - server.port
     - qyl.instrumentation.domain
-    recommended_attributes: []
+    recommended_attributes:
+    - network.protocol.version
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.KAFKA
@@ -836,6 +840,7 @@ contract_items:
     - messaging.operation.type
     - messaging.operation.name
     - qyl.instrumentation.domain
+    - messaging.destination.name
     recommended_attributes:
     - error.type
     opt_in_attributes: []

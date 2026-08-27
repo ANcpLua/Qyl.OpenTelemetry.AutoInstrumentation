@@ -113,7 +113,7 @@ internal sealed record SqliteReport(
 
         foreach (var span in sqliteSpans)
         {
-            if (span.Name is not "DB CREATE" and not "DB INSERT" and not "DB SELECT")
+            if (span.Name is not "CREATE Probe" and not "INSERT Probe" and not "SELECT Probe" and not "SELECT MissingProbe")
                 failures.Add($"unexpected SQLite span name: {span.Name}");
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))

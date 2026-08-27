@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -13,7 +14,7 @@ internal static class QylHttpActivityPolicy
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.HttpClient,
-            QylActivityNames.HttpClient(method),
+            QylSpanNames.Http(method),
             ActivityKind.Client,
             instrumentationDomain);
         if (activity is null)
@@ -36,7 +37,7 @@ internal static class QylHttpActivityPolicy
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.AspNetCore,
-            QylActivityNames.HttpServer(method, route),
+            QylSpanNames.HttpServer(method, route),
             ActivityKind.Server,
             QylInstrumentationDomains.AspNetCoreServer);
         if (activity is null)
@@ -65,7 +66,7 @@ internal static class QylHttpActivityPolicy
             return;
 
         activity.SetTag(QylSemanticAttributes.HttpRoute, route);
-        activity.DisplayName = QylActivityNames.HttpServer(method, route);
+        activity.DisplayName = QylSpanNames.HttpServer(method, route);
     }
 
     public static void SetResponseStatus(Activity activity, int statusCode, int errorStatusCodeFloor)
@@ -74,6 +75,11 @@ internal static class QylHttpActivityPolicy
         if (statusCode >= errorStatusCodeFloor)
             QylActivityStatus.RecordError(activity, statusCode);
     }
+
+    public static void SetProtocolVersion(Activity activity, Version version)
+        => activity.SetTag(
+            QylSemanticAttributes.NetworkProtocolVersion,
+            version.Minor is 0 ? version.Major.ToString(CultureInfo.InvariantCulture) : version.ToString(2));
 
     private static void SetRequestMethod(Activity activity, string method, string? methodOriginal)
     {

@@ -17,7 +17,7 @@ public static class QylInterceptedMongoDb
         var operation = NormalizeOperation(operationName);
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.MongoDb,
-            QylActivityNames.MongoDbCommand,
+            QylSpanNames.Db(operation, QylSemanticAttributes.DbSystemMongodb),
             ActivityKind.Client,
             QylInstrumentationDomains.DbMongoDb);
         if (activity is null)

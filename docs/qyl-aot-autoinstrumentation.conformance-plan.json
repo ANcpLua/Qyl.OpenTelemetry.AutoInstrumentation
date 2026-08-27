@@ -13,7 +13,8 @@
             "http.request.method",
             "http.response.status_code",
             "http.route",
-            "qyl.instrumentation.domain"
+            "qyl.instrumentation.domain",
+            "url.scheme"
           ],
           "recommended_attributes": [],
           "opt_in_attributes": []
@@ -27,7 +28,9 @@
             "server.address",
             "qyl.instrumentation.domain"
           ],
-          "recommended_attributes": [],
+          "recommended_attributes": [
+            "network.protocol.version"
+          ],
           "opt_in_attributes": []
         },
         {
@@ -40,7 +43,9 @@
             "server.port",
             "qyl.instrumentation.domain"
           ],
-          "recommended_attributes": [],
+          "recommended_attributes": [
+            "network.protocol.version"
+          ],
           "opt_in_attributes": []
         }
       ]
@@ -264,7 +269,8 @@
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "error.type",
+            "graphql.operation.type"
           ],
           "opt_in_attributes": [
             "graphql.document"
@@ -297,7 +303,8 @@
             "messaging.system",
             "messaging.operation.type",
             "messaging.operation.name",
-            "qyl.instrumentation.domain"
+            "qyl.instrumentation.domain",
+            "messaging.destination.name"
           ],
           "recommended_attributes": [
             "error.type"

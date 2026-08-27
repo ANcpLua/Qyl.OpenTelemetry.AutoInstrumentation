@@ -16,7 +16,7 @@ public static class QylInterceptedElastic
         var isElasticTransport = string.Equals(instrumentationId, QylAutoInstrumentationIds.ElasticTransport, StringComparison.Ordinal);
         var activity = QylActivityFactory.StartTraceActivity(
             instrumentationId,
-            isElasticTransport ? "Elastic transport request" : "Elasticsearch request",
+            QylSpanNames.Db(operation, QylSemanticAttributes.DbSystemElasticsearch),
             ActivityKind.Client,
             isElasticTransport ? QylInstrumentationDomains.ElasticTransport : QylInstrumentationDomains.DbElasticsearch);
         if (activity is null)

@@ -91,6 +91,8 @@ internal static class QylSemanticAttributes
     public const string DbSystemRedis = DbIncubatingAttributes.SystemNameValues.Redis;
     /// <summary>Well-known database System Sqlite value used by qyl auto-instrumentation.</summary>
     public const string DbSystemSqlite = DbIncubatingAttributes.SystemNameValues.Sqlite;
+    /// <summary>Well-known database System Ibm Db2 value used by qyl auto-instrumentation.</summary>
+    public const string DbSystemIbmDb2 = DbIncubatingAttributes.SystemNameValues.IbmDb2;
 
     /// <summary>Well-known Rpc System value used by qyl auto-instrumentation.</summary>
     public const string RpcSystem = RpcAttributes.SystemName;
@@ -113,10 +115,8 @@ internal static class QylSemanticAttributes
     public const string MessagingSystem = MessagingAttributes.System;
     /// <summary>Well-known Messaging Operation Name value used by qyl auto-instrumentation.</summary>
     public const string MessagingOperationName = MessagingAttributes.OperationName;
-    /// <summary>Well-known Messaging Operation Name Publish value used by qyl auto-instrumentation.</summary>
-    public const string MessagingOperationNamePublish = "publish";
-    /// <summary>Well-known Messaging Operation Name Send value used by qyl auto-instrumentation.</summary>
-    public const string MessagingOperationNameSend = MessagingAttributes.OperationTypeValues.Send;
+    /// <summary>Well-known Messaging Destination Name value used by qyl auto-instrumentation.</summary>
+    public const string MessagingDestinationName = MessagingAttributes.DestinationName;
     /// <summary>Well-known Messaging Operation Type value used by qyl auto-instrumentation.</summary>
     public const string MessagingOperationType = MessagingAttributes.OperationType;
     /// <summary>Well-known Messaging Operation Type Receive value used by qyl auto-instrumentation.</summary>
@@ -152,6 +152,14 @@ internal static class QylSemanticAttributes
     public const string GraphQlOperationName = GraphqlAttributes.OperationName;
     /// <summary>Well-known Graph Ql Document value used by qyl auto-instrumentation.</summary>
     public const string GraphQlDocument = GraphqlAttributes.Document;
+    /// <summary>Well-known Graph Ql Operation Type value used by qyl auto-instrumentation.</summary>
+    public const string GraphQlOperationType = GraphqlAttributes.OperationType;
+    /// <summary>Well-known Graph Ql Operation Type Query value used by qyl auto-instrumentation.</summary>
+    public const string GraphQlOperationTypeQuery = GraphqlAttributes.OperationTypeValues.Query;
+    /// <summary>Well-known Graph Ql Operation Type Mutation value used by qyl auto-instrumentation.</summary>
+    public const string GraphQlOperationTypeMutation = GraphqlAttributes.OperationTypeValues.Mutation;
+    /// <summary>Well-known Graph Ql Operation Type Subscription value used by qyl auto-instrumentation.</summary>
+    public const string GraphQlOperationTypeSubscription = GraphqlAttributes.OperationTypeValues.Subscription;
 
     /// <summary>Well-known Server Address value used by qyl auto-instrumentation.</summary>
     public const string ServerAddress = ServerAttributes.Address;
@@ -161,6 +169,8 @@ internal static class QylSemanticAttributes
     public const string NetworkPeerAddress = NetworkAttributes.PeerAddress;
     /// <summary>Well-known Network Peer Port value used by qyl auto-instrumentation.</summary>
     public const string NetworkPeerPort = NetworkAttributes.PeerPort;
+    /// <summary>Well-known Network Protocol Version value used by qyl auto-instrumentation.</summary>
+    public const string NetworkProtocolVersion = NetworkAttributes.ProtocolVersion;
     /// <summary>Well-known Error Type value used by qyl auto-instrumentation.</summary>
     public const string ErrorType = ErrorAttributes.Type;
 }

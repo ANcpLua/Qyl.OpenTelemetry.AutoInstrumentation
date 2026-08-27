@@ -8,13 +8,14 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylInterceptedQuartz
 {
+    private const string ActivityName = "Quartz execute";
 
     /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
     public static Activity? StartActivity()
     {
         return QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.Quartz,
-            QylActivityNames.QuartzExecute,
+            ActivityName,
             ActivityKind.Internal,
             QylInstrumentationDomains.JobQuartz);
     }
