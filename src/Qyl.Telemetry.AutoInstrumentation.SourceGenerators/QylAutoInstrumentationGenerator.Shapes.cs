@@ -6,76 +6,130 @@ using Microsoft.CodeAnalysis;
 
 namespace Qyl.Telemetry.AutoInstrumentation.SourceGenerators;
 
+/// <summary>
+/// The named shape predicates: the genuinely-logic residue a declaration cannot express as data.
+/// A declaration selects one by name; the predicate validates the overload against the library's
+/// real signature and computes the structural facts the emitted interceptor needs.
+/// </summary>
 public sealed partial class QylAutoInstrumentationGenerator
 {
-    private static bool TryGetDbCommandParameters(IMethodSymbol symbol, string methodName, out EquatableArray<ParameterSpec> parameters)
+    private readonly record struct ShapeMatch(
+        string ReceiverTypeName,
+        string ReturnType,
+        EquatableArray<ParameterSpec> Parameters,
+        bool IsAsync,
+        string TypeParameterList = "",
+        string ConstraintClauses = "",
+        string ExtensionContainingType = "",
+        string InstrumentationId = "",
+        EquatableArray<string> MetricIds = default,
+        string ShapeExpression = "",
+        string EnabledProbe = "");
+
+    private static bool TryMatchShape(
+        string shape,
+        IntegrationDeclaration integration,
+        IMethodSymbol symbol,
+        ITypeSymbol? receiverType,
+        ITypeSymbol matchedReceiver,
+        out ShapeMatch match)
     {
-        parameters = default;
-        if (string.Equals(methodName, "ExecuteReader", StringComparison.Ordinal))
-            return TryGetDbExecuteReaderParameters(symbol, allowCancellationToken: false, out parameters);
-
-        if (string.Equals(methodName, "ExecuteReaderAsync", StringComparison.Ordinal))
-            return TryGetDbExecuteReaderParameters(symbol, allowCancellationToken: true, out parameters);
-
-        if (string.Equals(methodName, "ExecuteScalar", StringComparison.Ordinal) ||
-            string.Equals(methodName, "ExecuteNonQuery", StringComparison.Ordinal))
-            return TryGetNoParameters(symbol, out parameters);
-
-        if (string.Equals(methodName, "ExecuteScalarAsync", StringComparison.Ordinal) ||
-            string.Equals(methodName, "ExecuteNonQueryAsync", StringComparison.Ordinal))
-            return TryGetOptionalCancellationTokenParameters(symbol, out parameters);
-
-        return false;
-    }
-
-    private static bool TryGetDbCommandReturn(IMethodSymbol symbol, string methodName, bool isAsync, out string returnType)
-    {
-        returnType = CleanTypeName(symbol.ReturnType, symbol);
-        if (string.Equals(methodName, "ExecuteNonQuery", StringComparison.Ordinal))
-            return symbol.ReturnType.SpecialType is SpecialType.System_Int32;
-
-        if (string.Equals(methodName, "ExecuteScalar", StringComparison.Ordinal))
-            return symbol.ReturnType.SpecialType is SpecialType.System_Object;
-
-        if (string.Equals(methodName, "ExecuteReader", StringComparison.Ordinal))
-            return InheritsFromOrIs(symbol.ReturnType, "global::System.Data.Common.DbDataReader");
-
-        if (!isAsync || !TryGetTaskResult(symbol.ReturnType, out var taskResult))
-            return false;
-
-        if (string.Equals(methodName, "ExecuteNonQueryAsync", StringComparison.Ordinal))
-            return taskResult.SpecialType is SpecialType.System_Int32;
-
-        if (string.Equals(methodName, "ExecuteScalarAsync", StringComparison.Ordinal))
-            return taskResult.SpecialType is SpecialType.System_Object;
-
-        if (string.Equals(methodName, "ExecuteReaderAsync", StringComparison.Ordinal))
-            return InheritsFromOrIs(taskResult, "global::System.Data.Common.DbDataReader");
-
-        return false;
-    }
-
-    private static InterceptorTarget HttpTarget(IMethodSymbol symbol, string methodName, string returnType, EquatableArray<ParameterSpec> parameters)
-        => new(
-            InterceptorKind.HttpClient,
-            TelemetrySignal.Traces,
-            "HTTPCLIENT",
-            CleanTypeName(symbol.ContainingType),
-            methodName,
-            returnType,
-            parameters,
-            false,
-            AdditionalMetricIds: MetricIds("HTTPCLIENT"));
-
-    private static EquatableArray<string> GetDbMetricIds(string instrumentationId)
-        => instrumentationId switch
+        switch (shape)
         {
-            "NPGSQL" or "SQLCLIENT" => MetricIds(instrumentationId),
-            _ => default,
-        };
+            case "HttpClient":
+                return TryMatchHttpClient(symbol, out match);
+            case "DbCommand":
+                return TryMatchDbCommand(symbol, receiverType, out match);
+            case "ElasticsearchClient":
+                return TryMatchElasticsearchClient(symbol, out match);
+            case "ElasticTransport":
+                return TryMatchElasticTransport(symbol, matchedReceiver, out match);
+            case "WcfClient":
+                return TryMatchWcfClient(symbol, out match);
+            case "KafkaProduce":
+                return TryMatchKafkaProduce(symbol, out match);
+            case "KafkaConsume":
+                return TryMatchKafkaConsume(symbol, out match);
+            case "MassTransitOperation":
+                return TryMatchMessagingOperation(symbol, matchedReceiver, recoverGenerics: false, out match);
+            case "NServiceBusOperation":
+                return TryMatchMessagingOperation(symbol, matchedReceiver, recoverGenerics: true, out match);
+            case "QuartzJob":
+                return TryMatchQuartzJob(symbol, out match);
+            case "RedisCommand":
+                return TryMatchRedisCommand(symbol, integration.HelperType, out match);
+            case "GraphQlExecute":
+                return TryMatchGraphQlExecute(symbol, out match);
+            case "MongoDbCollection":
+                return TryMatchMongoDbCollection(symbol, matchedReceiver, out match);
+            case "RabbitMqPublish":
+                return TryMatchRabbitMqPublish(symbol, matchedReceiver, out match);
+            case "LoggerLog":
+                return TryMatchLoggerLog(symbol, out match);
+            case "LoggerExtension":
+                return TryMatchLoggerExtension(symbol, out match);
+            case "ExternalLogger":
+                return TryMatchExternalLogger(symbol, out match);
+            default:
+                throw new InvalidOperationException("Unknown interceptor shape: " + shape);
+        }
+    }
 
-    private static EquatableArray<string> MetricIds(params string[] instrumentationIds)
-        => instrumentationIds.ToEquatableArray();
+    private static bool TryMatchHttpClient(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        var receiver = CleanTypeName(symbol.ContainingType);
+        const string response = "global::System.Net.Http.HttpResponseMessage";
+        const string responseTask = "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>";
+        EquatableArray<ParameterSpec> parameters;
+        switch (symbol.Name)
+        {
+            case "Send":
+                if (!IsType(symbol.ReturnType, response) || !TryGetSendShape(symbol, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, response, parameters, false);
+                return true;
+            case "SendAsync":
+                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetSendShape(symbol, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, responseTask, parameters, false);
+                return true;
+            case "GetAsync":
+                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetRequestUriShape(symbol, allowCompletionOption: true, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, responseTask, parameters, false);
+                return true;
+            case "DeleteAsync":
+                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, responseTask, parameters, false);
+                return true;
+            case "PostAsync":
+            case "PutAsync":
+            case "PatchAsync":
+                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetRequestUriContentShape(symbol, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, responseTask, parameters, false);
+                return true;
+            case "GetStringAsync":
+                if (!IsTaskOf(symbol.ReturnType, "global::System.String") || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, "global::System.Threading.Tasks.Task<string>", parameters, false);
+                return true;
+            case "GetByteArrayAsync":
+                if (!IsTaskOf(symbol.ReturnType, "global::System.Byte[]") || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, "global::System.Threading.Tasks.Task<byte[]>", parameters, false);
+                return true;
+            case "GetStreamAsync":
+                if (!IsTaskOf(symbol.ReturnType, "global::System.IO.Stream") || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
+                    return false;
+                match = new ShapeMatch(receiver, "global::System.Threading.Tasks.Task<global::System.IO.Stream>", parameters, false);
+                return true;
+            default:
+                return false;
+        }
+    }
 
     private static bool TryGetSendShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
@@ -175,16 +229,119 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool TryGetNoParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
+    private static bool TryMatchDbCommand(IMethodSymbol symbol, ITypeSymbol? receiverType, out ShapeMatch match)
     {
-        if (symbol.Parameters.Length is 0)
+        match = default;
+        var methodName = symbol.Name;
+        var isAsync = methodName.EndsWithOrdinal("Async");
+        if (!TryGetDbCommandParameters(symbol, methodName, out var parameters) ||
+            !TryGetDbCommandReturn(symbol, methodName, isAsync, out var returnType))
         {
-            parameters = default;
-            return true;
+            return false;
         }
 
+        // The provider is the receiver the call site names, so a SqlCommand typed as DbCommand still
+        // reports under ADONET while a SqlCommand-typed receiver reports under SQLCLIENT.
+        var effectiveReceiverType = receiverType is not null &&
+                                    InheritsFromOrIs(receiverType, "global::System.Data.Common.DbCommand")
+            ? receiverType
+            : symbol.ContainingType;
+        var instrumentationId = GetDbInstrumentationId(effectiveReceiverType);
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            returnType,
+            parameters,
+            isAsync,
+            InstrumentationId: instrumentationId,
+            MetricIds: GetDbMetricIds(instrumentationId));
+        return true;
+    }
+
+    private static bool TryGetDbCommandParameters(IMethodSymbol symbol, string methodName, out EquatableArray<ParameterSpec> parameters)
+    {
         parameters = default;
+        if (string.Equals(methodName, "ExecuteReader", StringComparison.Ordinal))
+            return TryGetDbExecuteReaderParameters(symbol, allowCancellationToken: false, out parameters);
+
+        if (string.Equals(methodName, "ExecuteReaderAsync", StringComparison.Ordinal))
+            return TryGetDbExecuteReaderParameters(symbol, allowCancellationToken: true, out parameters);
+
+        if (string.Equals(methodName, "ExecuteScalar", StringComparison.Ordinal) ||
+            string.Equals(methodName, "ExecuteNonQuery", StringComparison.Ordinal))
+            return TryGetNoParameters(symbol, out parameters);
+
+        if (string.Equals(methodName, "ExecuteScalarAsync", StringComparison.Ordinal) ||
+            string.Equals(methodName, "ExecuteNonQueryAsync", StringComparison.Ordinal))
+            return TryGetOptionalCancellationTokenParameters(symbol, out parameters);
+
         return false;
+    }
+
+    private static bool TryGetDbCommandReturn(IMethodSymbol symbol, string methodName, bool isAsync, out string returnType)
+    {
+        returnType = CleanTypeName(symbol.ReturnType, symbol);
+        if (string.Equals(methodName, "ExecuteNonQuery", StringComparison.Ordinal))
+            return symbol.ReturnType.SpecialType is SpecialType.System_Int32;
+
+        if (string.Equals(methodName, "ExecuteScalar", StringComparison.Ordinal))
+            return symbol.ReturnType.SpecialType is SpecialType.System_Object;
+
+        if (string.Equals(methodName, "ExecuteReader", StringComparison.Ordinal))
+            return InheritsFromOrIs(symbol.ReturnType, "global::System.Data.Common.DbDataReader");
+
+        if (!isAsync || !TryGetTaskResult(symbol.ReturnType, out var taskResult))
+            return false;
+
+        if (string.Equals(methodName, "ExecuteNonQueryAsync", StringComparison.Ordinal))
+            return taskResult.SpecialType is SpecialType.System_Int32;
+
+        if (string.Equals(methodName, "ExecuteScalarAsync", StringComparison.Ordinal))
+            return taskResult.SpecialType is SpecialType.System_Object;
+
+        if (string.Equals(methodName, "ExecuteReaderAsync", StringComparison.Ordinal))
+            return InheritsFromOrIs(taskResult, "global::System.Data.Common.DbDataReader");
+
+        return false;
+    }
+
+    private static string GetDbInstrumentationId(ITypeSymbol type)
+    {
+        var display = CleanTypeName(type);
+        if (display.StartsWithOrdinal("global::Microsoft.Data.SqlClient.") ||
+            display.StartsWithOrdinal("global::System.Data.SqlClient."))
+        {
+            return "SQLCLIENT";
+        }
+
+        if (display.StartsWithOrdinal("global::Microsoft.Data.Sqlite."))
+            return "SQLITE";
+
+        if (display.StartsWithOrdinal("global::Npgsql."))
+            return "NPGSQL";
+
+        if (display.StartsWithOrdinal("global::MySqlConnector."))
+            return "MYSQLCONNECTOR";
+
+        if (display.StartsWithOrdinal("global::MySql.Data."))
+            return "MYSQLDATA";
+
+        if (display.StartsWithOrdinal("global::Oracle.ManagedDataAccess."))
+            return "ORACLEMDA";
+
+        return "ADONET";
+    }
+
+    private static EquatableArray<string> GetDbMetricIds(string instrumentationId)
+        => instrumentationId switch
+        {
+            "NPGSQL" or "SQLCLIENT" => ImmutableArray.Create(instrumentationId).AsEquatableArray(),
+            _ => default,
+        };
+
+    private static bool TryGetNoParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
+    {
+        parameters = default;
+        return symbol.Parameters.Length is 0;
     }
 
     private static bool TryGetOptionalCancellationTokenParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
@@ -236,6 +393,196 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
+    private static bool TryMatchElasticsearchClient(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.ReturnsVoid ||
+            symbol.DeclaredAccessibility is not Accessibility.Public ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            !IsElasticsearchClientType(symbol.ContainingType) ||
+            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(symbol.ReturnType, symbol),
+            BuildParameters(symbol),
+            isAsync,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol));
+        return true;
+    }
+
+    private static bool TryMatchElasticTransport(IMethodSymbol symbol, ITypeSymbol matchedReceiver, out ShapeMatch match)
+    {
+        match = default;
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary and not MethodKind.ReducedExtension ||
+            symbol.ReturnsVoid ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(
+            CleanTypeName(matchedReceiver),
+            CleanTypeName(symbol.ReturnType, symbol),
+            BuildParameters(symbol),
+            isAsync,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
+        return true;
+    }
+
+    // The client types are not enumerable from metadata: every generated Elastic.Clients.Elasticsearch
+    // namespace ends its request surface in a *Client type, and that naming is the boundary.
+    private static bool IsElasticsearchClientType(ITypeSymbol? symbol)
+    {
+        if (symbol is not INamedTypeSymbol named ||
+            !named.Name.EndsWithOrdinal("Client"))
+        {
+            return false;
+        }
+
+        return named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("Elastic.Clients.Elasticsearch");
+    }
+
+    private static bool CanEmitElasticReturn(ITypeSymbol returnType, out bool isAsync)
+    {
+        isAsync = IsTask(returnType) || TryGetTaskResult(returnType, out _);
+        return true;
+    }
+
+    private static bool TryMatchWcfClient(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        var contractType = GetWcfContractType(symbol.ContainingType);
+        if (symbol.IsStatic ||
+            symbol.MethodKind is not MethodKind.Ordinary ||
+            symbol.IsGenericMethod ||
+            IsWcfInfrastructureMethod(symbol.Name) ||
+            !CanEmitByValueOrInParameters(symbol) ||
+            contractType is null ||
+            IsSystemServiceModelType(symbol.ContainingType))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(symbol.ReturnType, symbol),
+            BuildParameters(symbol),
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _),
+            ShapeExpression: QuoteLiteral(GetWcfMethodName(contractType, symbol)));
+        return true;
+    }
+
+    private static INamedTypeSymbol? GetWcfContractType(INamedTypeSymbol clientType)
+    {
+        for (var current = clientType; current is not null; current = current.BaseType)
+        {
+            if (IsType(current.ConstructedFrom, "global::System.ServiceModel.ClientBase<TChannel>") &&
+                current.TypeArguments is [INamedTypeSymbol contractType])
+            {
+                return contractType;
+            }
+        }
+
+        return null;
+    }
+
+    // rpc.method is the contract's own naming: the ServiceContract/OperationContract Name overrides
+    // when present, else the interface and method names.
+    private static string GetWcfMethodName(INamedTypeSymbol contractType, IMethodSymbol implementation)
+    {
+        var serviceName = GetAttributeName(
+                              contractType,
+                              "System.ServiceModel.ServiceContractAttribute") ??
+                          contractType.Name;
+        var operationName = implementation.Name;
+        foreach (var member in contractType.GetMembers(implementation.Name))
+        {
+            if (member is IMethodSymbol contractMethod &&
+                contractMethod.Parameters.Length == implementation.Parameters.Length)
+            {
+                operationName = GetAttributeName(
+                                    contractMethod,
+                                    "System.ServiceModel.OperationContractAttribute") ??
+                                contractMethod.Name;
+                break;
+            }
+        }
+
+        return serviceName + "/" + operationName;
+    }
+
+    private static string? GetAttributeName(ISymbol symbol, string attributeType)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (!string.Equals(attribute.AttributeClass?.ToDisplayString(), attributeType, StringComparison.Ordinal))
+                continue;
+
+            foreach (var argument in attribute.NamedArguments)
+            {
+                if (string.Equals(argument.Key, "Name", StringComparison.Ordinal) &&
+                    argument.Value.Value is string { Length: > 0 } name)
+                {
+                    return name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsWcfInfrastructureMethod(string methodName)
+        => methodName is "Open" or
+            "OpenAsync" or
+            "Close" or
+            "CloseAsync" or
+            "Abort" or
+            "Dispose" or
+            "GetProperty" or
+            "BeginOpen" or
+            "EndOpen" or
+            "BeginClose" or
+            "EndClose";
+
+    private static bool IsSystemServiceModelType(ITypeSymbol? symbol)
+        => symbol is INamedTypeSymbol named &&
+           named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("System.ServiceModel");
+
+    private static bool TryMatchKafkaProduce(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        var receiver = CleanTypeName(symbol.ContainingType);
+        if (string.Equals(symbol.Name, "ProduceAsync", StringComparison.Ordinal) &&
+            TryGetTaskResult(symbol.ReturnType, out var resultType) &&
+            IsConstructedGeneric(resultType, "Confluent.Kafka", "DeliveryResult`2") &&
+            TryGetKafkaProduceParameters(symbol, isAsync: true, out var parameters))
+        {
+            match = new ShapeMatch(receiver, CleanTypeName(symbol.ReturnType, symbol), parameters, true);
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "Produce", StringComparison.Ordinal) &&
+            symbol.ReturnsVoid &&
+            TryGetKafkaProduceParameters(symbol, isAsync: false, out parameters))
+        {
+            match = new ShapeMatch(receiver, "void", parameters, false);
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool TryGetKafkaProduceParameters(IMethodSymbol symbol, bool isAsync, out EquatableArray<ParameterSpec> parameters)
     {
         parameters = default;
@@ -273,6 +620,19 @@ public sealed partial class QylAutoInstrumentationGenerator
         string.Equals(named.ConstructedFrom.ContainingNamespace.ToDisplayString(), "System", StringComparison.Ordinal) &&
         IsConstructedGeneric(named.TypeArguments[0], "Confluent.Kafka", "DeliveryReport`2");
 
+    private static bool TryMatchKafkaConsume(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        if (!IsConstructedGeneric(symbol.ReturnType, "Confluent.Kafka", "ConsumeResult`2") ||
+            !TryGetKafkaConsumeParameters(symbol, out var parameters))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(CleanTypeName(symbol.ContainingType), CleanTypeName(symbol.ReturnType, symbol), parameters, false);
+        return true;
+    }
+
     private static bool TryGetKafkaConsumeParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
         parameters = default;
@@ -293,10 +653,354 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
+    private static bool TryMatchMessagingOperation(IMethodSymbol symbol, ITypeSymbol matchedReceiver, bool recoverGenerics, out ShapeMatch match)
+    {
+        match = default;
+        if (!IsTask(symbol.ReturnType) || symbol.Parameters.Length is 0)
+            return false;
+
+        var typeParameterList = GetTypeParameterList(symbol);
+        var receiverTypeName = CleanTypeName(matchedReceiver);
+        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
+        var parameters = BuildParameters(symbol);
+        if (recoverGenerics)
+        {
+            // NServiceBus reaches its generic Send<T>/Publish<T> through non-generic extension wrappers, so
+            // the type parameters the emitted signature must redeclare are recovered from the visible types.
+            if (string.IsNullOrEmpty(typeParameterList))
+                typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, matchedReceiver);
+            if (string.IsNullOrEmpty(typeParameterList))
+                typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
+        }
+
+        match = new ShapeMatch(
+            receiverTypeName,
+            returnTypeName,
+            parameters,
+            true,
+            typeParameterList,
+            GetConstraintClauses(symbol),
+            GetReducedExtensionContainingType(symbol));
+        return true;
+    }
+
+    private static bool TryMatchQuartzJob(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        if (!IsTask(symbol.ReturnType) ||
+            symbol.Parameters.Length is not 1 ||
+            !IsType(symbol.Parameters[0].Type, "global::Quartz.IJobExecutionContext"))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            "global::System.Threading.Tasks.Task",
+            BuildParameters(symbol),
+            true);
+        return true;
+    }
+
+    private static bool TryMatchGraphQlExecute(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        if (!TryGetTaskResult(symbol.ReturnType, out var resultType) ||
+            resultType is not INamedTypeSymbol namedResult ||
+            !IsTypeByMetadata(namedResult, "GraphQL", "ExecutionResult"))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(symbol.ReturnType, symbol),
+            BuildParameters(symbol),
+            true);
+        return true;
+    }
+
+    private static bool TryMatchMongoDbCollection(IMethodSymbol symbol, ITypeSymbol matchedReceiver, out ShapeMatch match)
+    {
+        match = default;
+        if (!CanEmitMongoDbReturn(symbol.ReturnType))
+            return false;
+
+        var typeParameterList = GetTypeParameterList(symbol);
+        var receiverTypeName = CleanTypeName(matchedReceiver);
+        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
+        var parameters = BuildParameters(symbol);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, matchedReceiver);
+        if (string.IsNullOrEmpty(typeParameterList))
+            typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
+
+        match = new ShapeMatch(
+            receiverTypeName,
+            returnTypeName,
+            parameters,
+            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _),
+            typeParameterList,
+            string.Empty,
+            GetReducedExtensionContainingType(symbol));
+        return true;
+    }
+
+    private static bool CanEmitMongoDbReturn(ITypeSymbol returnType)
+        => returnType.SpecialType is SpecialType.System_Void ||
+           IsTask(returnType) ||
+           TryGetTaskResult(returnType, out _) ||
+           returnType.SpecialType is not SpecialType.None ||
+           returnType is INamedTypeSymbol;
+
+    private static bool TryMatchRabbitMqPublish(IMethodSymbol symbol, ITypeSymbol matchedReceiver, out ShapeMatch match)
+    {
+        match = default;
+        if (!TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
+            return false;
+
+        if (string.Equals(symbol.Name, "BasicPublish", StringComparison.Ordinal) && symbol.ReturnsVoid)
+        {
+            match = new ShapeMatch(
+                CleanTypeName(matchedReceiver),
+                "void",
+                parameters,
+                false,
+                ExtensionContainingType: GetReducedExtensionContainingType(symbol));
+            return true;
+        }
+
+        if (string.Equals(symbol.Name, "BasicPublishAsync", StringComparison.Ordinal) && IsValueTask(symbol.ReturnType))
+        {
+            match = new ShapeMatch(
+                CleanTypeName(matchedReceiver),
+                CleanTypeName(symbol.ReturnType, symbol),
+                parameters,
+                true,
+                GetTypeParameterList(symbol),
+                GetConstraintClauses(symbol),
+                GetReducedExtensionContainingType(symbol));
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
+    {
+        parameters = default;
+        if (symbol.Parameters.Length < 3)
+            return false;
+
+        if (IsType(symbol.Parameters[0].Type, "global::System.String") &&
+            IsType(symbol.Parameters[1].Type, "global::System.String"))
+        {
+            parameters = BuildParameters(symbol);
+            return true;
+        }
+
+        if (symbol.Parameters[0].Type is INamedTypeSymbol publicationAddress &&
+            IsTypeByMetadata(publicationAddress, "RabbitMQ.Client", "PublicationAddress"))
+        {
+            parameters = BuildParameters(symbol);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryMatchLoggerLog(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        if (!symbol.ReturnsVoid ||
+            !symbol.IsGenericMethod ||
+            symbol.TypeParameters.Length is not 1 ||
+            !IsType(symbol.ContainingType, "global::Microsoft.Extensions.Logging.ILogger") ||
+            symbol.Parameters.Length is not 5 ||
+            !IsType(symbol.Parameters[0].Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
+            !IsType(symbol.Parameters[1].Type, "global::Microsoft.Extensions.Logging.EventId") ||
+            !IsLoggerFormatter(symbol.Parameters[4].Type))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(CleanTypeName(symbol.ContainingType), "void", BuildParameters(symbol), false);
+        return true;
+    }
+
+    private static bool TryMatchLoggerExtension(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        var original = symbol.ReducedFrom;
+        if (original is null ||
+            !symbol.ReturnsVoid ||
+            !IsType(original.ContainingType, "global::Microsoft.Extensions.Logging.LoggerExtensions") ||
+            !IsSupportedLoggerExtensionParameters(symbol))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch("global::Microsoft.Extensions.Logging.ILogger", "void", BuildParameters(symbol), false);
+        return true;
+    }
+
+    private static string? GetLoggerExtensionLevelName(string methodName)
+        => methodName switch
+        {
+            "LogTrace" => "Trace",
+            "LogDebug" => "Debug",
+            "LogInformation" => "Information",
+            "LogWarning" => "Warning",
+            "LogError" => "Error",
+            "LogCritical" => "Critical",
+            _ => null,
+        };
+
+    // The LoggerExtensions overloads differ only by which of (level, eventId, exception) precede the
+    // message and argument bag, so the bag is recognised by its parameter types rather than by shape.
+    private static bool IsSupportedLoggerExtensionParameters(IMethodSymbol symbol)
+    {
+        if (symbol.Parameters.Length is < 2)
+            return false;
+
+        var hasMessage = false;
+        var hasArgs = false;
+
+        foreach (var parameter in symbol.Parameters)
+        {
+            if (IsType(parameter.Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
+                IsType(parameter.Type, "global::Microsoft.Extensions.Logging.EventId") ||
+                IsType(parameter.Type, "global::System.Exception"))
+            {
+                continue;
+            }
+
+            if (IsType(parameter.Type, "global::System.String"))
+            {
+                hasMessage = true;
+                continue;
+            }
+
+            if (parameter.IsParams && IsArrayOf(parameter.Type, "global::System.Object"))
+            {
+                hasArgs = true;
+                continue;
+            }
+
+            return false;
+        }
+
+        return hasMessage && hasArgs;
+    }
+
+    private static bool TryMatchExternalLogger(IMethodSymbol symbol, out ShapeMatch match)
+    {
+        match = default;
+        if (!symbol.ReturnsVoid)
+            return false;
+
+        var parameters = BuildParameters(symbol);
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            "void",
+            parameters,
+            false,
+            GetTypeParameterList(symbol),
+            GetConstraintClauses(symbol),
+            ShapeExpression: ExternalLoggerSeverityExpression(parameters),
+            EnabledProbe: GetExternalLoggerEnabledProperty(symbol));
+        return true;
+    }
+
+    private static string ExternalLoggerSeverityExpression(EquatableArray<ParameterSpec> parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (string.Equals(parameter.TypeName, "global::NLog.LogLevel", StringComparison.Ordinal) ||
+                string.Equals(parameter.TypeName, "global::log4net.Core.Level", StringComparison.Ordinal))
+            {
+                return parameter.Name + " is null ? null : " + parameter.Name + ".Name";
+            }
+
+            if (string.Equals(parameter.TypeName, "global::NLog.LogEventInfo", StringComparison.Ordinal) ||
+                string.Equals(parameter.TypeName, "global::log4net.Core.LoggingEvent", StringComparison.Ordinal))
+            {
+                return parameter.Name + " is null ? null : " + parameter.Name + ".Level is null ? null : " + parameter.Name + ".Level.Name";
+            }
+        }
+
+        return "null";
+    }
+
+    // The external loggers gate their own work on IsXxxEnabled; the interceptor honours the same
+    // probe so a disabled level starts no activity.
+    private static string GetExternalLoggerEnabledProperty(IMethodSymbol symbol)
+    {
+        var propertyName = symbol.Name switch
+        {
+            "Trace" or "TraceFormat" => "IsTraceEnabled",
+            "Debug" or "DebugFormat" => "IsDebugEnabled",
+            "Info" or "InfoFormat" => "IsInfoEnabled",
+            "Warn" or "WarnFormat" or "Warning" or "WarningFormat" => "IsWarnEnabled",
+            "Error" or "ErrorFormat" => "IsErrorEnabled",
+            "Fatal" or "FatalFormat" or "Critical" or "CriticalFormat" => "IsFatalEnabled",
+            _ => string.Empty,
+        };
+
+        return propertyName.Length > 0 && HasReadableBooleanProperty(symbol.ContainingType, propertyName)
+            ? propertyName
+            : string.Empty;
+    }
+
+    private static bool HasReadableBooleanProperty(ITypeSymbol? symbol, string propertyName)
+    {
+        for (var current = symbol; current is not null; current = current.BaseType)
+        {
+            foreach (var member in current.GetMembers(propertyName))
+            {
+                if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
+                    return true;
+            }
+        }
+
+        if (symbol is INamedTypeSymbol named)
+        {
+            foreach (var interfaceType in named.AllInterfaces)
+            {
+                foreach (var member in interfaceType.GetMembers(propertyName))
+                {
+                    if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
+                        return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryMatchRedisCommand(IMethodSymbol symbol, string helperType, out ShapeMatch match)
+    {
+        match = default;
+        if (!(IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _)) ||
+            !TryGetRedisCommandParameters(symbol, out var parameters) ||
+            !TryGetRedisOperation(symbol.Name, parameters, out var operation))
+        {
+            return false;
+        }
+
+        match = new ShapeMatch(
+            CleanTypeName(symbol.ContainingType),
+            CleanTypeName(symbol.ReturnType, symbol),
+            parameters,
+            true,
+            ShapeExpression: RedisOperationExpression(in operation, helperType));
+        return true;
+    }
+
     private static bool TryGetRedisCommandParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
     {
         parameters = default;
-        if (!CanEmitRedisParameters(symbol))
+        if (!CanEmitByValueOrInParameters(symbol))
             return false;
 
         if (string.Equals(symbol.Name, "ExecuteAsync", StringComparison.Ordinal))
@@ -324,72 +1028,450 @@ public sealed partial class QylAutoInstrumentationGenerator
         return true;
     }
 
-    private static bool CanEmitRedisParameters(IMethodSymbol symbol)
+    /// <summary>A call-site test that selects <paramref name="Command"/> when it holds.</summary>
+    private readonly record struct RedisCommandBranch(string Condition, string Command);
+
+    /// <summary>
+    /// How a StackExchange.Redis call site names the command it puts on the wire.
+    /// <paramref name="Branches"/> are C# expressions over the interceptor's parameters, evaluated
+    /// in order, each selecting its own command; <paramref name="Command"/> is the command reached
+    /// when no branch holds. <paramref name="CommandTextParameter"/> names the parameter carrying
+    /// the command text for <c>IDatabaseAsync.ExecuteAsync</c>.
+    /// </summary>
+    private readonly record struct RedisOperationSpec(
+        string Command,
+        EquatableArray<RedisCommandBranch> Branches = default,
+        string CommandTextParameter = "");
+
+    private static string RedisOperationExpression(in RedisOperationSpec operation, string helperType)
     {
-        foreach (var parameter in symbol.Parameters)
+        var builder = new StringBuilder();
+        if (operation.CommandTextParameter.Length > 0)
         {
-            if (parameter.RefKind is not RefKind.None and not RefKind.In)
+            builder.Append(helperType);
+            builder.Append(".NormalizeCommandText(");
+            builder.Append(operation.CommandTextParameter);
+            builder.Append(')');
+            return builder.ToString();
+        }
+
+        for (var index = 0; index < operation.Branches.Length; index++)
+        {
+            builder.Append(operation.Branches[index].Condition);
+            builder.Append(" ? ");
+            AppendStringLiteral(builder, operation.Branches[index].Command);
+            builder.Append(" : ");
+        }
+
+        AppendStringLiteral(builder, operation.Command);
+        return builder.ToString();
+    }
+
+    private const string RedisKeyArrayType = "global::StackExchange.Redis.RedisKey[]";
+    private const string RedisValueArrayType = "global::StackExchange.Redis.RedisValue[]";
+    private const string RedisHashEntryArrayType = "global::StackExchange.Redis.HashEntry[]";
+    private const string RedisWhenType = "global::StackExchange.Redis.When";
+    private const string RedisOrderType = "global::StackExchange.Redis.Order";
+    private const string RedisExpirationType = "global::StackExchange.Redis.Expiration";
+
+    /// <summary>
+    /// Resolves the Redis command an <c>IDatabaseAsync</c> overload puts on the wire. Support and
+    /// naming are the same decision, so an unmapped overload is not instrumented rather than
+    /// labelled with a guessed command. Overloads that only differ on the wire by an argument
+    /// <em>value</em> carry a discriminator the interceptor evaluates at the call site.
+    /// Every mapping is captured from a live server by <c>demos/Qyl.RealRedisDemo</c>, which
+    /// compares this name against <c>IProfiledCommand.Command</c>.
+    /// </summary>
+    private static bool TryGetRedisOperation(
+        string methodName,
+        EquatableArray<ParameterSpec> parameters,
+        out RedisOperationSpec operation)
+    {
+        operation = default;
+
+        switch (methodName)
+        {
+            case "ExecuteAsync":
+                operation = new RedisOperationSpec(string.Empty, CommandTextParameter: parameters[0].Name);
+                return true;
+
+            case "StringGetAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 0, RedisKeyArrayType) ? "MGET" : "GET");
+                return true;
+            case "StringSetAsync":
+                // ValueCondition.NotExists reaches SETNX, but ValueCondition carries neither an
+                // equality operator nor IEquatable, so testing for it at the call site would box
+                // on every intercepted SET, including the calls that have tracing switched off.
+                // SET is reported for the whole method rather than charging every caller for the
+                // one branch that differs.
+                operation = new RedisOperationSpec("SET");
+                return true;
+            case "StringIncrementAsync":
+                return TryGetRedisIncrementOperation(parameters, "INCR", "INCRBY", out operation);
+            case "StringDecrementAsync":
+                return TryGetRedisIncrementOperation(parameters, "DECR", "DECRBY", out operation);
+            case "StringAppendAsync":
+                operation = new RedisOperationSpec("APPEND");
+                return true;
+            case "StringLengthAsync":
+                operation = new RedisOperationSpec("STRLEN");
+                return true;
+            case "StringGetRangeAsync":
+                operation = new RedisOperationSpec("GETRANGE");
+                return true;
+            case "StringSetRangeAsync":
+                operation = new RedisOperationSpec("SETRANGE");
+                return true;
+            case "StringGetSetAsync":
+                operation = new RedisOperationSpec("GETSET");
+                return true;
+            case "StringGetDeleteAsync":
+                operation = new RedisOperationSpec("GETDEL");
+                return true;
+            case "StringGetSetExpiryAsync":
+                operation = new RedisOperationSpec("GETEX");
+                return true;
+            case "StringGetBitAsync":
+                operation = new RedisOperationSpec("GETBIT");
+                return true;
+            case "StringSetBitAsync":
+                operation = new RedisOperationSpec("SETBIT");
+                return true;
+
+            case "HashGetAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 1, RedisValueArrayType) ? "HMGET" : "HGET");
+                return true;
+            case "HashSetAsync":
+                operation = IsRedisParameter(parameters, 1, RedisHashEntryArrayType)
+                    ? new RedisOperationSpec("HMSET")
+                    : RedisWhenOperation(parameters, "HSET", "HSETNX", "NotExists");
+                return true;
+            case "HashDeleteAsync":
+                operation = new RedisOperationSpec("HDEL");
+                return true;
+            case "HashExistsAsync":
+                operation = new RedisOperationSpec("HEXISTS");
+                return true;
+            case "HashGetAllAsync":
+                operation = new RedisOperationSpec("HGETALL");
+                return true;
+            case "HashKeysAsync":
+                operation = new RedisOperationSpec("HKEYS");
+                return true;
+            case "HashValuesAsync":
+                operation = new RedisOperationSpec("HVALS");
+                return true;
+            case "HashLengthAsync":
+                operation = new RedisOperationSpec("HLEN");
+                return true;
+            case "HashStringLengthAsync":
+                operation = new RedisOperationSpec("HSTRLEN");
+                return true;
+            case "HashRandomFieldAsync":
+                operation = new RedisOperationSpec("HRANDFIELD");
+                return true;
+            case "HashIncrementAsync":
+            case "HashDecrementAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 2, "double") ? "HINCRBYFLOAT" : "HINCRBY");
+                return true;
+
+            case "KeyDeleteAsync":
+                operation = new RedisOperationSpec("DEL");
+                return true;
+            case "KeyExistsAsync":
+                operation = new RedisOperationSpec("EXISTS");
+                return true;
+            case "KeyExpireAsync":
+                return TryGetRedisExpireOperation(parameters, out operation);
+            case "KeyTimeToLiveAsync":
+                operation = new RedisOperationSpec("PTTL");
+                return true;
+            case "KeyPersistAsync":
+                operation = new RedisOperationSpec("PERSIST");
+                return true;
+            case "KeyTypeAsync":
+                operation = new RedisOperationSpec("TYPE");
+                return true;
+            case "KeyRenameAsync":
+                operation = RedisWhenOperation(parameters, "RENAME", "RENAMENX", "NotExists");
+                return true;
+            case "KeyTouchAsync":
+                operation = new RedisOperationSpec("TOUCH");
+                return true;
+            case "KeyDumpAsync":
+                operation = new RedisOperationSpec("DUMP");
+                return true;
+            case "KeyCopyAsync":
+                operation = new RedisOperationSpec("COPY");
+                return true;
+            case "KeyMoveAsync":
+                operation = new RedisOperationSpec("MOVE");
+                return true;
+            case "KeyIdleTimeAsync":
+                operation = new RedisOperationSpec("OBJECT");
+                return true;
+
+            case "ListLeftPushAsync":
+                operation = RedisWhenOperation(parameters, "LPUSH", "LPUSHX", "Exists");
+                return true;
+            case "ListRightPushAsync":
+                operation = RedisWhenOperation(parameters, "RPUSH", "RPUSHX", "Exists");
+                return true;
+            case "ListLeftPopAsync":
+                return TryGetRedisSingleKeyOperation(parameters, "LPOP", out operation);
+            case "ListRightPopAsync":
+                return TryGetRedisSingleKeyOperation(parameters, "RPOP", out operation);
+            case "ListLengthAsync":
+                operation = new RedisOperationSpec("LLEN");
+                return true;
+            case "ListRangeAsync":
+                operation = new RedisOperationSpec("LRANGE");
+                return true;
+            case "ListGetByIndexAsync":
+                operation = new RedisOperationSpec("LINDEX");
+                return true;
+            case "ListRemoveAsync":
+                operation = new RedisOperationSpec("LREM");
+                return true;
+            case "ListSetByIndexAsync":
+                operation = new RedisOperationSpec("LSET");
+                return true;
+            case "ListTrimAsync":
+                operation = new RedisOperationSpec("LTRIM");
+                return true;
+            case "ListInsertBeforeAsync":
+            case "ListInsertAfterAsync":
+                operation = new RedisOperationSpec("LINSERT");
+                return true;
+            case "ListPositionAsync":
+                operation = new RedisOperationSpec("LPOS");
+                return true;
+            case "ListMoveAsync":
+                operation = new RedisOperationSpec("LMOVE");
+                return true;
+            case "ListRightPopLeftPushAsync":
+                operation = new RedisOperationSpec("RPOPLPUSH");
+                return true;
+
+            case "SetAddAsync":
+                operation = new RedisOperationSpec("SADD");
+                return true;
+            case "SetRemoveAsync":
+                operation = new RedisOperationSpec("SREM");
+                return true;
+            case "SetContainsAsync":
+                operation = new RedisOperationSpec(IsRedisParameter(parameters, 1, RedisValueArrayType) ? "SMISMEMBER" : "SISMEMBER");
+                return true;
+            case "SetMembersAsync":
+                operation = new RedisOperationSpec("SMEMBERS");
+                return true;
+            case "SetLengthAsync":
+                operation = new RedisOperationSpec("SCARD");
+                return true;
+            case "SetPopAsync":
+                operation = new RedisOperationSpec("SPOP");
+                return true;
+            case "SetRandomMemberAsync":
+            case "SetRandomMembersAsync":
+                operation = new RedisOperationSpec("SRANDMEMBER");
+                return true;
+            case "SetMoveAsync":
+                operation = new RedisOperationSpec("SMOVE");
+                return true;
+
+            case "SortedSetAddAsync":
+                operation = new RedisOperationSpec("ZADD");
+                return true;
+            case "SortedSetRemoveAsync":
+                operation = new RedisOperationSpec("ZREM");
+                return true;
+            case "SortedSetIncrementAsync":
+            case "SortedSetDecrementAsync":
+                operation = new RedisOperationSpec("ZINCRBY");
+                return true;
+            case "SortedSetLengthAsync":
+                operation = new RedisOperationSpec("ZCARD");
+                return true;
+            case "SortedSetLengthByValueAsync":
+                operation = new RedisOperationSpec("ZLEXCOUNT");
+                return true;
+            case "SortedSetScoreAsync":
+                operation = new RedisOperationSpec("ZSCORE");
+                return true;
+            case "SortedSetScoresAsync":
+                operation = new RedisOperationSpec("ZMSCORE");
+                return true;
+            case "SortedSetRankAsync":
+                operation = RedisOrderOperation(parameters, "ZRANK", "ZREVRANK");
+                return true;
+            case "SortedSetRangeByRankAsync":
+            case "SortedSetRangeByRankWithScoresAsync":
+                operation = RedisOrderOperation(parameters, "ZRANGE", "ZREVRANGE");
+                return true;
+            case "SortedSetRangeByScoreAsync":
+            case "SortedSetRangeByScoreWithScoresAsync":
+                operation = RedisOrderOperation(parameters, "ZRANGEBYSCORE", "ZREVRANGEBYSCORE");
+                return true;
+            case "SortedSetRangeByValueAsync":
+                operation = RedisOrderOperation(parameters, "ZRANGEBYLEX", "ZREVRANGEBYLEX");
+                return true;
+            case "SortedSetRemoveRangeByRankAsync":
+                operation = new RedisOperationSpec("ZREMRANGEBYRANK");
+                return true;
+            case "SortedSetRemoveRangeByScoreAsync":
+                operation = new RedisOperationSpec("ZREMRANGEBYSCORE");
+                return true;
+            case "SortedSetRemoveRangeByValueAsync":
+                operation = new RedisOperationSpec("ZREMRANGEBYLEX");
+                return true;
+            case "SortedSetPopAsync":
+                if (IsRedisParameter(parameters, 0, RedisKeyArrayType))
+                    return false;
+
+                operation = RedisOrderOperation(parameters, "ZPOPMIN", "ZPOPMAX");
+                return true;
+            case "SortedSetRandomMemberAsync":
+                operation = new RedisOperationSpec("ZRANDMEMBER");
+                return true;
+
+            default:
                 return false;
         }
+    }
 
+    /// <summary>
+    /// StackExchange.Redis collapses an increment of exactly one onto the unit command and
+    /// routes the floating-point overload through <c>INCRBYFLOAT</c> in both directions.
+    /// </summary>
+    private static bool TryGetRedisIncrementOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string unitCommand,
+        string byCommand,
+        out RedisOperationSpec operation)
+    {
+        operation = default;
+
+        // The bounded-increment overloads are marked experimental upstream and reach a wire
+        // command this table has not pinned against a live server.
+        if (IndexOfRedisParameter(parameters, RedisExpirationType) >= 0)
+            return false;
+
+        if (IsRedisParameter(parameters, 1, "double"))
+        {
+            operation = new RedisOperationSpec("INCRBYFLOAT");
+            return true;
+        }
+
+        if (!IsRedisParameter(parameters, 1, "long"))
+            return false;
+
+        operation = new RedisOperationSpec(
+            byCommand,
+            RedisBranches(new RedisCommandBranch(parameters[1].Name + " == 1L", unitCommand)));
         return true;
     }
 
-    private static bool TryGetRedisStringGetParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
+    /// <summary>Excludes the multi-key overloads, which reach a different wire command.</summary>
+    private static bool TryGetRedisSingleKeyOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string command,
+        out RedisOperationSpec operation)
     {
-        parameters = default;
-        if (symbol.Parameters.Length is < 1 or > 2)
+        operation = default;
+        if (IsRedisParameter(parameters, 0, RedisKeyArrayType))
             return false;
 
-        if (!IsType(symbol.Parameters[0].Type, "global::StackExchange.Redis.RedisKey") &&
-            !IsArrayOf(symbol.Parameters[0].Type, "global::StackExchange.Redis.RedisKey"))
-        {
-            return false;
-        }
-
-        if (symbol.Parameters.Length is 2 &&
-            !IsType(symbol.Parameters[1].Type, "global::StackExchange.Redis.CommandFlags"))
-        {
-            return false;
-        }
-
-        parameters = BuildParameters(symbol);
+        operation = new RedisOperationSpec(command);
         return true;
     }
 
-    private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
+    private static RedisOperationSpec RedisWhenOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string command,
+        string alternateCommand,
+        string whenMember)
+        => RedisDiscriminatedOperation(parameters, RedisWhenType, whenMember, command, alternateCommand);
+
+    private static RedisOperationSpec RedisOrderOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string ascendingCommand,
+        string descendingCommand)
+        => RedisDiscriminatedOperation(parameters, RedisOrderType, "Descending", ascendingCommand, descendingCommand);
+
+    /// <summary>
+    /// Builds the call-site test that selects <paramref name="alternateCommand"/>. The test is an
+    /// enum comparison, which the call site evaluates without allocating. An overload without the
+    /// discriminating parameter always reaches <paramref name="command"/>.
+    /// </summary>
+    private static RedisOperationSpec RedisDiscriminatedOperation(
+        EquatableArray<ParameterSpec> parameters,
+        string enumTypeName,
+        string enumMember,
+        string command,
+        string alternateCommand)
     {
-        parameters = default;
-        if (symbol.Parameters.Length < 3)
-            return false;
-
-        if (IsType(symbol.Parameters[0].Type, "global::System.String") &&
-            IsType(symbol.Parameters[1].Type, "global::System.String"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        if (symbol.Parameters[0].Type is INamedTypeSymbol publicationAddress &&
-            IsTypeByMetadata(publicationAddress, "RabbitMQ.Client", "PublicationAddress"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        return false;
+        var index = IndexOfRedisParameter(parameters, enumTypeName);
+        return index < 0
+            ? new RedisOperationSpec(command)
+            : new RedisOperationSpec(
+                command,
+                RedisBranches(new RedisCommandBranch(
+                    parameters[index].Name + " == " + enumTypeName + "." + enumMember,
+                    alternateCommand)));
     }
 
-    private static bool TryGetReducedExtensionReceiverType(IMethodSymbol symbol, out ITypeSymbol receiverType)
+    /// <summary>
+    /// A null expiry reaches PERSIST, and StackExchange.Redis picks the second-precision command
+    /// when the value carries no whole milliseconds — <c>TimeSpan.FromTicks(TimeSpan.TicksPerSecond + 1)</c>
+    /// still reaches EXPIRE, so the test is the millisecond component rather than the tick
+    /// remainder. Both tests read the argument the call site already holds.
+    /// </summary>
+    private static bool TryGetRedisExpireOperation(
+        EquatableArray<ParameterSpec> parameters,
+        out RedisOperationSpec operation)
     {
-        if (symbol.ReducedFrom is { Parameters.Length: > 0 } original)
+        operation = default;
+        if (parameters.Length < 2)
+            return false;
+
+        var expiry = parameters[1].Name;
+        switch (parameters[1].TypeName)
         {
-            receiverType = original.Parameters[0].Type;
-            return true;
+            case "global::System.TimeSpan?":
+                operation = new RedisOperationSpec(
+                    "PEXPIRE",
+                    RedisBranches(
+                        new RedisCommandBranch(expiry + " is null", "PERSIST"),
+                        new RedisCommandBranch(expiry + ".Value.Milliseconds == 0", "EXPIRE")));
+                return true;
+            case "global::System.DateTime?":
+                operation = new RedisOperationSpec(
+                    "PEXPIREAT",
+                    RedisBranches(
+                        new RedisCommandBranch(expiry + " is null", "PERSIST"),
+                        new RedisCommandBranch(expiry + ".Value.Millisecond == 0", "EXPIREAT")));
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static EquatableArray<RedisCommandBranch> RedisBranches(params RedisCommandBranch[] branches)
+        => ImmutableArray.Create(branches).AsEquatableArray();
+
+    private static bool IsRedisParameter(EquatableArray<ParameterSpec> parameters, int index, string typeName)
+        => index < parameters.Length &&
+           string.Equals(parameters[index].TypeName, typeName, StringComparison.Ordinal);
+
+    private static int IndexOfRedisParameter(EquatableArray<ParameterSpec> parameters, string typeName)
+    {
+        for (var index = 0; index < parameters.Length; index++)
+        {
+            if (string.Equals(parameters[index].TypeName, typeName, StringComparison.Ordinal))
+                return index;
         }
 
-        receiverType = symbol.ContainingType;
-        return false;
+        return -1;
     }
 
     private static string GetReducedExtensionContainingType(IMethodSymbol symbol)
@@ -593,9 +1675,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static bool IsTaskOf(ITypeSymbol? symbol, string resultFullyQualifiedName)
         => TryGetTaskResult(symbol, out var result) && IsType(result, resultFullyQualifiedName);
 
-    private static bool IsConstructedFrom(ITypeSymbol? symbol, string fullyQualifiedConstructedFromName)
-        => symbol is INamedTypeSymbol named && IsType(named.ConstructedFrom, fullyQualifiedConstructedFromName);
-
     private static bool IsConstructedGeneric(ITypeSymbol? symbol, string namespaceName, string metadataName)
         => symbol is INamedTypeSymbol named &&
            string.Equals(named.ConstructedFrom.MetadataName, metadataName, StringComparison.Ordinal) &&
@@ -644,34 +1723,20 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool IsOrImplementsConstructedGeneric(ITypeSymbol? symbol, string namespaceName, string metadataName)
+    private static bool IsOrDerivesOrImplements(ITypeSymbol? symbol, string namespaceName, string metadataName)
     {
-        if (symbol is not INamedTypeSymbol named)
+        if (symbol is null)
             return false;
 
-        if (IsConstructedGeneric(named, namespaceName, metadataName))
-            return true;
-
-        foreach (var interfaceType in named.AllInterfaces)
+        for (var current = symbol; current is not null; current = current.BaseType)
         {
-            if (IsConstructedGeneric(interfaceType, namespaceName, metadataName))
+            if (current is INamedTypeSymbol named && IsTypeByMetadata(named.OriginalDefinition, namespaceName, metadataName))
                 return true;
         }
 
-        return false;
-    }
-
-    private static bool IsOrImplementsType(ITypeSymbol? symbol, string namespaceName, string metadataName)
-    {
-        if (symbol is not INamedTypeSymbol named)
-            return false;
-
-        if (IsTypeByMetadata(named, namespaceName, metadataName))
-            return true;
-
-        foreach (var interfaceType in named.AllInterfaces)
+        foreach (var interfaceType in symbol.AllInterfaces)
         {
-            if (IsTypeByMetadata(interfaceType, namespaceName, metadataName))
+            if (IsTypeByMetadata(interfaceType.OriginalDefinition, namespaceName, metadataName))
                 return true;
         }
 
@@ -701,33 +1766,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         var display = CleanTypeName(symbol);
         return string.Equals(display, fullyQualifiedName, StringComparison.Ordinal);
-    }
-
-    private static string GetDbInstrumentationId(ITypeSymbol type)
-    {
-        var display = CleanTypeName(type);
-        if (display.StartsWithOrdinal("global::Microsoft.Data.SqlClient.") ||
-            display.StartsWithOrdinal("global::System.Data.SqlClient."))
-        {
-            return "SQLCLIENT";
-        }
-
-        if (display.StartsWithOrdinal("global::Microsoft.Data.Sqlite."))
-            return "SQLITE";
-
-        if (display.StartsWithOrdinal("global::Npgsql."))
-            return "NPGSQL";
-
-        if (display.StartsWithOrdinal("global::MySqlConnector."))
-            return "MYSQLCONNECTOR";
-
-        if (display.StartsWithOrdinal("global::MySql.Data."))
-            return "MYSQLDATA";
-
-        if (display.StartsWithOrdinal("global::Oracle.ManagedDataAccess."))
-            return "ORACLEMDA";
-
-        return "ADONET";
     }
 
     private static string CleanTypeName(ITypeSymbol symbol)
@@ -770,6 +1808,13 @@ public sealed partial class QylAutoInstrumentationGenerator
             default:
                 return CleanTypeName(symbol);
         }
+    }
+
+    private static string QuoteLiteral(string value)
+    {
+        var builder = new StringBuilder();
+        AppendStringLiteral(builder, value);
+        return builder.ToString();
     }
 
     private static void AppendStringLiteral(StringBuilder builder, string value)

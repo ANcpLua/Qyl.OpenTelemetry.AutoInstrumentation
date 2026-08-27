@@ -3,24 +3,24 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Kafka.</summary>
+/// <summary>Confluent.Kafka producer and consumer spans.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.Kafka, QylInstrumentationDomains.MessagingKafka)]
+[QylIntercept("Confluent.Kafka.IProducer`2", "Produce", "ProduceAsync", Shape = QylShapes.KafkaProduce, Start = nameof(Send))]
+[QylIntercept("Confluent.Kafka.IConsumer`2", "Consume", Shape = QylShapes.KafkaConsume, Start = nameof(Receive))]
 public static class QylInterceptedKafka
 {
-    /// <summary>Runs the Start Producer Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartProducerActivity(string? topic, int? partitionId)
+    /// <summary>Starts the producer span for a topic or topic partition.</summary>
+    public static Activity? Send(
+        [QylFromArgument(0, Type = "string")]
+        [QylFromArgument(0, Type = "Confluent.Kafka.TopicPartition", Convert = "{0}.Topic")]
+        string? topic,
+        [QylFromArgument(0, Type = "Confluent.Kafka.TopicPartition", Convert = "(int?){0}.Partition.Value")]
+        int? partitionId)
         => QylMessagingActivityPolicy.StartKafkaProducerActivity(topic, partitionId);
 
-    /// <summary>Runs the Start Consumer Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartConsumerActivity()
+    /// <summary>Starts the pull-based receive span.</summary>
+    public static Activity? Receive()
         => QylMessagingActivityPolicy.StartKafkaConsumerActivity();
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
-    }
-
-
 }

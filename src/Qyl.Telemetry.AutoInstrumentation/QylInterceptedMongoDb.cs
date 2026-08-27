@@ -3,14 +3,29 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted Mongo Db.</summary>
+/// <summary>MongoDB collection operation spans.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.MongoDb, QylInstrumentationDomains.DbMongoDb)]
+[QylIntercept(
+    "MongoDB.Driver.IMongoCollection`1",
+    "Find", "FindAsync",
+    "Aggregate", "AggregateAsync",
+    "InsertOne", "InsertOneAsync", "InsertMany", "InsertManyAsync",
+    "ReplaceOne", "ReplaceOneAsync",
+    "DeleteOne", "DeleteOneAsync", "DeleteMany", "DeleteManyAsync",
+    "UpdateOne", "UpdateOneAsync", "UpdateMany", "UpdateManyAsync",
+    "CountDocuments", "CountDocumentsAsync", "EstimatedDocumentCount", "EstimatedDocumentCountAsync",
+    Shape = QylShapes.MongoDbCollection,
+    Start = nameof(Operation),
+    ObserveAsync = true)]
 public static class QylInterceptedMongoDb
 {
-
-    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity(string operationName, string? collectionName, string? databaseName)
+    /// <summary>Starts the client span named <c>{operation} {collection}</c>.</summary>
+    public static Activity? Operation(
+        [QylFromMethodName] string operationName,
+        [QylFromReceiver("CollectionNamespace?.CollectionName")] string? collectionName,
+        [QylFromReceiver("Database?.DatabaseNamespace?.DatabaseName")] string? databaseName)
     {
         ArgumentNullException.ThrowIfNull(operationName);
 
@@ -35,20 +50,6 @@ public static class QylInterceptedMongoDb
             activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
 
         return activity;
-    }
-
-    /// <summary>Runs the Observe Async runtime helper used by source-generated qyl interceptors.</summary>
-    public static Task ObserveAsync(Task? task, Activity? activity)
-        => QylActivityObserver.ObserveAsync(task, activity);
-
-    /// <summary>Observes an asynchronous operation and records qyl exception telemetry.</summary>
-    public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
-        => QylActivityObserver.ObserveAsync(task, activity);
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
     }
 
     private static string NormalizeOperation(string operationName)

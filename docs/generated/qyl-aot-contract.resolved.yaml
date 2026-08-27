@@ -843,6 +843,7 @@ contract_items:
     - messaging.destination.name
     recommended_attributes:
     - error.type
+    - messaging.rabbitmq.destination.routing_key
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.QUARTZ
@@ -1018,6 +1019,7 @@ contract_items:
     - qyl.instrumentation.domain
     recommended_attributes:
     - error.type
+    - db.namespace
     opt_in_attributes:
     - db.query.text
 - kind: signal_specific_instrumentation_promise

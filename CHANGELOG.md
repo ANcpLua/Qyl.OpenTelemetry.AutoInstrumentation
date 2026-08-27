@@ -13,12 +13,35 @@ NativeAOT consumers, and only then creates the GitHub release.
   `QylGeneratedCodeAbi.V9` to `QylGeneratedCodeAbi.V10`, and the package major moved to `10.0.0`.
   Generated interceptors now reference the `V10` runtime anchor, so a stale generated interceptor
   from a `9.x` generator fails to compile against the `10.x` runtime instead of binding to changed
-  behavior. The break carries the interceptor argument-binding work below: the source generator now
-  binds the arguments each `QylIntercepted*.Start*` helper receives — from an intercepted argument
-  by index, from the receiver via a member path, from the intercepted method name, or from the
-  instrumentation id — so a call site's own low-cardinality values reach the span. Several
-  `QylIntercepted*` helper signatures gained parameters for those values; the helpers stay
-  `EditorBrowsable(Never)` ABI surface.
+  behavior.
+- **BREAKING (generated-code ABI):** the interceptor catalog is declarative. Each intercepted
+  integration is one `QylIntercepted*` class in the runtime carrying `[QylIntegration(id, domain)]`
+  and one `[QylIntercept(receiverType, methods…, Shape = QylShapes.X, Start = nameof(…))]` per call
+  shape; the helper's parameters carry `[QylFromArgument]`, `[QylFromReceiver]`,
+  `[QylFromMethodName]`, `[QylFromInstrumentationId]`, or `[QylFromShape]` bindings. The source
+  generator reads those declarations from the referenced runtime assembly's metadata at compile
+  time (ordinary Roslyn symbol reading — no runtime reflection) and derives the interceptor kind,
+  the receiver and method matcher, the emitted body, the `Start`/`Enrich`/`Metric` arguments, the
+  instrumentation id, domain, signal, and the contract manifest from them. The hand-coded
+  `InterceptorKind` enum, the per-integration `TryGet*Invocation` matchers, and the two catalog
+  tables are gone; what remains in the generator is the closed set of body templates
+  (`QylInterceptorBody`: `Trace`, `Forward`, `Log`, `LogExtension`, `ExternalLog`, `DbCommand`)
+  and the named shape predicates (`QylShapes`) that validate a library overload. The runtime's
+  per-signal enabled-id sets are generated from the same declarations plus `[QylSignal]` rows for
+  the listener, middleware, meter, and library-native lanes, so an integration cannot be added
+  without its environment toggle. Consequences for the ABI surface: `QylInterceptedElastic` split
+  into `QylInterceptedElasticsearch`/`QylInterceptedElasticTransport`, `QylInterceptedExternalLogger`
+  into `QylInterceptedNLog`/`QylInterceptedLog4Net`, `QylInterceptedLogger` is `QylInterceptedILogger`,
+  the fourteen `RecordException` copies and four `ObserveAsync` forwarders collapsed into
+  `QylInterceptedActivity`, and each helper's start method is named for its operation (`Send`,
+  `Publish`, `Command`, `Execute`, `Request`, `Call`, `Operation`, `Log`). The manifest's
+  `interceptorKind` is now `{Integration}.{Start}` (for example `Kafka.Send`, `ILogger.Log`,
+  `HttpClient.Forward`). `HttpClient` keeps the forwarding body: its helper mirrors the BCL's null
+  semantics before any span starts, resolves the request URI against `BaseAddress`, enriches from
+  the typed response, and maps `HttpRequestException.StatusCode`, none of which the trace template
+  expresses. A synchronous `IMongoCollection<T>` call intercepted with runtime task observation
+  previously never disposed its activity; the trace template now observes only asynchronous calls
+  and disposes synchronous ones in `finally`.
 - Messaging destinations are now emitted from the call site. Kafka produce spans carry
   `messaging.destination.name` (the topic, taken from the `string` or `TopicPartition` argument) and
   `messaging.destination.partition.id` when a `TopicPartition` is given; the span name is

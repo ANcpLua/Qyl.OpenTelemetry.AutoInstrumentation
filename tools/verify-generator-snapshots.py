@@ -36,8 +36,8 @@ REQUIRED_INTERCEPTOR_TOKENS = [
     "// Intercepted call at /_qyl_generator_snapshot/Program.cs",
     "[global::System.Runtime.CompilerServices.InterceptsLocationAttribute(",
     "ILogger_Log_",
-    "global::Microsoft.Extensions.Logging.ILogger logger",
-    "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(",
+    "global::Microsoft.Extensions.Logging.ILogger receiver",
+    "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedILogger.Log(",
 ]
 
 FORBIDDEN_INTERCEPTOR_TOKENS = [

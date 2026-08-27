@@ -38,7 +38,8 @@ from generator_manifest_coverage import (
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 GENERATOR_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
-INTERCEPTOR_CATALOG_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylGeneratedSourceInterceptorCatalog.cs"
+RUNTIME_SOURCE_ROOT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation"
+DECLARATIONS_PATH = RUNTIME_SOURCE_ROOT / "QylDeclarations.cs"
 GENERATED_INTERCEPTOR_SNAPSHOT_PATH = (
     ROOT
     / "tests"
@@ -255,15 +256,17 @@ def load_artifacts() -> ModuleType:
 
 
 def generator_partial_paths():
-    # The generator is split across QylAutoInstrumentationGenerator{,.Descriptors,.Detection,.Shapes}.cs partials.
+    # The generator is split across QylAutoInstrumentationGenerator{,.Declarations,.Shapes}.cs partials.
     return sorted(GENERATOR_PATH.parent.glob("QylAutoInstrumentationGenerator*.cs"))
 
 
 @functools.cache
 def read_generator_sources() -> str:
-    sources = [p.read_text() for p in generator_partial_paths()]
-    sources.append(INTERCEPTOR_CATALOG_PATH.read_text())
-    return "\n".join(sources)
+    return "\n".join(p.read_text() for p in generator_partial_paths())
+
+
+def declaration_paths() -> list[Path]:
+    return sorted(RUNTIME_SOURCE_ROOT.glob("QylIntercepted*.cs"))
 
 
 def parse_instrumentation_id_constants() -> dict[str, str]:
@@ -274,22 +277,124 @@ def parse_instrumentation_id_constants() -> dict[str, str]:
     }
 
 
-def parse_options_id_array(options: str, name: str, id_constants: dict[str, str]) -> set[str]:
-    try:
-        block = options.split(f"private static readonly string[] {name}", 1)[1].split("];", 1)[0]
-    except IndexError:
-        fail(f"{name} array missing from QylAutoInstrumentationOptions")
+def resolve_instrumentation_id(constant_name: str, id_constants: dict[str, str], context: str) -> str:
+    for instrumentation_id, candidate_name in id_constants.items():
+        if candidate_name == constant_name:
+            return instrumentation_id
+    fail(f"{context} references unknown QylAutoInstrumentationIds.{constant_name}")
 
-    values: set[str] = set()
-    for constant_name in re.findall(r"QylAutoInstrumentationIds\.([A-Za-z0-9]+)", block):
-        for instrumentation_id, candidate_name in id_constants.items():
-            if candidate_name == constant_name:
-                values.add(instrumentation_id)
-                break
+
+def attribute_arguments(text: str, attribute: str) -> list[str]:
+    """The argument text of every `[attribute(...)]` in `text`, with nested parentheses balanced."""
+    arguments: list[str] = []
+    marker = f"[{attribute}("
+    position = 0
+    while True:
+        start = text.find(marker, position)
+        if start < 0:
+            return arguments
+        depth = 0
+        index = start + len(marker) - 1
+        while index < len(text):
+            char = text[index]
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+            index += 1
         else:
-            fail(f"{name} references unknown QylAutoInstrumentationIds.{constant_name}")
+            fail(f"unterminated [{attribute}(...)] declaration")
+        arguments.append(text[start + len(marker):index])
+        position = index + 1
 
-    return values
+
+def parse_integration_declarations() -> list[dict[str, Any]]:
+    """The interceptor-lane declarations: one `[QylIntegration]` class per integration, each carrying
+    its `[QylIntercept]` rows. This is the single source the generator derives the catalog from, so
+    the gate derives its per-integration expectations from the same text."""
+    declarations: list[dict[str, Any]] = []
+    for path in declaration_paths():
+        text = strip_csharp_comments(path.read_text())
+        integrations = attribute_arguments(text, "QylIntegration")
+        if not integrations:
+            continue
+        if len(integrations) != 1:
+            fail(f"a declaration class carries exactly one [QylIntegration]: {path.relative_to(ROOT)}")
+        class_match = re.search(r"public static class (QylIntercepted[A-Za-z0-9]+)", text)
+        if class_match is None:
+            fail(f"[QylIntegration] must decorate a public static QylIntercepted* class: {path.relative_to(ROOT)}")
+        name = class_match.group(1)[len("QylIntercepted"):]
+        integration = integrations[0]
+        head = re.match(r"\s*QylAutoInstrumentationIds\.([A-Za-z0-9]+),\s*QylInstrumentationDomains\.([A-Za-z0-9]+)", integration)
+        if head is None:
+            fail(f"[QylIntegration] must name its id and domain through the vocabulary constants: {path.relative_to(ROOT)}")
+        signal_match = re.search(r"Signal\s*=\s*QylAutoInstrumentationSignal\.([A-Za-z]+)", integration)
+        metric_match = re.search(r"MetricIds\s*=\s*\[([^\]]*)\]", integration)
+        method_names = set(re.findall(r"public static [^\n(]+ ([A-Za-z0-9]+)(?:<[^>]+>)?\(", text))
+        intercepts: list[dict[str, str]] = []
+        for arguments in attribute_arguments(text, "QylIntercept"):
+            shape = re.search(r"Shape\s*=\s*QylShapes\.([A-Za-z0-9]+)", arguments)
+            if shape is None:
+                fail(f"[QylIntercept] must select a named QylShapes predicate: {path.relative_to(ROOT)}")
+            start = re.search(r"Start\s*=\s*nameof\(([A-Za-z0-9]+)\)", arguments)
+            body = re.search(r"Body\s*=\s*QylInterceptorBody\.([A-Za-z]+)", arguments)
+            for member in ["Start", "Enrich", "Metric"]:
+                named = re.search(rf"{member}\s*=\s*nameof\(([A-Za-z0-9]+)\)", arguments)
+                if named is not None and named.group(1) not in method_names:
+                    fail(f"[QylIntercept] {member} names a missing helper method {named.group(1)}: {path.relative_to(ROOT)}")
+            body_name = body.group(1) if body else "Trace"
+            intercepts.append(
+                {
+                    "shape": shape.group(1),
+                    "body": body_name,
+                    "kind": f"{name}.{start.group(1) if start else body_name}",
+                }
+            )
+        if not intercepts:
+            fail(f"[QylIntegration] class declares no [QylIntercept] rows: {path.relative_to(ROOT)}")
+        declarations.append(
+            {
+                "name": name,
+                "path": path,
+                "instrumentation_id": head.group(1),
+                "domain": head.group(2),
+                "signal": signal_match.group(1) if signal_match else "Traces",
+                "metric_ids": re.findall(r"QylAutoInstrumentationIds\.([A-Za-z0-9]+)", metric_match.group(1)) if metric_match else [],
+                "intercepts": intercepts,
+            }
+        )
+    if not declarations:
+        fail("no [QylIntegration] declarations found in the runtime")
+    return declarations
+
+
+def parse_signal_declarations() -> list[tuple[str, str]]:
+    """Every `[QylSignal(id, signal)]` in the runtime: the lanes that own a signal outside the
+    interceptor lane, plus the DbCommand provider fan-out."""
+    declarations: list[tuple[str, str]] = []
+    for path in sorted(RUNTIME_SOURCE_ROOT.rglob("*.cs")):
+        text = strip_csharp_comments(path.read_text())
+        for arguments in attribute_arguments(text, "QylSignal"):
+            match = re.match(r"\s*QylAutoInstrumentationIds\.([A-Za-z0-9]+),\s*QylAutoInstrumentationSignal\.([A-Za-z]+)\s*$", arguments)
+            if match is None:
+                fail(f"[QylSignal] must name its id and signal through the vocabulary constants: {path.relative_to(ROOT)}")
+            declarations.append((match.group(1), match.group(2)))
+    return declarations
+
+
+def declared_signal_ids(id_constants: dict[str, str]) -> dict[str, set[str]]:
+    """The per-signal instrumentation-id sets the generator derives QylDeclaredInstrumentations from."""
+    declared: dict[str, set[str]] = {"traces": set(), "metrics": set(), "logs": set()}
+    for declaration in parse_integration_declarations():
+        context = f"[QylIntegration] on {declaration['path'].relative_to(ROOT)}"
+        declared[declaration["signal"].lower()].add(resolve_instrumentation_id(declaration["instrumentation_id"], id_constants, context))
+        for metric_id in declaration["metric_ids"]:
+            declared["metrics"].add(resolve_instrumentation_id(metric_id, id_constants, context))
+    for constant_name, signal in parse_signal_declarations():
+        declared[signal.lower()].add(resolve_instrumentation_id(constant_name, id_constants, "[QylSignal]"))
+    return declared
 
 
 def parse_string_constants(text: str) -> dict[str, str]:
@@ -507,18 +612,21 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
         }
         for signal in ["traces", "metrics", "logs"]
     }
-    actual_by_signal = {
-        "traces": parse_options_id_array(options, "TraceInstrumentationIds", id_constants),
-        "metrics": parse_options_id_array(options, "MetricInstrumentationIds", id_constants),
-        "logs": parse_options_id_array(options, "LogInstrumentationIds", id_constants),
-    }
+    # Coherence: the enabled-set each environment toggle binds to is generated from the runtime's
+    # declarations; the declarations must therefore cover exactly the implemented contract signals.
+    actual_by_signal = declared_signal_ids(id_constants)
     for signal, expected in expected_by_signal.items():
         actual = actual_by_signal[signal]
         if expected != actual:
             fail(
-                f"{signal} instrumentation id array mismatch: "
+                f"{signal} declared instrumentation id set mismatch: "
                 f"missing={sorted(expected - actual)} extra={sorted(actual - expected)}"
             )
+    for member in ["QylDeclaredInstrumentations.Traces", "QylDeclaredInstrumentations.Metrics", "QylDeclaredInstrumentations.Logs"]:
+        if member not in options:
+            fail(f"QylAutoInstrumentationOptions must bind the environment toggles to the generated declaration set: {member}")
+    if "private static readonly string[]" in options:
+        fail("QylAutoInstrumentationOptions must not retype an instrumentation id array beside the generated declaration set")
 
 
 def verify_semconv_attribute_contract() -> None:
@@ -730,7 +838,7 @@ def verify_behavior_semantics_contract() -> None:
         if token in generator:
             fail(f"generator must not inline telemetry behavior instead of delegating to runtime: {token}")
 
-    behavior_sources = [*generator_partial_paths(), *sorted((ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation").glob("QylIntercepted*.cs"))]
+    behavior_sources = [*generator_partial_paths(), *declaration_paths()]
     for path in behavior_sources:
         text = path.read_text()
         for token in FORBIDDEN_EXCEPTION_REWRITE_TOKENS:
@@ -791,55 +899,39 @@ def verify_productive_mechanism_contract() -> None:
                     fail(f"productive code must not use forbidden instrumentation mechanism {token}: {path.relative_to(ROOT)}")
 
 
-def parse_interceptor_kinds(generator: str) -> set[str]:
+def parse_enum_members(text: str, enum_name: str) -> list[str]:
     try:
-        enum_block = generator.split("private enum InterceptorKind", 1)[1].split("}", 1)[0]
+        block = text.split(f"enum {enum_name}", 1)[1].split("}", 1)[0]
     except IndexError:
-        fail("InterceptorKind enum missing from generator")
+        fail(f"{enum_name} enum missing")
+    return re.findall(r"^\s*([A-Za-z0-9]+),\s*$", block, re.MULTILINE)
 
-    return {
+
+def parse_declared_shapes() -> set[str]:
+    text = strip_csharp_comments(DECLARATIONS_PATH.read_text())
+    try:
+        block = text.split("public static class QylShapes", 1)[1].split("\n}", 1)[0]
+    except IndexError:
+        fail("QylShapes missing from the runtime declarations")
+    shapes = {
         match.group(1)
-        for match in re.finditer(r"^\s*([A-Za-z0-9]+),\s*$", enum_block, re.MULTILINE)
+        for match in re.finditer(r'public const string ([A-Za-z0-9]+) = "([A-Za-z0-9]+)";', block)
+        if match.group(1) == match.group(2)
     }
+    if not shapes:
+        fail("QylShapes declares no shape predicates")
+    return shapes
 
 
-def parse_emission_descriptor_kinds(generator: str) -> set[str]:
-    descriptor_kinds = {
-        match.group(1)
-        for match in re.finditer(
-            r"new\s+InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+)",
-            generator,
-        )
-    }
-    if not descriptor_kinds:
-        fail("s_emissionDescriptors must describe every InterceptorKind")
-
-    return descriptor_kinds
-
-
-def parse_emission_descriptor_bodies(generator: str) -> dict[str, str]:
-    bodies_by_kind: dict[str, str] = {}
-    matches = list(re.finditer(
-        r"new\s+InterceptorEmissionDescriptor\(\s*InterceptorKind\.([A-Za-z0-9]+),\s*new\s+([A-Za-z0-9]+BodyDescriptor)\(",
-        generator,
-    ))
-    constructor_count = len(re.findall(r"new\s+InterceptorEmissionDescriptor\(", generator))
-    if len(matches) != constructor_count:
-        fail(
-            "every emission descriptor must construct exactly one typed body descriptor: "
-            f"{constructor_count} constructors, {len(matches)} with a parsable body"
-        )
-
-    for match in matches:
-        kind = match.group(1)
-        if kind in bodies_by_kind:
-            fail(f"duplicate emission descriptor for InterceptorKind.{kind}")
-        bodies_by_kind[kind] = match.group(2)
-
-    if not bodies_by_kind:
-        fail("s_emissionDescriptors must map every InterceptorKind to a typed body descriptor")
-
-    return bodies_by_kind
+def parse_generator_shape_cases(generator: str) -> set[str]:
+    try:
+        block = generator.split("private static bool TryMatchShape(", 1)[1].split("\n    private static ", 1)[0]
+    except IndexError:
+        fail("TryMatchShape dispatch missing from generator")
+    cases = set(re.findall(r'case "([A-Za-z0-9]+)":', block))
+    if not cases:
+        fail("TryMatchShape dispatches no named shape")
+    return cases
 
 
 def verify_generated_interceptor_manifests(
@@ -856,111 +948,82 @@ def verify_generated_interceptor_manifests(
     return emitted_keys
 
 
-def verify_matcher_registration(generator: str) -> None:
-    detection_methods = set(re.findall(r"private static bool (TryGet[A-Za-z0-9]+Invocation)\(", generator))
-    if not detection_methods:
-        fail("no TryGet*Invocation detection methods found in the generator")
+def verify_interceptor_structure(generator: str) -> set[str]:
+    """The catalog is the runtime's declarations, read from metadata; the generator keeps only the
+    named shape predicates and the closed set of body templates. Returns the declared kinds."""
+    declarations = parse_integration_declarations()
+    kinds = {intercept["kind"] for declaration in declarations for intercept in declaration["intercepts"]}
+    names = [declaration["name"] for declaration in declarations]
+    if len(set(names)) != len(names):
+        fail(f"integration declaration names must be unique: {sorted(names)}")
 
-    registered = set(re.findall(r"new InterceptorMatcherDescriptor\((TryGet[A-Za-z0-9]+Invocation)\)", generator))
-    unknown = registered - detection_methods
-    if unknown:
-        fail(f"matcher rows reference unknown detection methods: {sorted(unknown)}")
-
-    for method in sorted(detection_methods - registered):
-        references = len(re.findall(rf"\b{method}\b", generator)) - 1
-        if references <= 0:
-            fail(
-                "detection method is neither registered in CreateGeneratedMatcherDescriptors "
-                f"nor called by another detection method: {method}"
-            )
-
-
-def verify_interceptor_emission_bodies(generator: str, kinds: set[str]) -> None:
-    bodies_by_kind = parse_emission_descriptor_bodies(generator)
-    missing_bodies = kinds - set(bodies_by_kind)
-    if missing_bodies:
-        fail(f"InterceptorKind values missing emission body descriptors: {sorted(missing_bodies)}")
+    # Philosophy guard: no hand-coded per-integration matcher or catalog may reappear beside the
+    # declarations.
+    for pattern, message in [
+        (r"\bTryGet[A-Za-z0-9]+Invocation\(", "generator must not reintroduce hand-coded per-integration TryGet*Invocation matchers"),
+        (r"\benum InterceptorKind\b", "generator must not reintroduce a per-integration InterceptorKind enum"),
+        (r"\bInterceptorEmissionDescriptor\b|\bInterceptorMatcherDescriptor\b", "generator must not reintroduce a retyped interceptor catalog"),
+    ]:
+        for match in re.finditer(pattern, generator):
+            if match.group(0) != "TryGetInvocation(":
+                fail(message)
 
     for token in [
-        "private abstract record InterceptorBodyDescriptor",
-        "public abstract void Emit(StringBuilder builder, in InterceptedInvocation invocation, int index);",
-        "InterceptorBodyDescriptor Body",
-        "Unsupported interceptor kind: ",
+        "GetCatalog(compilation)",
+        "foreach (var integration in catalog.Integrations)",
+        "TryMatchDeclaration(integration, intercept, symbol, receiverType, out target)",
+        "TryMatchShape(intercept.Shape, integration, symbol, receiverType, matchedReceiver, out var shape)",
+        "EmitInterceptorManifest(builder, in target);",
+        "EmitInterceptorBody(builder, in invocation, index);",
     ]:
         if token not in generator:
-            fail(f"generator must model emission bodies as a closed self-emitting descriptor hierarchy: {token}")
-
-
-def verify_interceptor_structure(generator: str) -> set[str]:
-    kinds = parse_interceptor_kinds(generator)
-    if not kinds:
-        fail("InterceptorKind enum has no values")
-
-    try:
-        dispatch_block = generator.split("for (var index = 0; index < invocations.Length; index++)", 1)[1].split(
-            'context.AddSource("QylAutoInstrumentation.Interceptors.g.cs"', 1
-        )[0]
-    except IndexError:
-        fail("EmitInterceptors dispatch block missing")
-
-    if "var target = invocation.Target;" not in dispatch_block:
-        fail("emitter dispatch must retain the matched InterceptorTarget")
-    if "GetEmissionDescriptor(in target)" not in dispatch_block:
-        fail("emitter dispatch must use the descriptor table")
-    if "private delegate void InterceptorEmitter" in generator or "InterceptorEmitter? Emitter" in generator or "descriptor.Emitter" in dispatch_block:
-        fail("emitter dispatch must not use generic emitter delegates")
-    # Q4: bodies emit themselves; body-type exhaustiveness is enforced by the
-    # compiler through the abstract Emit member, not by this gate.
-    if "descriptor.Body.Emit(builder, in invocation, index);" not in dispatch_block:
-        fail("emitter dispatch must invoke the polymorphic body emit")
-    if "EmitInterceptorManifest(builder, in target);" not in dispatch_block:
-        fail("emitter dispatch must emit one manifest from each matched InterceptorTarget")
+            fail(f"generator must drive matching and emission from the runtime declarations: {token}")
 
     try:
         manifest_emitter = generator.split("private static void EmitInterceptorManifest(", 1)[1].split(
-            "private static void EmitInterceptsLocationAttribute(",
+            "private static string GetContractKey(",
             1,
         )[0]
     except IndexError:
         fail("generated interceptor manifest emitter missing")
     for token in [
-        "target.Kind",
-        "target.Signal",
+        "target.Intercept.Kind",
+        "target.Integration.Signal",
         "target.InstrumentationId",
         "target.AdditionalMetricIds",
-        "GetContractKey(target.Signal, target.InstrumentationId)",
+        "GetContractKey(target.Integration.Signal, target.InstrumentationId)",
         "GetContractKey(TelemetrySignal.Metrics, target.AdditionalMetricIds[index])",
     ]:
         if token not in manifest_emitter:
-            fail(f"generated interceptor manifest must derive its representation from InterceptorTarget: {token}")
+            fail(f"generated interceptor manifest must derive its representation from the declaration: {token}")
 
-    try:
-        matcher_dispatch_block = generator.split("private static bool TryGetInvocation(", 1)[1].split(
-            "private static void EmitInterceptors(",
-            1,
-        )[0]
-    except IndexError:
-        fail("TryGetInvocation matcher dispatch block missing")
-
-    if "foreach (var descriptor in s_matcherDescriptors)" not in matcher_dispatch_block:
-        fail("matcher dispatch must use the descriptor table")
-    if "descriptor.TryMatch(symbol, receiverType, out target)" not in matcher_dispatch_block:
-        fail("matcher dispatch must invoke descriptor.TryMatch")
-    if re.search(r"if\s*\(\s*TryGet[A-Za-z0-9]+Invocation\(", matcher_dispatch_block) is not None:
-        fail("matcher dispatch must not reintroduce hand-coded TryGet*Invocation sequencing")
-
-    verify_matcher_registration(generator)
-
-    descriptor_kinds = parse_emission_descriptor_kinds(generator)
-    descriptor_missing = kinds - descriptor_kinds
-    descriptor_extra = descriptor_kinds - kinds
-    if descriptor_missing or descriptor_extra:
+    # Coherence: every declared shape is a predicate the generator implements, and every predicate
+    # the generator implements is selected by a declaration — the residue cannot grow silently.
+    declared_shapes = parse_declared_shapes()
+    generator_shapes = parse_generator_shape_cases(generator)
+    if declared_shapes != generator_shapes:
         fail(
-            "InterceptorKind descriptor mismatch: "
-            f"missing={sorted(descriptor_missing)} extra={sorted(descriptor_extra)}"
+            "QylShapes and the generator's TryMatchShape dispatch must name the same predicates: "
+            f"undispatched={sorted(declared_shapes - generator_shapes)} undeclared={sorted(generator_shapes - declared_shapes)}"
         )
+    selected_shapes = {intercept["shape"] for declaration in declarations for intercept in declaration["intercepts"]}
+    if selected_shapes - declared_shapes:
+        fail(f"declarations select shapes QylShapes does not declare: {sorted(selected_shapes - declared_shapes)}")
+    if declared_shapes - selected_shapes:
+        fail(f"QylShapes declares predicates no declaration selects: {sorted(declared_shapes - selected_shapes)}")
 
-    verify_interceptor_emission_bodies(generator, kinds)
+    # Coherence: the generator reads QylInterceptorBody by value, so both enums must agree member-for-member.
+    runtime_bodies = parse_enum_members(strip_csharp_comments(DECLARATIONS_PATH.read_text()), "QylInterceptorBody")
+    generator_bodies = parse_enum_members(generator, "InterceptorBody")
+    if runtime_bodies != generator_bodies:
+        fail(f"QylInterceptorBody and the generator's InterceptorBody must agree: runtime={runtime_bodies} generator={generator_bodies}")
+    selected_bodies = {intercept["body"] for declaration in declarations for intercept in declaration["intercepts"]}
+    if selected_bodies - set(runtime_bodies):
+        fail(f"declarations select unknown body templates: {sorted(selected_bodies - set(runtime_bodies))}")
+    for body in runtime_bodies:
+        if f"case InterceptorBody.{body}:" not in generator:
+            fail(f"generator must emit every declared body template: {body}")
+
     return kinds
 
 
@@ -1011,7 +1074,7 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
         "two-ILogger deterministic fixture",
     )
     fixture_kinds = [manifest["interceptorKind"] for manifest in fixture_manifests]
-    if fixture_kinds != ["ILoggerLog", "ILoggerLog"]:
+    if fixture_kinds != ["ILogger.Log", "ILogger.Log"]:
         fail(f"generated interceptor snapshot kind mismatch: {fixture_kinds}")
     fixture_keys = [manifest["contractKeys"] for manifest in fixture_manifests]
     if fixture_keys != [["signals.logs.ILOGGER"], ["signals.logs.ILOGGER"]]:
@@ -1025,7 +1088,7 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     emitted_kinds = {str(manifest["interceptorKind"]) for manifest in coverage_manifests}
     if emitted_kinds != interceptor_kinds:
         fail(
-            "live generated manifest kinds must exactly match the interceptor catalog: "
+            "live generated manifest kinds must exactly match the declared interceptor kinds: "
             f"missing={sorted(interceptor_kinds - emitted_kinds)} "
             f"unexpected={sorted(emitted_kinds - interceptor_kinds)}"
         )

@@ -62,12 +62,17 @@
     </ItemGroup>
   </Target>
 
+  <!-- The generator reads this assembly's integration declarations and emits QylDeclaredInstrumentations.
+       Under PublishAot it is consumed as the prebuilt analyzer from the standard artifacts/ layout, the
+       same contract the AOT-published demos satisfy. -->
   <ItemGroup Condition="'$(PublishAot)' != 'true'">
-    <!-- NativeAOT publishes only the generated runtime code. -->
     <ProjectReference Include="..\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(PublishAot)' == 'true'">
+    <Analyzer Include="$(ArtifactsPath)\bin\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\release\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.dll" />
   </ItemGroup>
 
 </Project>

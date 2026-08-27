@@ -157,7 +157,7 @@ def verify_generated_source(directory: Path) -> None:
     for token in [
         "namespace Qyl.Telemetry.AutoInstrumentation.Generated",
         "ILogger_Log_0",
-        "QylInterceptedLogger.Log(",
+        "QylInterceptedILogger.Log(",
         '"contractKeys":["signals.logs.ILOGGER"]',
     ]:
         if token not in text:

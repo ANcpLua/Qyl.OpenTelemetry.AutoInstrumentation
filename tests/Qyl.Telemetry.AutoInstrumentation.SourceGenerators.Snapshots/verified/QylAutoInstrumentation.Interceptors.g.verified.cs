@@ -18,29 +18,29 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
     {
         private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V10;
 
-        // qyl-interceptor-manifest: {"interceptorKind":"ILoggerLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
+        // qyl-interceptor-manifest: {"interceptorKind":"ILogger.Log","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(5,8)
         [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "BZ/VvozrZJa2e0oqXWVjZFQAAABQcm9ncmFtLmNz")]
         public static void ILogger_Log_0<TState>(
-            this global::Microsoft.Extensions.Logging.ILogger logger,
+            this global::Microsoft.Extensions.Logging.ILogger receiver,
             global::Microsoft.Extensions.Logging.LogLevel logLevel,
             global::Microsoft.Extensions.Logging.EventId eventId,
             TState state,
             global::System.Exception? exception,
             global::System.Func<TState, global::System.Exception?, string> formatter)
-            => global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
+            => global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedILogger.Log(receiver, logLevel, eventId, state, exception, formatter);
 
-        // qyl-interceptor-manifest: {"interceptorKind":"ILoggerLog","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
+        // qyl-interceptor-manifest: {"interceptorKind":"ILogger.Log","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
         // Intercepted call at /_qyl_generator_snapshot/Probe.cs(10,16)
         [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "bCVh78nW9Q7jLziddD9BAPcBAABQcm9iZS5jcw==")]
         public static void ILogger_Log_1<TState>(
-            this global::Microsoft.Extensions.Logging.ILogger logger,
+            this global::Microsoft.Extensions.Logging.ILogger receiver,
             global::Microsoft.Extensions.Logging.LogLevel logLevel,
             global::Microsoft.Extensions.Logging.EventId eventId,
             TState state,
             global::System.Exception? exception,
             global::System.Func<TState, global::System.Exception?, string> formatter)
-            => global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLogger.Log(logger, logLevel, eventId, state, exception, formatter);
+            => global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedILogger.Log(receiver, logLevel, eventId, state, exception, formatter);
 
     }
 }

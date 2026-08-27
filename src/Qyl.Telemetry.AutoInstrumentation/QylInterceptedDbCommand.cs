@@ -4,14 +4,32 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>Defines the qyl auto-instrumentation surface for qyl Intercepted database Command.</summary>
+/// <summary>ADO.NET <see cref="DbCommand"/> execution spans, fanned out to the provider's instrumentation id by the receiver's namespace.</summary>
 /// <remarks>This runtime surface is NativeAOT-compatible and is consumed by source-generated interceptors without runtime IL rewriting, profiler attach, or reflection discovery.</remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+[QylIntegration(QylAutoInstrumentationIds.AdoNet, QylInstrumentationDomains.DbClient)]
+[QylIntercept(
+    "System.Data.Common.DbCommand",
+    "ExecuteReader", "ExecuteReaderAsync", "ExecuteScalar", "ExecuteScalarAsync", "ExecuteNonQuery", "ExecuteNonQueryAsync",
+    Shape = QylShapes.DbCommand,
+    Body = QylInterceptorBody.DbCommand,
+    Start = nameof(Execute),
+    Metric = nameof(RecordDuration))]
+[QylSignal(QylAutoInstrumentationIds.MySqlConnector, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.MySqlData, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.Npgsql, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.Npgsql, QylAutoInstrumentationSignal.Metrics)]
+[QylSignal(QylAutoInstrumentationIds.OracleMda, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.SqlClient, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.SqlClient, QylAutoInstrumentationSignal.Metrics)]
+[QylSignal(QylAutoInstrumentationIds.Sqlite, QylAutoInstrumentationSignal.Traces)]
 public static class QylInterceptedDbCommand
 {
-
-    /// <summary>Runs the Start Activity runtime helper used by source-generated qyl interceptors.</summary>
-    public static Activity? StartActivity(DbCommand command, string instrumentationId, string operationName)
+    /// <summary>Starts the client span for the command under the provider's instrumentation id.</summary>
+    public static Activity? Execute(
+        [QylFromReceiver] DbCommand command,
+        [QylFromInstrumentationId] string instrumentationId,
+        [QylFromMethodName] string operationName)
     {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(instrumentationId);
@@ -20,12 +38,12 @@ public static class QylInterceptedDbCommand
         return QylDbActivityPolicy.StartDbCommandActivity(command, instrumentationId);
     }
 
-    /// <summary>Runs the Get Timestamp runtime helper used by source-generated qyl interceptors.</summary>
+    /// <summary>Reads the metric start timestamp, or zero when the metric is not recording.</summary>
     public static long GetTimestamp()
         => QylDbClientMetrics.GetTimestamp();
 
-    /// <summary>Runs the Record Duration runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordDuration(long startTimestamp, string instrumentationId)
+    /// <summary>Records the operation duration since <paramref name="startTimestamp"/>.</summary>
+    public static void RecordDuration(long startTimestamp, [QylFromInstrumentationId] string instrumentationId)
         => QylDbClientMetrics.RecordDuration(startTimestamp, instrumentationId);
 
     /// <summary>Observes an asynchronous database command and records qyl success, exception, and duration telemetry.</summary>
@@ -50,7 +68,7 @@ public static class QylInterceptedDbCommand
         }
         catch (Exception exception)
         {
-            RecordException(activity, exception);
+            QylInterceptedActivity.RecordException(activity, exception);
             QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
             throw;
         }
@@ -59,12 +77,4 @@ public static class QylInterceptedDbCommand
             activity?.Dispose();
         }
     }
-
-    /// <summary>Runs the Record Exception runtime helper used by source-generated qyl interceptors.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-    {
-        QylActivityStatus.RecordException(activity, exception);
-    }
-
-
 }
