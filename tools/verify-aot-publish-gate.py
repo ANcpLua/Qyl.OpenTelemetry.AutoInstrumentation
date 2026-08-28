@@ -33,7 +33,6 @@ CLEAN_DEMOS: list[str] = [
     "Qyl.RealILoggerDemo",
     "Qyl.RealMcpDemo",
     "Qyl.RealMySqlConnectorDemo",
-    "Qyl.RealNLogDemo",
     "Qyl.RealNetRuntimeMetricsDemo",
     "Qyl.RealNpgsqlDemo",
     "Qyl.RealRabbitMqDemo",

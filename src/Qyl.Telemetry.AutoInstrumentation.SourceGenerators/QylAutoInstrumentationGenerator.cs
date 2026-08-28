@@ -57,8 +57,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         string TypeParameterList,
         string ConstraintClauses,
         string ExtensionContainingType,
-        string ShapeExpression,
-        string EnabledProbe);
+        string ShapeExpression);
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 
@@ -179,8 +178,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             shape.TypeParameterList,
             shape.ConstraintClauses,
             shape.ExtensionContainingType,
-            shape.ShapeExpression,
-            shape.EnabledProbe);
+            shape.ShapeExpression);
         return true;
     }
 
@@ -268,15 +266,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 return;
             case InterceptorBody.Forward:
                 EmitForwardingInterceptor(builder, in invocation, index);
-                return;
-            case InterceptorBody.Log:
-                EmitDirectLoggerInterceptor(builder, in invocation, index);
-                return;
-            case InterceptorBody.LogExtension:
-                EmitLoggerExtensionInterceptor(builder, in invocation, index);
-                return;
-            case InterceptorBody.ExternalLog:
-                EmitExternalLoggerInterceptor(builder, in invocation, index);
                 return;
             case InterceptorBody.DbCommand:
                 EmitDbCommandInterceptor(builder, in invocation, index);
@@ -704,183 +693,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("        }");
         builder.AppendLine();
     }
-
-    private static void EmitDirectLoggerInterceptor(StringBuilder builder, in InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        var attribute = invocation.Location.GetInterceptsLocationAttributeSyntax();
-        var displayLocation = invocation.Location.GetDisplayLocation();
-        builder.Append("        // Intercepted call at ");
-        builder.AppendLine(displayLocation);
-        builder.Append("        ");
-        builder.AppendLine(attribute);
-        builder.Append("        public static void ");
-        builder.Append(GetMethodPrefix(in target));
-        builder.Append('_');
-        builder.Append(index.ToString(System.Globalization.CultureInfo.InvariantCulture));
-        builder.AppendLine("<TState>(");
-        builder.Append("            this global::Microsoft.Extensions.Logging.ILogger ");
-        builder.Append(ReceiverName);
-        builder.AppendLine(",");
-        builder.AppendLine("            global::Microsoft.Extensions.Logging.LogLevel logLevel,");
-        builder.AppendLine("            global::Microsoft.Extensions.Logging.EventId eventId,");
-        builder.AppendLine("            TState state,");
-        builder.AppendLine("            global::System.Exception? exception,");
-        builder.AppendLine("            global::System.Func<TState, global::System.Exception?, string> formatter)");
-        builder.Append("            => ");
-        builder.Append(target.Integration.HelperType);
-        builder.Append('.');
-        builder.Append(target.Intercept.Start);
-        builder.Append('(');
-        builder.Append(ReceiverName);
-        builder.AppendLine(", logLevel, eventId, state, exception, formatter);");
-        builder.AppendLine();
-    }
-
-    private static void EmitLoggerExtensionInterceptor(StringBuilder builder, in InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
-            builder,
-            invocation.Location,
-            "void",
-            GetMethodPrefix(in target),
-            index,
-            target.ReceiverType,
-            target.Parameters,
-            isAsync: false,
-            string.Empty,
-            string.Empty);
-        builder.Append("            => ");
-        builder.Append(target.Integration.HelperType);
-        builder.Append('.');
-        builder.Append(target.Intercept.Start);
-        builder.Append('(');
-        builder.Append(ReceiverName);
-        builder.Append(", ");
-        AppendLoggerLevelExpression(builder, in target);
-        builder.Append(", ");
-        AppendFirstParameterExpression(builder, in target, "global::Microsoft.Extensions.Logging.EventId", "default");
-        builder.Append(", ");
-        AppendFirstParameterExpression(builder, in target, "global::System.Exception", "null");
-        builder.Append(", ");
-        AppendFirstParameterExpression(builder, in target, "global::System.String", "null");
-        builder.Append(", ");
-        AppendFirstArrayParameterExpression(builder, in target, "global::System.Object",
-            "global::System.Array.Empty<object>()");
-        builder.AppendLine(");");
-        builder.AppendLine();
-    }
-
-    private static void EmitExternalLoggerInterceptor(StringBuilder builder, in InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
-            builder,
-            invocation.Location,
-            "void",
-            GetMethodPrefix(in target),
-            index,
-            target.ReceiverType,
-            target.Parameters,
-            isAsync: false,
-            target.TypeParameterList,
-            target.ConstraintClauses);
-        builder.AppendLine("        {");
-        if (target.EnabledProbe.Length > 0)
-        {
-            builder.Append("            if (!");
-            builder.Append(ReceiverName);
-            builder.Append('.');
-            builder.Append(target.EnabledProbe);
-            builder.AppendLine(")");
-            builder.AppendLine("            {");
-            builder.Append("                ");
-            AppendInvocationCall(builder, in target);
-            builder.AppendLine(";");
-            builder.AppendLine("                return;");
-            builder.AppendLine("            }");
-        }
-
-        builder.Append("            var activity = ");
-        AppendHelperCall(builder, target.Integration.HelperType, target.Intercept.Start, target.Intercept.StartParameters, in target, string.Empty);
-        builder.AppendLine(";");
-        builder.AppendLine("            try");
-        builder.AppendLine("            {");
-        builder.Append("                ");
-        AppendInvocationCall(builder, in target);
-        builder.AppendLine(";");
-        builder.AppendLine("            }");
-        builder.AppendLine("            catch (global::System.Exception exception)");
-        builder.AppendLine("            {");
-        builder.Append("                ");
-        builder.Append(SharedHelperType);
-        builder.AppendLine(".RecordException(activity, exception);");
-        builder.AppendLine("                throw;");
-        builder.AppendLine("            }");
-        EmitActivityDisposeFinally(builder);
-        builder.AppendLine("        }");
-        builder.AppendLine();
-    }
-
-    private static void AppendLoggerLevelExpression(StringBuilder builder, in InterceptorTarget target)
-    {
-        if (string.Equals(target.MethodName, "Log", StringComparison.Ordinal))
-        {
-            AppendFirstParameterExpression(builder, in target, "global::Microsoft.Extensions.Logging.LogLevel",
-                "global::Microsoft.Extensions.Logging.LogLevel.None");
-            return;
-        }
-
-        var levelName = GetLoggerExtensionLevelName(target.MethodName)
-            ?? throw new InvalidOperationException("Unknown logger extension method: " + target.MethodName);
-        builder.Append("global::Microsoft.Extensions.Logging.LogLevel.");
-        builder.Append(levelName);
-    }
-
-    private static void AppendFirstParameterExpression(StringBuilder builder, in InterceptorTarget target,
-        string typeName, string fallbackExpression)
-    {
-        foreach (var parameter in target.Parameters)
-        {
-            if (IsParameterType(parameter, typeName))
-            {
-                builder.Append(parameter.Name);
-                return;
-            }
-        }
-
-        builder.Append(fallbackExpression);
-    }
-
-    private static void AppendFirstArrayParameterExpression(StringBuilder builder, in InterceptorTarget target,
-        string elementTypeName, string fallbackExpression)
-    {
-        foreach (var parameter in target.Parameters)
-        {
-            if (IsParameterType(parameter, elementTypeName + "[]"))
-            {
-                builder.Append(parameter.Name);
-                return;
-            }
-        }
-
-        builder.Append(fallbackExpression);
-    }
-
-    private static bool IsParameterType(ParameterSpec parameter, string typeName)
-        => string.Equals(NormalizeSpecialTypeName(parameter.TypeName), NormalizeSpecialTypeName(typeName),
-            StringComparison.Ordinal);
-
-    private static string NormalizeSpecialTypeName(string typeName)
-        => typeName switch
-        {
-            "string" => "global::System.String",
-            "string[]" => "global::System.String[]",
-            "object" => "global::System.Object",
-            "object[]" => "global::System.Object[]",
-            _ => typeName,
-        };
 
     private static void EmitAttributeAndSignature(
         StringBuilder builder,

@@ -20,9 +20,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         Trace,
         Forward,
-        Log,
-        LogExtension,
-        ExternalLog,
         DbCommand,
     }
 

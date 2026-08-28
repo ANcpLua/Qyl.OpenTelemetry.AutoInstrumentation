@@ -23,8 +23,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         string ExtensionContainingType = "",
         string InstrumentationId = "",
         EquatableArray<string> MetricIds = default,
-        string ShapeExpression = "",
-        string EnabledProbe = "");
+        string ShapeExpression = "");
 
     private static bool TryMatchShape(
         string shape,
@@ -64,12 +63,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchMongoDbCollection(symbol, matchedReceiver, out match);
             case "RabbitMqPublish":
                 return TryMatchRabbitMqPublish(symbol, matchedReceiver, out match);
-            case "LoggerLog":
-                return TryMatchLoggerLog(symbol, out match);
-            case "LoggerExtension":
-                return TryMatchLoggerExtension(symbol, out match);
-            case "ExternalLogger":
-                return TryMatchExternalLogger(symbol, out match);
             default:
                 throw new InvalidOperationException("Unknown interceptor shape: " + shape);
         }
@@ -809,175 +802,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool TryMatchLoggerLog(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        if (!symbol.ReturnsVoid ||
-            !symbol.IsGenericMethod ||
-            symbol.TypeParameters.Length is not 1 ||
-            !IsType(symbol.ContainingType, "global::Microsoft.Extensions.Logging.ILogger") ||
-            symbol.Parameters.Length is not 5 ||
-            !IsType(symbol.Parameters[0].Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
-            !IsType(symbol.Parameters[1].Type, "global::Microsoft.Extensions.Logging.EventId") ||
-            !IsLoggerFormatter(symbol.Parameters[4].Type))
-        {
-            return false;
-        }
-
-        match = new ShapeMatch(CleanTypeName(symbol.ContainingType), "void", BuildParameters(symbol), false);
-        return true;
-    }
-
-    private static bool TryMatchLoggerExtension(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        var original = symbol.ReducedFrom;
-        if (original is null ||
-            !symbol.ReturnsVoid ||
-            !IsType(original.ContainingType, "global::Microsoft.Extensions.Logging.LoggerExtensions") ||
-            !IsSupportedLoggerExtensionParameters(symbol))
-        {
-            return false;
-        }
-
-        match = new ShapeMatch("global::Microsoft.Extensions.Logging.ILogger", "void", BuildParameters(symbol), false);
-        return true;
-    }
-
-    private static string? GetLoggerExtensionLevelName(string methodName)
-        => methodName switch
-        {
-            "LogTrace" => "Trace",
-            "LogDebug" => "Debug",
-            "LogInformation" => "Information",
-            "LogWarning" => "Warning",
-            "LogError" => "Error",
-            "LogCritical" => "Critical",
-            _ => null,
-        };
-
-    // The LoggerExtensions overloads differ only by which of (level, eventId, exception) precede the
-    // message and argument bag, so the bag is recognised by its parameter types rather than by shape.
-    private static bool IsSupportedLoggerExtensionParameters(IMethodSymbol symbol)
-    {
-        if (symbol.Parameters.Length is < 2)
-            return false;
-
-        var hasMessage = false;
-        var hasArgs = false;
-
-        foreach (var parameter in symbol.Parameters)
-        {
-            if (IsType(parameter.Type, "global::Microsoft.Extensions.Logging.LogLevel") ||
-                IsType(parameter.Type, "global::Microsoft.Extensions.Logging.EventId") ||
-                IsType(parameter.Type, "global::System.Exception"))
-            {
-                continue;
-            }
-
-            if (IsType(parameter.Type, "global::System.String"))
-            {
-                hasMessage = true;
-                continue;
-            }
-
-            if (parameter.IsParams && IsArrayOf(parameter.Type, "global::System.Object"))
-            {
-                hasArgs = true;
-                continue;
-            }
-
-            return false;
-        }
-
-        return hasMessage && hasArgs;
-    }
-
-    private static bool TryMatchExternalLogger(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        if (!symbol.ReturnsVoid)
-            return false;
-
-        var parameters = BuildParameters(symbol);
-        match = new ShapeMatch(
-            CleanTypeName(symbol.ContainingType),
-            "void",
-            parameters,
-            false,
-            GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol),
-            ShapeExpression: ExternalLoggerSeverityExpression(parameters),
-            EnabledProbe: GetExternalLoggerEnabledProperty(symbol));
-        return true;
-    }
-
-    private static string ExternalLoggerSeverityExpression(EquatableArray<ParameterSpec> parameters)
-    {
-        foreach (var parameter in parameters)
-        {
-            if (string.Equals(parameter.TypeName, "global::NLog.LogLevel", StringComparison.Ordinal) ||
-                string.Equals(parameter.TypeName, "global::log4net.Core.Level", StringComparison.Ordinal))
-            {
-                return parameter.Name + " is null ? null : " + parameter.Name + ".Name";
-            }
-
-            if (string.Equals(parameter.TypeName, "global::NLog.LogEventInfo", StringComparison.Ordinal) ||
-                string.Equals(parameter.TypeName, "global::log4net.Core.LoggingEvent", StringComparison.Ordinal))
-            {
-                return parameter.Name + " is null ? null : " + parameter.Name + ".Level is null ? null : " + parameter.Name + ".Level.Name";
-            }
-        }
-
-        return "null";
-    }
-
-    // The external loggers gate their own work on IsXxxEnabled; the interceptor honours the same
-    // probe so a disabled level starts no activity.
-    private static string GetExternalLoggerEnabledProperty(IMethodSymbol symbol)
-    {
-        var propertyName = symbol.Name switch
-        {
-            "Trace" or "TraceFormat" => "IsTraceEnabled",
-            "Debug" or "DebugFormat" => "IsDebugEnabled",
-            "Info" or "InfoFormat" => "IsInfoEnabled",
-            "Warn" or "WarnFormat" or "Warning" or "WarningFormat" => "IsWarnEnabled",
-            "Error" or "ErrorFormat" => "IsErrorEnabled",
-            "Fatal" or "FatalFormat" or "Critical" or "CriticalFormat" => "IsFatalEnabled",
-            _ => string.Empty,
-        };
-
-        return propertyName.Length > 0 && HasReadableBooleanProperty(symbol.ContainingType, propertyName)
-            ? propertyName
-            : string.Empty;
-    }
-
-    private static bool HasReadableBooleanProperty(ITypeSymbol? symbol, string propertyName)
-    {
-        for (var current = symbol; current is not null; current = current.BaseType)
-        {
-            foreach (var member in current.GetMembers(propertyName))
-            {
-                if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
-                    return true;
-            }
-        }
-
-        if (symbol is INamedTypeSymbol named)
-        {
-            foreach (var interfaceType in named.AllInterfaces)
-            {
-                foreach (var member in interfaceType.GetMembers(propertyName))
-                {
-                    if (member is IPropertySymbol { Type.SpecialType: SpecialType.System_Boolean, GetMethod: not null })
-                        return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     private static bool TryMatchRedisCommand(IMethodSymbol symbol, string helperType, out ShapeMatch match)
     {
         match = default;
@@ -1682,15 +1506,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static bool IsArrayOf(ITypeSymbol? symbol, string elementFullyQualifiedName)
         => symbol is IArrayTypeSymbol array && IsType(array.ElementType, elementFullyQualifiedName);
-
-    private static bool IsLoggerFormatter(ITypeSymbol? symbol)
-        => symbol is INamedTypeSymbol
-        {
-            Name: "Func",
-            TypeArguments.Length: 3,
-        } named &&
-        IsType(named.TypeArguments[1], "global::System.Exception") &&
-        IsType(named.TypeArguments[2], "global::System.String");
 
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");

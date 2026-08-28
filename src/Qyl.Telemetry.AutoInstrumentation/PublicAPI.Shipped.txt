@@ -48,23 +48,17 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElasticsearch
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElasticTransport
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedILogger
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLog4Net
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMassTransit
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNLog
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.DbCommand = 5 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.ExternalLog = 4 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.DbCommand = 2 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Forward = 1 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Log = 2 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.LogExtension = 3 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Trace = 0 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes
 Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions
@@ -76,13 +70,10 @@ const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V10 = 
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.DbCommand = "DbCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.ElasticsearchClient = "ElasticsearchClient" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.ElasticTransport = "ElasticTransport" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.ExternalLogger = "ExternalLogger" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.GraphQlExecute = "GraphQlExecute" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.HttpClient = "HttpClient" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.LoggerExtension = "LoggerExtension" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.LoggerLog = "LoggerLog" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MassTransitOperation = "MassTransitOperation" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MongoDbCollection = "MongoDbCollection" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.NServiceBusOperation = "NServiceBusOperation" -> string!
@@ -145,14 +136,10 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedILogger.Log<TState>(Microsoft.Extensions.Logging.ILogger! logger, Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, System.Exception? exception, System.Func<TState, System.Exception?, string!>! formatter) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedILogger.LogExtension(Microsoft.Extensions.Logging.ILogger! logger, Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, System.Exception? exception, string? message, object?[]! args) -> void
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Receive() -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Send(string? topic, int? partitionId) -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedLog4Net.Log(string! methodName, string? severityName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMassTransit.Send(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb.Operation(string! operationName, string? collectionName, string? databaseName) -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNLog.Log(string! methodName, string? severityName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.Send(string! operationName) -> System.Diagnostics.Activity?

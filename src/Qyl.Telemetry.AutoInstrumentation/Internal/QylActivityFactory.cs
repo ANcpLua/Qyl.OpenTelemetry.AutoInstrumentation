@@ -9,33 +9,8 @@ internal static class QylActivityFactory
         string activityName,
         ActivityKind activityKind,
         string instrumentationDomain)
-        => StartActivity(
-            QylAutoInstrumentationSignal.Traces,
-            instrumentationId,
-            activityName,
-            activityKind,
-            instrumentationDomain);
-
-    public static Activity? StartLogActivity(
-        string instrumentationId,
-        string activityName,
-        ActivityKind activityKind,
-        string instrumentationDomain)
-        => StartActivity(
-            QylAutoInstrumentationSignal.Logs,
-            instrumentationId,
-            activityName,
-            activityKind,
-            instrumentationDomain);
-
-    private static Activity? StartActivity(
-        QylAutoInstrumentationSignal signal,
-        string instrumentationId,
-        string activityName,
-        ActivityKind activityKind,
-        string instrumentationDomain)
     {
-        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(signal, instrumentationId))
+        if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, instrumentationId))
             return null;
 
         var activity = QylActivitySource.StartActivity(activityName, activityKind);

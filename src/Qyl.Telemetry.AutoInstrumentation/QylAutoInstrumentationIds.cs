@@ -7,7 +7,7 @@ public enum QylAutoInstrumentationSignal
     Traces,
     /// <summary>Instruments.</summary>
     Metrics,
-    /// <summary>Log records captured as spans.</summary>
+    /// <summary>Log records.</summary>
     Logs,
 }
 
@@ -43,7 +43,4 @@ internal static class QylAutoInstrumentationIds
     public const string StackExchangeRedis = "STACKEXCHANGEREDIS";
     public const string WcfClient = "WCFCLIENT";
     public const string WcfCore = "WCFCORE";
-    public const string ILogger = "ILOGGER";
-    public const string Log4Net = "LOG4NET";
-    public const string NLog = "NLOG";
 }

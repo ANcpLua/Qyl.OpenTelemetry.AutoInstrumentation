@@ -55,7 +55,7 @@ public sealed class QylInterceptAttribute : Attribute
     /// <summary>The named shape predicate (<see cref="QylShapes"/>) that validates the overload and computes the shape-bound value.</summary>
     public string Shape { get; set; } = string.Empty;
 
-    /// <summary>The helper method that starts the activity, or the forwarded helper for the log bodies.</summary>
+    /// <summary>The helper method that starts the activity.</summary>
     public string Start { get; set; } = string.Empty;
 
     /// <summary>The body template the generator emits.</summary>
@@ -82,12 +82,6 @@ public enum QylInterceptorBody
     Trace,
     /// <summary>Forward the call to a same-named helper overload.</summary>
     Forward,
-    /// <summary>Forward <c>ILogger.Log&lt;TState&gt;</c> to the helper.</summary>
-    Log,
-    /// <summary>Forward a <c>LoggerExtensions</c> call to the helper with the level and parameter bag resolved.</summary>
-    LogExtension,
-    /// <summary>Probe the logger's enabled flag, then trace the log call.</summary>
-    ExternalLog,
     /// <summary>Trace a <c>DbCommand</c> execution with the duration metric observed alongside the task.</summary>
     DbCommand,
 }
@@ -124,12 +118,6 @@ public static class QylShapes
     public const string MongoDbCollection = "MongoDbCollection";
     /// <summary>The <c>BasicPublish</c>/<c>BasicPublishAsync</c> overloads.</summary>
     public const string RabbitMqPublish = "RabbitMqPublish";
-    /// <summary>The generic <c>ILogger.Log&lt;TState&gt;</c> method.</summary>
-    public const string LoggerLog = "LoggerLog";
-    /// <summary>A <c>LoggerExtensions</c> log method with a message and argument bag.</summary>
-    public const string LoggerExtension = "LoggerExtension";
-    /// <summary>A void log method on an external logger, with its enabled probe and severity.</summary>
-    public const string ExternalLogger = "ExternalLogger";
 }
 
 /// <summary>Binds a helper parameter to an intercepted argument by position, optionally filtered by the argument's type and converted by a format whose <c>{0}</c> is the argument.</summary>

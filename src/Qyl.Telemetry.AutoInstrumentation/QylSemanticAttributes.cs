@@ -76,14 +76,6 @@ internal static class QylSemanticAttributes
     public const string MessagingSystemMassTransit = "masstransit";
     public const string MessagingSystemNServiceBus = "nservicebus";
 
-    public const string LogSeverity = "log.severity";
-    public const string LogSeverityTrace = "Trace";
-    public const string LogSeverityDebug = "Debug";
-    public const string LogSeverityInformation = "Information";
-    public const string LogSeverityWarning = "Warning";
-    public const string LogSeverityError = "Error";
-    public const string LogSeverityCritical = "Critical";
-    public const string LogSeverityOther = "Other";
     public const string GraphQlOperationName = GraphqlAttributes.OperationName;
     public const string GraphQlDocument = GraphqlAttributes.Document;
     public const string GraphQlOperationType = GraphqlAttributes.OperationType;

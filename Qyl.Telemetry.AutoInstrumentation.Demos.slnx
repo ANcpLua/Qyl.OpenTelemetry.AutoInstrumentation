@@ -20,13 +20,11 @@
   <Project Path="demos/Qyl.RealHttpClientDemo/Qyl.RealHttpClientDemo.csproj" />
   <Project Path="demos/Qyl.RealILoggerDemo/Qyl.RealILoggerDemo.csproj" />
   <Project Path="demos/Qyl.RealKafkaDemo/Qyl.RealKafkaDemo.csproj" />
-  <Project Path="demos/Qyl.RealLog4NetDemo/Qyl.RealLog4NetDemo.csproj" />
   <Project Path="demos/Qyl.RealMassTransitDemo/Qyl.RealMassTransitDemo.csproj" />
   <Project Path="demos/Qyl.RealMcpDemo/Qyl.RealMcpDemo.csproj" />
   <Project Path="demos/Qyl.RealMongoDbDemo/Qyl.RealMongoDbDemo.csproj" />
   <Project Path="demos/Qyl.RealMySqlConnectorDemo/Qyl.RealMySqlConnectorDemo.csproj" />
   <Project Path="demos/Qyl.RealMySqlDataDemo/Qyl.RealMySqlDataDemo.csproj" />
-  <Project Path="demos/Qyl.RealNLogDemo/Qyl.RealNLogDemo.csproj" />
   <Project Path="demos/Qyl.RealNetRuntimeMetricsDemo/Qyl.RealNetRuntimeMetricsDemo.csproj" />
   <Project Path="demos/Qyl.RealNpgsqlDemo/Qyl.RealNpgsqlDemo.csproj" />
   <Project Path="demos/Qyl.RealNServiceBusDemo/Qyl.RealNServiceBusDemo.csproj" />

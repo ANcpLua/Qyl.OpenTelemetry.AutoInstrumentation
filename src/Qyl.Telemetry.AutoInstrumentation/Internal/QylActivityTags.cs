@@ -53,7 +53,4 @@ internal static class QylActivityTags
 
     public static void SetGraphQlOperationType(Activity activity, string operationType)
         => activity.SetTag(QylSemanticAttributes.GraphQlOperationType, operationType);
-
-    public static void SetLogSeverity(Activity activity, string severity)
-        => activity.SetTag(QylSemanticAttributes.LogSeverity, severity);
 }
