@@ -3,7 +3,6 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
 using QylIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
 using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
-using CodeAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Code.CodeAttributes;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using GraphqlAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
@@ -37,7 +36,6 @@ internal static class QylSemanticAttributes
     public const string UrlQuery = UrlAttributes.Query;
     public const string UrlFull = UrlAttributes.Full;
     public const string UrlScheme = UrlAttributes.Scheme;
-    public const string CodeFunctionName = CodeAttributes.FunctionName;
 
     public const string DbSystemName = DbAttributes.SystemName;
     public const string DbNamespace = DbAttributes.Namespace;
