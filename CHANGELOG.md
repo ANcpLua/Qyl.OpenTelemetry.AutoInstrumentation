@@ -7,8 +7,37 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 ## [Unreleased]
 
+### Removed
+
+- **BREAKING:** the log-as-span lane is deleted. qyl intercepted `ILogger`, NLog and log4net calls
+  and started an `Activity` named `ILogger log` / `NLog log` / `log4net log` carrying one tag,
+  `log.severity`. That attribute is in no semantic-convention registry and is absent from the qyl
+  collector's span allowlist, so it was discarded at ingest — leaving a span with no message, no
+  body and no surviving attribute, while `Qyl.Telemetry.Hosting` already exported the same calls as
+  real OTLP LogRecords through `builder.Logging.AddOpenTelemetry()`. Gone from the ABI surface:
+  `QylInterceptedILogger`, `QylInterceptedNLog`, `QylInterceptedLog4Net`, the `Log`, `LogExtension`
+  and `ExternalLog` body templates, and the `LoggerLog`, `LoggerExtension` and `ExternalLogger`
+  shapes. Gone from the runtime: the `log.ilogger`/`log.nlog`/`log.log4net` domains, the `ILOGGER`,
+  `NLOG` and `LOG4NET` instrumentation ids with their
+  `OTEL_DOTNET_AUTO_LOGS_{id}_INSTRUMENTATION_ENABLED` toggles, and the `log.severity` constants.
+  `Qyl.RealNLogDemo` and `Qyl.RealLog4NetDemo` and their verifiers are deleted with it.
+- `signals.logs.ILOGGER` stays `implemented`: `AddQyl()` satisfies the upstream promise by exporting
+  ILogger output as LogRecords, so the span lane was a second, wrong implementation of one row. The
+  row now names the OpenTelemetry ILogger provider `Qyl.Telemetry.Hosting` registers, on the
+  `runtime_public_telemetry` lane, and `Qyl.RealILoggerDemo` proves it under NativeAOT: six
+  LogRecords with the expected severity and body, and zero qyl activities for a log call.
+- `signals.logs.NLOG` and `signals.logs.LOG4NET` become `research_required` on a new
+  `not_implemented` lane. NLog and log4net are independent logging frameworks; capturing either as
+  LogRecords needs a bridge into `Microsoft.Extensions.Logging`, or a framework-specific
+  appender/target, that qyl does not ship.
+
 ### Changed
 
+- `OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` now gates something. `AddQyl()` registers the
+  OpenTelemetry ILogger provider only when both `QylSdkOptions.EnableLogExport` and that variable
+  allow it; with the variable false the provider is not registered and no LogRecord is exported.
+  A contract row that names a control which disables nothing is a lie, and `signals.logs.ILOGGER`
+  is only implemented because Hosting exports those records.
 - **BREAKING (generated-code ABI):** the generated-code ABI anchor moved from
   `QylGeneratedCodeAbi.V9` to `QylGeneratedCodeAbi.V10`, and the package major moved to `10.0.0`.
   Generated interceptors now reference the `V10` runtime anchor, so a stale generated interceptor
@@ -25,17 +54,16 @@ NativeAOT consumers, and only then creates the GitHub release.
   instrumentation id, domain, signal, and the contract manifest from them. The hand-coded
   `InterceptorKind` enum, the per-integration `TryGet*Invocation` matchers, and the two catalog
   tables are gone; what remains in the generator is the closed set of body templates
-  (`QylInterceptorBody`: `Trace`, `Forward`, `Log`, `LogExtension`, `ExternalLog`, `DbCommand`)
+  (`QylInterceptorBody`: `Trace`, `Forward`, `DbCommand`)
   and the named shape predicates (`QylShapes`) that validate a library overload. The runtime's
   per-signal enabled-id sets are generated from the same declarations plus `[QylSignal]` rows for
   the listener, middleware, meter, and library-native lanes, so an integration cannot be added
   without its environment toggle. Consequences for the ABI surface: `QylInterceptedElastic` split
-  into `QylInterceptedElasticsearch`/`QylInterceptedElasticTransport`, `QylInterceptedExternalLogger`
-  into `QylInterceptedNLog`/`QylInterceptedLog4Net`, `QylInterceptedLogger` is `QylInterceptedILogger`,
+  into `QylInterceptedElasticsearch`/`QylInterceptedElasticTransport`,
   the fourteen `RecordException` copies and four `ObserveAsync` forwarders collapsed into
   `QylInterceptedActivity`, and each helper's start method is named for its operation (`Send`,
-  `Publish`, `Command`, `Execute`, `Request`, `Call`, `Operation`, `Log`). The manifest's
-  `interceptorKind` is now `{Integration}.{Start}` (for example `Kafka.Send`, `ILogger.Log`,
+  `Publish`, `Command`, `Execute`, `Request`, `Call`, `Operation`). The manifest's
+  `interceptorKind` is now `{Integration}.{Start}` (for example `Kafka.Send`, `Redis.Command`,
   `HttpClient.Forward`). `HttpClient` keeps the forwarding body: its helper mirrors the BCL's null
   semantics before any span starts, resolves the request URI against `BaseAddress`, enriches from
   the typed response, and maps `HttpRequestException.StatusCode`, none of which the trace template

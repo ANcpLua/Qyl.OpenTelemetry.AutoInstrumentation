@@ -1,6 +1,6 @@
 name: qyl-verify-real-demos
 
-# The 31 real-demo verifiers (Kafka, Mongo, Redis, RabbitMQ, Postgres, MySQL, Oracle,
+# The 29 real-demo verifiers (Kafka, Mongo, Redis, RabbitMQ, Postgres, MySQL, Oracle,
 # Elasticsearch, gRPC, Azure, WCF, …). They execute real consumers and assert emitted
 # telemetry end-to-end; the applicable lanes also NativeAOT-publish and use testcontainers.
 # Linux-only because the integration subset needs Docker. Heavy, so it runs post-merge on

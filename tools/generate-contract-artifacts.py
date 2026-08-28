@@ -94,7 +94,6 @@ CONFORMANCE_PROFILES = [
         "profile_id": "qyl-aot-logging",
         "signal_names": [
             "ilogger.log",
-            "nlog.log",
         ],
     },
     {
@@ -156,6 +155,9 @@ LANES = {
     "environment_control",
     "instrumentation_option",
     "unsupported_nativeaot",
+    # An upstream promise qyl binds through no mechanism at all — not the same claim as
+    # unsupported_nativeaot, which asserts the substrate makes the promise unreachable.
+    "not_implemented",
 }
 STATUSES = {
     "implemented",
@@ -238,7 +240,6 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
     ),
 }
 MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
-    "signals.logs.LOG4NET",
     "signals.metrics.NSERVICEBUS",
     "signals.traces.KAFKA",
     "signals.traces.MONGODB",

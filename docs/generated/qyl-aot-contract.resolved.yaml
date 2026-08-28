@@ -1511,25 +1511,21 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: runtime_public_telemetry
   qyl_status: implemented
-  call_site_visibility: user_code
-  payload_access: not_applicable
+  call_site_visibility: library_internal
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: OpenTelemetry ILogger provider registered by Qyl.Telemetry.Hosting AddQyl()
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealILoggerDemo
   - tools/verify-real-ilogger-demo.py
   conformance_signals:
-  - kind: span
+  - kind: log
     name: ilogger.log
-    required_attributes:
-    - log.severity
-    - qyl.instrumentation.domain
-    recommended_attributes:
-    - error.type
+    required_attributes: []
+    recommended_attributes: []
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.LOG4NET
@@ -1553,17 +1549,13 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L245-L254
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
-  qyl_status: implemented
-  call_site_visibility: user_code
+  lane: not_implemented
+  qyl_status: research_required
+  call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealLog4NetDemo
-  - tools/verify-real-log4net-demo.py
+  evidence_level: none
+  primary_owner: unowned; no qyl log4net-to-LogRecord bridge is shipped
+  evidence: []
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.NLOG
   signal: logs
@@ -1586,25 +1578,13 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L246-L257
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
-  qyl_status: implemented
-  call_site_visibility: user_code
+  lane: not_implemented
+  qyl_status: research_required
+  call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealNLogDemo
-  - tools/verify-real-nlog-demo.py
-  conformance_signals:
-  - kind: span
-    name: nlog.log
-    required_attributes:
-    - log.severity
-    - qyl.instrumentation.domain
-    recommended_attributes: []
-    opt_in_attributes: []
+  evidence_level: none
+  primary_owner: unowned; no qyl NLog-to-LogRecord bridge is shipped
+  evidence: []
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
@@ -1767,12 +1747,13 @@ contract_items:
   qyl_status: control_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationOptions
+  evidence_level: verified_nativeaot
+  primary_owner: QylAutoInstrumentationOptions, gating the Qyl.Telemetry.Hosting ILogger provider registration
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - tools/verify-real-ilogger-demo.py
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
@@ -1800,11 +1781,12 @@ contract_items:
   call_site_visibility: not_applicable
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationOptions
+  primary_owner: QylAutoInstrumentationOptions; the logs signal declares no instrumentation id, so the pattern expands over
+    an empty set
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - tools/verify-environment-options-behavior.py
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
   environment_variable: OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT

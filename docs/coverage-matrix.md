@@ -23,8 +23,9 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | Status | Count |
 |---|---:|
 | `control_bound` | 7 |
-| `implemented` | 40 |
+| `implemented` | 38 |
 | `option_bound` | 12 |
+| `research_required` | 2 |
 | `unsupported_nativeaot` | 7 |
 
 ## Lane counts
@@ -34,17 +35,18 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | `environment_control` | 7 |
 | `framework_initialization` | 1 |
 | `instrumentation_option` | 12 |
+| `not_implemented` | 2 |
 | `official_library_hook` | 7 |
-| `runtime_public_telemetry` | 8 |
-| `source_interceptor` | 24 |
+| `runtime_public_telemetry` | 9 |
+| `source_interceptor` | 21 |
 | `unsupported_nativeaot` | 7 |
 
 ## Evidence counts
 
 | Evidence level | Count |
 |---|---:|
-| `none` | 7 |
-| `verified_managed` | 23 |
+| `none` | 9 |
+| `verified_managed` | 21 |
 | `verified_nativeaot` | 36 |
 
 ## Matrix
@@ -85,16 +87,16 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 32 | upstream 60 | `signals.metrics.NSERVICEBUS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L228) | >=8.0.0 && <10.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator + QylNServiceBusMetrics |
 | 33 | upstream 60 | `signals.metrics.PROCESS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L229) | * | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | .NET runtime System.Runtime meter, subscribed by QylMetricMeters |
 | 34 | upstream 60 | `signals.metrics.SQLCLIENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L230-L236) | * | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator + QylDbClientMetrics |
-| 35 | upstream 60 | `signals.logs.ILOGGER` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251) | >=8.0.0 && <12.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
-| 36 | upstream 60 | `signals.logs.LOG4NET` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L245-L254) | >=2.0.13 && <4.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
-| 37 | upstream 60 | `signals.logs.NLOG` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L246-L257) | >=5.0.0 && <7.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
+| 35 | upstream 60 | `signals.logs.ILOGGER` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251) | >=8.0.0 && <12.0.0 | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | OpenTelemetry ILogger provider registered by Qyl.Telemetry.Hosting AddQyl() |
+| 36 | upstream 60 | `signals.logs.LOG4NET` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L245-L254) | >=2.0.13 && <4.0.0 | `not_implemented` | `research_required` | `not_applicable` | `not_applicable` | `none` | unowned; no qyl log4net-to-LogRecord bridge is shipped |
+| 37 | upstream 60 | `signals.logs.NLOG` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L246-L257) | >=5.0.0 && <7.0.0 | `not_implemented` | `research_required` | `not_applicable` | `not_applicable` | `none` | unowned; no qyl NLog-to-LogRecord bridge is shipped |
 | 38 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L128) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 39 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L129) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 40 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L130) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 41 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L131) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 42 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L132) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
-| 43 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L133) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
-| 44 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L134) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
+| 43 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L133) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions, gating the Qyl.Telemetry.Hosting ILogger provider registration |
+| 44 | upstream 60 | `global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L134) | n/a | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions; the logs signal declares no instrumentation id, so the pattern expands over an empty set |
 | 45 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT` | [60-item source row](https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L156)<br>[current removal note](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L414-L418) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 46 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L263) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 47 | upstream 60 | `instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L264) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |

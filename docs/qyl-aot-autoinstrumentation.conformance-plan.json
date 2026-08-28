@@ -342,24 +342,9 @@
       "profile_id": "qyl-aot-logging",
       "expected_signals": [
         {
-          "kind": "span",
+          "kind": "log",
           "name": "ilogger.log",
-          "required_attributes": [
-            "log.severity",
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [
-            "error.type"
-          ],
-          "opt_in_attributes": []
-        },
-        {
-          "kind": "span",
-          "name": "nlog.log",
-          "required_attributes": [
-            "log.severity",
-            "qyl.instrumentation.domain"
-          ],
+          "required_attributes": [],
           "recommended_attributes": [],
           "opt_in_attributes": []
         }
