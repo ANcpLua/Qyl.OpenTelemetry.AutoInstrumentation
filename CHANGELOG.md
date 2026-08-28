@@ -7,6 +7,17 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 ## [Unreleased]
 
+### Changed
+
+- The semantic-convention pin moves to `6.0.0`. That release makes the vocabulary packages
+  consumers of their own Roslyn generator — the constants this package reads are now produced at
+  build time from the pinned registry rather than checked in, and are byte-identical to the `4.4.0`
+  surface, so nothing here changes shape. It also ships the object-first definition types
+  (`MetricDefinition<TInstrument>`, `SpanDefinition<TKind>`, `EventDefinition`, `EntityDefinition`)
+  in the compiled package, `AllValues`/`Contains` on every enum-value class, and
+  `qyl.instrumentation.domain` as a generated value set. This package adopts none of those yet:
+  the typed `Activity` setters and the definition-to-BCL bridge are separate changes.
+
 ### Removed
 
 - **BREAKING:** the log-as-span lane is deleted. qyl intercepted `ILogger`, NLog and log4net calls
