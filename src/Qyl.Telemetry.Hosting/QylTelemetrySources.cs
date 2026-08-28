@@ -47,6 +47,9 @@ internal static class QylTelemetrySources
             QylAutoInstrumentationSignal.Traces,
             QylAutoInstrumentationIds.WcfCore);
 
+    internal static bool IsLogRecordCaptureEnabled()
+        => QylAutoInstrumentationOptions.Current.LogsEnabled;
+
     internal static string[] GetEnabledMeterNames()
     {
         var options = QylAutoInstrumentationOptions.Current;

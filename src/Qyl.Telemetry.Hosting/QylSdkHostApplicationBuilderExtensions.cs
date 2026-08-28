@@ -116,7 +116,9 @@ public static class QylSdkHostApplicationBuilderExtensions
             });
         }
 
-        if (options.EnableLogExport)
+        // OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED is the upstream global logs control; the
+        // OpenTelemetry ILogger provider is the only thing qyl binds it to, so it gates registration.
+        if (options.EnableLogExport && QylTelemetrySources.IsLogRecordCaptureEnabled())
         {
             builder.Logging.AddOpenTelemetry(logging =>
             {

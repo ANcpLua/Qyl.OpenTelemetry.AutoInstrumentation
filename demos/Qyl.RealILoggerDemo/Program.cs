@@ -3,158 +3,175 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Qyl.Telemetry.AutoInstrumentation;
+using OpenTelemetry.Logs;
+using Qyl;
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
+var qylActivities = new List<string>();
+var qylActivityLock = new Lock();
 using var listener = new ActivityListener
 {
     ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity =>
     {
-        lock (capturedLock)
+        lock (qylActivityLock)
         {
-            captured.Add(CapturedActivity.From(activity));
+            qylActivities.Add(activity.DisplayName);
         }
     },
 };
 
 ActivitySource.AddActivityListener(listener);
 
-var logLines = new List<string>();
-ILogger logger = new ProbeLogger(logLines);
+var exportedRecords = new List<LogRecord>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
+{
+    ApplicationName = "Qyl.RealILoggerDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-ilogger-demo";
+    options.EnableCollectorDiscovery = false;
+    options.RequireConfiguredEndpoint = true;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
 
-logger.LogDebug("qyl disabled debug");
-logger.Log(LogLevel.Information, new EventId(1, "info"), "qyl information", null, static (state, _) => state);
-logger.LogError(new InvalidOperationException("qyl boom"), "qyl error");
+// Configure only: registering the OpenTelemetry logging provider is AddQyl's job, so an
+// unregistered provider leaves this exporter unreachable and the record list empty.
+builder.Services.Configure<OpenTelemetryLoggerOptions>(logging => logging.AddInMemoryExporter(exportedRecords));
+builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-Console.WriteLine("ilogger-output-count=" + logLines.Count.ToString(CultureInfo.InvariantCulture));
+using var host = builder.Build();
+
+var providerRegistered = host.Services.GetServices<ILoggerProvider>().OfType<OpenTelemetryLoggerProvider>().Any();
+var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Qyl.RealILoggerDemo");
+
+logger.LogTrace("qyl trace record");
+logger.LogDebug("qyl debug record");
+logger.LogInformation("qyl information record");
+logger.LogWarning("qyl warning record");
+logger.LogError("qyl error record");
+logger.LogCritical("qyl critical record");
+
+host.Dispose();
+
+Console.WriteLine("ilogger-record-count=" + exportedRecords.Count.ToString(CultureInfo.InvariantCulture));
 
 var report = ILoggerReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    logLines.ToArray(),
-    captured.ToArray());
+    LogsControl.IsEnabled(),
+    providerRegistered,
+    exportedRecords.Select(CapturedLogRecord.From).ToArray(),
+    qylActivities.ToArray());
 
 var json = JsonSerializer.Serialize(report, RealILoggerJsonContext.Default.ILoggerReport);
 Console.WriteLine(json);
 
 return report.Pass ? 0 : 1;
 
-internal sealed class ProbeLogger(List<string> logLines) : ILogger
+internal static class LogsControl
 {
-    public IDisposable? BeginScope<TState>(TState state)
-        where TState : notnull
-        => NullScope.Instance;
+    internal const string Variable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
 
-    public bool IsEnabled(LogLevel logLevel)
-        => logLevel >= LogLevel.Information;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
-    {
-        if (!IsEnabled(logLevel))
-            return;
-
-        logLines.Add(logLevel + ":" + formatter(state, exception));
-    }
-
-    private sealed class NullScope : IDisposable
-    {
-        public static readonly NullScope Instance = new();
-
-        public void Dispose()
-        {
-        }
-    }
+    internal static bool IsEnabled()
+        => Environment.GetEnvironmentVariable(Variable) is not { } value ||
+           !StringComparer.OrdinalIgnoreCase.Equals(value, "false");
 }
 
-internal sealed record CapturedActivity(
-    string Name,
-    string Kind,
-    string Status,
-    IReadOnlyDictionary<string, string> Tags)
+internal sealed record CapturedLogRecord(string Severity, string Body, string FormattedMessage, string CategoryName)
 {
-    public static CapturedActivity From(Activity activity)
+    public static CapturedLogRecord From(LogRecord record)
         => new(
-            activity.DisplayName,
-            activity.Kind.ToString(),
-            activity.Status.ToString(),
-            activity.TagObjects.ToDictionary(
-                static tag => tag.Key,
-                static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
-                StringComparer.Ordinal));
+            record.LogLevel.ToString(),
+            Convert.ToString(record.Body, CultureInfo.InvariantCulture) ?? string.Empty,
+            record.FormattedMessage ?? string.Empty,
+            record.CategoryName ?? string.Empty);
 }
 
 internal sealed record ILoggerReport(
     string RuntimeMode,
+    bool LogsControlEnabled,
+    bool OpenTelemetryLoggerProviderRegistered,
     bool Pass,
     string[] Failures,
-    string[] LogLines,
-    CapturedActivity[] Activities)
+    CapturedLogRecord[] Records,
+    string[] QylActivities)
 {
-    public static ILoggerReport Create(string runtimeMode, string[] logLines, CapturedActivity[] activities)
+    private static readonly (string Severity, string Body)[] ExpectedRecords =
+    [
+        ("Trace", "qyl trace record"),
+        ("Debug", "qyl debug record"),
+        ("Information", "qyl information record"),
+        ("Warning", "qyl warning record"),
+        ("Error", "qyl error record"),
+        ("Critical", "qyl critical record"),
+    ];
+
+    public static ILoggerReport Create(
+        string runtimeMode,
+        bool logsControlEnabled,
+        bool providerRegistered,
+        CapturedLogRecord[] records,
+        string[] qylActivities)
     {
         var failures = new List<string>();
-        var loggerSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "log.ilogger"))
-            .ToArray();
 
-        if (logLines.Length != 2)
-            failures.Add($"expected 2 enabled ILogger output records, got {logLines.Length}");
+        // The regression assertion for the deleted log-as-span lane: an ILogger call must produce a
+        // LogRecord and nothing on the qyl ActivitySource.
+        if (qylActivities.Length is not 0)
+            failures.Add($"expected no qyl activity for a log call, got {string.Join("|", qylActivities)}");
 
-        if (loggerSpans.Length != 2)
-            failures.Add($"expected 2 ILogger spans, got {loggerSpans.Length}");
+        if (logsControlEnabled)
+            RequireExport(providerRegistered, records, failures);
+        else
+            RequireNoExport(providerRegistered, records, failures);
 
-        var information = FindBySeverity(loggerSpans, "Information");
-        var error = FindBySeverity(loggerSpans, "Error");
-        Require(information, "information span", failures);
-        Require(error, "error span", failures);
-        RequireTag(error, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
-
-        foreach (var span in loggerSpans)
-        {
-            if (!StringComparer.Ordinal.Equals(span.Name, "ILogger log"))
-                failures.Add($"unexpected ILogger span name: {span.Name}");
-
-            if (!StringComparer.Ordinal.Equals(span.Kind, "Internal"))
-                failures.Add($"expected kind Internal, got {span.Kind}");
-        }
-
-        return new ILoggerReport(runtimeMode, failures.Count is 0, failures.ToArray(), logLines, loggerSpans);
+        return new ILoggerReport(
+            runtimeMode,
+            logsControlEnabled,
+            providerRegistered,
+            failures.Count is 0,
+            failures.ToArray(),
+            records,
+            qylActivities);
     }
 
-    private static CapturedActivity? FindBySeverity(IEnumerable<CapturedActivity> activities, string severity)
-        => activities.FirstOrDefault(activity =>
-            activity.Tags.TryGetValue("log.severity", out var actual) &&
-            StringComparer.Ordinal.Equals(actual, severity));
-
-    private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
+    private static void RequireExport(bool providerRegistered, CapturedLogRecord[] records, ICollection<string> failures)
     {
-        if (activity is null)
-            failures.Add($"missing {label}");
-    }
+        if (!providerRegistered)
+            failures.Add("AddQyl did not register the OpenTelemetry logging provider");
 
-    private static void RequireTag(CapturedActivity? activity, string key, string expected, ICollection<string> failures)
-    {
-        if (activity is null)
-            return;
-
-        if (!activity.Tags.TryGetValue(key, out var actual))
+        if (records.Length != ExpectedRecords.Length)
         {
-            failures.Add($"missing {key}");
+            failures.Add($"expected {ExpectedRecords.Length} exported log records, got {records.Length}");
             return;
         }
 
-        if (!StringComparer.Ordinal.Equals(actual, expected))
-            failures.Add($"expected {key}={expected}, got {actual}");
+        for (var index = 0; index < ExpectedRecords.Length; index++)
+        {
+            var (severity, body) = ExpectedRecords[index];
+            if (!StringComparer.Ordinal.Equals(records[index].Severity, severity))
+                failures.Add($"record {index} severity: expected {severity}, got {records[index].Severity}");
+            if (!StringComparer.Ordinal.Equals(records[index].Body, body))
+                failures.Add($"record {index} body: expected {body}, got {records[index].Body}");
+            if (!StringComparer.Ordinal.Equals(records[index].FormattedMessage, body))
+                failures.Add($"record {index} formatted message: expected {body}, got {records[index].FormattedMessage}");
+            if (!StringComparer.Ordinal.Equals(records[index].CategoryName, "Qyl.RealILoggerDemo"))
+                failures.Add($"record {index} category: got {records[index].CategoryName}");
+        }
+    }
+
+    private static void RequireNoExport(bool providerRegistered, CapturedLogRecord[] records, ICollection<string> failures)
+    {
+        if (providerRegistered)
+            failures.Add($"{LogsControl.Variable}=false must leave the OpenTelemetry logging provider unregistered");
+        if (records.Length is not 0)
+            failures.Add($"{LogsControl.Variable}=false must export no log records, got {records.Length}");
     }
 }
 
