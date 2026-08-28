@@ -9,14 +9,10 @@
 {"interceptorKind":"Elasticsearch.Request","signal":"traces","instrumentationId":"ELASTICSEARCH","additionalMetricIds":[],"contractKeys":["signals.traces.ELASTICSEARCH"]}
 {"interceptorKind":"GraphQl.Execute","signal":"traces","instrumentationId":"GRAPHQL","additionalMetricIds":[],"contractKeys":["signals.traces.GRAPHQL"]}
 {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
-{"interceptorKind":"ILogger.Log","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
-{"interceptorKind":"ILogger.LogExtension","signal":"logs","instrumentationId":"ILOGGER","additionalMetricIds":[],"contractKeys":["signals.logs.ILOGGER"]}
 {"interceptorKind":"Kafka.Receive","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
 {"interceptorKind":"Kafka.Send","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
-{"interceptorKind":"Log4Net.Log","signal":"logs","instrumentationId":"LOG4NET","additionalMetricIds":[],"contractKeys":["signals.logs.LOG4NET"]}
 {"interceptorKind":"MassTransit.Send","signal":"traces","instrumentationId":"MASSTRANSIT","additionalMetricIds":[],"contractKeys":["signals.traces.MASSTRANSIT"]}
 {"interceptorKind":"MongoDb.Operation","signal":"traces","instrumentationId":"MONGODB","additionalMetricIds":[],"contractKeys":["signals.traces.MONGODB"]}
-{"interceptorKind":"NLog.Log","signal":"logs","instrumentationId":"NLOG","additionalMetricIds":[],"contractKeys":["signals.logs.NLOG"]}
 {"interceptorKind":"NServiceBus.Send","signal":"traces","instrumentationId":"NSERVICEBUS","additionalMetricIds":["NSERVICEBUS"],"contractKeys":["signals.traces.NSERVICEBUS","signals.metrics.NSERVICEBUS"]}
 {"interceptorKind":"Quartz.Execute","signal":"traces","instrumentationId":"QUARTZ","additionalMetricIds":[],"contractKeys":["signals.traces.QUARTZ"]}
 {"interceptorKind":"RabbitMq.Publish","signal":"traces","instrumentationId":"RABBITMQ","additionalMetricIds":[],"contractKeys":["signals.traces.RABBITMQ"]}

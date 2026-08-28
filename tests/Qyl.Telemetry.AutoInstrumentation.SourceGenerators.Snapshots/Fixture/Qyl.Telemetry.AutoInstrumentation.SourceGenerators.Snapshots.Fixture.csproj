@@ -15,7 +15,6 @@
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
   <Import Project="../../../src/Qyl.Telemetry.AutoInstrumentation/buildTransitive/Qyl.Telemetry.AutoInstrumentation.targets" />

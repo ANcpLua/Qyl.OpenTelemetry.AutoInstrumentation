@@ -35,7 +35,7 @@ Console.WriteLine("trace.http=" + options.IsInstrumentationEnabled(QylAutoInstru
 Console.WriteLine("trace.sql=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.SqlClient));
 Console.WriteLine("metric.http=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient));
 Console.WriteLine("metric.sql=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.SqlClient));
-Console.WriteLine("log.ilogger=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, QylAutoInstrumentationIds.ILogger));
+Console.WriteLine("log.fallback=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, "UNDECLARED"));
 Console.WriteLine("meters=" + string.Join("|", QylMetricMeters.GetEnabledMeterNames()));
 Console.WriteLine("ef.text=" + options.EntityFrameworkCoreSetDbStatementForText);
 Console.WriteLine("graphql.document=" + options.GraphQlSetDocument);
@@ -133,7 +133,31 @@ trace.http=True
 trace.sql=True
 metric.http=True
 metric.sql=True
-log.ilogger=True
+log.fallback=True
+meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
+ef.text=False
+graphql.document=False
+oracle.text=False
+sql.text=False
+aspnetcore.req=
+aspnetcore.res=
+grpc.req=
+grpc.res=
+http.req=
+http.res=
+aspnetcore.query.unredacted=False
+http.query.unredacted=False
+"""
+
+LOGS_DISABLED_EXPECTED = """global=True
+traces=True
+metrics=True
+logs=False
+trace.http=True
+trace.sql=True
+metric.http=True
+metric.sql=True
+log.fallback=False
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
 ef.text=False
 graphql.document=False
@@ -157,7 +181,7 @@ trace.http=True
 trace.sql=False
 metric.http=False
 metric.sql=False
-log.ilogger=False
+log.fallback=False
 meters=
 ef.text=False
 graphql.document=False
@@ -181,7 +205,7 @@ trace.http=True
 trace.sql=False
 metric.http=True
 metric.sql=False
-log.ilogger=False
+log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
 ef.text=False
 graphql.document=False
@@ -205,7 +229,7 @@ trace.http=True
 trace.sql=True
 metric.http=True
 metric.sql=True
-log.ilogger=True
+log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime
 ef.text=True
 graphql.document=True
@@ -229,7 +253,7 @@ trace.http=True
 trace.sql=True
 metric.http=True
 metric.sql=True
-log.ilogger=True
+log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.OpenTelemetry.AutoInstrumentation.Database|Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
 ef.text=False
 graphql.document=False
@@ -382,10 +406,14 @@ def main() -> None:
                     "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED": "true",
                     "OTEL_DOTNET_AUTO_TRACES_SQLCLIENT_INSTRUMENTATION_ENABLED": "false",
                     "OTEL_DOTNET_AUTO_METRICS_SQLCLIENT_INSTRUMENTATION_ENABLED": "false",
-                    "OTEL_DOTNET_AUTO_LOGS_ILOGGER_INSTRUMENTATION_ENABLED": "false",
                 },
             ),
             SIGNAL_AND_SPECIFIC_OVERRIDES_EXPECTED,
+        )
+        assert_scenario(
+            "logs signal disabled",
+            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED": "false"}),
+            LOGS_DISABLED_EXPECTED,
         )
         assert_scenario(
             "instrumentation options",

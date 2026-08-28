@@ -1,32 +1,18 @@
-using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Net.Http;
 
-ILogger logger = new SnapshotLogger();
+using var client = new HttpClient(new SnapshotHandler());
 
-logger.Log(
-    LogLevel.Warning,
-    new EventId(42, "snapshot-log"),
-    "snapshot-state",
-    exception: null,
-    static (state, exception) => exception is null ? state : state + ":" + exception.GetType().Name);
+using (await client.GetAsync("http://qyl.invalid/program"))
+{
+}
 
-Probe.Emit(logger);
+await Probe.EmitAsync(client);
 
 return 0;
 
-internal sealed class SnapshotLogger : ILogger
+internal sealed class SnapshotHandler : HttpMessageHandler
 {
-    public IDisposable? BeginScope<TState>(TState state)
-        where TState : notnull
-        => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
-    {
-    }
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
 }

@@ -1,6 +1,3 @@
 http.status=204
-logger.calls=1
-logger.last=Warning:5:smoke-log
-activity=GET|Client|http.client|GET|204|
-activity=ILogger log|Internal|log.ilogger|||Warning
-activity.count=2
+activity=GET|Client|http.client|GET|204
+activity.count=1

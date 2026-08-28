@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Negative-space gate: a disabled instrumentation actually emits zero qyl telemetry.
 
-The HttpClient runtime listener and ILogger source interceptor are present in the consumer;
-this gate fires real operations with instrumentation off and proves their qyl spans disappear.
-Native BCL metrics are intentionally outside this gate because qyl controls their SDK
-registration, not whether the framework records them.
+The HttpClient source interceptor is present in the consumer; this gate fires a real request
+with instrumentation off and proves its qyl span disappears. Native BCL metrics are
+intentionally outside this gate because qyl controls their SDK registration, not whether the
+framework records them. The logs signal declares no instrumentation, so
+OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED is proved in tools/verify-real-ilogger-demo.py
+against the log-record exporter Qyl.Telemetry.Hosting registers.
 
 Control (enabled)  -> exactly one HttpClient span.
 Disabled (http)    -> zero spans, via OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED=false.
+Disabled (traces)  -> zero spans, via OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED=false.
 Disabled (global)  -> zero spans, via OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED=false.
+Disabled (other)   -> one span still, proving a per-integration switch stays selective.
 """
 from __future__ import annotations
 
@@ -30,7 +34,6 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
@@ -49,15 +52,6 @@ using (await http.GetAsync(server.Uri + "probe"))
 }
 await server.RequestCompleted;
 
-var capturingLogger = new CapturingLogger();
-ILogger logger = capturingLogger;
-logger.Log(
-    LogLevel.Warning,
-    new EventId(7, "disabled-behavior"),
-    "probe-log",
-    exception: null,
-    static (state, exception) => state);
-
 var httpClientSpans = captured.Count(static activity =>
     activity.TagObjects.Any(static tag =>
         tag.Key == "qyl.instrumentation.domain" &&
@@ -66,33 +60,8 @@ var httpClientSpans = captured.Count(static activity =>
             "http.client",
             StringComparison.Ordinal)));
 
-var iloggerSpans = captured.Count(static activity =>
-    activity.TagObjects.Any(static tag =>
-        tag.Key == "qyl.instrumentation.domain" &&
-        string.Equals(
-            Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
-            "log.ilogger",
-            StringComparison.Ordinal)));
-
 Console.WriteLine("httpclient.spans=" + httpClientSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
-Console.WriteLine("ilogger.spans=" + iloggerSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
 return 0;
-
-internal sealed class CapturingLogger : ILogger
-{
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
-    {
-    }
-}
 
 internal sealed class LoopbackHttpServer : IAsyncDisposable
 {
@@ -179,7 +148,6 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
@@ -227,38 +195,33 @@ def main() -> None:
         run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], project.parent, env)
         assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
 
-        def expect(spans: int, logs: int) -> str:
-            return f"httpclient.spans={spans}\nilogger.spans={logs}"
+        def expect(spans: int) -> str:
+            return f"httpclient.spans={spans}"
 
-        # Control: everything on -> one span per lane.
-        assert_spans("enabled (control)", run_scenario(assembly, env, {}), expect(1, 1))
-        # Per-integration trace kill switch: only the HttpClient TRACE lane dies.
+        assert_spans("enabled (control)", run_scenario(assembly, env, {}), expect(1))
+        # Per-integration trace kill switch.
         assert_spans(
             "http trace instrumentation disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED": "false"}),
-            expect(0, 1),
+            expect(0),
         )
-        # Global kill switch: every lane dies.
-        assert_spans(
-            "global instrumentation disabled",
-            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED": "false"}),
-            expect(0, 0),
-        )
-        # Signal-level switches: exactly one signal dies each time.
+        # Signal-level kill switch.
         assert_spans(
             "traces signal disabled",
             run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED": "false"}),
-            expect(0, 1),
+            expect(0),
         )
+        # Global kill switch.
         assert_spans(
-            "logs signal disabled",
-            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED": "false"}),
-            expect(1, 0),
+            "global instrumentation disabled",
+            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED": "false"}),
+            expect(0),
         )
+        # Selectivity: an unrelated integration's switch leaves the HttpClient span alone.
         assert_spans(
-            "ilogger logs instrumentation disabled",
-            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_LOGS_ILOGGER_INSTRUMENTATION_ENABLED": "false"}),
-            expect(1, 0),
+            "unrelated integration disabled",
+            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_SQLCLIENT_INSTRUMENTATION_ENABLED": "false"}),
+            expect(1),
         )
 
     print("instrumentation-disabled-behavior-ok")

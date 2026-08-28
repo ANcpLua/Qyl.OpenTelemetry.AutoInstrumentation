@@ -158,10 +158,15 @@ FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw caughtException;",
     "throw ex;",
 ]
+# Coherence: implemented signals that bind no per-instrumentation environment toggle, so the
+# runtime declares no instrumentation id for them. Qyl.Telemetry.Hosting registers the
+# OpenTelemetry ILogger provider under the global logs control alone.
+UNDECLARED_IMPLEMENTED_SIGNAL_KEYS = {
+    "signals.logs.ILOGGER",
+}
 # Coherence: the explicit NativeAOT boundary — implemented signals whose
 # evidence is managed-only. Growing or shrinking this set is a deliberate act.
 MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
-    "signals.logs.LOG4NET",
     "signals.metrics.NSERVICEBUS",
     "signals.traces.KAFKA",
     "signals.traces.MONGODB",
@@ -573,6 +578,26 @@ def verify_nativeaot_evidence_is_executable(artifacts: ModuleType, contract: dic
             fail(f"verified_nativeaot item has no executable NativeAOT verifier evidence: {item['key']}")
 
 
+def verify_undeclared_implemented_signals(implemented_signals: list[dict[str, Any]]) -> None:
+    implemented_keys = {str(item["key"]) for item in implemented_signals}
+    stale = UNDECLARED_IMPLEMENTED_SIGNAL_KEYS - implemented_keys
+    if stale:
+        fail(f"undeclared-implemented exemption names non-implemented signals: {sorted(stale)}")
+    declared = {
+        instrumentation_id
+        for ids in declared_signal_ids(parse_instrumentation_id_constants()).values()
+        for instrumentation_id in ids
+    }
+    redundant = {
+        str(item["key"])
+        for item in implemented_signals
+        if str(item["key"]) in UNDECLARED_IMPLEMENTED_SIGNAL_KEYS
+        and str(item["instrumentation_id"]) in declared
+    }
+    if redundant:
+        fail(f"undeclared-implemented exemption names declared instrumentations: {sorted(redundant)}")
+
+
 def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any]) -> None:
     items = artifacts.contract_items(contract)
     options = OPTIONS_PATH.read_text()
@@ -604,11 +629,13 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
             fail(f"unsupported instrumentation option must be absent from QylAutoInstrumentationOptions: {variable}")
 
     implemented_signals = list(artifacts.implemented_signal_items(contract))
+    verify_undeclared_implemented_signals(implemented_signals)
     expected_by_signal = {
         signal: {
             str(item["instrumentation_id"])
             for item in implemented_signals
             if item.get("signal") == signal
+            and str(item["key"]) not in UNDECLARED_IMPLEMENTED_SIGNAL_KEYS
         }
         for signal in ["traces", "metrics", "logs"]
     }
@@ -1071,13 +1098,14 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     verify_generated_interceptor_manifests(
         fixture_manifests,
         interceptor_kinds,
-        "two-ILogger deterministic fixture",
+        "two-HttpClient deterministic fixture",
     )
     fixture_kinds = [manifest["interceptorKind"] for manifest in fixture_manifests]
-    if fixture_kinds != ["ILogger.Log", "ILogger.Log"]:
+    if fixture_kinds != ["HttpClient.Forward", "HttpClient.Forward"]:
         fail(f"generated interceptor snapshot kind mismatch: {fixture_kinds}")
     fixture_keys = [manifest["contractKeys"] for manifest in fixture_manifests]
-    if fixture_keys != [["signals.logs.ILOGGER"], ["signals.logs.ILOGGER"]]:
+    expected_fixture_keys = ["signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"]
+    if fixture_keys != [expected_fixture_keys, expected_fixture_keys]:
         fail(f"generated interceptor snapshot contract-key mismatch: {fixture_keys}")
 
     emitted_keys = verify_generated_interceptor_manifests(

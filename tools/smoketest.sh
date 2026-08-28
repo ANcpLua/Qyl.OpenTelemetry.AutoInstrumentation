@@ -75,7 +75,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 #endif
-using Microsoft.Extensions.Logging;
 #if QYL_SDK_PACKAGE_SMOKE
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -165,15 +164,6 @@ var response = await http.GetAsync(server.Uri + "probe?secret=redacted");
 await server.RequestCompleted;
 Console.WriteLine("http.status=" + ((int)response.StatusCode).ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-var concreteLogger = new CapturingLogger();
-ILogger logger = concreteLogger;
-logger.Log(
-    LogLevel.Warning,
-    new EventId(5, "smoke"),
-    "smoke-log",
-    exception: null,
-    static (state, exception) => exception is null ? state : state + ":" + exception.GetType().Name);
-
 #if QYL_SDK_PACKAGE_SMOKE
 if (!inMemoryMetricReader.Collect(5_000))
     throw new InvalidOperationException("The in-memory metric reader did not complete collection.");
@@ -228,9 +218,6 @@ if (exportedQylHttpClientSpanCount != 1 ||
 await qylHost.StopAsync();
 #endif
 
-Console.WriteLine("logger.calls=" + concreteLogger.Calls.ToString(System.Globalization.CultureInfo.InvariantCulture));
-Console.WriteLine("logger.last=" + concreteLogger.Last);
-
 foreach (var activity in captured.OrderBy(static activity => activity.DisplayName, StringComparer.Ordinal))
 {
     var tags = activity.TagObjects.ToDictionary(
@@ -241,14 +228,13 @@ foreach (var activity in captured.OrderBy(static activity => activity.DisplayNam
     tags.TryGetValue("qyl.instrumentation.domain", out var domain);
     tags.TryGetValue("http.request.method", out var method);
     tags.TryGetValue("http.response.status_code", out var statusCode);
-    tags.TryGetValue("log.severity", out var severity);
 
-    Console.WriteLine("activity=" + activity.DisplayName + "|" + activity.Kind + "|" + domain + "|" + method + "|" + statusCode + "|" + severity);
+    Console.WriteLine("activity=" + activity.DisplayName + "|" + activity.Kind + "|" + domain + "|" + method + "|" + statusCode);
 }
 
 Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-return captured.Count == 2 ? 0 : 3;
+return captured.Count == 1 ? 0 : 3;
 
 #if QYL_SDK_PACKAGE_SMOKE
 static bool IsApplicationActivity(
@@ -351,28 +337,6 @@ internal sealed class LoopbackHttpServer : IAsyncDisposable
         await stream.WriteAsync(response);
     }
 }
-
-internal sealed class CapturingLogger : ILogger
-{
-    public int Calls { get; private set; }
-
-    public string Last { get; private set; } = string.Empty;
-
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
-    {
-        Calls++;
-        Last = logLevel + ":" + eventId.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + formatter(state, exception);
-    }
-}
 EOF
 }
 
@@ -397,7 +361,6 @@ write_package_consumer() {
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.Hosting" Version="$VERSION" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="$INMEMORY_EXPORTER_VERSION" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
@@ -432,7 +395,6 @@ write_projectreference_consumer() {
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
     <Analyzer Include="$GENERATOR_DLL" Condition="'\$(PublishAot)' == 'true'" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 

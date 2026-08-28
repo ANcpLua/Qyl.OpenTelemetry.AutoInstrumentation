@@ -19,7 +19,9 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
+using System.Globalization;
+using System.Net;
+using System.Net.Http;
 
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
@@ -31,68 +33,55 @@ using var activityListener = new ActivityListener
 
 ActivitySource.AddActivityListener(activityListener);
 
-var concreteLogger = new CapturingLogger();
-ILogger logger = concreteLogger;
-logger.Log(
-    LogLevel.Information,
-    new EventId(42, "projectreference-log"),
-    "projectreference-log",
-    exception: null,
-    static (state, exception) => exception is null ? state : state + ":" + exception.GetType().Name);
+var handler = new CountingHandler();
+using var client = new HttpClient(handler);
+using (await client.GetAsync("http://qyl.invalid/projectreference?token=secret"))
+{
+}
 
-Console.WriteLine("logger.calls=" + concreteLogger.Calls.ToString(System.Globalization.CultureInfo.InvariantCulture));
-Console.WriteLine("logger.last=" + concreteLogger.Last);
-Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
+Console.WriteLine("client.calls=" + handler.Calls.ToString(CultureInfo.InvariantCulture));
+Console.WriteLine("activity.count=" + captured.Count.ToString(CultureInfo.InvariantCulture));
 
 if (captured.Count == 1)
 {
     var activity = captured[0];
     var tags = activity.TagObjects.ToDictionary(
         static tag => tag.Key,
-        static tag => Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
+        static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
         StringComparer.Ordinal);
     tags.TryGetValue("qyl.instrumentation.domain", out var domain);
-    tags.TryGetValue("log.severity", out var severity);
+    tags.TryGetValue("http.response.status_code", out var statusCode);
+    tags.TryGetValue("url.full", out var urlFull);
 
     Console.WriteLine("activity.name=" + activity.DisplayName);
     Console.WriteLine("activity.kind=" + activity.Kind);
     Console.WriteLine("qyl.instrumentation.domain=" + domain);
-    Console.WriteLine("log.severity=" + severity);
+    Console.WriteLine("http.response.status_code=" + statusCode);
+    Console.WriteLine("url.full=" + urlFull);
 }
 
 return 0;
 
-internal sealed class CapturingLogger : ILogger
+internal sealed class CountingHandler : HttpMessageHandler
 {
     public int Calls { get; private set; }
 
-    public string Last { get; private set; } = string.Empty;
-
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         Calls++;
-        Last = logLevel + ":" + eventId.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) + ":" + formatter(state, exception);
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
     }
 }
 '''
 
 
-EXPECTED_VERIFIED = """logger.calls=1
-logger.last=Information:42:projectreference-log
+EXPECTED_VERIFIED = """client.calls=1
 activity.count=1
-activity.name=ILogger log
-activity.kind=Internal
-qyl.instrumentation.domain=log.ilogger
-log.severity=Information
+activity.name=GET
+activity.kind=Client
+qyl.instrumentation.domain=http.client
+http.response.status_code=204
+url.full=http://qyl.invalid/projectreference?token=Redacted
 """
 
 
@@ -142,7 +131,6 @@ def write_project(directory: Path, packages: Path) -> Path:
                       ReferenceOutputAssembly="false"
                       GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
     <Analyzer Include="{GENERATOR_DLL}" Condition="'$(PublishAot)' == 'true'" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 
@@ -170,7 +158,7 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "#nullable enable",
         "Qyl.Telemetry.AutoInstrumentation.Generated",
         "file sealed class InterceptsLocationAttribute",
-        "global::Microsoft.Extensions.Logging.ILogger",
+        "global::System.Net.Http.HttpClient",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")

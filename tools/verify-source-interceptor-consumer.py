@@ -23,7 +23,9 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
+using System.Globalization;
+using System.Net;
+using System.Net.Http;
 using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
@@ -35,60 +37,49 @@ using var activityListener = new ActivityListener
 };
 ActivitySource.AddActivityListener(activityListener);
 
-var concreteLogger = new CapturingLogger();
-ILogger logger = concreteLogger;
-logger.Log(
-    LogLevel.Warning,
-    new EventId(1, "warning"),
-    "warning",
-    exception: null,
-    static (state, exception) => state);
-logger.Log(
-    LogLevel.Error,
-    new EventId(2, "error"),
-    "error",
-    exception: null,
-    static (state, exception) => state);
+var handler = new CountingHandler();
+using var client = new HttpClient(handler);
+using (await client.GetAsync("http://qyl.invalid/accepted"))
+{
+}
 
-var logActivities = captured
+using (await client.GetAsync("http://qyl.invalid/unavailable"))
+{
+}
+
+var httpActivities = captured
     .Where(static activity => activity.TagObjects.Any(static tag =>
         tag.Key == "qyl.instrumentation.domain" &&
-        StringComparer.Ordinal.Equals(tag.Value as string, "log.ilogger")))
+        StringComparer.Ordinal.Equals(tag.Value as string, "http.client")))
     .ToArray();
-var severities = logActivities
-    .Select(static activity => activity.GetTagItem("log.severity") as string)
+var statuses = httpActivities
+    .Select(static activity => Convert.ToString(activity.GetTagItem("http.response.status_code"), CultureInfo.InvariantCulture))
     .OfType<string>()
-    .OrderBy(static severity => severity, StringComparer.Ordinal)
+    .OrderBy(static status => status, StringComparer.Ordinal)
     .ToArray();
 
-Console.WriteLine("logger.calls=" + concreteLogger.Calls.ToString(System.Globalization.CultureInfo.InvariantCulture));
-Console.WriteLine("activity.count=" + logActivities.Length.ToString(System.Globalization.CultureInfo.InvariantCulture));
-Console.WriteLine("activity.severities=" + string.Join("|", severities));
+Console.WriteLine("client.calls=" + handler.Calls.ToString(CultureInfo.InvariantCulture));
+Console.WriteLine("activity.count=" + httpActivities.Length.ToString(CultureInfo.InvariantCulture));
+Console.WriteLine("activity.statuses=" + string.Join("|", statuses));
 
-return concreteLogger.Calls == 2 && logActivities.Length == 2 ? 0 : 1;
+return handler.Calls == 2 && httpActivities.Length == 2 ? 0 : 1;
 
-internal sealed class CapturingLogger : ILogger
+internal sealed class CountingHandler : HttpMessageHandler
 {
     public int Calls { get; private set; }
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(
-        LogLevel logLevel,
-        EventId eventId,
-        TState state,
-        Exception? exception,
-        Func<TState, Exception?, string> formatter)
-        => Calls++;
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        Calls++;
+        return Task.FromResult(new HttpResponseMessage(Calls == 1 ? HttpStatusCode.NoContent : HttpStatusCode.ServiceUnavailable));
+    }
 }
 '''
 
 
-EXPECTED = """logger.calls=2
+EXPECTED = """client.calls=2
 activity.count=2
-activity.severities=Error|Warning
+activity.statuses=204|503
 """
 
 
@@ -126,7 +117,6 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
@@ -156,9 +146,9 @@ def verify_generated_source(directory: Path) -> None:
     text = generated[0].read_text(encoding="utf-8")
     for token in [
         "namespace Qyl.Telemetry.AutoInstrumentation.Generated",
-        "ILogger_Log_0",
-        "QylInterceptedILogger.Log(",
-        '"contractKeys":["signals.logs.ILOGGER"]',
+        "HttpClient_GetAsync_0",
+        "QylInterceptedHttpClient.GetAsync(",
+        '"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]',
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")
