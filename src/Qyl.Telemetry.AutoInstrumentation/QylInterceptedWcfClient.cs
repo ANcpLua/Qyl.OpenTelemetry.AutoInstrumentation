@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>WCF client operation spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.WcfClient, QylInstrumentationDomains.RpcWcfClient)]
+[QylIntegration(QylAutoInstrumentationIds.WcfClient, QylAttributes.InstrumentationDomainValues.RpcWcfClient)]
 [QylIntercept("System.ServiceModel.ClientBase`1", Shape = QylShapes.WcfClient, Start = nameof(Call))]
 public static class QylInterceptedWcfClient
 {
@@ -16,7 +17,7 @@ public static class QylInterceptedWcfClient
             QylAutoInstrumentationIds.WcfClient,
             QylSpanNames.Rpc(method, QylSemanticAttributes.RpcSystemDotNetWcf),
             ActivityKind.Client,
-            QylInstrumentationDomains.RpcWcfClient);
+            QylAttributes.InstrumentationDomainValues.RpcWcfClient);
         if (activity is null)
             return null;
 

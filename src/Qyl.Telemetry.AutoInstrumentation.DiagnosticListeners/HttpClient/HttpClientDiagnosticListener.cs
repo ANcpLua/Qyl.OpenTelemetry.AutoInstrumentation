@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
@@ -42,7 +43,7 @@ internal sealed class HttpClientDiagnosticListener : QylDiagnosticListenerSubscr
 
         using var activity = QylActivitySource.StartAtAmbientStart(QylSpanNames.Http(method), ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.HttpClient);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.HttpClient);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.NetworkProtocolVersion, DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.NetworkProtocolVersion));

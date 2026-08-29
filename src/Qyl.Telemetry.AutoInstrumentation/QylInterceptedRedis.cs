@@ -1,12 +1,13 @@
 using System.Diagnostics;
 using System.Globalization;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>StackExchange.Redis command spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.StackExchangeRedis, QylInstrumentationDomains.DbRedis)]
+[QylIntegration(QylAutoInstrumentationIds.StackExchangeRedis, QylAttributes.InstrumentationDomainValues.DbRedis)]
 [QylIntercept("StackExchange.Redis.IDatabaseAsync", Shape = QylShapes.RedisCommand, Start = nameof(Command))]
 public static class QylInterceptedRedis
 {
@@ -17,7 +18,7 @@ public static class QylInterceptedRedis
             QylAutoInstrumentationIds.StackExchangeRedis,
             QylSpanNames.Db(operationName, QylSemanticAttributes.DbSystemRedis),
             ActivityKind.Client,
-            QylInstrumentationDomains.DbRedis);
+            QylAttributes.InstrumentationDomainValues.DbRedis);
         if (activity is null)
             return null;
 

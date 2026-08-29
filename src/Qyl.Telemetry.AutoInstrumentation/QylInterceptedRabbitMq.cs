@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>RabbitMQ.Client publish spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.RabbitMq, QylInstrumentationDomains.MessagingRabbitMq)]
+[QylIntegration(QylAutoInstrumentationIds.RabbitMq, QylAttributes.InstrumentationDomainValues.MessagingRabbitMq)]
 [QylIntercept("RabbitMQ.Client.IModel", "BasicPublish", "BasicPublishAsync", Shape = QylShapes.RabbitMqPublish, Start = nameof(Publish))]
 [QylIntercept("RabbitMQ.Client.IChannel", "BasicPublish", "BasicPublishAsync", Shape = QylShapes.RabbitMqPublish, Start = nameof(Publish))]
 public static class QylInterceptedRabbitMq

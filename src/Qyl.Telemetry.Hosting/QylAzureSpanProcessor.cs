@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using OpenTelemetry;
 using Qyl.Telemetry.AutoInstrumentation;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl;
 
@@ -11,7 +12,7 @@ internal sealed class QylAzureSpanProcessor : BaseProcessor<Activity>
         if (!data.Source.Name.StartsWith("Azure.", StringComparison.Ordinal))
             return;
 
-        data.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AzureSdk);
+        data.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.AzureSdk);
         data.SetTag(QylSemanticAttributes.UrlFull, null);
         data.SetTag(QylSemanticAttributes.UrlPath, null);
 

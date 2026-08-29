@@ -15,8 +15,18 @@ NativeAOT consumers, and only then creates the GitHub release.
   surface, so nothing here changes shape. It also ships the object-first definition types
   (`MetricDefinition<TInstrument>`, `SpanDefinition<TKind>`, `EventDefinition`, `EntityDefinition`)
   in the compiled package, `AllValues`/`Contains` on every enum-value class, and
-  `qyl.instrumentation.domain` as a generated value set. This package adopts none of those yet:
-  the typed `Activity` setters and the definition-to-BCL bridge are separate changes.
+  `qyl.instrumentation.domain` as a generated value set. The typed `Activity` setters and the
+  definition-to-BCL bridge are separate changes; the two surfaces below are adopted.
+- `QylInstrumentationDomains` is gone. Every `[QylIntegration]` and activity policy names its
+  domain through `QylAttributes.InstrumentationDomainValues`, the generated value set the
+  hand-written class had restated member for member since semconv `b8ddb0a`.
+- The HTTP request-method vocabulary is read from `HttpAttributes.RequestMethodValues.Contains`
+  instead of a hand-typed `HashSet` and a ten-branch `string.Equals` chain. One rule,
+  `QylHttpMethod.IsKnown`, serves both the interceptor and the diagnostic listener; `_OTHER`
+  stays unknown so `http.request.method_original` is still recorded for it.
+- `tools/verify-contract-invariants.py` fails on any `"qyl.` literal under `src/` outside
+  generated files, and `tools/verify-version-sync.py` fails when the CHANGELOG's top entry is
+  neither `[Unreleased]` for an untagged version nor `[<props version>] - <date>`.
 
 ### Removed
 

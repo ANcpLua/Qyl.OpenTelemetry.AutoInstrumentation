@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>GraphQL.NET document execution spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.GraphQl, QylInstrumentationDomains.GraphQl)]
+[QylIntegration(QylAutoInstrumentationIds.GraphQl, QylAttributes.InstrumentationDomainValues.GraphQl)]
 [QylIntercept("GraphQL.IDocumentExecuter", "ExecuteAsync", Shape = QylShapes.GraphQlExecute, Start = nameof(Execute), Enrich = nameof(RecordExecutionOptions), ObserveAsync = true)]
 public static class QylInterceptedGraphQl
 {
@@ -15,7 +16,7 @@ public static class QylInterceptedGraphQl
             QylAutoInstrumentationIds.GraphQl,
             QylSpanNames.GraphQl(null),
             ActivityKind.Internal,
-            QylInstrumentationDomains.GraphQl);
+            QylAttributes.InstrumentationDomainValues.GraphQl);
 
     /// <summary>Records the operation name and type, and the document behind its opt-in.</summary>
     public static void RecordExecutionOptions(

@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>MassTransit publish and send spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.MassTransit, QylInstrumentationDomains.MessagingMassTransit)]
+[QylIntegration(QylAutoInstrumentationIds.MassTransit, QylAttributes.InstrumentationDomainValues.MessagingMassTransit)]
 [QylIntercept("MassTransit.IPublishEndpoint", "Publish", "Send", Shape = QylShapes.MassTransitOperation, Start = nameof(Send))]
 [QylIntercept("MassTransit.ISendEndpoint", "Publish", "Send", Shape = QylShapes.MassTransitOperation, Start = nameof(Send))]
 [QylIntercept("MassTransit.ISendEndpointProvider", "Publish", "Send", Shape = QylShapes.MassTransitOperation, Start = nameof(Send))]

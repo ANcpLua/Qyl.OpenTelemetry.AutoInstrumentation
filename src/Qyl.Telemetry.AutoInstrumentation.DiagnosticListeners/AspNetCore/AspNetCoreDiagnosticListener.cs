@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 
@@ -41,7 +42,7 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
 
         using var activity = QylActivitySource.StartAtAmbientStart(QylSpanNames.HttpServer(method, route), ActivityKind.Server);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.AspNetCoreServer);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.AspNetCoreServer);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethod, method);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethodOriginal, originalMethod);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRoute, route);

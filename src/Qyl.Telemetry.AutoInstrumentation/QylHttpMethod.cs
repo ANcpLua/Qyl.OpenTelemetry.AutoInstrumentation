@@ -1,40 +1,19 @@
 namespace Qyl.Telemetry.AutoInstrumentation;
 
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+
 internal static class QylHttpMethod
 {
+    public static bool IsKnown(string method)
+        => method is not QylSemanticAttributes.HttpRequestMethodOther && HttpAttributes.RequestMethodValues.Contains(method);
+
     public static string Normalize(string? method)
     {
         if (string.IsNullOrEmpty(method))
             return QylSemanticAttributes.HttpRequestMethodOther;
 
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodConnect, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodConnect;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodDelete, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodDelete;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodGet, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodGet;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodHead, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodHead;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodOptions, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodOptions;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodPatch, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodPatch;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodPost, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodPost;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodPut, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodPut;
-
-        if (string.Equals(method, QylSemanticAttributes.HttpRequestMethodTrace, StringComparison.OrdinalIgnoreCase))
-            return QylSemanticAttributes.HttpRequestMethodTrace;
-
-        return QylSemanticAttributes.HttpRequestMethodOther;
+        var normalized = method.ToUpperInvariant();
+        return IsKnown(normalized) ? normalized : QylSemanticAttributes.HttpRequestMethodOther;
     }
 
     /// <summary>

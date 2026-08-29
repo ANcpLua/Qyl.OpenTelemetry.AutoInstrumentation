@@ -332,7 +332,7 @@ def parse_integration_declarations() -> list[dict[str, Any]]:
             fail(f"[QylIntegration] must decorate a public static QylIntercepted* class: {path.relative_to(ROOT)}")
         name = class_match.group(1)[len("QylIntercepted"):]
         integration = integrations[0]
-        head = re.match(r"\s*QylAutoInstrumentationIds\.([A-Za-z0-9]+),\s*QylInstrumentationDomains\.([A-Za-z0-9]+)", integration)
+        head = re.match(r"\s*QylAutoInstrumentationIds\.([A-Za-z0-9]+),\s*QylAttributes\.InstrumentationDomainValues\.([A-Za-z0-9]+)", integration)
         if head is None:
             fail(f"[QylIntegration] must name its id and domain through the vocabulary constants: {path.relative_to(ROOT)}")
         signal_match = re.search(r"Signal\s*=\s*QylAutoInstrumentationSignal\.([A-Za-z]+)", integration)
@@ -681,6 +681,18 @@ def verify_semconv_attribute_contract() -> None:
                 match = pattern.search(text)
                 if match is not None:
                     fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
+
+
+def verify_qyl_vocabulary_literals() -> None:
+    hits = [
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "src").rglob("*.cs")
+        if not path.name.endswith(".g.cs")
+        and not any(part in ("obj", "bin", "artifacts") for part in path.parts)
+        and '"qyl.' in path.read_text()
+    ]
+    if hits:
+        fail(f"qyl.* vocabulary must come from the generated semconv constants, not literals: {sorted(hits)}")
 
 
 def verify_demo_solution_release_mapping() -> None:
@@ -1163,6 +1175,7 @@ def main() -> None:
     verify_generator_keys(artifacts, contract)
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
+    verify_qyl_vocabulary_literals()
     verify_demo_solution_release_mapping()
     verify_metric_contract()
     verify_sensitive_attribute_emission_policy()

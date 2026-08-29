@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
@@ -18,7 +19,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 /// argument-bound trace template expresses.
 /// </remarks>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.HttpClient, QylInstrumentationDomains.HttpClient, MetricIds = [QylAutoInstrumentationIds.HttpClient])]
+[QylIntegration(QylAutoInstrumentationIds.HttpClient, QylAttributes.InstrumentationDomainValues.HttpClient, MetricIds = [QylAutoInstrumentationIds.HttpClient])]
 [QylIntercept(
     "System.Net.Http.HttpClient",
     "Send", "SendAsync", "GetAsync", "DeleteAsync", "PostAsync", "PutAsync", "PatchAsync", "GetStringAsync", "GetByteArrayAsync", "GetStreamAsync",
@@ -599,7 +600,7 @@ public static class QylInterceptedHttpClient
         {
             requestUri = ResolveRequestUri(client, requestUri);
             activity = QylHttpActivityPolicy.StartClientActivity(
-                QylInstrumentationDomains.HttpClient,
+                QylAttributes.InstrumentationDomainValues.HttpClient,
                 method,
                 methodOriginal,
                 requestUri,

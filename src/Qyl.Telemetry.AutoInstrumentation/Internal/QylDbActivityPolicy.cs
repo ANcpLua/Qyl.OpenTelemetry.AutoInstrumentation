@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -19,7 +20,7 @@ internal static class QylDbActivityPolicy
             instrumentationId,
             QylSpanNames.Db(summary, systemName),
             ActivityKind.Client,
-            QylInstrumentationDomains.DbClient);
+            QylAttributes.InstrumentationDomainValues.DbClient);
         if (activity is null)
             return null;
 

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore;
 
@@ -38,7 +39,7 @@ internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListe
             command.StartTime);
         activity?.SetEndTime((command.StartTime + command.Duration).UtcDateTime);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbEfCore);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.DbEfCore);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbSystemName, command.DbSystem);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbNamespace, command.Namespace);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbOperationName, command.Operation);

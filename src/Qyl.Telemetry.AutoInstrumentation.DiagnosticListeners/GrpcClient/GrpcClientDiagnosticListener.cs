@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 
@@ -40,7 +41,7 @@ internal sealed class GrpcClientDiagnosticListener : QylDiagnosticListenerSubscr
             QylSpanNames.Grpc(method),
             ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.RpcGrpc);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.RpcGrpc);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcMethod, method);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcMethodOriginal, originalMethod);

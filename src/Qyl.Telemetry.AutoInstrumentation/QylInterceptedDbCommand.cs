@@ -1,12 +1,13 @@
 using System.Data.Common;
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>ADO.NET <see cref="DbCommand"/> execution spans, fanned out to the provider's instrumentation id by the receiver's namespace.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.AdoNet, QylInstrumentationDomains.DbClient)]
+[QylIntegration(QylAutoInstrumentationIds.AdoNet, QylAttributes.InstrumentationDomainValues.DbClient)]
 [QylIntercept(
     "System.Data.Common.DbCommand",
     "ExecuteReader", "ExecuteReaderAsync", "ExecuteScalar", "ExecuteScalarAsync", "ExecuteNonQuery", "ExecuteNonQueryAsync",

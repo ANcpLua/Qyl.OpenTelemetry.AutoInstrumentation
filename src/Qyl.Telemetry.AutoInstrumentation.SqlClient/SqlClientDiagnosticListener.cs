@@ -3,6 +3,7 @@ using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.SqlClient;
 
@@ -78,7 +79,7 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
             endTime - duration);
         activity?.SetEndTime(endTime.UtcDateTime);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylInstrumentationDomains.DbSqlClient);
+        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.DbSqlClient);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMicrosoftSqlServer);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbNamespace, command.Namespace);
         SemanticTagWriter.Set(activity, QylSemanticAttributes.DbOperationName, command.Operation);

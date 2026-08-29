@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -39,7 +40,7 @@ internal static class QylHttpActivityPolicy
             QylAutoInstrumentationIds.AspNetCore,
             QylSpanNames.HttpServer(method, route),
             ActivityKind.Server,
-            QylInstrumentationDomains.AspNetCoreServer);
+            QylAttributes.InstrumentationDomainValues.AspNetCoreServer);
         if (activity is null)
             return null;
 

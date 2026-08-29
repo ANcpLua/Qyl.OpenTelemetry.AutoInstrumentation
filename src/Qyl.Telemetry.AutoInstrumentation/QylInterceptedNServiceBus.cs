@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>NServiceBus publish and send spans, with the qyl operation-duration metric.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.NServiceBus, QylInstrumentationDomains.MessagingNServiceBus, MetricIds = [QylAutoInstrumentationIds.NServiceBus])]
+[QylIntegration(QylAutoInstrumentationIds.NServiceBus, QylAttributes.InstrumentationDomainValues.MessagingNServiceBus, MetricIds = [QylAutoInstrumentationIds.NServiceBus])]
 [QylIntercept("NServiceBus.IMessageSession", "Publish", "Send", Shape = QylShapes.NServiceBusOperation, Start = nameof(Send), Metric = nameof(RecordDuration))]
 [QylIntercept("NServiceBus.IMessageHandlerContext", "Publish", "Send", Shape = QylShapes.NServiceBusOperation, Start = nameof(Send), Metric = nameof(RecordDuration))]
 public static class QylInterceptedNServiceBus

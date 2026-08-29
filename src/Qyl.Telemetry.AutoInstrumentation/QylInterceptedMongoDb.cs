@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>MongoDB collection operation spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.MongoDb, QylInstrumentationDomains.DbMongoDb)]
+[QylIntegration(QylAutoInstrumentationIds.MongoDb, QylAttributes.InstrumentationDomainValues.DbMongoDb)]
 [QylIntercept(
     "MongoDB.Driver.IMongoCollection`1",
     "Find", "FindAsync",
@@ -34,7 +35,7 @@ public static class QylInterceptedMongoDb
             QylAutoInstrumentationIds.MongoDb,
             QylSpanNames.Db(summary, QylSemanticAttributes.DbSystemMongodb),
             ActivityKind.Client,
-            QylInstrumentationDomains.DbMongoDb);
+            QylAttributes.InstrumentationDomainValues.DbMongoDb);
         if (activity is null)
             return null;
 

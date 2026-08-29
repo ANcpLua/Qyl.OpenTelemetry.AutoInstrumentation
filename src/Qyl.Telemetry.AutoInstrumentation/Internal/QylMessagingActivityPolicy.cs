@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -15,7 +16,7 @@ internal static class QylMessagingActivityPolicy
         var activity = Start(
             QylAutoInstrumentationIds.Kafka,
             ActivityKind.Producer,
-            QylInstrumentationDomains.MessagingKafka,
+            QylAttributes.InstrumentationDomainValues.MessagingKafka,
             QylSemanticAttributes.MessagingSystemKafka,
             QylSemanticAttributes.MessagingOperationTypeSend,
             Send,
@@ -30,7 +31,7 @@ internal static class QylMessagingActivityPolicy
         => Start(
             QylAutoInstrumentationIds.Kafka,
             ActivityKind.Client,
-            QylInstrumentationDomains.MessagingKafka,
+            QylAttributes.InstrumentationDomainValues.MessagingKafka,
             QylSemanticAttributes.MessagingSystemKafka,
             QylSemanticAttributes.MessagingOperationTypeReceive,
             Receive,
@@ -40,7 +41,7 @@ internal static class QylMessagingActivityPolicy
         => Start(
             QylAutoInstrumentationIds.MassTransit,
             ActivityKind.Producer,
-            QylInstrumentationDomains.MessagingMassTransit,
+            QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
             QylSemanticAttributes.MessagingSystemMassTransit,
             QylSemanticAttributes.MessagingOperationTypeSend,
             OperationName(method),
@@ -50,7 +51,7 @@ internal static class QylMessagingActivityPolicy
         => Start(
             QylAutoInstrumentationIds.NServiceBus,
             ActivityKind.Producer,
-            QylInstrumentationDomains.MessagingNServiceBus,
+            QylAttributes.InstrumentationDomainValues.MessagingNServiceBus,
             QylSemanticAttributes.MessagingSystemNServiceBus,
             QylSemanticAttributes.MessagingOperationTypeSend,
             OperationName(method),
@@ -61,7 +62,7 @@ internal static class QylMessagingActivityPolicy
         var activity = Start(
             QylAutoInstrumentationIds.RabbitMq,
             ActivityKind.Producer,
-            QylInstrumentationDomains.MessagingRabbitMq,
+            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
             QylSemanticAttributes.MessagingSystemRabbitMq,
             QylSemanticAttributes.MessagingOperationTypeSend,
             Publish,

@@ -3,19 +3,6 @@ namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 internal static class HttpSemantics
 {
-    private static readonly HashSet<string> KnownMethods = new(StringComparer.Ordinal)
-    {
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodConnect,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodDelete,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodGet,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodHead,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodOptions,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodPatch,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodPost,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodPut,
-        global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodTrace,
-    };
-
     public static string? NormalizeMethod(string? method, out string? originalMethod)
     {
         originalMethod = null;
@@ -24,7 +11,7 @@ internal static class HttpSemantics
             return null;
 
         var normalized = method.Trim().ToUpperInvariant();
-        if (KnownMethods.Contains(normalized))
+        if (global::Qyl.Telemetry.AutoInstrumentation.QylHttpMethod.IsKnown(normalized))
         {
             if (!StringComparer.Ordinal.Equals(method, normalized))
                 originalMethod = method;

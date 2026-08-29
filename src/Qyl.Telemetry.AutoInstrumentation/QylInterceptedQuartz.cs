@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Quartz job execution spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.Quartz, QylInstrumentationDomains.JobQuartz)]
+[QylIntegration(QylAutoInstrumentationIds.Quartz, QylAttributes.InstrumentationDomainValues.JobQuartz)]
 [QylIntercept("Quartz.IJob", "Execute", Shape = QylShapes.QuartzJob, Start = nameof(Execute), ObserveAsync = true)]
 public static class QylInterceptedQuartz
 {
@@ -17,5 +18,5 @@ public static class QylInterceptedQuartz
             QylAutoInstrumentationIds.Quartz,
             QylSpanNames.Job(jobGroup, jobName),
             ActivityKind.Internal,
-            QylInstrumentationDomains.JobQuartz);
+            QylAttributes.InstrumentationDomainValues.JobQuartz);
 }
