@@ -5,6 +5,8 @@ The instrumentation-scope version is stamped onto every emitted span and metric 
 the shipped package. This gate enforces a single source of truth:
 
   * Directory.Build.props <Version> (the release-version owner) must be >= the latest stable v* tag,
+  * CHANGELOG.md's top entry must be [Unreleased] (only while that version is untagged) or
+    [<that version>] - <date>, and released entries must be unique and descending,
   * any version-pinned README package-reference example must equal that version,
   * the generated-code ABI anchor and emitted references must exactly match the package major,
   * QylInstrumentation.Version must stay DERIVED from the build (no hardcoded semver literal).
@@ -20,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / "Directory.Build.props"
 README = ROOT / "README.md"
+CHANGELOG = ROOT / "CHANGELOG.md"
 INSTRUMENTATION = (
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylInstrumentation.cs"
 )
@@ -41,6 +44,7 @@ GENERATED_INTERCEPTOR_SNAPSHOT = (
 )
 
 STABLE_TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
+CHANGELOG_HEADING = re.compile(r"^## \[(?P<version>[^\]]+)\](?: - (?P<date>\d{4}-\d{2}-\d{2}))?\s*$", re.M)
 
 
 def fail(message: str) -> None:
@@ -89,6 +93,19 @@ def latest_stable_tag() -> tuple[int, int, int] | None:
     return None
 
 
+def tag_exists(version: str) -> bool:
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(ROOT), "tag", "--list", f"v{version}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return out.strip() == f"v{version}"
+
+
 def check_props_version(version: str) -> None:
     tag = latest_stable_tag()
     if tag is None:
@@ -101,6 +118,38 @@ def check_props_version(version: str) -> None:
             f"v{tag_text}. Bump the version to at least {tag_text}."
         )
     print(f"  - props version {version} >= latest tag v{'.'.join(map(str, tag))}")
+
+
+def check_changelog(version: str) -> None:
+    headings = list(CHANGELOG_HEADING.finditer(CHANGELOG.read_text(encoding="utf-8")))
+    if not headings:
+        fail("CHANGELOG.md has no '## [version]' heading")
+    top = headings[0]
+    if top["version"] == "Unreleased":
+        if tag_exists(version):
+            fail(
+                f"CHANGELOG.md top entry is [Unreleased] but v{version} is tagged. Close the entry "
+                f"as '## [{version}] - YYYY-MM-DD' before the release gate runs."
+            )
+        print(f"  - CHANGELOG top entry is [Unreleased]; v{version} is not tagged yet")
+    elif top["version"] != version:
+        fail(
+            f"CHANGELOG.md top entry is [{top['version']}] but Directory.Build.props <Version> is "
+            f"{version}. Add '## [{version}] - YYYY-MM-DD' (or '## [Unreleased]' until the tag)."
+        )
+    elif not top["date"]:
+        fail(f"CHANGELOG.md entry [{version}] has no ISO date: expected '## [{version}] - YYYY-MM-DD'")
+    else:
+        print(f"  - CHANGELOG top entry [{version}] - {top['date']} matches props version")
+
+    released = [h["version"] for h in headings if h["version"] != "Unreleased"]
+    duplicates = sorted({v for v in released if released.count(v) > 1})
+    if duplicates:
+        fail(f"CHANGELOG.md has duplicate release entries: {duplicates}")
+    ordered = [semver(v) for v in released]
+    if ordered != sorted(ordered, reverse=True):
+        fail(f"CHANGELOG.md release entries are not in descending order: {released}")
+    print(f"  - {len(released)} CHANGELOG release entries unique and descending")
 
 
 def check_readme(version: str) -> None:
@@ -175,6 +224,7 @@ def main() -> None:
     version = props_version()
     print(f"version-sync: single source of truth = Directory.Build.props <Version> = {version}")
     check_props_version(version)
+    check_changelog(version)
     check_readme(version)
     check_generated_code_abi(version)
     check_version_is_derived()
