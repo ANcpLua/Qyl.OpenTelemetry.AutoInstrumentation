@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageVersion Include="ANcpLua.Analyzers" Version="2.1.1" />
-    <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.42" />
+    <PackageVersion Include="ANcpLua.Analyzers" Version="2.1.2" />
+    <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.46" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.29.1" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Confluent.Kafka" Version="2.15.0" />
@@ -41,10 +41,10 @@
     <PackageVersion Include="MySqlConnector" Version="2.6.2" />
     <PackageVersion Include="Npgsql" Version="10.0.3" />
     <PackageVersion Include="NServiceBus" Version="10.2.8" />
-    <PackageVersion Include="OpenTelemetry" Version="1.17.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.17.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
+    <PackageVersion Include="OpenTelemetry" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.InMemory" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.300" />
     <PackageVersion Include="Quartz" Version="3.19.1" />
     <PackageVersion Include="Qyl.Telemetry.SemanticConventions" Version="6.0.0" />
