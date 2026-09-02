@@ -21,7 +21,7 @@ var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
+    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity =>
     {
@@ -303,7 +303,7 @@ internal sealed record SqlClientReport(
 
 internal static class DemoMetricNames
 {
-    internal const string Database = "Qyl.OpenTelemetry.AutoInstrumentation.Database";
+    internal const string Database = "Qyl.Telemetry.AutoInstrumentation.Database";
 }
 
 [JsonSerializable(typeof(SqlClientReport))]

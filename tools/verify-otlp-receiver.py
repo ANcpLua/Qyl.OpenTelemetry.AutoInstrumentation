@@ -257,7 +257,7 @@ def write_consumer(version: str, *, published: bool) -> None:
 
             using var provider = Sdk.CreateTracerProviderBuilder()
                 .SetSampler(new AlwaysOnSampler())
-                .AddSource("Qyl.OpenTelemetry.AutoInstrumentation")
+                .AddSource("Qyl.Telemetry.AutoInstrumentation")
                 .AddOtlpExporter(options =>
                 {
                     options.Endpoint = new Uri(args[0]);
@@ -335,7 +335,7 @@ def build_report(
         raise SystemExit("OTLP span carries invalid trace/span identifiers")
     if span.start_time_unix_nano <= 0 or span.end_time_unix_nano < span.start_time_unix_nano:
         raise SystemExit("OTLP span carries invalid timestamps")
-    if scope.name != "Qyl.OpenTelemetry.AutoInstrumentation" or scope.version != version:
+    if scope.name != "Qyl.Telemetry.AutoInstrumentation" or scope.version != version:
         raise SystemExit(
             "OTLP instrumentation scope did not match the package under test: "
             f"name={scope.name!r} version={scope.version!r} expected_version={version!r}"

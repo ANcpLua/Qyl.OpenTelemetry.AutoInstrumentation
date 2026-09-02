@@ -25,7 +25,7 @@
     "kind": "SPAN_KIND_CLIENT",
     "name": "GET",
     "scope": {
-      "name": "Qyl.OpenTelemetry.AutoInstrumentation",
+      "name": "Qyl.Telemetry.AutoInstrumentation",
       "version": "5.0.0-otlpreceiver"
     },
     "timestampsValid": true

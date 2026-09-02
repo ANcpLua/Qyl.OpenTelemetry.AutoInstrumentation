@@ -37,10 +37,15 @@ unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V10` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — bumped from `V9` for the
 10.0.0 declaration-driven interceptor catalog — so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
-misbehaving. The emitted `ActivitySource` name is deliberately still
-`Qyl.OpenTelemetry.AutoInstrumentation`: renaming a package does not rename the
-telemetry it produces, so existing `AddSource(...)` calls and collector-side
-subscriptions keep working untouched.
+misbehaving. The emitted scope names move to the package family in 10.0.0: the
+`ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the two qyl meters
+are `Qyl.Telemetry.AutoInstrumentation.Database` and
+`Qyl.Telemetry.AutoInstrumentation.NServiceBus`. Update `AddSource(...)`,
+`AddMeter(...)` and `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`; the qyl
+collector accepts the `Qyl.OpenTelemetry.AutoInstrumentation*` spellings for the
+lifetime of this major. The strings are owned by the semantic-convention
+registry, not by this repository — the code reads them from
+`QylTelemetryNames.Scopes`.
 
 ```bash
 dotnet add package Qyl.Telemetry.Hosting
@@ -97,7 +102,7 @@ alongside `Qyl.Telemetry.AutoInstrumentation.Hosting`, then registers the source
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("my-service"))
     .WithTracing(t => t
-        .AddSource("Qyl.OpenTelemetry.AutoInstrumentation") // the qyl scope name — see note below
+        .AddSource("Qyl.Telemetry.AutoInstrumentation") // the qyl scope name — see note below
         .AddOtlpExporter());
 builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 ```

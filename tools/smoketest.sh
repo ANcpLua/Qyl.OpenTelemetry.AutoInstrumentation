@@ -91,7 +91,7 @@ QylAutoInstrumentationBootstrap.Boot();
 #endif
 
 #if QYL_SDK_PACKAGE_SMOKE
-const string qylActivitySourceName = "Qyl.OpenTelemetry.AutoInstrumentation";
+const string qylActivitySourceName = "Qyl.Telemetry.AutoInstrumentation";
 const string httpClientMeterName = "System.Net.Http";
 const string httpClientDurationMetricName = "http.client.request.duration";
 
@@ -148,7 +148,7 @@ await qylHost.StartAsync();
 var captured = new List<Activity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
+    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };

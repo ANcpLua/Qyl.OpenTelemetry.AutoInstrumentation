@@ -31,7 +31,7 @@ using Qyl.Telemetry.AutoInstrumentation;
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == "Qyl.OpenTelemetry.AutoInstrumentation",
+    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
