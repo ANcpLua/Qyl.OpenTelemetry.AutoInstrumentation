@@ -11,6 +11,10 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 [QylIntercept("GraphQL.IDocumentExecuter", "ExecuteAsync", Shape = QylShapes.GraphQlExecute, Start = nameof(Execute), Enrich = nameof(RecordExecutionOptions), ObserveAsync = true)]
 public static class QylInterceptedGraphQl
 {
+    // The span kind is deliberately Internal, not the registry's `graphql.server` kind. That group is
+    // development-stability, and this span nests inside the ASP.NET Core server span of the same
+    // request, so a second Server span per request would be wrong. CHANGELOG 10.0.0 ("GraphQL spans
+    // stay `Internal`") records the decision; qyl's ARCHITECTURE-1.0.0.md restates it.
     /// <summary>Starts the internal span; the operation type names it once the document is read.</summary>
     public static Activity? Execute()
         => QylActivityFactory.StartTraceActivity(
