@@ -5,7 +5,7 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
-## [Unreleased]
+## [10.1.0] - 2026-09-02
 
 ### Changed
 
