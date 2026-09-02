@@ -5,6 +5,21 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [Unreleased]
+
+### Changed
+
+- The semantic-convention pin moves to `7.1.1` and `Qyl.Telemetry.SemanticConventions.Analyzers`
+  is referenced for the first time, with `OtelSemConvInstrumentationLibrary` set in
+  `Directory.Build.props`. Two things in the package had to change before that was possible:
+  7.1.0 added that opt-out for QYL0008, whose "copy the constant locally" advice is the
+  hand-maintained duplication 10.0.0 deleted, and 7.1.1 stopped shipping
+  `ANcpLua.Roslyn.Utilities.dll` beside the analyzers, which collided with the build of the same
+  assembly that `ANcpLua.Analyzers` carries and made every rule fail to load here (CS8032). The
+  opt-out also covers QYL0101, since this library's `ActivitySource`s are registered by
+  `Qyl.Telemetry.Hosting`, not by its own compilation. Every other rule in the package now runs
+  against the producer and reports nothing.
+
 ## [10.0.0] - 2026-09-02
 
 ### Changed
