@@ -5,11 +5,23 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
-## [Unreleased]
+## [10.0.0] - 2026-09-02
 
 ### Changed
 
-- The semantic-convention pin moves to `6.0.0`. That release makes the vocabulary packages
+- The semantic-convention pin moves to `7.0.0`. `QylTelemetryNames` graduates out of
+  `Qyl.Telemetry.SemanticConventions.Incubating` into the stable package under
+  `Qyl.Telemetry.SemanticConventions.Names`, and its `Scopes` members are renamed with the strings
+  they carry: `QylTelemetryAutoInstrumentation`, `QylTelemetryAutoInstrumentationDatabase` and
+  `QylTelemetryAutoInstrumentationNServiceBus`. `QylActivitySource`, `QylMetricMeters` and the
+  HttpClient listener follow the move; no scope name is spelled out anywhere in `src/` or `tests/`.
+  `Qyl.Telemetry.SemanticConventions.Analyzers` 7.0.0 is deliberately NOT referenced: its QYL0008
+  rule forbids a library from reading any Incubating constant and tells it to copy the value
+  locally, which is the hand-maintained duplication this major deleted (138 diagnostics, one per
+  legitimate call site), and QYL0101 reports the qyl `ActivitySource` as unregistered because the
+  library that declares it is not the assembly that calls `AddSource`. QYL0200/QYL0201 raise
+  nothing on this tree.
+- The `6.0.0` pin that preceded it made the vocabulary packages
   consumers of their own Roslyn generator — the constants this package reads are now produced at
   build time from the pinned registry rather than checked in, and are byte-identical to the `4.4.0`
   surface, so nothing here changes shape. It also ships the object-first definition types
@@ -27,6 +39,40 @@ NativeAOT consumers, and only then creates the GitHub release.
 - `tools/verify-contract-invariants.py` fails on any `"qyl.` literal under `src/` outside
   generated files, and `tools/verify-version-sync.py` fails when the CHANGELOG's top entry is
   neither `[Unreleased]` for an untagged version nor `[<props version>] - <date>`.
+- **BREAKING:** the qyl scope names follow the `Qyl.Telemetry` package family. The single
+  `ActivitySource` and the two qyl-owned meters become `Qyl.Telemetry.AutoInstrumentation`,
+  `Qyl.Telemetry.AutoInstrumentation.Database` and `Qyl.Telemetry.AutoInstrumentation.NServiceBus`.
+  The registry owns those strings, so the values arrive with the semantic-convention pin rather
+  than from this repository: `src/` and `tests/` already read every scope name from
+  `QylTelemetryNames.Scopes` and contain no literal of either spelling. A consumer that calls
+  `AddSource(...)` or `AddMeter(...)` with `Qyl.OpenTelemetry.AutoInstrumentation`,
+  `Qyl.OpenTelemetry.AutoInstrumentation.Database` or
+  `Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus`, or that sets
+  `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES` to them, must update. The qyl collector accepts both
+  spellings for the lifetime of this major.
+- **BREAKING:** `QylSemanticAttributes` is deleted. Seventy-seven
+  `public const string X = SomeAttributes.Y;` re-aliases bought a second name for every attribute
+  key and hid which registry each key came from; every runtime call site now names the generated
+  semconv constant through a file-level `using` alias. The four values that were compositions
+  rather than registry members — the `http.request.header.` / `http.response.header.` /
+  `rpc.request.metadata.` / `rpc.response.metadata.` prefixes — are composed at their single call
+  site in `QylAutoInstrumentationOptions`. The three system values the registry does not carry live
+  with the code that writes them: `dotnet_wcf` on `QylInterceptedWcfClient` (`rpc.system.name`
+  enumerates only `connectrpc`, `dubbo`, `grpc` and `jsonrpc`; `dotnet_wcf` exists solely on the
+  deprecated `rpc.system`), and `masstransit` / `nservicebus` on `QylMessagingActivityPolicy`
+  (`messaging.system` enumerates neither). The type was `internal`, so no public API moves.
+- `messaging.operation.name` and `messaging.operation.type` are sourced consistently. The registry
+  gives `messaging.operation.name` no value set — it is the system-specific verb, examples `ack`,
+  `nack`, `send` — and marks the `publish` member of `messaging.operation.type` deprecated in
+  favour of `send`. qyl writes its own two verbs (`send`, `publish`) as the operation NAME and
+  always writes `MessagingAttributes.OperationTypeValues.Send` as the TYPE; the former
+  `MessagingOperationNameSend = OperationTypeValues.Send` conflation — an operation-type value
+  standing in for an operation name — is gone.
+- `QylMetricMeters.GetEnabledMeterNames` reads a static instrumentation-id → meter-names table
+  instead of a nine-branch `if` chain with a `databaseMeterEnabled` flag and two dedup strategies.
+  Output order and duplicate handling are unchanged; `tools/verify-environment-options-behavior.py`
+  pins the exact emitted list for six option sets, and `tools/verify-contract-invariants.py` now
+  reads the registered set out of that table.
 
 ### Removed
 
