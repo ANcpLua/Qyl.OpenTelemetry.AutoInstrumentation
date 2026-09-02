@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -17,7 +18,7 @@ internal static class QylActivityFactory
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.QylInstrumentationDomain, instrumentationDomain);
+        activity.SetTag(QylAttributes.InstrumentationDomain, instrumentationDomain);
         return activity;
     }
 }

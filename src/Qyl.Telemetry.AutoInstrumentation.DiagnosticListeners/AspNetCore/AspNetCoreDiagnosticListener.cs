@@ -3,6 +3,9 @@ using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 
@@ -30,24 +33,24 @@ internal sealed class AspNetCoreDiagnosticListener : QylDiagnosticListenerSubscr
 
         var method = HttpSemantics.NormalizeMethod(
             AspNetCorePayloadReader.GetMethod(payload) ??
-            DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.HttpRequestMethod),
+            DiagnosticPayloadReader.GetString(payload, HttpAttributes.RequestMethod),
             out var originalMethod);
         var route = AspNetCorePayloadReader.GetRoute(payload) ??
-                    DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.HttpRoute);
+                    DiagnosticPayloadReader.GetString(payload, HttpAttributes.Route);
         var path = AspNetCorePayloadReader.GetPath(payload) ??
-                   DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.UrlPath);
+                   DiagnosticPayloadReader.GetString(payload, UrlAttributes.Path);
         var statusCode = AspNetCorePayloadReader.GetStatusCode(payload) ??
-                         DiagnosticPayloadReader.GetInt32(payload, QylSemanticAttributes.HttpResponseStatusCode);
-        var errorType = DiagnosticPayloadReader.GetString(payload, QylSemanticAttributes.ErrorType);
+                         DiagnosticPayloadReader.GetInt32(payload, HttpAttributes.ResponseStatusCode);
+        var errorType = DiagnosticPayloadReader.GetString(payload, ErrorAttributes.Type);
 
         using var activity = QylActivitySource.StartAtAmbientStart(QylSpanNames.HttpServer(method, route), ActivityKind.Server);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.AspNetCoreServer);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethod, method);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRequestMethodOriginal, originalMethod);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.HttpRoute, route);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlPath, path);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlScheme, AspNetCorePayloadReader.GetScheme(payload));
+        SemanticTagWriter.Set(activity, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.AspNetCoreServer);
+        SemanticTagWriter.Set(activity, HttpAttributes.RequestMethod, method);
+        SemanticTagWriter.Set(activity, HttpAttributes.RequestMethodOriginal, originalMethod);
+        SemanticTagWriter.Set(activity, HttpAttributes.Route, route);
+        SemanticTagWriter.Set(activity, UrlAttributes.Path, path);
+        SemanticTagWriter.Set(activity, UrlAttributes.Scheme, AspNetCorePayloadReader.GetScheme(payload));
 
         // Option parity with the explicit middleware lane: url.query obeys the ASP.NET Core
         // redaction control; header capture obeys the configured capture lists.

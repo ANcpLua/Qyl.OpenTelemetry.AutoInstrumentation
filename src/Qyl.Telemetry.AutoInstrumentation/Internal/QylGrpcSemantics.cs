@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -31,11 +33,11 @@ internal static class QylGrpcSemantics
             return;
 
         var statusName = GetStatusName(statusCode.Value);
-        activity.SetTag(QylSemanticAttributes.RpcResponseStatusCode, statusName);
+        activity.SetTag(RpcAttributes.ResponseStatusCode, statusName);
         if (statusCode.Value is 0)
             return;
 
-        activity.SetTag(QylSemanticAttributes.ErrorType, statusName);
+        activity.SetTag(ErrorAttributes.Type, statusName);
         activity.SetStatus(ActivityStatusCode.Error);
     }
 

@@ -1,5 +1,8 @@
 using System.Data.Common;
 using System.Diagnostics;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using GraphqlAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
+using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -8,7 +11,7 @@ internal static class QylSensitiveCapturePolicy
     public static void SetAspNetCoreUrlQuery(Activity activity, string query)
     {
         activity.SetTag(
-            QylSemanticAttributes.UrlQuery,
+            UrlAttributes.Query,
             QylAutoInstrumentationOptions.Current.AspNetCoreUrlQueryRedactionDisabled
                 ? query
                 : QylCaptureHelpers.RedactQueryValues(query));
@@ -17,7 +20,7 @@ internal static class QylSensitiveCapturePolicy
     public static void SetHttpClientUrlFull(Activity activity, string url)
     {
         activity.SetTag(
-            QylSemanticAttributes.UrlFull,
+            UrlAttributes.Full,
             QylCaptureHelpers.FormatUrlFull(
                 url,
                 QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled));
@@ -28,7 +31,7 @@ internal static class QylSensitiveCapturePolicy
         if (!ShouldCaptureDbQueryText(command, instrumentationId))
             return;
 
-        activity.SetTag(QylSemanticAttributes.DbQueryText, command.CommandText);
+        activity.SetTag(DbAttributes.QueryText, command.CommandText);
     }
 
     public static void SetGraphQlDocument(Activity activity, string? document)
@@ -39,7 +42,7 @@ internal static class QylSensitiveCapturePolicy
             return;
         }
 
-        activity.SetTag(QylSemanticAttributes.GraphQlDocument, document);
+        activity.SetTag(GraphqlAttributes.Document, document);
     }
 
     private static bool ShouldCaptureDbQueryText(DbCommand command, string instrumentationId)

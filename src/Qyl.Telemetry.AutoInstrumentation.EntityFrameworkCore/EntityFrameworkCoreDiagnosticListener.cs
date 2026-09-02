@@ -3,6 +3,7 @@ using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore;
 
@@ -39,16 +40,16 @@ internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListe
             command.StartTime);
         activity?.SetEndTime((command.StartTime + command.Duration).UtcDateTime);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.DbEfCore);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbSystemName, command.DbSystem);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbNamespace, command.Namespace);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbOperationName, command.Operation);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQuerySummary, command.QuerySummary);
+        SemanticTagWriter.Set(activity, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.DbEfCore);
+        SemanticTagWriter.Set(activity, DbAttributes.SystemName, command.DbSystem);
+        SemanticTagWriter.Set(activity, DbAttributes.Namespace, command.Namespace);
+        SemanticTagWriter.Set(activity, DbAttributes.OperationName, command.Operation);
+        SemanticTagWriter.Set(activity, DbAttributes.QuerySummary, command.QuerySummary);
         if (DatabaseSemantics.ShouldWriteQueryText(
                 command.QueryText,
                 QylAutoInstrumentationOptions.Current.EntityFrameworkCoreSetDbStatementForText))
         {
-            SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText, command.QueryText);
+            SemanticTagWriter.Set(activity, DbAttributes.QueryText, command.QueryText);
         }
 
         ErrorStatusSemantics.SetError(activity, command.ErrorType);

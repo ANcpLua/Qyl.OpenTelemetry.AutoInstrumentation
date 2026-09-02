@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 
@@ -32,7 +33,7 @@ internal static class ErrorStatusSemantics
 
         SemanticTagWriter.Set(
             activity,
-            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.ErrorType,
+            ErrorAttributes.Type,
             errorType);
         activity?.SetStatus(ActivityStatusCode.Error);
     }

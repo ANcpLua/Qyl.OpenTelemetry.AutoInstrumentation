@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -73,12 +75,12 @@ internal sealed class QylAutoInstrumentationOptions
         GrpcNetClientCapturedResponseMetadata = grpcNetClientCapturedResponseMetadata;
         HttpClientCapturedRequestHeaders = httpClientCapturedRequestHeaders;
         HttpClientCapturedResponseHeaders = httpClientCapturedResponseHeaders;
-        AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, aspNetCoreCapturedRequestHeaders);
-        AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, aspNetCoreCapturedResponseHeaders);
-        GrpcNetClientCapturedRequestMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcRequestMetadataPrefix, grpcNetClientCapturedRequestMetadata, normalizeLookupName: true);
-        GrpcNetClientCapturedResponseMetadataMap = QylCapturedNameMap.Create(QylSemanticAttributes.GrpcResponseMetadataPrefix, grpcNetClientCapturedResponseMetadata, normalizeLookupName: true);
-        HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpRequestHeaderPrefix, httpClientCapturedRequestHeaders);
-        HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(QylSemanticAttributes.HttpResponseHeaderPrefix, httpClientCapturedResponseHeaders);
+        AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", aspNetCoreCapturedRequestHeaders);
+        AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", aspNetCoreCapturedResponseHeaders);
+        GrpcNetClientCapturedRequestMetadataMap = QylCapturedNameMap.Create(RpcAttributes.RequestMetadata + ".", grpcNetClientCapturedRequestMetadata, normalizeLookupName: true);
+        GrpcNetClientCapturedResponseMetadataMap = QylCapturedNameMap.Create(RpcAttributes.ResponseMetadata + ".", grpcNetClientCapturedResponseMetadata, normalizeLookupName: true);
+        HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", httpClientCapturedRequestHeaders);
+        HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", httpClientCapturedResponseHeaders);
         AdditionalMetricMeterNames = additionalMetricMeterNames;
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;

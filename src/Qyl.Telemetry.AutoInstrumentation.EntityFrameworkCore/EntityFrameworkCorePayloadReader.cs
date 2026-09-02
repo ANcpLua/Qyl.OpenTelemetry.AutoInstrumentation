@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore;
 
@@ -33,14 +35,14 @@ internal static class EntityFrameworkCorePayloadReader
     private static string MapProviderName(string? providerName)
         => providerName switch
         {
-            "Microsoft.EntityFrameworkCore.Sqlite" => QylSemanticAttributes.DbSystemSqlite,
-            "Microsoft.EntityFrameworkCore.SqlServer" => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
-            "Npgsql.EntityFrameworkCore.PostgreSQL" => QylSemanticAttributes.DbSystemPostgresql,
-            "Pomelo.EntityFrameworkCore.MySql" => QylSemanticAttributes.DbSystemMysql,
-            "MySql.EntityFrameworkCore" => QylSemanticAttributes.DbSystemMysql,
-            "Oracle.EntityFrameworkCore" => QylSemanticAttributes.DbSystemOracleDb,
-            "IBM.EntityFrameworkCore" => QylSemanticAttributes.DbSystemIbmDb2,
-            _ => QylSemanticAttributes.DbSystemOtherSql,
+            "Microsoft.EntityFrameworkCore.Sqlite" => DbIncubatingAttributes.SystemNameValues.Sqlite,
+            "Microsoft.EntityFrameworkCore.SqlServer" => DbAttributes.SystemNameValues.MicrosoftSqlServer,
+            "Npgsql.EntityFrameworkCore.PostgreSQL" => DbAttributes.SystemNameValues.Postgresql,
+            "Pomelo.EntityFrameworkCore.MySql" => DbAttributes.SystemNameValues.Mysql,
+            "MySql.EntityFrameworkCore" => DbAttributes.SystemNameValues.Mysql,
+            "Oracle.EntityFrameworkCore" => DbIncubatingAttributes.SystemNameValues.OracleDb,
+            "IBM.EntityFrameworkCore" => DbIncubatingAttributes.SystemNameValues.IbmDb2,
+            _ => DbIncubatingAttributes.SystemNameValues.OtherSql,
         };
 
     private static string? NormalizeEmpty(string? value)

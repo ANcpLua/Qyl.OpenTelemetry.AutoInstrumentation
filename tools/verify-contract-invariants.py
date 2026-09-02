@@ -53,7 +53,6 @@ GENERATED_INTERCEPTOR_MANIFEST_ARTIFACT_PATH = (
 )
 OPTIONS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylAutoInstrumentationOptions.cs"
 IDS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylAutoInstrumentationIds.cs"
-SEMCONV_ATTRIBUTES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylSemanticAttributes.cs"
 HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
 DEMO_SOLUTION_PATH = ROOT / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
@@ -199,8 +198,8 @@ REQUIRED_REGISTERED_METER_NAME_VALUES = {
     "System.Net.Http",
     "System.Net.NameResolution",
     "System.Runtime",
-    "Qyl.OpenTelemetry.AutoInstrumentation.Database",
-    "Qyl.OpenTelemetry.AutoInstrumentation.NServiceBus",
+    "Qyl.Telemetry.AutoInstrumentation.Database",
+    "Qyl.Telemetry.AutoInstrumentation.NServiceBus",
 }
 FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
     "Npgsql",
@@ -220,20 +219,23 @@ METRICS_ADDITIONAL_SOURCES_VARIABLE = "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURC
 # Philosophy guard: sensitive raw values (query strings, full URLs, query text,
 # GraphQL documents) may only be written through the capture policy / owning
 # semantics helper, behind the repository's redaction/opt-in controls.
-SENSITIVE_RAW_SETTAG_TOKENS = [
-    "SetTag(QylSemanticAttributes.UrlQuery",
-    "SetTag(QylSemanticAttributes.UrlFull",
-    "SetTag(QylSemanticAttributes.DbQueryText",
-    "SetTag(QylSemanticAttributes.GraphQlDocument",
+SENSITIVE_RAW_SETTAG_PATTERNS = [
+    re.compile(r"SetTag\(\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*UrlAttributes\.Query\b"),
+    re.compile(r"SetTag\(\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*UrlAttributes\.Full\b"),
+    re.compile(r"SetTag\(\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*DbAttributes\.QueryText\b"),
+    re.compile(r"SetTag\(\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*GraphqlAttributes\.Document\b"),
 ]
 SENSITIVE_RAW_SETTAG_ALLOWED_PATHS = {
     "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
 }
-SENSITIVE_SEMANTIC_WRITER_TOKENS = [
-    "SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlFull",
-    "SemanticTagWriter.Set(activity, QylSemanticAttributes.UrlQuery",
-    "SemanticTagWriter.Set(activity, QylSemanticAttributes.GraphQlDocument",
+SENSITIVE_SEMANTIC_WRITER_PATTERNS = [
+    re.compile(r"SemanticTagWriter\.Set\(activity,\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*UrlAttributes\.Full\b"),
+    re.compile(r"SemanticTagWriter\.Set\(activity,\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*UrlAttributes\.Query\b"),
+    re.compile(r"SemanticTagWriter\.Set\(activity,\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*GraphqlAttributes\.Document\b"),
 ]
+DB_QUERY_TEXT_WRITE_PATTERN = re.compile(
+    r"SemanticTagWriter\.Set\(activity,\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*DbAttributes\.QueryText\b"
+)
 SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH = "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs"
 URL_FORMAT_ALLOWED_PATHS = {
     "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
@@ -657,7 +659,6 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
 
 
 def verify_semconv_attribute_contract() -> None:
-    attributes = SEMCONV_ATTRIBUTES_PATH.read_text()
     runtime_project = RUNTIME_PROJECT_PATH.read_text()
 
     for package in [
@@ -667,20 +668,26 @@ def verify_semconv_attribute_contract() -> None:
         if package not in runtime_project:
             fail(f"runtime project must reference generated semconv package: {package}")
 
+    # External contract: every attribute key an emitting source writes is a generated semconv
+    # constant, named directly at the call site (the QylSemanticAttributes re-alias layer is gone).
+    emission_sources = {
+        path: path.read_text()
+        for root in RUNTIME_EMISSION_ROOTS
+        for path in root.rglob("*.cs")
+    }
+
     for namespace in [
         "Qyl.Telemetry.SemanticConventions.Attributes.",
         "Qyl.Telemetry.SemanticConventions.Incubating.Attributes.",
     ]:
-        if namespace not in attributes:
-            fail(f"QylSemanticAttributes must alias generated semconv constants from {namespace}")
+        if not any(namespace in text for text in emission_sources.values()):
+            fail(f"runtime attribute keys must come from generated semconv constants in {namespace}")
 
-    for root in RUNTIME_EMISSION_ROOTS:
-        for path in root.rglob("*.cs"):
-            text = path.read_text()
-            for pattern in FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS:
-                match = pattern.search(text)
-                if match is not None:
-                    fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
+    for path, text in emission_sources.items():
+        for pattern in FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS:
+            match = pattern.search(text)
+            if match is not None:
+                fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
 
 
 def verify_qyl_vocabulary_literals() -> None:
@@ -716,9 +723,12 @@ def verify_metric_contract() -> None:
     generator = read_generator_sources()
 
     meter_constants = parse_string_constants(meters)
+    meter_table = re.search(r"MetricMeterTable\s*=\s*\[(.*?)\n    \];", meters, re.DOTALL)
+    if meter_table is None:
+        fail("QylMetricMeters must select meters through the MetricMeterTable")
     registered_meter_values = {
         meter_constants[constant_name]
-        for constant_name in re.findall(r"\.Add\(([A-Za-z0-9_]+)\);", meters)
+        for constant_name in re.findall(r"[A-Za-z0-9_]+", meter_table.group(1))
         if constant_name in meter_constants
     }
     missing_meters = REQUIRED_REGISTERED_METER_NAME_VALUES - registered_meter_values
@@ -796,13 +806,15 @@ def verify_sensitive_attribute_emission_policy() -> None:
             relative_path = path.relative_to(ROOT).as_posix()
             text = path.read_text()
 
-            for token in SENSITIVE_RAW_SETTAG_TOKENS:
-                if token in text and relative_path not in SENSITIVE_RAW_SETTAG_ALLOWED_PATHS:
-                    fail(f"sensitive raw attribute writes must go through QylSensitiveCapturePolicy: {relative_path} {token}")
+            for pattern in SENSITIVE_RAW_SETTAG_PATTERNS:
+                match = pattern.search(text)
+                if match is not None and relative_path not in SENSITIVE_RAW_SETTAG_ALLOWED_PATHS:
+                    fail(f"sensitive raw attribute writes must go through QylSensitiveCapturePolicy: {relative_path} {match.group()}")
 
-            for token in SENSITIVE_SEMANTIC_WRITER_TOKENS:
-                if token in text and relative_path != SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH:
-                    fail(f"runtime-public sensitive writes must go through the owning semantics helper: {relative_path} {token}")
+            for pattern in SENSITIVE_SEMANTIC_WRITER_PATTERNS:
+                match = pattern.search(text)
+                if match is not None and relative_path != SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH:
+                    fail(f"runtime-public sensitive writes must go through the owning semantics helper: {relative_path} {match.group()}")
 
             if "QylCaptureHelpers.FormatUrlFull(" in text and relative_path not in URL_FORMAT_ALLOWED_PATHS:
                 fail(f"url.full formatting must stay centralized behind sensitive capture policy/HttpSemantics: {relative_path}")
@@ -810,13 +822,13 @@ def verify_sensitive_attribute_emission_policy() -> None:
             if "QylCaptureHelpers.RedactQueryValues(" in text and relative_path not in URL_FORMAT_ALLOWED_PATHS:
                 fail(f"url query redaction must stay centralized behind sensitive capture policy/helpers: {relative_path}")
 
-            if "SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText" not in text:
+            if DB_QUERY_TEXT_WRITE_PATTERN.search(text) is None:
                 continue
 
             if relative_path not in DB_QUERY_TEXT_ALLOWED_PATHS:
                 fail(f"db.query.text writes must be owned by typed DB listener paths: {relative_path}")
 
-            for match in re.finditer(r"SemanticTagWriter\.Set\(activity,\s*QylSemanticAttributes\.DbQueryText", text):
+            for match in DB_QUERY_TEXT_WRITE_PATTERN.finditer(text):
                 guard_window = text[max(0, match.start() - 260):match.start()]
                 if "if (DatabaseSemantics.ShouldWriteQueryText(" not in guard_window:
                     fail(f"db.query.text write must be guarded by DatabaseSemantics.ShouldWriteQueryText: {relative_path}")

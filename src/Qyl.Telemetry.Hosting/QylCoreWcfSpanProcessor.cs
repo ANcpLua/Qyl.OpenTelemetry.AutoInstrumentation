@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using OpenTelemetry;
 using Qyl.Telemetry.AutoInstrumentation;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 
 namespace Qyl;
 
@@ -14,7 +15,7 @@ internal sealed class QylCoreWcfSpanProcessor : BaseProcessor<Activity>
             return;
 
         if (data.GetTagItem(LegacyRpcSystem) is { } system)
-            data.SetTag(QylSemanticAttributes.RpcSystem, system);
+            data.SetTag(RpcAttributes.SystemName, system);
 
         data.SetTag(LegacyRpcSystem, null);
     }

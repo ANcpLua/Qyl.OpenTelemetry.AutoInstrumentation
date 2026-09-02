@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
+using MessagingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -21,9 +22,9 @@ internal static class QylNServiceBusMetrics
         {
             OperationDuration.Record(
                 elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingSystem, QylSemanticAttributes.MessagingSystemNServiceBus),
-                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationType, QylSemanticAttributes.MessagingOperationTypeSend),
-                new KeyValuePair<string, object?>(QylSemanticAttributes.MessagingOperationName, QylMessagingActivityPolicy.OperationName(operationName)));
+                new KeyValuePair<string, object?>(MessagingAttributes.System, QylMessagingActivityPolicy.NServiceBusSystemName),
+                new KeyValuePair<string, object?>(MessagingAttributes.OperationType, MessagingAttributes.OperationTypeValues.Send),
+                new KeyValuePair<string, object?>(MessagingAttributes.OperationName, QylMessagingActivityPolicy.OperationName(operationName)));
         }
     }
 

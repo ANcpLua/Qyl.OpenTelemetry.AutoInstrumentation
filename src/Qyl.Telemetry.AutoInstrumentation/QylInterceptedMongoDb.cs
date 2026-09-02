@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
@@ -33,7 +35,7 @@ public static class QylInterceptedMongoDb
         var summary = string.IsNullOrEmpty(collectionName) ? operation : operation + " " + collectionName;
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.MongoDb,
-            QylSpanNames.Db(summary, QylSemanticAttributes.DbSystemMongodb),
+            QylSpanNames.Db(summary, DbIncubatingAttributes.SystemNameValues.Mongodb),
             ActivityKind.Client,
             QylAttributes.InstrumentationDomainValues.DbMongoDb);
         if (activity is null)
@@ -41,13 +43,13 @@ public static class QylInterceptedMongoDb
 
         QylActivityTags.SetDb(
             activity,
-            QylSemanticAttributes.DbSystemMongodb,
+            DbIncubatingAttributes.SystemNameValues.Mongodb,
             operation,
             summary);
         if (!string.IsNullOrEmpty(collectionName))
-            activity.SetTag(QylSemanticAttributes.DbCollectionName, collectionName);
+            activity.SetTag(DbIncubatingAttributes.CollectionName, collectionName);
         if (!string.IsNullOrEmpty(databaseName))
-            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
+            activity.SetTag(DbAttributes.Namespace, databaseName);
 
         return activity;
     }

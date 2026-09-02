@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -10,7 +11,7 @@ internal static class QylActivityStatus
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.ErrorType, GetErrorTypeName(exception.GetType()));
+        activity.SetTag(ErrorAttributes.Type, GetErrorTypeName(exception.GetType()));
         activity.SetStatus(ActivityStatusCode.Error);
     }
 
@@ -27,7 +28,7 @@ internal static class QylActivityStatus
         if (activity is null)
             return;
 
-        activity.SetTag(QylSemanticAttributes.ErrorType, statusCode.ToString(CultureInfo.InvariantCulture));
+        activity.SetTag(ErrorAttributes.Type, statusCode.ToString(CultureInfo.InvariantCulture));
         activity.SetStatus(ActivityStatusCode.Error);
     }
 }

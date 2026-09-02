@@ -2,6 +2,8 @@ using System.Diagnostics;
 using OpenTelemetry;
 using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 namespace Qyl;
 
@@ -12,16 +14,16 @@ internal sealed class QylAzureSpanProcessor : BaseProcessor<Activity>
         if (!data.Source.Name.StartsWith("Azure.", StringComparison.Ordinal))
             return;
 
-        data.SetTag(QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.AzureSdk);
-        data.SetTag(QylSemanticAttributes.UrlFull, null);
-        data.SetTag(QylSemanticAttributes.UrlPath, null);
+        data.SetTag(QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.AzureSdk);
+        data.SetTag(UrlAttributes.Full, null);
+        data.SetTag(UrlAttributes.Path, null);
 
         if (data.Status is ActivityStatusCode.Error)
         {
-            var exceptionType = data.GetTagItem(QylSemanticAttributes.ErrorType) as string
+            var exceptionType = data.GetTagItem(ErrorAttributes.Type) as string
                 ?? FindExceptionType(data);
             if (exceptionType is not null)
-                data.SetTag(QylSemanticAttributes.ErrorType, GetSimpleTypeName(exceptionType));
+                data.SetTag(ErrorAttributes.Type, GetSimpleTypeName(exceptionType));
         }
     }
 

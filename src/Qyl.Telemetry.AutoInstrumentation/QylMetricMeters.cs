@@ -1,4 +1,4 @@
-using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -19,11 +19,11 @@ internal static class QylMetricMeters
     internal const string HttpClientMeterName = "System.Net.Http";
     internal const string NameResolutionMeterName = "System.Net.NameResolution";
     /// <summary>The qyl database meter (<c>db.client.operation.duration</c>).</summary>
-    internal const string DatabaseMeterName = QylTelemetryNames.Scopes.QylOpenTelemetryAutoInstrumentationDatabase;
+    internal const string DatabaseMeterName = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentationDatabase;
     /// <summary>Npgsql's library-native Meter, carrying its connection-pool and command instruments.</summary>
     internal const string NpgsqlNativeMeterName = "Npgsql";
     /// <summary>The qyl NServiceBus meter (<c>nservicebus.messaging.operation.duration</c>).</summary>
-    internal const string NServiceBusMeterName = QylTelemetryNames.Scopes.QylOpenTelemetryAutoInstrumentationNServiceBus;
+    internal const string NServiceBusMeterName = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentationNServiceBus;
     /// <summary>NServiceBus's library-native core Meter.</summary>
     internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
     /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
@@ -31,49 +31,47 @@ internal static class QylMetricMeters
     /// <summary>The runtime's built-in meter (GC, JIT, thread pool, exceptions, process CPU and memory). qyl subscribes to it and produces nothing on it.</summary>
     internal const string RuntimeMeterName = QylTelemetryNames.Scopes.SystemRuntime;
 
+    /// <summary>
+    /// The meter names each instrumentation id contributes, in registration order. Two ids may name
+    /// the same meter — Npgsql and SqlClient both produce on the qyl database meter, NetRuntime and
+    /// Process both subscribe to the runtime meter — and the walk keeps the first occurrence, so
+    /// enabling either yields exactly one entry.
+    /// </summary>
+    private static readonly (string InstrumentationId, string[] MeterNames)[] MetricMeterTable =
+    [
+        (QylAutoInstrumentationIds.AspNetCore,
+        [
+            AspNetCoreHostingMeterName,
+            AspNetCoreRoutingMeterName,
+            AspNetCoreDiagnosticsMeterName,
+            AspNetCoreRateLimitingMeterName,
+            AspNetCoreHeaderParsingMeterName,
+            AspNetCoreServerKestrelMeterName,
+            AspNetCoreHttpConnectionsMeterName,
+            AspNetCoreAuthorizationMeterName,
+            AspNetCoreAuthenticationMeterName,
+            AspNetCoreComponentsMeterName,
+            AspNetCoreComponentsLifecycleMeterName,
+            AspNetCoreComponentsServerCircuitsMeterName,
+        ]),
+        (QylAutoInstrumentationIds.HttpClient, [HttpClientMeterName, NameResolutionMeterName]),
+        (QylAutoInstrumentationIds.Npgsql, [DatabaseMeterName]),
+        (QylAutoInstrumentationIds.SqlClient, [DatabaseMeterName]),
+        (QylAutoInstrumentationIds.NServiceBus, [NServiceBusMeterName]),
+        (QylAutoInstrumentationIds.NetRuntime, [RuntimeMeterName]),
+        (QylAutoInstrumentationIds.Process, [RuntimeMeterName]),
+    ];
+
     internal static string[] GetEnabledMeterNames()
     {
         var options = QylAutoInstrumentationOptions.Current;
-        var names = new List<string>(20);
+        var names = new List<string>();
 
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.AspNetCore))
+        foreach (var (instrumentationId, meterNames) in MetricMeterTable)
         {
-            names.Add(AspNetCoreHostingMeterName);
-            names.Add(AspNetCoreRoutingMeterName);
-            names.Add(AspNetCoreDiagnosticsMeterName);
-            names.Add(AspNetCoreRateLimitingMeterName);
-            names.Add(AspNetCoreHeaderParsingMeterName);
-            names.Add(AspNetCoreServerKestrelMeterName);
-            names.Add(AspNetCoreHttpConnectionsMeterName);
-            names.Add(AspNetCoreAuthorizationMeterName);
-            names.Add(AspNetCoreAuthenticationMeterName);
-            names.Add(AspNetCoreComponentsMeterName);
-            names.Add(AspNetCoreComponentsLifecycleMeterName);
-            names.Add(AspNetCoreComponentsServerCircuitsMeterName);
+            if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, instrumentationId))
+                AddDistinct(names, meterNames);
         }
-
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.HttpClient))
-        {
-            names.Add(HttpClientMeterName);
-            names.Add(NameResolutionMeterName);
-        }
-
-        var databaseMeterEnabled = false;
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Npgsql))
-            databaseMeterEnabled = true;
-
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.SqlClient))
-            databaseMeterEnabled = true;
-
-        if (databaseMeterEnabled)
-            names.Add(DatabaseMeterName);
-
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NServiceBus))
-            names.Add(NServiceBusMeterName);
-
-        if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.NetRuntime) ||
-            options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Metrics, QylAutoInstrumentationIds.Process))
-            names.Add(RuntimeMeterName);
 
         if (options.MetricsEnabled)
             AddDistinct(names, options.AdditionalMetricMeterNames);

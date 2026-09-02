@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -9,7 +10,7 @@ internal static class QylElasticActivityPolicy
         var operation = NormalizeOperation(methodName);
         var activity = QylActivityFactory.StartTraceActivity(
             instrumentationId,
-            QylSpanNames.Db(operation, QylSemanticAttributes.DbSystemElasticsearch),
+            QylSpanNames.Db(operation, DbIncubatingAttributes.SystemNameValues.Elasticsearch),
             ActivityKind.Client,
             domain);
         if (activity is null)
@@ -17,7 +18,7 @@ internal static class QylElasticActivityPolicy
 
         QylActivityTags.SetDb(
             activity,
-            QylSemanticAttributes.DbSystemElasticsearch,
+            DbIncubatingAttributes.SystemNameValues.Elasticsearch,
             operation,
             operation);
         return activity;

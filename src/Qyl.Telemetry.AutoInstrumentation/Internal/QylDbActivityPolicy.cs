@@ -2,6 +2,8 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
@@ -29,7 +31,7 @@ internal static class QylDbActivityPolicy
 
         var databaseName = command.Connection?.Database;
         if (!string.IsNullOrWhiteSpace(databaseName))
-            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseName);
+            activity.SetTag(DbAttributes.Namespace, databaseName);
 
         QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);
         return activity;
@@ -52,13 +54,13 @@ internal static class QylDbActivityPolicy
     internal static string GetDbSystemName(string instrumentationId)
         => instrumentationId switch
         {
-            QylAutoInstrumentationIds.SqlClient => QylSemanticAttributes.DbSystemMicrosoftSqlServer,
-            QylAutoInstrumentationIds.Sqlite => QylSemanticAttributes.DbSystemSqlite,
-            QylAutoInstrumentationIds.Npgsql => QylSemanticAttributes.DbSystemPostgresql,
-            QylAutoInstrumentationIds.MySqlConnector => QylSemanticAttributes.DbSystemMysql,
-            QylAutoInstrumentationIds.MySqlData => QylSemanticAttributes.DbSystemMysql,
-            QylAutoInstrumentationIds.OracleMda => QylSemanticAttributes.DbSystemOracleDb,
-            QylAutoInstrumentationIds.AdoNet => QylSemanticAttributes.DbSystemOtherSql,
+            QylAutoInstrumentationIds.SqlClient => DbAttributes.SystemNameValues.MicrosoftSqlServer,
+            QylAutoInstrumentationIds.Sqlite => DbIncubatingAttributes.SystemNameValues.Sqlite,
+            QylAutoInstrumentationIds.Npgsql => DbAttributes.SystemNameValues.Postgresql,
+            QylAutoInstrumentationIds.MySqlConnector => DbAttributes.SystemNameValues.Mysql,
+            QylAutoInstrumentationIds.MySqlData => DbAttributes.SystemNameValues.Mysql,
+            QylAutoInstrumentationIds.OracleMda => DbIncubatingAttributes.SystemNameValues.OracleDb,
+            QylAutoInstrumentationIds.AdoNet => DbIncubatingAttributes.SystemNameValues.OtherSql,
             _ => throw new ArgumentOutOfRangeException(nameof(instrumentationId), instrumentationId,
                 "Unknown DB instrumentation id."),
         };

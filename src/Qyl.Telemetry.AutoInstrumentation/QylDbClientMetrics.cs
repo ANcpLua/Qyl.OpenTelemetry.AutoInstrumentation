@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -22,7 +23,7 @@ internal static class QylDbClientMetrics
         {
             OperationDuration.Record(
                 elapsed.TotalSeconds,
-                new KeyValuePair<string, object?>(QylSemanticAttributes.DbSystemName, Internal.QylDbActivityPolicy.GetDbSystemName(instrumentationId)));
+                new KeyValuePair<string, object?>(DbAttributes.SystemName, Internal.QylDbActivityPolicy.GetDbSystemName(instrumentationId)));
         }
     }
 

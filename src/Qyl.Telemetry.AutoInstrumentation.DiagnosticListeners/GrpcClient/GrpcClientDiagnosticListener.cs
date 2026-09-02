@@ -3,6 +3,9 @@ using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 
@@ -41,17 +44,17 @@ internal sealed class GrpcClientDiagnosticListener : QylDiagnosticListenerSubscr
             QylSpanNames.Grpc(method),
             ActivityKind.Client);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.RpcGrpc);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcSystem, QylSemanticAttributes.RpcSystemGrpc);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcMethod, method);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.RpcMethodOriginal, originalMethod);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerAddress, requestUri?.Host);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerPort, requestUri?.Port);
+        SemanticTagWriter.Set(activity, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.RpcGrpc);
+        SemanticTagWriter.Set(activity, RpcAttributes.SystemName, RpcAttributes.SystemNameValues.Grpc);
+        SemanticTagWriter.Set(activity, RpcAttributes.Method, method);
+        SemanticTagWriter.Set(activity, RpcAttributes.MethodOriginal, originalMethod);
+        SemanticTagWriter.Set(activity, ServerAttributes.Address, requestUri?.Host);
+        SemanticTagWriter.Set(activity, ServerAttributes.Port, requestUri?.Port);
         if (requestUri is not null &&
             Uri.CheckHostName(requestUri.Host) is UriHostNameType.IPv4 or UriHostNameType.IPv6)
         {
-            SemanticTagWriter.Set(activity, QylSemanticAttributes.NetworkPeerAddress, requestUri.Host);
-            SemanticTagWriter.Set(activity, QylSemanticAttributes.NetworkPeerPort, requestUri.Port);
+            SemanticTagWriter.Set(activity, NetworkAttributes.PeerAddress, requestUri.Host);
+            SemanticTagWriter.Set(activity, NetworkAttributes.PeerPort, requestUri.Port);
         }
 
         QylCaptureHelpers.SetHttpHeaders(

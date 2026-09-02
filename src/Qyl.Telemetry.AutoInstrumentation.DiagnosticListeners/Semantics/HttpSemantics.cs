@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
+using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 
 internal static class HttpSemantics
@@ -20,14 +23,14 @@ internal static class HttpSemantics
         }
 
         originalMethod = method;
-        return global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpRequestMethodOther;
+        return HttpAttributes.RequestMethodValues.Other;
     }
 
     public static void SetUrlTags(Activity? activity, string? url, string? serverAddress, int? serverPort)
     {
         SemanticTagWriter.Set(
             activity,
-            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.UrlFull,
+            UrlAttributes.Full,
             url is null
                 ? null
                 : global::Qyl.Telemetry.AutoInstrumentation.Internal.QylCaptureHelpers.FormatUrlFull(
@@ -40,11 +43,11 @@ internal static class HttpSemantics
 
         SemanticTagWriter.Set(
             activity,
-            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.ServerAddress,
+            ServerAttributes.Address,
             serverAddress ?? uri?.Host);
         SemanticTagWriter.Set(
             activity,
-            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.ServerPort,
+            ServerAttributes.Port,
             serverPort ?? GetPort(uri));
     }
 
@@ -52,7 +55,7 @@ internal static class HttpSemantics
     {
         SemanticTagWriter.Set(
             activity,
-            global::Qyl.Telemetry.AutoInstrumentation.QylSemanticAttributes.HttpResponseStatusCode,
+            HttpAttributes.ResponseStatusCode,
             statusCode);
         ErrorStatusSemantics.SetError(
             activity,

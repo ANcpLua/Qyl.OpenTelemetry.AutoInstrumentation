@@ -5,15 +5,15 @@ using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAtt
 internal static class QylHttpMethod
 {
     public static bool IsKnown(string method)
-        => method is not QylSemanticAttributes.HttpRequestMethodOther && HttpAttributes.RequestMethodValues.Contains(method);
+        => method is not HttpAttributes.RequestMethodValues.Other && HttpAttributes.RequestMethodValues.Contains(method);
 
     public static string Normalize(string? method)
     {
         if (string.IsNullOrEmpty(method))
-            return QylSemanticAttributes.HttpRequestMethodOther;
+            return HttpAttributes.RequestMethodValues.Other;
 
         var normalized = method.ToUpperInvariant();
-        return IsKnown(normalized) ? normalized : QylSemanticAttributes.HttpRequestMethodOther;
+        return IsKnown(normalized) ? normalized : HttpAttributes.RequestMethodValues.Other;
     }
 
     /// <summary>
@@ -25,7 +25,7 @@ internal static class QylHttpMethod
     {
         var normalized = Normalize(method);
         original = !string.IsNullOrEmpty(method)
-                   && string.Equals(normalized, QylSemanticAttributes.HttpRequestMethodOther, StringComparison.Ordinal)
+                   && string.Equals(normalized, HttpAttributes.RequestMethodValues.Other, StringComparison.Ordinal)
             ? method
             : null;
         return normalized;

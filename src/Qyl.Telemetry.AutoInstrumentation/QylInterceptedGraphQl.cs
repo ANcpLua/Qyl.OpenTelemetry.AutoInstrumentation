@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using GraphqlAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
@@ -76,7 +77,7 @@ public static class QylInterceptedGraphQl
                 if (depth is 0 && parentheses is 0)
                 {
                     if (!sawWord)
-                        return QylSemanticAttributes.GraphQlOperationTypeQuery;
+                        return GraphqlAttributes.OperationTypeValues.Query;
                     if (pendingType is not null && (operationName is null || StringComparer.Ordinal.Equals(pendingName, operationName)))
                         return pendingType;
                 }
@@ -132,9 +133,9 @@ public static class QylInterceptedGraphQl
             var word = document.AsSpan(start, position - start);
             var type = word switch
             {
-                "query" => QylSemanticAttributes.GraphQlOperationTypeQuery,
-                "mutation" => QylSemanticAttributes.GraphQlOperationTypeMutation,
-                "subscription" => QylSemanticAttributes.GraphQlOperationTypeSubscription,
+                "query" => GraphqlAttributes.OperationTypeValues.Query,
+                "mutation" => GraphqlAttributes.OperationTypeValues.Mutation,
+                "subscription" => GraphqlAttributes.OperationTypeValues.Subscription,
                 _ => null,
             };
             if (type is not null)

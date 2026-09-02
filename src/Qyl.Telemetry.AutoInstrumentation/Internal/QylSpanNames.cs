@@ -1,5 +1,7 @@
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+
 /// <summary>
 /// Span names derived from the span's own low-cardinality attributes, following the naming rule
 /// of each OpenTelemetry signal family.
@@ -12,7 +14,7 @@ internal static class QylSpanNames
     private const string JobFallback = "job";
 
     public static string Http(string? method)
-        => method is null or QylSemanticAttributes.HttpRequestMethodOther ? HttpFallback : method;
+        => method is null or HttpAttributes.RequestMethodValues.Other ? HttpFallback : method;
 
     public static string HttpServer(string? method, string? route)
     {

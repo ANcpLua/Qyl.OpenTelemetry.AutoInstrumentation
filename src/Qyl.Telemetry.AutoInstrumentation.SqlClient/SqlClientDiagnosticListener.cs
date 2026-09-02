@@ -4,6 +4,8 @@ using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.SqlClient;
 
@@ -74,25 +76,25 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
 
         var endTime = TimeProvider.System.GetUtcNow();
         using var activity = QylActivitySource.StartAt(
-            QylSpanNames.Db(command.QuerySummary, QylSemanticAttributes.DbSystemMicrosoftSqlServer),
+            QylSpanNames.Db(command.QuerySummary, DbAttributes.SystemNameValues.MicrosoftSqlServer),
             ActivityKind.Client,
             endTime - duration);
         activity?.SetEndTime(endTime.UtcDateTime);
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.QylInstrumentationDomain, QylAttributes.InstrumentationDomainValues.DbSqlClient);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemMicrosoftSqlServer);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbNamespace, command.Namespace);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbOperationName, command.Operation);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQuerySummary, command.QuerySummary);
+        SemanticTagWriter.Set(activity, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.DbSqlClient);
+        SemanticTagWriter.Set(activity, DbAttributes.SystemName, DbAttributes.SystemNameValues.MicrosoftSqlServer);
+        SemanticTagWriter.Set(activity, DbAttributes.Namespace, command.Namespace);
+        SemanticTagWriter.Set(activity, DbAttributes.OperationName, command.Operation);
+        SemanticTagWriter.Set(activity, DbAttributes.QuerySummary, command.QuerySummary);
         if (DatabaseSemantics.ShouldWriteQueryText(
                 command.QueryText,
                 QylAutoInstrumentationOptions.Current.SqlClientSetDbStatementForText))
         {
-            SemanticTagWriter.Set(activity, QylSemanticAttributes.DbQueryText, command.QueryText);
+            SemanticTagWriter.Set(activity, DbAttributes.QueryText, command.QueryText);
         }
 
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerAddress, command.ServerAddress);
-        SemanticTagWriter.Set(activity, QylSemanticAttributes.ServerPort, command.ServerPort);
+        SemanticTagWriter.Set(activity, ServerAttributes.Address, command.ServerAddress);
+        SemanticTagWriter.Set(activity, ServerAttributes.Port, command.ServerPort);
         ErrorStatusSemantics.SetError(activity, command.ErrorType);
     }
 

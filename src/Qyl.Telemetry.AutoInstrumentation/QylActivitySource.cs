@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Incubating.Names.QylTelemetryNames;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
@@ -12,7 +12,7 @@ internal static class QylActivitySource
 {
     /// <summary>The registry-owned scope name. Mirror it in <c>AddSource(...)</c> on a TracerProvider
     /// or in <c>OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES</c>.</summary>
-    public const string Name = QylTelemetryNames.Scopes.QylOpenTelemetryAutoInstrumentation;
+    public const string Name = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentation;
 
     /// <summary>The single source instance.</summary>
     public static readonly ActivitySource Source = new(

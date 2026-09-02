@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Globalization;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
@@ -16,17 +18,17 @@ public static class QylInterceptedRedis
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.StackExchangeRedis,
-            QylSpanNames.Db(operationName, QylSemanticAttributes.DbSystemRedis),
+            QylSpanNames.Db(operationName, DbIncubatingAttributes.SystemNameValues.Redis),
             ActivityKind.Client,
             QylAttributes.InstrumentationDomainValues.DbRedis);
         if (activity is null)
             return null;
 
-        activity.SetTag(QylSemanticAttributes.DbSystemName, QylSemanticAttributes.DbSystemRedis);
+        activity.SetTag(DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Redis);
         if (operationName is not null)
             QylActivityTags.SetDbOperation(activity, operationName, operationName);
         if (databaseIndex >= 0)
-            activity.SetTag(QylSemanticAttributes.DbNamespace, databaseIndex.ToString(CultureInfo.InvariantCulture));
+            activity.SetTag(DbAttributes.Namespace, databaseIndex.ToString(CultureInfo.InvariantCulture));
 
         return activity;
     }
