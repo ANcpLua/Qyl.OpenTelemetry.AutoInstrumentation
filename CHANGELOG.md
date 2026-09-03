@@ -5,6 +5,19 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [Unreleased]
+
+### Changed
+
+- The semantic-convention pin moves to `8.0.0`, which removes the `qyl.agent.diagnostic.*` and
+  `qyl.workflow.*` vocabulary and the `qyl.agent.diagnostic.snapshot` event — 14 attributes and one
+  event that only the removed qyl Codex observer ever produced. Nothing in this package referenced
+  any of them, so no producer code changes; the major exists because consumers of
+  `Qyl.Telemetry.AutoInstrumentation*` receive the semantic-conventions major transitively. The
+  generated-code ABI anchor follows the package major from `QylGeneratedCodeAbi.V10` to
+  `QylGeneratedCodeAbi.V11`, so generated interceptors built against a `10.x` runtime fail to
+  compile rather than binding to `11.x`.
+
 ## [10.1.0] - 2026-09-02
 
 ### Changed

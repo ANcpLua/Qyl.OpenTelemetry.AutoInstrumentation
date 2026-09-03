@@ -66,7 +66,7 @@ Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V10 = 10 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V11 = 11 -> int
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.DbCommand = "DbCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.ElasticsearchClient = "ElasticsearchClient" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.ElasticTransport = "ElasticTransport" -> string!
