@@ -25,7 +25,7 @@ Add the package that owns the integration you need. The supported zero-configura
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
 The family ships as one line; `Directory.Build.props` owns its version and
-`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: a `10.x` package pairs with `QylGeneratedCodeAbi.V10`
+`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: an `11.x` package pairs with `QylGeneratedCodeAbi.V11`
 and nothing else, which is why the number is ahead of the rest of qyl and does not move
 with the product version.
 
@@ -33,9 +33,9 @@ with the product version.
 `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
 updated further; change the ID and take the current version. `Qyl.Telemetry.Hosting` is the
 successor to `Qyl.Sdk`, and `builder.AddQyl()` is
-unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V10` in the
-`Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — bumped from `V9` for the
-10.0.0 declaration-driven interceptor catalog — so a stale generated
+unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V11` in the
+`Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — the anchor tracks the
+package major, so it moved from `V10` with the 11.0.0 line — so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
 misbehaving. The emitted scope names move to the package family in 10.0.0: the
 `ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the two qyl meters
