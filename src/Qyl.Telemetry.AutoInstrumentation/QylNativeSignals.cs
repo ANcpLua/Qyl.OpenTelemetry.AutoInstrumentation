@@ -25,6 +25,8 @@ internal sealed class QylSignalAttribute : Attribute
 [QylSignal(QylAutoInstrumentationIds.AspNetCore, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.AspNetCore, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.Azure, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.ElasticTransport, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.Elasticsearch, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.EntityFrameworkCore, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.GrpcNetClient, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.MassTransit, QylAutoInstrumentationSignal.Traces)]

@@ -1,64 +1,69 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elastic.Transport;
-using Qyl.Telemetry.AutoInstrumentation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
+using Qyl;
+using ElasticAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Elastic.ElasticAttributes;
+using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
-var capturedActivities = new List<CapturedActivity>();
-using var activityListener = new ActivityListener
+// The real registration path: AddQyl subscribes to Elastic.Transport's own ActivitySource and
+// installs the one native-span processor, so what the exporter receives is what a consumer receives.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
-};
-ActivitySource.AddActivityListener(activityListener);
+    ApplicationName = "Qyl.RealElasticTransportDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-elastictransport-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-ITransport transport = new ThrowingTransport();
+using var host = builder.Build();
+await host.StartAsync();
+
+// A real DistributedTransport against a closed port: the transport starts its own activity before
+// the request pipeline, so the span exists even though no node answers.
+var configuration = new TransportConfiguration(new Uri($"http://{IPAddress.Loopback}:9"));
+var transport = new DistributedTransport(configuration);
 var path = new EndpointPath(Elastic.Transport.HttpMethod.GET, "/_search");
 
-try
-{
-    _ = transport.Request<StringResponse>(path, PostData.Empty);
-}
-catch (InvalidOperationException exception)
-{
-    Console.WriteLine("expected-elastictransport-error=" + exception.GetType().Name);
-}
+var sync = transport.Request<StringResponse>(path, PostData.Empty);
+Console.WriteLine("elastictransport-sync=" + sync.ApiCallDetails.HasSuccessfulStatusCode.ToString(CultureInfo.InvariantCulture));
 
-try
-{
-    _ = await transport.RequestAsync<StringResponse>(path, PostData.Empty);
-}
-catch (InvalidOperationException exception)
-{
-    Console.WriteLine("expected-elastictransport-error=" + exception.GetType().Name);
-}
+var async = await transport.RequestAsync<StringResponse>(path, PostData.Empty);
+Console.WriteLine("elastictransport-async=" + async.ApiCallDetails.HasSuccessfulStatusCode.ToString(CultureInfo.InvariantCulture));
+
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
 
 var report = ElasticTransportReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    capturedActivities.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealElasticTransportJsonContext.Default.ElasticTransportReport);
 Console.WriteLine(json);
 
 return report.Pass ? 0 : 1;
 
-internal sealed class ThrowingTransport : ITransport
-{
-    public ITransportConfiguration Configuration => null!;
-
-    public TResponse Request<TResponse>(in EndpointPath path, PostData? postData = null, Action<Activity>? configureActivity = null, IRequestConfiguration? localConfiguration = null)
-        where TResponse : TransportResponse, new()
-        => throw new InvalidOperationException("qyl-elastictransport-error");
-
-    public Task<TResponse> RequestAsync<TResponse>(in EndpointPath path, PostData? postData = null, Action<Activity>? configureActivity = null, IRequestConfiguration? localConfiguration = null, CancellationToken cancellationToken = default)
-        where TResponse : TransportResponse, new()
-        => throw new InvalidOperationException("qyl-elastictransport-error");
-}
-
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -66,6 +71,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -81,31 +87,43 @@ internal sealed record ElasticTransportReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    // Elastic.Transport's own product registration name. A bare transport reports this; the
+    // Elasticsearch client reports its own, which is what moves the span to the db.elasticsearch
+    // domain.
+    private const string TransportProductName = "elastic-transport-net";
+
     public static ElasticTransportReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
         var elasticSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "elastic.transport"))
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.ElasticTransport))
             .ToArray();
 
+        // One native span per request, not per run.
         if (elasticSpans.Length != 2)
             failures.Add($"expected 2 Elastic.Transport spans, got {elasticSpans.Length.ToString(CultureInfo.InvariantCulture)}");
 
         foreach (var span in elasticSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "request"))
-                failures.Add($"unexpected Elastic.Transport span name: {span.Name}");
+            // The attribute the qyl processor owns: without it the collector cannot classify the
+            // span, because it classifies on attribute presence and never on the span name.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.ElasticTransport,
+                failures);
+
+            // Elastic.Transport's own attributes. It emits no database semantic conventions of its
+            // own: db.system.name and db.operation.name came from the deleted interceptor's call
+            // site and have no equivalent on the native span.
+            RequireTag(span, ElasticAttributes.TransportProductName, TransportProductName, failures);
+            RequireTag(span, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
+            RequireTag(span, ServerAttributes.Address, IPAddress.Loopback.ToString(), failures);
+
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected Elastic.Transport span kind Client, got {span.Kind}");
-            if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
-                failures.Add($"expected Elastic.Transport span status Error, got {span.Status}");
-
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Elasticsearch, failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "request", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
-            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new ElasticTransportReport(runtimeMode, failures.Count is 0, failures.ToArray(), elasticSpans);
@@ -121,12 +139,6 @@ internal sealed record ElasticTransportReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
-    }
-
-    private static void RequireMissingTag(CapturedActivity activity, string key, ICollection<string> failures)
-    {
-        if (activity.Tags.ContainsKey(key))
-            failures.Add($"unexpected {key}");
     }
 }
 

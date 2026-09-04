@@ -56,8 +56,9 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
-    if completed.stdout.count("expected-elastictransport-error=InvalidOperationException") != 2:
-        fail(f"{name} expected exactly 2 Elastic.Transport error tokens\nstdout={completed.stdout}")
+    for token in ["elastictransport-sync=False", "elastictransport-async=False"]:
+        if token not in completed.stdout:
+            fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
 
     report = parse_report(completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:

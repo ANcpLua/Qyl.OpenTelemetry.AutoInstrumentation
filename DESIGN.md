@@ -256,8 +256,8 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
 | Library | Status | Call-site-dependence check | Output change |
 | --- | --- | --- | --- |
 | MassTransit | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.masstransit`), so the processor sets them without the call site. The interceptor's `messaging.operation.name` **was** call-site-derived and the native span does **not** replace it — see the output change. | Source `Qyl.Telemetry.AutoInstrumentation` span `publish`/`send` -> source `MassTransit` span `{destination} send`. `messaging.system` changes from the qyl-owned `masstransit` to the transport MassTransit reports (`rabbitmq`). `messaging.operation.type` and `messaging.operation.name` are gone; MassTransit reports the deprecated `messaging.operation`, always `send`, for both `Publish` and `Send`, so the two are no longer distinguishable. `error.type` is gone: a publish that fails before the transport produces no span at all. Gained: `messaging.destination.name` and the `messaging.masstransit.*` vendor keys. |
-| Elastic.Transport | open | — | — |
-| Elasticsearch | open | — | — |
+| Elastic.Transport | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `elastic.transport`), set without the call site. The interceptor's `db.operation.name` was derived from the intercepted method name; the native span has no equivalent. | Source `Qyl.Telemetry.AutoInstrumentation` span `request` -> source `Elastic.Transport` span named after the HTTP method. Elastic.Transport emits **no database semantic conventions of its own**: `db.system.name`, `db.operation.name` and `db.query.summary` are gone, as is `error.type`. Gained: `elastic.transport.*` (7 keys), `http.request.method`, `server.address`, `server.port`, `url.full`, `user_agent.original`. |
+| Elasticsearch | migrated | Same constants. The client owns no `ActivitySource`; its spans are Elastic.Transport's, so ELASTICSEARCH and ELASTICTRANSPORT share one table row and the domain is selected per span from `elastic.transport.product.name` (`elasticsearch-net` -> `db.elasticsearch`, otherwise `elastic.transport`). | Source `Qyl.Telemetry.AutoInstrumentation` span `request` -> source `Elastic.Transport` span named after the client operation (`ping`). The stable `db.system.name` / `db.operation.name` become the client's pre-stable `db.system` = `elasticsearch` and `db.operation`; `db.query.summary` and `error.type` are gone. Gained: `db.elasticsearch.*`, `elastic.transport.*`, and the HTTP/server keys. |
 | RabbitMQ.Client | open | — | — |
 | MongoDB.Driver | open | — | — |
 | Quartz | open | — | — |
@@ -286,6 +286,17 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
   publish/send distinction; it is named in the CHANGELOG rather than reconstructed by the
   processor, because a processor that guessed it from the destination shape would be inventing
   semantic-convention data the library never emitted.
+- **Elastic.Transport carries no database semantic conventions, and Elasticsearch rides on its
+  source.** `DistributedTransport` at tag `1.0.0` starts the only span, names it after the HTTP
+  method, and sets `db.user`, `elastic.transport.*`, `http.*`, `server.*`, `url.full` and
+  `user_agent.original`; `db.system` and `db.operation` arrive only from
+  `ProductRegistration.DefaultOpenTelemetryAttributes`, which the Elasticsearch client supplies.
+  Because both integrations share the one source name, they share one table row, and the qyl domain
+  is chosen per span from `elastic.transport.product.name` — the transport reports
+  `elastic-transport-net` (`DefaultProductRegistration.Name`), the client `elasticsearch-net`. That
+  is a vendor value, not a semantic-convention one: the registry names the key, Elastic owns what
+  goes in it. Both demos run without a container and were verified locally.
+
 - **CoreWCF has no instrumentation-domain value.** The registry's
   `qyl.instrumentation.domain` value set publishes `rpc.wcf.client`, which belongs to the
   intercepted WCF *client*; there is no value for the CoreWCF server spans. The CoreWCF row of the

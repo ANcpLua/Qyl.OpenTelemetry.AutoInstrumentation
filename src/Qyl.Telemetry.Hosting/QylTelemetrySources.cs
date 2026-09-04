@@ -14,6 +14,7 @@ internal static class QylTelemetrySources
     internal const string Azure = "Azure.*";
     internal const string AspNetCore = "Microsoft.AspNetCore";
     internal const string HttpClient = "System.Net.Http";
+    internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
 
     /// <summary>
@@ -40,6 +41,11 @@ internal static class QylTelemetrySources
             QylAutoInstrumentationIds.WcfCore,
             Domain: null,
             QylNativeSpanProcessor.NormalizeCoreWcf),
+        new(
+            ElasticTransport,
+            QylAutoInstrumentationIds.ElasticTransport,
+            QylAttributes.InstrumentationDomainValues.ElasticTransport,
+            QylNativeSpanProcessor.NormalizeElastic),
         new(
             MassTransit,
             QylAutoInstrumentationIds.MassTransit,

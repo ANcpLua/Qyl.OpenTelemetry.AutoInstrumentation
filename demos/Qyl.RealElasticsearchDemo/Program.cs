@@ -6,16 +6,37 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elastic.Clients.Elasticsearch;
 using Elastic.Transport;
-using Qyl.Telemetry.AutoInstrumentation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
+using Qyl;
+using ElasticAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Elastic.ElasticAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
+using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
-var capturedActivities = new List<CapturedActivity>();
-using var activityListener = new ActivityListener
+// The real registration path. Elastic.Clients.Elasticsearch owns no ActivitySource: its spans are
+// Elastic.Transport's, enriched by the client, which is why the demo subscribes to the transport.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity => capturedActivities.Add(CapturedActivity.From(activity)),
-};
-ActivitySource.AddActivityListener(activityListener);
+    ApplicationName = "Qyl.RealElasticsearchDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-elasticsearch-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
+
+using var host = builder.Build();
+await host.StartAsync();
 
 var endpoint = new Uri($"http://{IPAddress.Loopback}:9");
 var settings = new ElasticsearchClientSettings(endpoint)
@@ -41,9 +62,12 @@ catch (TransportException exception)
     Console.WriteLine("expected-elasticsearch-error=" + exception.GetType().Name);
 }
 
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
+
 var report = ElasticsearchReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    capturedActivities.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealElasticsearchJsonContext.Default.ElasticsearchReport);
 Console.WriteLine(json);
@@ -51,6 +75,7 @@ Console.WriteLine(json);
 return report.Pass ? 0 : 1;
 
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -58,6 +83,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -73,31 +99,37 @@ internal sealed record ElasticsearchReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    // The client's own product registration name. It is what tells an Elasticsearch call from a bare
+    // transport call on the one source both share, and therefore what selects the qyl domain.
+    private const string ElasticsearchProductName = "elasticsearch-net";
+
     public static ElasticsearchReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
         var elasticsearchSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "db.elasticsearch"))
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.ElasticTransport))
             .ToArray();
 
+        // One native span per request, not per run.
         if (elasticsearchSpans.Length != 2)
             failures.Add($"expected 2 Elasticsearch spans, got {elasticsearchSpans.Length.ToString(CultureInfo.InvariantCulture)}");
 
         foreach (var span in elasticsearchSpans)
         {
-            if (!StringComparer.Ordinal.Equals(span.Name, "request"))
-                failures.Add($"unexpected Elasticsearch span name: {span.Name}");
+            // The attribute the qyl processor owns, and the vendor attribute it selected the value
+            // from: proof that the shared-source row resolved to the Elasticsearch domain.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.DbElasticsearch,
+                failures);
+            RequireTag(span, ElasticAttributes.TransportProductName, ElasticsearchProductName, failures);
+            RequireTag(span, ServerAttributes.Address, IPAddress.Loopback.ToString(), failures);
+
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected Elasticsearch span kind Client, got {span.Kind}");
-            if (!StringComparer.Ordinal.Equals(span.Status, "Error"))
-                failures.Add($"expected Elasticsearch span status Error, got {span.Status}");
-
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Elasticsearch, failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, "request", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(TransportException).FullName!, failures);
-            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QueryText, failures);
         }
 
         return new ElasticsearchReport(runtimeMode, failures.Count is 0, failures.ToArray(), elasticsearchSpans);
@@ -113,12 +145,6 @@ internal sealed record ElasticsearchReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
-    }
-
-    private static void RequireMissingTag(CapturedActivity activity, string key, ICollection<string> failures)
-    {
-        if (activity.Tags.ContainsKey(key))
-            failures.Add($"unexpected {key}");
     }
 }
 

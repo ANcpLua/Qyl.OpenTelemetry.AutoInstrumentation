@@ -5,8 +5,6 @@
 {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"ORACLEMDA","additionalMetricIds":[],"contractKeys":["signals.traces.ORACLEMDA"]}
 {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"SQLCLIENT","additionalMetricIds":["SQLCLIENT"],"contractKeys":["signals.traces.SQLCLIENT","signals.metrics.SQLCLIENT"]}
 {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"SQLITE","additionalMetricIds":[],"contractKeys":["signals.traces.SQLITE"]}
-{"interceptorKind":"ElasticTransport.Request","signal":"traces","instrumentationId":"ELASTICTRANSPORT","additionalMetricIds":[],"contractKeys":["signals.traces.ELASTICTRANSPORT"]}
-{"interceptorKind":"Elasticsearch.Request","signal":"traces","instrumentationId":"ELASTICSEARCH","additionalMetricIds":[],"contractKeys":["signals.traces.ELASTICSEARCH"]}
 {"interceptorKind":"GraphQl.Execute","signal":"traces","instrumentationId":"GRAPHQL","additionalMetricIds":[],"contractKeys":["signals.traces.GRAPHQL"]}
 {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
 {"interceptorKind":"Kafka.Receive","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}

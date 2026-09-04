@@ -90,52 +90,54 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
   key: signals.traces.ELASTICSEARCH
-  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1
-  lane: source_interceptor
+  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the Elastic.Transport ActivitySource the client enriches
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Elastic.Transport's ActivitySource enriched by Elastic.Clients.Elasticsearch, enabled by Qyl.Telemetry.Hosting, with the qyl domain selected by QylNativeSpanProcessor from elastic.transport.product.name
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealElasticsearchDemo
   - tools/verify-real-elasticsearch-demo.py
   conformance_signals:
   - kind: span
-    name: elasticsearch.request
+    name: '{db.operation}'
     required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - elastic.transport.product.name
+    - server.address
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
+    - url.full
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
   key: signals.traces.ELASTICTRANSPORT
-  lane: source_interceptor
+  supported_versions: Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Elastic.Transport's own Elastic.Transport ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealElasticTransportDemo
   - tools/verify-real-elastictransport-demo.py
   conformance_signals:
   - kind: span
-    name: elastictransport.request
+    name: '{http.request.method}'
     required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - elastic.transport.product.name
+    - http.request.method
+    - server.address
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
+    - url.full
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_007
   key: signals.traces.ENTITYFRAMEWORKCORE

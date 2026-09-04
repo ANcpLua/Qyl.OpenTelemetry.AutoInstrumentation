@@ -94,10 +94,6 @@ public static class QylShapes
     public const string HttpClient = "HttpClient";
     /// <summary>The <c>DbCommand</c> execute overloads, with the provider fan-out by receiver namespace.</summary>
     public const string DbCommand = "DbCommand";
-    /// <summary>Any public instance method on an <c>Elastic.Clients.Elasticsearch.*Client</c> type.</summary>
-    public const string ElasticsearchClient = "ElasticsearchClient";
-    /// <summary>The <c>ITransport.Request</c> overloads.</summary>
-    public const string ElasticTransport = "ElasticTransport";
     /// <summary>Operation methods on a <c>ClientBase&lt;TChannel&gt;</c>, named by the contract attributes.</summary>
     public const string WcfClient = "WcfClient";
     /// <summary>The <c>IProducer&lt;TKey, TValue&gt;</c> produce overloads.</summary>

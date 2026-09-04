@@ -5,24 +5,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Qyl.RealElasticsearchDemo</RootNamespace>
     <AssemblyName>Qyl.RealElasticsearchDemo</AssemblyName>
-    <Description>Real zero-code Elastic.Clients.Elasticsearch source-interceptor proof for qyl.</Description>
+    <Description>Real zero-code Elastic.Clients.Elasticsearch native ActivitySource proof for qyl.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Elastic.Clients.Elasticsearch" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation\Qyl.Telemetry.AutoInstrumentation.csproj" />
-    <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
-                      Condition="'$(PublishAot)' != 'true'"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false"
-                      GlobalPropertiesToRemove="PublishAot;PublishSingleFile;PublishTrimmed;RuntimeIdentifier;RuntimeIdentifiers;SelfContained" />
-    <Analyzer Include="..\..\artifacts\bin\Qyl.Telemetry.AutoInstrumentation.SourceGenerators\release\Qyl.Telemetry.AutoInstrumentation.SourceGenerators.dll"
-              Condition="'$(PublishAot)' == 'true'" />
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.Hosting\Qyl.Telemetry.Hosting.csproj" />
   </ItemGroup>
-
-  <Import Project="..\..\src\Qyl.Telemetry.AutoInstrumentation\buildTransitive\Qyl.Telemetry.AutoInstrumentation.targets" />
 
 </Project>

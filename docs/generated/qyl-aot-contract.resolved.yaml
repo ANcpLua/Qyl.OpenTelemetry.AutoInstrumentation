@@ -206,7 +206,8 @@ contract_items:
   libraries:
   - name: Elastic.Clients.Elasticsearch
     url: https://www.nuget.org/packages/Elastic.Clients.Elasticsearch
-  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1
+  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the Elastic.Transport
+    ActivitySource the client enriches
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -219,27 +220,28 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L148-L189
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Elastic.Transport's ActivitySource enriched by Elastic.Clients.Elasticsearch, enabled by Qyl.Telemetry.Hosting,
+    with the qyl domain selected by QylNativeSpanProcessor from elastic.transport.product.name
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealElasticsearchDemo
   - tools/verify-real-elasticsearch-demo.py
   conformance_signals:
   - kind: span
-    name: elasticsearch.request
+    name: '{db.operation}'
     required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - elastic.transport.product.name
+    - server.address
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
+    - url.full
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ELASTICTRANSPORT
@@ -250,7 +252,7 @@ contract_items:
   libraries:
   - name: Elastic.Transport
     url: https://www.nuget.org/packages/Elastic.Transport
-  supported_versions: '>=0.4.16'
+  supported_versions: Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -261,27 +263,29 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L149
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Elastic.Transport's own Elastic.Transport ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain
+    stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealElasticTransportDemo
   - tools/verify-real-elastictransport-demo.py
   conformance_signals:
   - kind: span
-    name: elastictransport.request
+    name: '{http.request.method}'
     required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - elastic.transport.product.name
+    - http.request.method
+    - server.address
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
+    - url.full
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ENTITYFRAMEWORKCORE

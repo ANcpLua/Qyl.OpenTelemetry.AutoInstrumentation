@@ -229,29 +229,28 @@
       "expected_signals": [
         {
           "kind": "span",
-          "name": "elasticsearch.request",
+          "name": "{db.operation}",
           "required_attributes": [
-            "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
+            "elastic.transport.product.name",
+            "server.address",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "url.full"
           ],
           "opt_in_attributes": []
         },
         {
           "kind": "span",
-          "name": "elastictransport.request",
+          "name": "{http.request.method}",
           "required_attributes": [
-            "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
+            "elastic.transport.product.name",
+            "http.request.method",
+            "server.address",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "url.full"
           ],
           "opt_in_attributes": []
         }

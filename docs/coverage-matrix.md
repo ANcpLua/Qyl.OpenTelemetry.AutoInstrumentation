@@ -33,12 +33,12 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | Lane | Count |
 |---|---:|
 | `environment_control` | 7 |
-| `framework_initialization` | 2 |
+| `framework_initialization` | 4 |
 | `instrumentation_option` | 12 |
 | `not_implemented` | 2 |
 | `official_library_hook` | 7 |
 | `runtime_public_telemetry` | 9 |
-| `source_interceptor` | 20 |
+| `source_interceptor` | 18 |
 | `unsupported_nativeaot` | 7 |
 
 ## Evidence counts
@@ -57,8 +57,8 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 2 | upstream 60 | `signals.traces.ASPNET` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L145-L184) | * | `unsupported_nativeaot` | `unsupported_nativeaot` | `user_code` | `reflection_required` | `none` | unsupported by qyl NativeAOT substrate |
 | 3 | upstream 60 | `signals.traces.ASPNETCORE` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L146) | * | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 4 | upstream 60 | `signals.traces.AZURE` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L147-L186) | Azure.* prefixed packages released after 2021-10-01 | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_nativeaot` | Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Telemetry.Hosting with Qyl enrichment |
-| 5 | upstream 60 | `signals.traces.ELASTICSEARCH` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L148-L189) | Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
-| 6 | upstream 60 | `signals.traces.ELASTICTRANSPORT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L149) | >=0.4.16 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
+| 5 | upstream 60 | `signals.traces.ELASTICSEARCH` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L148-L189) | Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the Elastic.Transport ActivitySource the client enriches | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_nativeaot` | Elastic.Transport's ActivitySource enriched by Elastic.Clients.Elasticsearch, enabled by Qyl.Telemetry.Hosting, with the qyl domain selected by QylNativeSpanProcessor from elastic.transport.product.name |
+| 6 | upstream 60 | `signals.traces.ELASTICTRANSPORT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L149) | Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport" | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_nativeaot` | Elastic.Transport's own Elastic.Transport ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
 | 7 | upstream 60 | `signals.traces.ENTITYFRAMEWORKCORE` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L150-L195) | >=6.0.12 | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | EntityFrameworkCore specialist package EntityFrameworkCoreDiagnosticListener |
 | 8 | upstream 60 | `signals.traces.GRAPHQL` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L151) | >=7.5.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 9 | upstream 60 | `signals.traces.GRPCNETCLIENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L152) | >=2.52.0 && <3.0.0 | `runtime_public_telemetry` | `implemented` | `both` | `aot_reflection` | `verified_nativeaot` | GrpcClientDiagnosticListener |

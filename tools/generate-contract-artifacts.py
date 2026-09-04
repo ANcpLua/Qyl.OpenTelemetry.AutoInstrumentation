@@ -63,8 +63,8 @@ CONFORMANCE_PROFILES = [
         "service_name": "qyl-search-aot-demo",
         "profile_id": "qyl-aot-search",
         "signal_names": [
-            "elasticsearch.request",
-            "elastictransport.request",
+            "{db.operation}",
+            "{http.request.method}",
         ],
     },
     {
@@ -236,7 +236,11 @@ QYL_NATIVE_8_SUPPORTED_PATHS = {
 }
 QYL_SUPPORTED_VERSION_OVERRIDES = {
     "signals.traces.ELASTICSEARCH": (
-        "Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1"
+        "Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the "
+        "Elastic.Transport ActivitySource the client enriches"
+    ),
+    "signals.traces.ELASTICTRANSPORT": (
+        'Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"'
     ),
     "signals.metrics.NSERVICEBUS": (
         "NServiceBus >=8.0.0; verified against 10.2.9"

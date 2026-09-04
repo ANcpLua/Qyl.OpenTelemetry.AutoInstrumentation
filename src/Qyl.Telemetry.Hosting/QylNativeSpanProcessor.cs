@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using OpenTelemetry;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using ElasticAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Elastic.ElasticAttributes;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
@@ -64,6 +65,26 @@ internal sealed class QylNativeSpanProcessor(QylNativeSourceRow[] rows) : BasePr
         var exceptionType = data.GetTagItem(ErrorAttributes.Type) as string ?? FindExceptionType(data);
         if (exceptionType is not null)
             data.SetTag(ErrorAttributes.Type, GetSimpleTypeName(exceptionType));
+    }
+
+    /// <summary>
+    /// Elastic.Clients.Elasticsearch owns no <c>ActivitySource</c>: it enriches Elastic.Transport's
+    /// span and identifies itself in <c>elastic.transport.product.name</c>, which is the only thing
+    /// that separates an Elasticsearch call from a bare transport call on the one shared source.
+    /// </summary>
+    internal static void NormalizeElastic(Activity data)
+    {
+        // Elastic.Clients.Elasticsearch's own product registration name, not a semantic-convention
+        // value: the registry names the key, the vendor owns what goes in it.
+        const string elasticsearchProductName = "elasticsearch-net";
+
+        if (data.GetTagItem(ElasticAttributes.TransportProductName) is string productName &&
+            StringComparer.Ordinal.Equals(productName, elasticsearchProductName))
+        {
+            data.SetTag(
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.DbElasticsearch);
+        }
     }
 
     /// <summary>CoreWCF still reports the pre-stable <c>rpc.system</c> key; qyl reports the stable one.</summary>

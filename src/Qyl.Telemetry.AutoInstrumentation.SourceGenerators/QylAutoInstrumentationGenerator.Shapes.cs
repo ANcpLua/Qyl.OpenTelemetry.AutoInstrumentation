@@ -39,10 +39,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchHttpClient(symbol, out match);
             case "DbCommand":
                 return TryMatchDbCommand(symbol, receiverType, out match);
-            case "ElasticsearchClient":
-                return TryMatchElasticsearchClient(symbol, out match);
-            case "ElasticTransport":
-                return TryMatchElasticTransport(symbol, matchedReceiver, out match);
             case "WcfClient":
                 return TryMatchWcfClient(symbol, out match);
             case "KafkaProduce":
@@ -382,72 +378,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         parameters = default;
         return false;
-    }
-
-    private static bool TryMatchElasticsearchClient(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        if (symbol.IsStatic ||
-            symbol.MethodKind is not MethodKind.Ordinary ||
-            symbol.ReturnsVoid ||
-            symbol.DeclaredAccessibility is not Accessibility.Public ||
-            !CanEmitByValueOrInParameters(symbol) ||
-            !IsElasticsearchClientType(symbol.ContainingType) ||
-            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
-        {
-            return false;
-        }
-
-        match = new ShapeMatch(
-            CleanTypeName(symbol.ContainingType),
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            isAsync,
-            GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol));
-        return true;
-    }
-
-    private static bool TryMatchElasticTransport(IMethodSymbol symbol, ITypeSymbol matchedReceiver, out ShapeMatch match)
-    {
-        match = default;
-        if (symbol.IsStatic ||
-            symbol.MethodKind is not MethodKind.Ordinary and not MethodKind.ReducedExtension ||
-            symbol.ReturnsVoid ||
-            !CanEmitByValueOrInParameters(symbol) ||
-            !CanEmitElasticReturn(symbol.ReturnType, out var isAsync))
-        {
-            return false;
-        }
-
-        match = new ShapeMatch(
-            CleanTypeName(matchedReceiver),
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            isAsync,
-            GetTypeParameterList(symbol),
-            GetConstraintClauses(symbol),
-            GetReducedExtensionContainingType(symbol));
-        return true;
-    }
-
-    // The client types are not enumerable from metadata: every generated Elastic.Clients.Elasticsearch
-    // namespace ends its request surface in a *Client type, and that naming is the boundary.
-    private static bool IsElasticsearchClientType(ITypeSymbol? symbol)
-    {
-        if (symbol is not INamedTypeSymbol named ||
-            !named.Name.EndsWithOrdinal("Client"))
-        {
-            return false;
-        }
-
-        return named.ContainingNamespace.ToDisplayString().StartsWithOrdinal("Elastic.Clients.Elasticsearch");
-    }
-
-    private static bool CanEmitElasticReturn(ITypeSymbol returnType, out bool isAsync)
-    {
-        isAsync = IsTask(returnType) || TryGetTaskResult(returnType, out _);
-        return true;
     }
 
     private static bool TryMatchWcfClient(IMethodSymbol symbol, out ShapeMatch match)
