@@ -174,7 +174,10 @@ internal sealed record RabbitMqReport(
             RequirePresentTag(span, MessagingAttributes.RabbitmqDestinationRoutingKey, failures);
             RequirePresentTag(span, MessagingAttributes.MessageBodySize, failures);
 
-            if (!StringComparer.Ordinal.Equals(span.Name, "publish"))
+            // RabbitMQTracingOptions.UseRoutingKeyAsOperationName defaults to true, so the library
+            // names the span after the routing key as well as the operation.
+            span.Tags.TryGetValue(MessagingAttributes.RabbitmqDestinationRoutingKey, out var routingKey);
+            if (!StringComparer.Ordinal.Equals(span.Name, "publish " + routingKey))
                 failures.Add($"unexpected RabbitMQ span name: {span.Name}");
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");

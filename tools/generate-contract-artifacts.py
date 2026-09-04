@@ -79,7 +79,7 @@ CONFORMANCE_PROFILES = [
         "profile_id": "qyl-aot-messaging",
         "signal_names": [
             "{destination} send",
-            "publish",
+            "publish {messaging.rabbitmq.destination.routing_key}",
         ],
     },
     {
