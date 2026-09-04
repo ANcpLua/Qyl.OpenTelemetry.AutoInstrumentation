@@ -53,7 +53,7 @@ def fail(message: str) -> None:
     raise SystemExit(message)
 
 
-def run_build() -> None:
+def run_build() -> str:
     if GENERATED_ROOT.exists():
         shutil.rmtree(GENERATED_ROOT)
     completed = subprocess.run(
@@ -68,7 +68,7 @@ def run_build() -> None:
             "-m:1",
             "/nr:false",
             "-v",
-            "quiet",
+            "normal",
             "-p:NuGetAudit=false",
             "-p:UseSharedCompilation=false",
         ],
@@ -83,6 +83,8 @@ def run_build() -> None:
             "generator snapshot fixture build failed\n"
             f"exit={completed.returncode}\nstdout={completed.stdout}\nstderr={completed.stderr}"
         )
+
+    return completed.stdout + completed.stderr
 
 
 def generated_files_by_name() -> dict[str, Path]:
@@ -155,9 +157,45 @@ def compare_contract_manifest_coverage() -> None:
     )
 
 
+def verify_shape_mismatch_diagnostic(build_output: str, interceptors: str) -> None:
+    """A declared call site that does not fit its shape must report QYL1001 and emit no interceptor.
+
+    Fixture/ShapeMismatch.cs calls QylUnmatchedClient.GetAsync(int). The receiver derives from
+    System.Net.Http.HttpClient and the method name is declared, so the declaration matches; the
+    signature returns Task<string> and does not fit the HttpClient shape. The generator must skip it
+    and say so, rather than failing the consumer's build or dropping the call site in silence.
+    """
+    reported = {
+        line.split("warning QYL1001:", 1)[1].strip().split(" [", 1)[0]
+        for line in build_output.splitlines()
+        if "warning QYL1001:" in line
+    }
+    if len(reported) != 1:
+        fail(
+            "expected exactly one distinct QYL1001 diagnostic from the snapshot fixture, got "
+            f"{len(reported)}: {sorted(reported)}"
+        )
+
+    message = reported.pop()
+    for token in ["QylUnmatchedClient", "GetAsync", "'HttpClient' shape", "not instrumented"]:
+        if token not in message:
+            fail(f"QYL1001 message missing {token!r}: {message}")
+
+    # The whole point is that no interceptor is produced for the reported call site.
+    for token in ["QylUnmatchedClient", "ShapeMismatch.cs"]:
+        if token in interceptors:
+            fail(f"an interceptor was emitted for the non-matching call site: {token}")
+
+    print(f"  - QYL1001 reported once and no interceptor emitted: {message}")
+
+
 def main() -> None:
-    run_build()
+    build_output = run_build()
     compare_snapshots(generated_files_by_name())
+    verify_shape_mismatch_diagnostic(
+        build_output,
+        (VERIFIED_ROOT / "QylAutoInstrumentation.Interceptors.g.verified.cs").read_text(encoding="utf-8"),
+    )
     compare_contract_manifest_coverage()
     print("generator-snapshots-ok")
 

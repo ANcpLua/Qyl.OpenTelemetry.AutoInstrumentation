@@ -133,9 +133,16 @@ REQUIRED_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
 FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
     "new InterceptableLocation",
     "InterceptableLocation.Create",
-    "GetLocation()",
     "Location.Create",
 ]
+# A Roslyn Location is not an InterceptableLocation: an interceptor location must always come from
+# GetInterceptableLocation (enforced above), but reporting a diagnostic needs an ordinary source
+# Location. Exactly one such use is allowed, on the QYL1001 path that reports a call site the
+# generator deliberately did NOT intercept -- so it cannot be the source of an interceptor location.
+# Anything beyond that single use is a regression and fails.
+DIAGNOSTIC_LOCATION_TOKEN = "GetLocation()"
+DIAGNOSTIC_LOCATION_OWNER = "QylGeneratorDiagnostics.ShapeNotMatched"
+DIAGNOSTIC_LOCATION_MAX_USES = 1
 # Philosophy guard: runtime telemetry must emit attribute keys through the
 # generated semconv constants, never literal strings.
 FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
@@ -1022,7 +1029,7 @@ def verify_interceptor_structure(generator: str) -> set[str]:
     for token in [
         "GetCatalog(compilation)",
         "foreach (var integration in catalog.Integrations)",
-        "TryMatchDeclaration(integration, intercept, symbol, receiverType, out target)",
+        "TryMatchDeclaration(integration, intercept, symbol, receiverType, out target, out var declaredShape)",
         "TryMatchShape(intercept.Shape, integration, symbol, receiverType, matchedReceiver, out var shape)",
         "EmitInterceptorManifest(builder, in target);",
         "EmitInterceptorBody(builder, in invocation, index);",
@@ -1102,6 +1109,20 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     for token in FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS:
         if token in generator:
             fail(f"generator must not synthesize interceptor locations: {token}")
+
+    diagnostic_locations = generator.count(DIAGNOSTIC_LOCATION_TOKEN)
+    if diagnostic_locations > DIAGNOSTIC_LOCATION_MAX_USES:
+        fail(
+            f"generator may use {DIAGNOSTIC_LOCATION_TOKEN} at most "
+            f"{DIAGNOSTIC_LOCATION_MAX_USES} time(s), for the skipped-call-site diagnostic only; "
+            f"found {diagnostic_locations}. Interceptor locations must come from "
+            "GetInterceptableLocation."
+        )
+    if diagnostic_locations and DIAGNOSTIC_LOCATION_OWNER not in generator:
+        fail(
+            f"generator uses {DIAGNOSTIC_LOCATION_TOKEN} without reporting "
+            f"{DIAGNOSTIC_LOCATION_OWNER}; the only permitted use is the skipped-call-site diagnostic"
+        )
 
     if "InterceptsLocationAttribute(" in generator and "GetInterceptsLocationAttributeSyntax(" not in generator:
         fail("generator must emit InterceptsLocationAttribute through Roslyn GetInterceptsLocationAttributeSyntax")

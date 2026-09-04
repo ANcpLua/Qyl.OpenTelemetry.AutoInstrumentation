@@ -61,6 +61,20 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private readonly record struct InterceptedInvocation(InterceptorTarget Target, InterceptableLocation Location);
 
+    // A call site whose receiver type and method name match a declared integration, but whose
+    // signature does not fit the declared shape. No interceptor is emitted; QYL1001 is reported so
+    // the lost instrumentation is visible instead of silent.
+    private readonly record struct ShapeMismatch(
+        string ReceiverType,
+        string MethodName,
+        string Shape,
+        Location Location);
+
+    // Exactly one of the two is set, or neither when the call site matches no declaration at all.
+    private readonly record struct InvocationScanResult(
+        InterceptedInvocation? Intercepted,
+        ShapeMismatch? Mismatch);
+
     /// <summary>
     /// Registers the incremental syntax pipeline.
     /// </summary>
@@ -71,8 +85,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             .CreateSyntaxProvider(
                 static (node, _) => node is InvocationExpressionSyntax,
                 static (syntaxContext, cancellationToken) =>
-                    TryCreateInterceptedInvocation(syntaxContext, cancellationToken))
-            .Where(static invocation => invocation is not null)
+                    ScanInvocation(syntaxContext, cancellationToken))
+            .Where(static result => result.Intercepted is not null || result.Mismatch is not null)
             .Collect();
 
         context.RegisterSourceOutput(
@@ -89,7 +103,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 EmitDeclaredInstrumentations(productionContext, signals));
     }
 
-    private static InterceptedInvocation? TryCreateInterceptedInvocation(
+    private static InvocationScanResult ScanInvocation(
         GeneratorSyntaxContext context,
         CancellationToken cancellationToken)
     {
@@ -97,27 +111,39 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         var compilation = context.SemanticModel.Compilation;
         if (compilation.AssemblyName is { } assemblyName &&
             s_qylRuntimeAssemblies.Contains(assemblyName))
-            return null;
+            return default;
 
         var catalog = GetCatalog(compilation);
         if (catalog.Integrations.IsEmpty)
-            return null;
+            return default;
 
         if (context.SemanticModel.GetInterceptorMethod(invocation, cancellationToken) is not null)
-            return null;
+            return default;
 
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol symbol)
-            return null;
+            return default;
 
         var receiverType = GetInvocationReceiverType(invocation, context.SemanticModel, cancellationToken);
-        if (!TryGetInvocation(catalog, symbol, receiverType, out var target))
-            return null;
+        if (!TryGetInvocation(catalog, symbol, receiverType, out var target, out var declaredShape))
+        {
+            // The receiver and method named a declared integration but the signature did not fit its
+            // shape. Report it rather than dropping the call site silently; see QYL1001.
+            return declaredShape.Length is 0
+                ? default
+                : new InvocationScanResult(
+                    null,
+                    new ShapeMismatch(
+                        symbol.ContainingType.ToDisplayString(s_fullyQualifiedFormat),
+                        symbol.Name,
+                        declaredShape,
+                        invocation.GetLocation()));
+        }
 
         var interceptableLocation = context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken);
         if (interceptableLocation is null)
-            return null;
+            return default;
 
-        return new InterceptedInvocation(target, interceptableLocation);
+        return new InvocationScanResult(new InterceptedInvocation(target, interceptableLocation), null);
     }
 
     private static ITypeSymbol? GetInvocationReceiverType(
@@ -132,14 +158,21 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         DeclarationCatalog catalog,
         IMethodSymbol symbol,
         ITypeSymbol? receiverType,
-        out InterceptorTarget target)
+        out InterceptorTarget target,
+        out string unmatchedShape)
     {
+        unmatchedShape = string.Empty;
         foreach (var integration in catalog.Integrations)
         {
             foreach (var intercept in integration.Intercepts)
             {
-                if (TryMatchDeclaration(integration, intercept, symbol, receiverType, out target))
+                if (TryMatchDeclaration(integration, intercept, symbol, receiverType, out target, out var declaredShape))
                     return true;
+
+                // Remember the first declaration whose receiver and method matched but whose shape did
+                // not; a later declaration may still match outright, in which case this is discarded.
+                if (declaredShape.Length > 0 && unmatchedShape.Length is 0)
+                    unmatchedShape = declaredShape;
             }
         }
 
@@ -152,9 +185,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         InterceptDeclaration intercept,
         IMethodSymbol symbol,
         ITypeSymbol? receiverType,
-        out InterceptorTarget target)
+        out InterceptorTarget target,
+        out string unmatchedShape)
     {
         target = default;
+        unmatchedShape = string.Empty;
         if (intercept.Methods.Length > 0 && !intercept.Methods.Contains(symbol.Name))
             return false;
 
@@ -162,7 +197,16 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             return false;
 
         if (!TryMatchShape(intercept.Shape, integration, symbol, receiverType, matchedReceiver, out var shape))
+        {
+            // Only worth reporting when the declaration actually named this API. A declaration with no
+            // receiver type or no method list matches every invocation in the compilation and leaves the
+            // narrowing to the shape function, so a shape miss there says nothing about consumer intent
+            // -- reporting it would fire QYL1001 on Task.FromResult and int.ToString.
+            if (intercept.ReceiverType.Length > 0 && intercept.Methods.Length > 0)
+                unmatchedShape = intercept.Shape;
+
             return false;
+        }
 
         var overridesId = shape.InstrumentationId.Length > 0;
         target = new InterceptorTarget(
@@ -206,14 +250,35 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
     private static void EmitInterceptors(
         SourceProductionContext context,
-        ImmutableArray<InterceptedInvocation?> nullableInvocations)
+        ImmutableArray<InvocationScanResult> results)
     {
-        if (nullableInvocations.IsDefaultOrEmpty)
+        if (results.IsDefaultOrEmpty)
             return;
 
-        var invocations = nullableInvocations
-            .Where(static invocation => invocation is not null)
-            .Select(static invocation => invocation!.Value)
+        // Report every call site that named a declared integration but did not fit its shape, in a
+        // stable order so the build log is reproducible. These produce no interceptor by design.
+        var mismatches = results
+            .Where(static result => result.Mismatch is not null)
+            .Select(static result => result.Mismatch!.Value)
+            .Distinct()
+            .OrderBy(static mismatch => mismatch.Location.GetLineSpan().Path, StringComparer.Ordinal)
+            .ThenBy(static mismatch => mismatch.Location.SourceSpan.Start)
+            .ThenBy(static mismatch => mismatch.ReceiverType, StringComparer.Ordinal)
+            .ThenBy(static mismatch => mismatch.MethodName, StringComparer.Ordinal);
+
+        foreach (var mismatch in mismatches)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                QylGeneratorDiagnostics.ShapeNotMatched,
+                mismatch.Location,
+                mismatch.ReceiverType,
+                mismatch.MethodName,
+                mismatch.Shape));
+        }
+
+        var invocations = results
+            .Where(static result => result.Intercepted is not null)
+            .Select(static result => result.Intercepted!.Value)
             .Distinct()
             // Stable, content-based ordering so the emission order and the _N interceptor-name indices
             // are a pure function of the matched call sites — independent of Roslyn's cross-tree syntax

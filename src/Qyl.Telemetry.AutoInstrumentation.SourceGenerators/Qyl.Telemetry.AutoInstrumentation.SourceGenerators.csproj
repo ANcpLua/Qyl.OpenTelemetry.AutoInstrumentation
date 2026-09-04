@@ -22,6 +22,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Analyzer release tracking (RS2007/RS2008) for the generator's diagnostics. -->
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ANcpLua.Roslyn.Utilities.Sources" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <!-- Exclude the runtime-only helper from the compiler-host assembly. -->

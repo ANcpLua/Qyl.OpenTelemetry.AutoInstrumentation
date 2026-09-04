@@ -7,6 +7,13 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
     <PathMap>$(MSBuildProjectDirectory)=/_qyl_generator_snapshot</PathMap>
+
+    <!-- ShapeMismatch.cs deliberately contains a call site that names a declared integration
+         receiver and method but does not fit its shape. QYL1001 is Info by default, which MSBuild
+         does not print, so the fixture raises it to a warning (.editorconfig) to make it assertable
+         and exempts it from TreatWarningsAsErrors. The assertion lives in
+         tools/verify-generator-snapshots.py. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);QYL1001</WarningsNotAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

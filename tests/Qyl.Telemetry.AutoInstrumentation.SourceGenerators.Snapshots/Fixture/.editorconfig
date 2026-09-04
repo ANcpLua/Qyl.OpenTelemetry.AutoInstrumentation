@@ -1,0 +1,5 @@
+[*.cs]
+# QYL1001 is Info by default and MSBuild does not surface Info diagnostics. The snapshot
+# fixture raises it so tools/verify-generator-snapshots.py can assert it; the project sets
+# WarningsNotAsErrors so it stays non-fatal under TreatWarningsAsErrors.
+dotnet_diagnostic.QYL1001.severity = warning
