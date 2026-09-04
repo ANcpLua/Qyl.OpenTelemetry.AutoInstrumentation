@@ -108,7 +108,7 @@ public static class QylShapes
     public const string MassTransitOperation = "MassTransitOperation";
     /// <summary>A <c>Task</c>-returning NServiceBus publish or send.</summary>
     public const string NServiceBusOperation = "NServiceBusOperation";
-    /// <summary>The <c>IJob.Execute(IJobExecutionContext)</c> operation.</summary>
+    /// <summary>The <c>IJob.Execute(IJobExecutionContext, CancellationToken)</c> operation.</summary>
     public const string QuartzJob = "QuartzJob";
     /// <summary>An <c>IDatabaseAsync</c> command whose wire command the command table resolves.</summary>
     public const string RedisCommand = "RedisCommand";

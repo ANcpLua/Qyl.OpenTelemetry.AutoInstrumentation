@@ -437,6 +437,7 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ
+  supported_versions: Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code

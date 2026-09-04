@@ -83,8 +83,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
-  supported_versions: Microsoft.Agents.AI ==1.17.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
+  supported_versions: Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -95,8 +95,8 @@ contract_items:
   index: 63
   contract_item_id: QYL_NATIVE_CONTRACT_003
   upstream_sources:
-  - label: Microsoft.Agents.AI 1.17.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
+  - label: Microsoft.Agents.AI 1.20.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
   - label: official UseOpenTelemetry API
     url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
   lane: official_library_hook
@@ -117,8 +117,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
-  supported_versions: Microsoft.Agents.AI ==1.17.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
+  supported_versions: Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -129,8 +129,8 @@ contract_items:
   index: 64
   contract_item_id: QYL_NATIVE_CONTRACT_004
   upstream_sources:
-  - label: Microsoft.Agents.AI 1.17.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.17.0
+  - label: Microsoft.Agents.AI 1.20.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
   - label: official UseOpenTelemetry API
     url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
   lane: official_library_hook
@@ -151,8 +151,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI.Workflows
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.17.0
-  supported_versions: Microsoft.Agents.AI.Workflows ==1.17.0; WorkflowBuilder.WithOpenTelemetry() path only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.20.0
+  supported_versions: Microsoft.Agents.AI.Workflows ==1.20.0; WorkflowBuilder.WithOpenTelemetry() path only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -164,8 +164,8 @@ contract_items:
   index: 65
   contract_item_id: QYL_NATIVE_CONTRACT_005
   upstream_sources:
-  - label: Microsoft.Agents.AI.Workflows 1.17.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.17.0
+  - label: Microsoft.Agents.AI.Workflows 1.20.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.20.0
   - label: official Agent Framework repository
     url: https://github.com/microsoft/agent-framework
   lane: official_library_hook
