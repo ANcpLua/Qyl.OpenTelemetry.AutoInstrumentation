@@ -8,3 +8,6 @@
 *REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.ElasticTransport = "ElasticTransport" -> string!
 *REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElasticsearch.Request(string! methodName) -> System.Diagnostics.Activity?
 *REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedElasticTransport.Request(string! methodName) -> System.Diagnostics.Activity?
+*REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq
+*REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RabbitMqPublish = "RabbitMqPublish" -> string!
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq.Publish(string? exchange, string? routingKey) -> System.Diagnostics.Activity?

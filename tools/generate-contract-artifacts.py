@@ -79,7 +79,7 @@ CONFORMANCE_PROFILES = [
         "profile_id": "qyl-aot-messaging",
         "signal_names": [
             "{destination} send",
-            "rabbitmq.publish",
+            "publish",
         ],
     },
     {
@@ -247,6 +247,10 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
     ),
     "signals.traces.NSERVICEBUS": (
         "NServiceBus >=8.0.0; verified against 10.2.9"
+    ),
+    "signals.traces.RABBITMQ": (
+        'RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources '
+        '"RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber"'
     ),
     "signals.traces.MASSTRANSIT": (
         'MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"'

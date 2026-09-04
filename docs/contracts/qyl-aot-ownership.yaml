@@ -416,20 +416,22 @@ ownership_items:
     - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
   key: signals.traces.RABBITMQ
-  lane: source_interceptor
+  supported_versions: RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources "RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber"
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: RabbitMQ.Client's own publisher and subscriber ActivitySources enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealRabbitMqDemo
   - tools/verify-real-rabbitmq-demo.py
   conformance_signals:
   - kind: span
-    name: rabbitmq.publish
+    name: publish
     required_attributes:
     - messaging.system
     - messaging.operation.type
@@ -437,8 +439,8 @@ ownership_items:
     - qyl.instrumentation.domain
     - messaging.destination.name
     recommended_attributes:
-    - error.type
     - messaging.rabbitmq.destination.routing_key
+    - messaging.message.body.size
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ

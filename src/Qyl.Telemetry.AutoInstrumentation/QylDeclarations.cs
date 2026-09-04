@@ -110,8 +110,6 @@ public static class QylShapes
     public const string GraphQlExecute = "GraphQlExecute";
     /// <summary>An <c>IMongoCollection&lt;T&gt;</c> operation.</summary>
     public const string MongoDbCollection = "MongoDbCollection";
-    /// <summary>The <c>BasicPublish</c>/<c>BasicPublishAsync</c> overloads.</summary>
-    public const string RabbitMqPublish = "RabbitMqPublish";
 }
 
 /// <summary>Binds a helper parameter to an intercepted argument by position, optionally filtered by the argument's type and converted by a format whose <c>{0}</c> is the argument.</summary>

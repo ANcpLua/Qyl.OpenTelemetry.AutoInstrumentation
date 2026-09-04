@@ -16,6 +16,8 @@ internal static class QylTelemetrySources
     internal const string HttpClient = "System.Net.Http";
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
+    internal const string RabbitMqPublisher = QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher;
+    internal const string RabbitMqSubscriber = QylTelemetryNames.VendorActivitySources.RabbitMQClientSubscriber;
 
     /// <summary>
     /// The libraries whose own <c>ActivitySource</c> qyl subscribes to instead of intercepting: the
@@ -50,6 +52,16 @@ internal static class QylTelemetrySources
             MassTransit,
             QylAutoInstrumentationIds.MassTransit,
             QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
+            Normalize: null),
+        new(
+            RabbitMqPublisher,
+            QylAutoInstrumentationIds.RabbitMq,
+            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
+            Normalize: null),
+        new(
+            RabbitMqSubscriber,
+            QylAutoInstrumentationIds.RabbitMq,
+            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
             Normalize: null),
     ];
 

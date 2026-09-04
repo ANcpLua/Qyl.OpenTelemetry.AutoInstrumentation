@@ -55,8 +55,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchGraphQlExecute(symbol, out match);
             case "MongoDbCollection":
                 return TryMatchMongoDbCollection(symbol, matchedReceiver, out match);
-            case "RabbitMqPublish":
-                return TryMatchRabbitMqPublish(symbol, matchedReceiver, out match);
             default:
                 throw new InvalidOperationException("Unknown interceptor shape: " + shape);
         }
@@ -674,62 +672,6 @@ public sealed partial class QylAutoInstrumentationGenerator
            TryGetTaskResult(returnType, out _) ||
            returnType.SpecialType is not SpecialType.None ||
            returnType is INamedTypeSymbol;
-
-    private static bool TryMatchRabbitMqPublish(IMethodSymbol symbol, ITypeSymbol matchedReceiver, out ShapeMatch match)
-    {
-        match = default;
-        if (!TryGetRabbitMqBasicPublishParameters(symbol, out var parameters))
-            return false;
-
-        if (string.Equals(symbol.Name, "BasicPublish", StringComparison.Ordinal) && symbol.ReturnsVoid)
-        {
-            match = new ShapeMatch(
-                CleanTypeName(matchedReceiver),
-                "void",
-                parameters,
-                false,
-                ExtensionContainingType: GetReducedExtensionContainingType(symbol));
-            return true;
-        }
-
-        if (string.Equals(symbol.Name, "BasicPublishAsync", StringComparison.Ordinal) && IsValueTask(symbol.ReturnType))
-        {
-            match = new ShapeMatch(
-                CleanTypeName(matchedReceiver),
-                CleanTypeName(symbol.ReturnType, symbol),
-                parameters,
-                true,
-                GetTypeParameterList(symbol),
-                GetConstraintClauses(symbol),
-                GetReducedExtensionContainingType(symbol));
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryGetRabbitMqBasicPublishParameters(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
-    {
-        parameters = default;
-        if (symbol.Parameters.Length < 3)
-            return false;
-
-        if (IsType(symbol.Parameters[0].Type, "global::System.String") &&
-            IsType(symbol.Parameters[1].Type, "global::System.String"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        if (symbol.Parameters[0].Type is INamedTypeSymbol publicationAddress &&
-            IsTypeByMetadata(publicationAddress, "RabbitMQ.Client", "PublicationAddress"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        return false;
-    }
 
     private static bool TryMatchRedisCommand(IMethodSymbol symbol, string helperType, out ShapeMatch match)
     {

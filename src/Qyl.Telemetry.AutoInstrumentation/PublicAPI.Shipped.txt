@@ -50,7 +50,6 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
@@ -72,7 +71,6 @@ const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MongoDbCollection = "MongoDbCollection" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.NServiceBusOperation = "NServiceBusOperation" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.QuartzJob = "QuartzJob" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RabbitMqPublish = "RabbitMqPublish" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RedisCommand = "RedisCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.WcfClient = "WcfClient" -> string!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
@@ -135,7 +133,6 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.Send(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz.Execute(string? jobGroup, string? jobName) -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq.Publish(string? exchange, string? routingKey) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.Command(string? operationName, int databaseIndex) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.Call(string! method, System.Uri? endpointUri) -> System.Diagnostics.Activity?

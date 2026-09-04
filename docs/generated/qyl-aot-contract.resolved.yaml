@@ -814,7 +814,8 @@ contract_items:
   libraries:
   - name: RabbitMQ.Client
     url: https://www.nuget.org/packages/RabbitMQ.Client/
-  supported_versions: '>=5.0.0'
+  supported_versions: RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources "RabbitMQ.Client.Publisher"
+    and "RabbitMQ.Client.Subscriber"
   instrumentation_types:
   - source
   - bytecode
@@ -828,20 +829,22 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L162-L204
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: RabbitMQ.Client's own publisher and subscriber ActivitySources enabled by Qyl.Telemetry.Hosting, with the
+    qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealRabbitMqDemo
   - tools/verify-real-rabbitmq-demo.py
   conformance_signals:
   - kind: span
-    name: rabbitmq.publish
+    name: publish
     required_attributes:
     - messaging.system
     - messaging.operation.type
@@ -849,8 +852,8 @@ contract_items:
     - qyl.instrumentation.domain
     - messaging.destination.name
     recommended_attributes:
-    - error.type
     - messaging.rabbitmq.destination.routing_key
+    - messaging.message.body.size
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.QUARTZ

@@ -4,9 +4,15 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Qyl.Telemetry.AutoInstrumentation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
+using Qyl;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
+using MessagingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 var uriText = Environment.GetEnvironmentVariable("QYL_RABBITMQ_URI");
 if (string.IsNullOrWhiteSpace(uriText))
@@ -15,22 +21,28 @@ if (string.IsNullOrWhiteSpace(uriText))
     return 2;
 }
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
-using var listener = new ActivityListener
+// The real registration path: AddQyl subscribes to RabbitMQ.Client's own publisher and subscriber
+// ActivitySources and installs the one native-span processor.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
+    ApplicationName = "Qyl.RealRabbitMqDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-rabbitmq-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-ActivitySource.AddActivityListener(listener);
+using var host = builder.Build();
+await host.StartAsync();
 
 var factory = new ConnectionFactory { Uri = new Uri(uriText) };
 await using var connection = await WaitForRabbitMqAsync(factory);
@@ -46,21 +58,19 @@ await using (var channel = await connection.CreateChannelAsync(channelOptions))
     Console.WriteLine("published-queue=" + queue);
 }
 
-await using (var failingChannel = await connection.CreateChannelAsync(channelOptions))
+await using (var namedChannel = await connection.CreateChannelAsync(channelOptions))
 {
-    try
-    {
-        await failingChannel.BasicPublishAsync("qyl.missing.exchange", "qyl", Encoding.UTF8.GetBytes("qyl-error"));
-    }
-    catch (RabbitMQClientException exception)
-    {
-        Console.WriteLine("expected-rabbitmq-error=" + exception.GetType().Name);
-    }
+    await namedChannel.ExchangeDeclareAsync(RabbitMqReport.NamedExchange, ExchangeType.Fanout, autoDelete: true);
+    await namedChannel.BasicPublishAsync(RabbitMqReport.NamedExchange, RabbitMqReport.NamedRoutingKey, Encoding.UTF8.GetBytes("qyl-exchange"));
+    Console.WriteLine("published-exchange=" + RabbitMqReport.NamedExchange);
 }
+
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
 
 var report = RabbitMqReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealRabbitMqJsonContext.Default.RabbitMqReport);
 Console.WriteLine(json);
@@ -89,6 +99,7 @@ static async Task<IConnection> WaitForRabbitMqAsync(ConnectionFactory factory)
 }
 
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -96,6 +107,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -111,59 +123,67 @@ internal sealed record RabbitMqReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    internal const string NamedExchange = "qyl-probe-exchange";
+    internal const string NamedRoutingKey = "qyl";
+
+    // RabbitMQ.Client's own name for the default exchange, which it substitutes for the empty one.
+    private const string DefaultExchangeDestination = "amq.default";
+
     public static RabbitMqReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
-        var rabbitSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "messaging.rabbitmq"))
+        var publisherSpans = activities
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher))
             .ToArray();
 
-        var success = rabbitSpans.Where(static span => StringComparer.Ordinal.Equals(span.Status, "Unset")).ToArray();
-        var error = rabbitSpans.Where(static span => StringComparer.Ordinal.Equals(span.Status, "Error")).ToArray();
+        // One native span per publish, not per run.
+        var defaultExchangeSpans = publisherSpans
+            .Where(static span =>
+                span.Tags.TryGetValue(MessagingAttributes.DestinationName, out var destination) &&
+                StringComparer.Ordinal.Equals(destination, DefaultExchangeDestination))
+            .ToArray();
+        var namedExchangeSpans = publisherSpans
+            .Where(static span =>
+                span.Tags.TryGetValue(MessagingAttributes.DestinationName, out var destination) &&
+                StringComparer.Ordinal.Equals(destination, NamedExchange))
+            .ToArray();
 
-        if (success.Length != 1)
-            failures.Add($"expected 1 successful RabbitMQ publish span, got {success.Length}");
+        if (defaultExchangeSpans.Length != 1)
+            failures.Add($"expected exactly 1 default-exchange publish span, got {defaultExchangeSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+        if (namedExchangeSpans.Length != 1)
+            failures.Add($"expected exactly 1 '{NamedExchange}' publish span, got {namedExchangeSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+        if (publisherSpans.Length != 2)
+            failures.Add($"expected exactly 2 RabbitMQ publisher spans, got {publisherSpans.Length.ToString(CultureInfo.InvariantCulture)}");
 
-        if (error.Length != 1)
-            failures.Add($"expected 1 error RabbitMQ publish span, got {error.Length}");
-
-        foreach (var span in rabbitSpans)
+        foreach (var span in publisherSpans)
         {
-            span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.DestinationName, out var destination);
-            span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.RabbitmqDestinationRoutingKey, out var routingKey);
-            if (StringComparer.Ordinal.Equals(span.Status, "Error"))
-            {
-                // publish to a named exchange with routing key "qyl": destination is exchange:routing_key.
-                if (!StringComparer.Ordinal.Equals(destination, "qyl.missing.exchange:qyl"))
-                    failures.Add($"unexpected RabbitMQ error destination: {destination}");
-                if (!StringComparer.Ordinal.Equals(routingKey, "qyl"))
-                    failures.Add($"unexpected RabbitMQ error routing key: {routingKey}");
-            }
-            else
-            {
-                // publish to the default exchange with the generated queue as the routing key:
-                // the empty exchange drops out, so destination is the routing key (the queue).
-                if (string.IsNullOrEmpty(destination) || !StringComparer.Ordinal.Equals(destination, routingKey))
-                    failures.Add($"expected RabbitMQ default-exchange destination to equal the routing key, got destination={destination} routingKey={routingKey}");
-            }
+            // The attribute the qyl processor owns: without it the collector cannot classify the
+            // span, because it classifies on attribute presence and never on the span name.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
+                failures);
 
-            if (!StringComparer.Ordinal.Equals(span.Name, "publish " + destination))
+            // RabbitMQ.Client's own attributes, which are the stable messaging conventions.
+            RequireTag(span, MessagingAttributes.System, MessagingAttributes.SystemValues.Rabbitmq, failures);
+            RequireTag(span, MessagingAttributes.OperationType, MessagingAttributes.OperationTypeValues.Send, failures);
+            RequireTag(span, MessagingAttributes.OperationName, "publish", failures);
+            RequirePresentTag(span, MessagingAttributes.RabbitmqDestinationRoutingKey, failures);
+            RequirePresentTag(span, MessagingAttributes.MessageBodySize, failures);
+
+            if (!StringComparer.Ordinal.Equals(span.Name, "publish"))
                 failures.Add($"unexpected RabbitMQ span name: {span.Name}");
-
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.SystemValues.Rabbitmq, failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, "publish", failures);
-
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");
         }
 
-        foreach (var span in error)
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(RabbitMQ.Client.Exceptions.AlreadyClosedException).FullName!, failures);
+        foreach (var span in namedExchangeSpans)
+            RequireTag(span, MessagingAttributes.RabbitmqDestinationRoutingKey, NamedRoutingKey, failures);
 
-        return new RabbitMqReport(runtimeMode, failures.Count is 0, failures.ToArray(), rabbitSpans);
+        return new RabbitMqReport(runtimeMode, failures.Count is 0, failures.ToArray(), publisherSpans);
     }
 
     private static void RequireTag(CapturedActivity span, string key, string expected, ICollection<string> failures)
@@ -176,6 +196,12 @@ internal sealed record RabbitMqReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequirePresentTag(CapturedActivity span, string key, ICollection<string> failures)
+    {
+        if (!span.Tags.ContainsKey(key))
+            failures.Add($"missing {key}");
     }
 }
 

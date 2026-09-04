@@ -61,7 +61,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
 
     for token in [
         "published-queue=",
-        "expected-rabbitmq-error=AlreadyClosedException",
+        "published-exchange=qyl-probe-exchange",
     ]:
         if token not in completed.stdout:
             fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")

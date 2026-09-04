@@ -38,5 +38,6 @@ internal sealed class QylSignalAttribute : Attribute
 [QylSignal(QylAutoInstrumentationIds.ModelContextProtocol, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.NetRuntime, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.Process, QylAutoInstrumentationSignal.Metrics)]
+[QylSignal(QylAutoInstrumentationIds.RabbitMq, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.WcfCore, QylAutoInstrumentationSignal.Traces)]
 internal static class QylNativeSignals;

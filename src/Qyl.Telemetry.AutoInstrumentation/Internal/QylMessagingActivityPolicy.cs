@@ -13,7 +13,6 @@ internal static class QylMessagingActivityPolicy
     private const string Send = "send";
     private const string Publish = "publish";
     private const string Receive = "receive";
-    private const string RabbitMqDefaultDestination = "amq.default";
     // messaging.system does not enumerate NServiceBus, so the value is qyl-owned.
     internal const string NServiceBusSystemName = "nservicebus";
 
@@ -52,38 +51,6 @@ internal static class QylMessagingActivityPolicy
             MessagingAttributes.OperationTypeValues.Send,
             OperationName(method),
             destination: null);
-
-    public static Activity? StartRabbitMqPublishActivity(string? exchange, string? routingKey)
-    {
-        var activity = Start(
-            QylAutoInstrumentationIds.RabbitMq,
-            ActivityKind.Producer,
-            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
-            MessagingAttributes.SystemValues.Rabbitmq,
-            MessagingAttributes.OperationTypeValues.Send,
-            Publish,
-            RabbitMqDestination(exchange, routingKey));
-        if (activity is not null && !string.IsNullOrEmpty(routingKey))
-            activity.SetTag(MessagingAttributes.RabbitmqDestinationRoutingKey, routingKey);
-
-        return activity;
-    }
-
-    // RabbitMQ destination convention: {exchange}:{routing_key}; the available one alone when the
-    // other is empty; amq.default only when both are empty.
-    private static string RabbitMqDestination(string? exchange, string? routingKey)
-    {
-        var hasExchange = !string.IsNullOrEmpty(exchange);
-        var hasRoutingKey = !string.IsNullOrEmpty(routingKey);
-        if (!hasExchange && !hasRoutingKey)
-            return RabbitMqDefaultDestination;
-        if (!hasExchange)
-            return routingKey!;
-        if (!hasRoutingKey)
-            return exchange!;
-
-        return exchange + ":" + routingKey;
-    }
 
     public static string OperationName(string method)
         => string.Equals(method, "Send", StringComparison.Ordinal) ? Send : Publish;

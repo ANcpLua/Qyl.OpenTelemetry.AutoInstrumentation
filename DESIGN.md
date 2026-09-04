@@ -258,7 +258,7 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
 | MassTransit | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.masstransit`), so the processor sets them without the call site. The interceptor's `messaging.operation.name` **was** call-site-derived and the native span does **not** replace it — see the output change. | Source `Qyl.Telemetry.AutoInstrumentation` span `publish`/`send` -> source `MassTransit` span `{destination} send`. `messaging.system` changes from the qyl-owned `masstransit` to the transport MassTransit reports (`rabbitmq`). `messaging.operation.type` and `messaging.operation.name` are gone; MassTransit reports the deprecated `messaging.operation`, always `send`, for both `Publish` and `Send`, so the two are no longer distinguishable. `error.type` is gone: a publish that fails before the transport produces no span at all. Gained: `messaging.destination.name` and the `messaging.masstransit.*` vendor keys. |
 | Elastic.Transport | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `elastic.transport`), set without the call site. The interceptor's `db.operation.name` was derived from the intercepted method name; the native span has no equivalent. | Source `Qyl.Telemetry.AutoInstrumentation` span `request` -> source `Elastic.Transport` span named after the HTTP method. Elastic.Transport emits **no database semantic conventions of its own**: `db.system.name`, `db.operation.name` and `db.query.summary` are gone, as is `error.type`. Gained: `elastic.transport.*` (7 keys), `http.request.method`, `server.address`, `server.port`, `url.full`, `user_agent.original`. |
 | Elasticsearch | migrated | Same constants. The client owns no `ActivitySource`; its spans are Elastic.Transport's, so ELASTICSEARCH and ELASTICTRANSPORT share one table row and the domain is selected per span from `elastic.transport.product.name` (`elasticsearch-net` -> `db.elasticsearch`, otherwise `elastic.transport`). | Source `Qyl.Telemetry.AutoInstrumentation` span `request` -> source `Elastic.Transport` span named after the client operation (`ping`). The stable `db.system.name` / `db.operation.name` become the client's pre-stable `db.system` = `elasticsearch` and `db.operation`; `db.query.summary` and `error.type` are gone. Gained: `db.elasticsearch.*`, `elastic.transport.*`, and the HTTP/server keys. |
-| RabbitMQ.Client | open | — | — |
+| RabbitMQ.Client | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.rabbitmq`), set without the call site. The interceptor read the exchange and routing key from the call arguments; `RabbitMQActivitySource` sets both itself, so nothing is lost. | Source `Qyl.Telemetry.AutoInstrumentation` span `publish {exchange}:{routing_key}` -> source `RabbitMQ.Client.Publisher` span `publish`. `messaging.destination.name` stops being qyl's `{exchange}:{routing_key}` composite and becomes the exchange alone (`amq.default` for the default exchange), with the routing key in `messaging.rabbitmq.destination.routing_key` where the convention puts it. `error.type` is gone. Gained: `messaging.message.body.size`, `messaging.rabbitmq.delivery_tag`, `network.protocol.*`, `server.*`, `network.peer.*`, `client.*`, and the consumer side — `RabbitMQ.Client.Subscriber` spans (`deliver`, `fetch`) that the interceptor never produced at all. |
 | MongoDB.Driver | open | — | — |
 | Quartz | open | — | — |
 | NServiceBus | open | — | — |
@@ -296,6 +296,14 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
   `elastic-transport-net` (`DefaultProductRegistration.Name`), the client `elasticsearch-net`. That
   is a vendor value, not a semantic-convention one: the registry names the key, Elastic owns what
   goes in it. Both demos run without a container and were verified locally.
+
+- **RabbitMQ.Client's native span is strictly richer than the interceptor's, and adds a signal.**
+  `RabbitMQActivitySource` at tag `v7.2.2` emits the stable messaging conventions directly —
+  `messaging.system` = `rabbitmq`, `messaging.operation.type`, `messaging.operation.name`,
+  `messaging.destination.name`, `messaging.rabbitmq.destination.routing_key`,
+  `messaging.message.body.size` — from `CreationTags` and `PopulateMessagingTags`, and it owns a
+  second source, `RabbitMQ.Client.Subscriber`, for `deliver` and `fetch`. Subscribing therefore adds
+  consumer spans qyl never emitted. Two source names, one instrumentation id, two table rows.
 
 - **CoreWCF has no instrumentation-domain value.** The registry's
   `qyl.instrumentation.domain` value set publishes `rpc.wcf.client`, which belongs to the
