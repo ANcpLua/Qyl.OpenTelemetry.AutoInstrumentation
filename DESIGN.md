@@ -98,12 +98,69 @@ the major this repository pins.
   `.UseRoutingKeyAsOperationName`) that change propagation and span names. A processor shares that
   state with application code.
 
+## Audit of the nine remaining interceptors
+
+Audited 2026-09-04, one question each: does `AddSource("<name>")` alone deliver spans, without a
+contrib package and without a `DiagnosticListener` adapter? The finding column names what was read —
+the declaring type at a public tag, the shipped assembly of the pinned version, or the vendor's own
+documentation. "None" in the opt-in column means the source emits with a listener attached and
+nothing else.
+
+| Integration | Pinned | Native source? | Exact name | Floor | Finding | Bucket | Opt-in? | Vendor / non-stable keys emitted |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ADONET | `System.Data.Common`, `Microsoft.NETCore.App` `10.0.11` | No | n/a | n/a | String and metadata scan of `shared/Microsoft.NETCore.App/10.0.11/System.Data.Common.dll`: zero `ActivitySource`, zero `DiagnosticSource`/`DiagnosticListener`. `DbCommand` is abstract and emits nothing. | no native source | n/a | n/a |
+| SQLCLIENT | `Microsoft.Data.SqlClient` `7.0.2` | No | n/a | n/a | `grep -rn ActivitySource` over `src/` at tag `v7.0.2`: zero hits. The only telemetry entry point is `SqlDiagnosticListener : DiagnosticListener` constructed as `base("SqlClientDiagnosticListener")`, `src/Microsoft.Data.SqlClient/src/Microsoft/Data/SqlClient/Diagnostics/SqlDiagnosticListener.cs:18`. `DiagnosticSource` only counts as No. | `DiagnosticSource` only | n/a | n/a |
+| SQLITE | `Microsoft.Data.Sqlite` `10.0.11` | No | n/a | n/a | `grep -rn ActivitySource` over `src/Microsoft.Data.Sqlite.Core/` at `dotnet/efcore` tag `v10.0.11`: zero hits; no file in that tree matches `activity`, `telemetry` or `diagnostic`. | no native source | n/a | n/a |
+| NPGSQL | `Npgsql` `10.0.3` | **Yes** | `Npgsql` | `6.0.0` | `static readonly ActivitySource Source = new("Npgsql", GetLibraryVersion());` — `src/Npgsql/NpgsqlActivitySource.cs:15` at tag `v10.0.3`. Floor by bisect: the same file declares `Source = new("Npgsql", version)` at tag `v6.0.0`; at `v5.0.0` the path is absent and the `v5.0.0` tree contains no `*Activity*` file under `src/Npgsql/`. | native | None — the only gate is `Source.HasListeners()`; `NpgsqlTracingOptionsBuilder` filters and enriches, it does not enable | `db.npgsql.connection_id`, `db.npgsql.data_source`, `db.npgsql.prepared`, `db.npgsql.rows`; event `received-first-response` |
+| MYSQLCONNECTOR | `MySqlConnector` `2.6.2` | **Yes** | `MySqlConnector` | `2.0.0` | `private static ActivitySource ActivitySource { get; } = new("MySqlConnector", GetVersion());` — `src/MySqlConnector/Utilities/ActivitySourceHelper.cs` at tag `2.6.2`. Floor by bisect: the file exists at tag `2.0.0` (`CreateActivitySource()`, same name) and 404s at `1.3.14` and `2.0.0-beta.1`. Agrees with upstream `>=2.0.0`. | native | None for spans. Attribute flavor is environment-driven: without `OTEL_SEMCONV_STABILITY_OPT_IN=database` (or `database/dup`) only the experimental keys are set — `MySqlConnectorTracingOptions.GetDefaultSemanticConventions()` | `db.connection_id`, `db.connection_string`, `db.user`, `thread.id`, and, under the default experimental flavor, `db.name`, `db.system`, `db.statement`, `net.peer.ip`, `net.peer.name`, `net.peer.port`, `net.transport` |
+| MYSQLDATA | `MySql.Data` `26.7.0` | **Yes** | `connector-net` | `8.1.0` | `Source = new("connector-net", version);` — `MySQL.Data/src/MySQLActivitySource.cs:47` at tag `9.7.0` (the newest public tag; `26.7.0` is untagged). The literal `connector-net` is present in the `#US` heap of `lib/net10.0/MySql.Data.dll` in the pinned `26.7.0` package. That `AddSource` alone suffices is Oracle's own statement: `MySql.Data.OpenTelemetry`'s entire content is `AddConnectorNet(this TracerProviderBuilder builder) => builder.AddSource("connector-net")`, `MySQL.Data.OpenTelemetry/src/TraceProviderBuilderExtension.cs`. Floor by bisect: the file exists at tag `8.1.0`, 404s at `8.0.33`. Agrees with upstream `>=8.1.0`. Guarded by `#if NET5_0_OR_GREATER`, so no .NET Framework. | native | None | `db.connection_string`, `db.name`, `db.sql.table`, `db.statement`, `db.system`, `db.user`, `net.peer.port`, `net.transport`, `otel.status_code`, `otel.status_description`, `thread.id`, `thread.name`; exception carried as an `exception` event, not `error.type` |
+| ORACLEMDA | `Oracle.ManagedDataAccess.Core` `23.26.300` | **Yes** | `Oracle.ManagedDataAccess.Core` (ODP.NET Core; `Oracle.ManagedDataAccess` for the unmanaged driver) | `23.4.0` | Oracle documents the no-package path verbatim — "Without ODP.NET OpenTelemetry package … must call `AddSource("Oracle.ManagedDataAccess.Core")`; `AddOracleDataProviderInstrumentation()` is not required", <https://docs.oracle.com/en/database/oracle/oracle-database/26/odpnt/featOpenTelemetry.html>. Floor by package bisect: `OpenTelemetryTracing` and the `Oracle.ManagedDataAccess.Core` source literal are in `lib/netstandard2.1/Oracle.ManagedDataAccess.dll` of `23.4.0` (first stable) and absent from `23.2.0-dev`. Agrees with upstream `>=23.4.0`. | native | None — `OracleConfiguration.OpenTelemetryTracing` is `public static bool` with default `true`, <https://docs.oracle.com/en/database/oracle/oracle-database/26/odpnt/ConfigurationOpenTelemetryTracing.html>. `DatabaseOpenTelemetryTracing` is a separate, additional span set and is not required | `db.odp.connection.id`, `db.odp.roundtrip.count`, `db.odp.roundtrip.duration`, `db.odp.rows_affected`, `db.odp.sql_id`, `db.odp.user.statement`, plus `db.name`, `db.statement`, `db.system`, `db.user`, `otel.status_code`, `otel.status_description` |
+| STACKEXCHANGEREDIS | `StackExchange.Redis` `3.1.31` | No | n/a | n/a | `grep -rn ActivitySource` over `src/` at tag `3.1.31`: zero hits. The only instrumentation surface is the profiling API, `src/StackExchange.Redis/Profiling/ProfilingSession.cs`, which is what `OpenTelemetry.Instrumentation.StackExchangeRedis` drives — a contrib package by the rule's definition. | no native source | n/a | n/a |
+| WCFCLIENT | `System.ServiceModel.Primitives` `10.0.652802` | No | n/a | n/a | String and metadata scan of every `System.ServiceModel*.dll` in the pinned package, `lib/` and `ref/`, `net10.0`, `net462` and `netstandard2.0`: zero `ActivitySource`, zero `DiagnosticListener`. `OpenTelemetry.Instrumentation.Wcf` works through an endpoint behavior, not a source. | no native source | n/a | n/a |
+
+Four of the nine qualify: **NPGSQL**, **MYSQLCONNECTOR**, **MYSQLDATA**, **ORACLEMDA**. Five do not
+and stay interceptors: **ADONET**, **SQLCLIENT**, **SQLITE**, **STACKEXCHANGEREDIS**, **WCFCLIENT**.
+
+### Rows that carry a caveat
+
+- **Npgsql** emits a second span, `CONNECT <database>`, when a physical connection is opened. The
+  per-library demo proof is one span per command, not one span per run; the demo must open the
+  connection outside the asserted window or assert the CONNECT span explicitly.
+- **MySqlConnector** defaults to the *experimental* database conventions. Migrating without setting
+  `OTEL_SEMCONV_STABILITY_OPT_IN=database` in the consumer's environment replaces qyl's stable
+  `db.system.name` / `db.namespace` / `db.query.text` / `server.address` with `db.system` /
+  `db.name` / `db.statement` / `net.peer.*`. Either the environment variable is part of the
+  documented migration or the table-driven processor maps the legacy keys forward.
+- **MySql.Data** is the sharpest output change in the wave. Its span is named `SQL Statement`, it
+  carries no stable semantic-convention key at all, it reports failure as an `exception` event with
+  `otel.status_code` rather than `error.type`, and it sets `db.statement` to
+  `command.OriginalCommandText` unconditionally — qyl's `SET_DBSTATEMENT_FOR_TEXT` policy has no
+  equivalent on the native source, so a processor would have to strip the tag rather than choose it.
+  It also mutates the query itself, injecting a `traceparent` query attribute whenever
+  `Activity.Current` is not null.
+- **ODP.NET** produces several spans per command — `Connect`, `Open`, `Close`, `ExecuteNonQuery`,
+  `SendExecuteRequest` — each display-named `<verb> HOST:PORT:DATABASE`, so span names carry the
+  endpoint. Upstream also records it as unsupported on ARM64.
+- **Microsoft.Data.SqlClient** is the one No that could plausibly change: the library has an open
+  telemetry track and today ships `SqlClientMetrics` (a `Meter`) but no `ActivitySource`. Re-check
+  at the next major rather than treating this row as permanent.
+
+### What SemanticConventions 8.1.0 must carry for these four
+
+Source-name constants: `Npgsql`, `MySqlConnector`, `connector-net`, `Oracle.ManagedDataAccess.Core`.
+
+Vendor attribute namespaces: `db.npgsql.*` (4 keys) and `db.odp.*` (6 keys). The remaining keys the
+four sources emit are not vendor-namespaced — they are pre-stable OpenTelemetry keys (`db.system`,
+`db.name`, `db.statement`, `db.user`, `db.connection_id`, `db.connection_string`, `db.sql.table`,
+`net.peer.*`, `net.transport`, `otel.status_*`, `thread.id`, `thread.name`) and the dropped-attribute
+counter, not the registry, is the right place to make their loss visible.
+
 ## Every integration
 
 The rule above is only checkable if it is applied to all of them. Mechanism today is read from
-`lane` in `docs/generated/qyl-aot-contract.resolved.yaml`. **"not audited" means exactly that** — no
-one has yet checked whether the library owns a native `ActivitySource`, and the cell must not be
-read as "no".
+`lane` in `docs/generated/qyl-aot-contract.resolved.yaml`. Every row now carries a decided bucket;
+where a row says "interceptor", the parenthesis names the reason, and the evidence for it is in the
+audit tables above.
 
 | Integration | Mechanism today | Bucket | Floor | After 13.0.0 |
 | --- | --- | --- | --- | --- |
@@ -116,15 +173,15 @@ read as "no".
 | RABBITMQ | interceptor | native | `7.0.0` | source + processor |
 | GRAPHQL | interceptor | native + consumer opt-in | `7.3.0` | interceptor (opt-in cannot be injected) |
 | KAFKA | interceptor | no native source | n/a | interceptor |
-| ADONET | interceptor | **not audited** | — | unchanged pending audit |
-| SQLCLIENT | interceptor | **not audited** | — | unchanged pending audit |
-| SQLITE | interceptor | **not audited** | — | unchanged pending audit |
-| NPGSQL | interceptor | **not audited** | — | unchanged pending audit |
-| MYSQLCONNECTOR | interceptor | **not audited** | — | unchanged pending audit |
-| MYSQLDATA | interceptor | **not audited** | — | unchanged pending audit |
-| ORACLEMDA | interceptor | **not audited** | — | unchanged pending audit |
-| STACKEXCHANGEREDIS | interceptor | **not audited** | — | unchanged pending audit |
-| WCFCLIENT | interceptor | **not audited** | — | unchanged pending audit |
+| ADONET | interceptor | no native source | n/a | interceptor (`System.Data.Common` declares no `ActivitySource`) |
+| SQLCLIENT | interceptor | `DiagnosticSource` only | n/a | interceptor (`SqlClientDiagnosticListener`, no `ActivitySource`) |
+| SQLITE | interceptor | no native source | n/a | interceptor (`Microsoft.Data.Sqlite.Core` declares no `ActivitySource`) |
+| NPGSQL | interceptor | native | `6.0.0` | source + processor |
+| MYSQLCONNECTOR | interceptor | native | `2.0.0` | source + processor |
+| MYSQLDATA | interceptor | native | `8.1.0` | source + processor |
+| ORACLEMDA | interceptor | native | `23.4.0` | source + processor |
+| STACKEXCHANGEREDIS | interceptor | no native source | n/a | interceptor (profiling API only) |
+| WCFCLIENT | interceptor | no native source | n/a | interceptor (no `ActivitySource` in `System.ServiceModel.*`) |
 | AZURE | source + framework initialization | native | — | unchanged; already the rule |
 | WCFCORE | official library hook | native | — | unchanged; already the rule |
 | MCP | official library hook | native | — | unchanged |
@@ -135,10 +192,11 @@ read as "no".
 | ASPNET, WCFSERVICE | unsupported on NativeAOT | — | — | unchanged |
 | LOG4NET, NLOG | not implemented | — | — | unchanged |
 
-Nine interceptors are unaudited, and several are plausible native-source candidates — Npgsql and
-MySqlConnector in particular are worth checking first. Until they are audited this document states a
-rule the codebase has not been proven to follow; that gap is the honest state, not an oversight to
-paper over.
+Every integration is audited. Eleven rows move to source + processor in the 13.0.0 wave —
+MassTransit, Elastic.Transport, Elasticsearch (via the transport), Quartz, MongoDB, NServiceBus,
+RabbitMQ, Npgsql, MySqlConnector, MySql.Data and ODP.NET — and seven stay interceptors with a
+reason in the row: Kafka and GraphQL from the first pass, ADO.NET, SqlClient, Sqlite,
+StackExchange.Redis and the WCF client from the second.
 
 ## Constraints on the 13.0.0 wave
 
