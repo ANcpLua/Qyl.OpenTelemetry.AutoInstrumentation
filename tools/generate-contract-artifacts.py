@@ -243,10 +243,13 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
         'Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"'
     ),
     "signals.metrics.NSERVICEBUS": (
-        "NServiceBus >=8.0.0; verified against 10.2.9"
+        "NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core and "
+        "NServiceBus.Core.Pipeline.Incoming, registered by the consumer through "
+        "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES"
     ),
     "signals.traces.NSERVICEBUS": (
-        "NServiceBus >=8.0.0; verified against 10.2.9"
+        'NServiceBus >=8.0.0; verified against 10.2.9; native ActivitySource "NServiceBus.Core" '
+        "(enabled by default from v10)"
     ),
     "signals.traces.MONGODB": (
         'MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver"'
@@ -267,7 +270,6 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
     ),
 }
 MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
-    "signals.metrics.NSERVICEBUS",
     "signals.traces.KAFKA",
     "signals.traces.MONGODB",
     "signals.traces.NSERVICEBUS",

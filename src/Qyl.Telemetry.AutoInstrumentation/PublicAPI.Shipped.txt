@@ -47,7 +47,6 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
@@ -66,7 +65,6 @@ const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.GraphQlExecute =
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.HttpClient = "HttpClient" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.NServiceBusOperation = "NServiceBusOperation" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RedisCommand = "RedisCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.WcfClient = "WcfClient" -> string!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
@@ -124,9 +122,6 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Receive() -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Send(string? topic, int? partitionId) -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.GetTimestamp() -> long
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.Send(string! operationName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.Command(string? operationName, int databaseIndex) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.Call(string! method, System.Uri? endpointUri) -> System.Diagnostics.Activity?

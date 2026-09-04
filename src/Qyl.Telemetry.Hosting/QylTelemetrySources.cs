@@ -17,6 +17,7 @@ internal static class QylTelemetrySources
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
     internal const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
+    internal const string NServiceBusCore = QylTelemetryNames.VendorActivitySources.NServiceBusCore;
     internal const string Quartz = QylTelemetryNames.VendorActivitySources.Quartz;
     internal const string RabbitMqPublisher = QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher;
     internal const string RabbitMqSubscriber = QylTelemetryNames.VendorActivitySources.RabbitMQClientSubscriber;
@@ -59,6 +60,11 @@ internal static class QylTelemetrySources
             MongoDbDriver,
             QylAutoInstrumentationIds.MongoDb,
             QylAttributes.InstrumentationDomainValues.DbMongoDb,
+            Normalize: null),
+        new(
+            NServiceBusCore,
+            QylAutoInstrumentationIds.NServiceBus,
+            QylAttributes.InstrumentationDomainValues.MessagingNServiceBus,
             Normalize: null),
         new(
             Quartz,

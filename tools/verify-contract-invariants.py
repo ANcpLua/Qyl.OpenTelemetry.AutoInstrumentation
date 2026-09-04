@@ -173,7 +173,6 @@ UNDECLARED_IMPLEMENTED_SIGNAL_KEYS = {
 # Coherence: the explicit NativeAOT boundary — implemented signals whose
 # evidence is managed-only. Growing or shrinking this set is a deliberate act.
 MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
-    "signals.metrics.NSERVICEBUS",
     "signals.traces.KAFKA",
     "signals.traces.MONGODB",
     "signals.traces.NSERVICEBUS",
@@ -206,7 +205,6 @@ REQUIRED_REGISTERED_METER_NAME_VALUES = {
     "System.Net.NameResolution",
     "System.Runtime",
     "Qyl.Telemetry.AutoInstrumentation.Database",
-    "Qyl.Telemetry.AutoInstrumentation.NServiceBus",
 }
 FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
     "Npgsql",
@@ -218,7 +216,6 @@ FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
 # by meter name and must not be mirrored as dead QylMetricNames constants.
 QYL_OWNED_METRIC_NAME_VALUES = {
     "db.client.operation.duration",
-    "nservicebus.messaging.operation.duration",
 }
 # External contract: upstream OTEL .NET auto-instrumentation environment
 # variable for additional metric sources.

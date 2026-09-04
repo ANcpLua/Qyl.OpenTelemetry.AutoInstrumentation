@@ -100,8 +100,6 @@ public static class QylShapes
     public const string KafkaProduce = "KafkaProduce";
     /// <summary>The <c>IConsumer&lt;TKey, TValue&gt;</c> consume overloads.</summary>
     public const string KafkaConsume = "KafkaConsume";
-    /// <summary>A <c>Task</c>-returning NServiceBus publish or send.</summary>
-    public const string NServiceBusOperation = "NServiceBusOperation";
     /// <summary>An <c>IDatabaseAsync</c> command whose wire command the command table resolves.</summary>
     public const string RedisCommand = "RedisCommand";
     /// <summary>The <c>IDocumentExecuter.ExecuteAsync</c> operation.</summary>

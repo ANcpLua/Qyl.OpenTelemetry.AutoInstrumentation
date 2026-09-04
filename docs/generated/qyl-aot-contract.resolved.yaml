@@ -735,7 +735,8 @@ contract_items:
   libraries:
   - name: NServiceBus
     url: https://www.nuget.org/packages/NServiceBus
-  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; native ActivitySource "NServiceBus.Core" (enabled by default
+    from v10)
   instrumentation_types:
   - source
   - bytecode
@@ -747,15 +748,17 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L160
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: NServiceBus's own NServiceBus.Core ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped
+    by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealNServiceBusDemo
   - tools/verify-real-nservicebus-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -1369,7 +1372,8 @@ contract_items:
   libraries:
   - name: NServiceBus
     url: https://www.nuget.org/packages/NServiceBus
-  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core and NServiceBus.Core.Pipeline.Incoming,
+    registered by the consumer through OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES
   instrumentation_types:
   - source
   - bytecode
@@ -1384,18 +1388,16 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L228
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
-  qyl_status: implemented
-  call_site_visibility: user_code
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator + QylNServiceBusMetrics
+  primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylNServiceBusMetrics.cs
-  - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealNServiceBusDemo
-  - tools/verify-real-nservicebus-demo.py
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+  - tools/verify-environment-options-behavior.py
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.PROCESS
   signal: metrics

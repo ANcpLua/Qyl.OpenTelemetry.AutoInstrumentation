@@ -22,8 +22,8 @@ Every row identifies its contract origin and carries a clickable authoritative s
 
 | Status | Count |
 |---|---:|
-| `control_bound` | 7 |
-| `implemented` | 38 |
+| `control_bound` | 8 |
+| `implemented` | 37 |
 | `option_bound` | 12 |
 | `research_required` | 2 |
 | `unsupported_nativeaot` | 7 |
@@ -32,13 +32,13 @@ Every row identifies its contract origin and carries a clickable authoritative s
 
 | Lane | Count |
 |---|---:|
-| `environment_control` | 7 |
-| `framework_initialization` | 7 |
+| `environment_control` | 8 |
+| `framework_initialization` | 8 |
 | `instrumentation_option` | 12 |
 | `not_implemented` | 2 |
 | `official_library_hook` | 7 |
 | `runtime_public_telemetry` | 9 |
-| `source_interceptor` | 15 |
+| `source_interceptor` | 13 |
 | `unsupported_nativeaot` | 7 |
 
 ## Evidence counts
@@ -69,7 +69,7 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 14 | upstream 60 | `signals.traces.MYSQLCONNECTOR` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L157) | >=2.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 15 | upstream 60 | `signals.traces.MYSQLDATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L158) | >=8.1.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 16 | upstream 60 | `signals.traces.NPGSQL` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L159-L195) | >=6.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
-| 17 | upstream 60 | `signals.traces.NSERVICEBUS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L160) | NServiceBus >=8.0.0; verified against 10.2.9 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 17 | upstream 60 | `signals.traces.NSERVICEBUS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L160) | NServiceBus >=8.0.0; verified against 10.2.9; native ActivitySource "NServiceBus.Core" (enabled by default from v10) | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_managed` | NServiceBus's own NServiceBus.Core ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
 | 18 | upstream 60 | `signals.traces.ORACLEMDA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L161) | >=23.4.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 19 | upstream 60 | `signals.traces.RABBITMQ` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L162-L204) | RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources "RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber" | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_nativeaot` | RabbitMQ.Client's own publisher and subscriber ActivitySources enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
 | 20 | upstream 60 | `signals.traces.QUARTZ` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L163) | Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" (3.x used DiagnosticListener and has none) | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_managed` | Quartz's own Quartz ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
@@ -84,7 +84,7 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 29 | upstream 60 | `signals.metrics.HTTPCLIENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L225) | * | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 30 | upstream 60 | `signals.metrics.NETRUNTIME` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L226) | * | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | .NET runtime System.Runtime meter, subscribed by QylMetricMeters |
 | 31 | upstream 60 | `signals.metrics.NPGSQL` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L227) | >=6.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator + QylDbClientMetrics |
-| 32 | upstream 60 | `signals.metrics.NSERVICEBUS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L228) | NServiceBus >=8.0.0; verified against 10.2.9 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator + QylNServiceBusMetrics |
+| 32 | upstream 60 | `signals.metrics.NSERVICEBUS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L228) | NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core and NServiceBus.Core.Pipeline.Incoming, registered by the consumer through OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES | `environment_control` | `control_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 33 | upstream 60 | `signals.metrics.PROCESS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L229) | * | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | .NET runtime System.Runtime meter, subscribed by QylMetricMeters |
 | 34 | upstream 60 | `signals.metrics.SQLCLIENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L230-L236) | * | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator + QylDbClientMetrics |
 | 35 | upstream 60 | `signals.logs.ILOGGER` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251) | >=8.0.0 && <12.0.0 | `runtime_public_telemetry` | `implemented` | `library_internal` | `typed_public` | `verified_nativeaot` | OpenTelemetry ILogger provider registered by Qyl.Telemetry.Hosting AddQyl() |

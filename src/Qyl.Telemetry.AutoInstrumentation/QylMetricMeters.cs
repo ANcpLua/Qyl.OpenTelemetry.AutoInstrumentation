@@ -22,8 +22,6 @@ internal static class QylMetricMeters
     internal const string DatabaseMeterName = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentationDatabase;
     /// <summary>Npgsql's library-native Meter, carrying its connection-pool and command instruments.</summary>
     internal const string NpgsqlNativeMeterName = "Npgsql";
-    /// <summary>The qyl NServiceBus meter (<c>nservicebus.messaging.operation.duration</c>).</summary>
-    internal const string NServiceBusMeterName = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentationNServiceBus;
     /// <summary>NServiceBus's library-native core Meter.</summary>
     internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
     /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
@@ -57,7 +55,6 @@ internal static class QylMetricMeters
         (QylAutoInstrumentationIds.HttpClient, [HttpClientMeterName, NameResolutionMeterName]),
         (QylAutoInstrumentationIds.Npgsql, [DatabaseMeterName]),
         (QylAutoInstrumentationIds.SqlClient, [DatabaseMeterName]),
-        (QylAutoInstrumentationIds.NServiceBus, [NServiceBusMeterName]),
         (QylAutoInstrumentationIds.NetRuntime, [RuntimeMeterName]),
         (QylAutoInstrumentationIds.Process, [RuntimeMeterName]),
     ];

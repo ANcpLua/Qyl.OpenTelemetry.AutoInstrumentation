@@ -17,3 +17,8 @@
 *REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz
 *REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.QuartzJob = "QuartzJob" -> string!
 *REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz.Execute(string? jobGroup, string? jobName) -> System.Diagnostics.Activity?
+*REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus
+*REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.NServiceBusOperation = "NServiceBusOperation" -> string!
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.GetTimestamp() -> long
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.Send(string! operationName) -> System.Diagnostics.Activity?

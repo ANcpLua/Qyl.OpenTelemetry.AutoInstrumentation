@@ -9,6 +9,5 @@
 {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
 {"interceptorKind":"Kafka.Receive","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
 {"interceptorKind":"Kafka.Send","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
-{"interceptorKind":"NServiceBus.Send","signal":"traces","instrumentationId":"NSERVICEBUS","additionalMetricIds":["NSERVICEBUS"],"contractKeys":["signals.traces.NSERVICEBUS","signals.metrics.NSERVICEBUS"]}
 {"interceptorKind":"Redis.Command","signal":"traces","instrumentationId":"STACKEXCHANGEREDIS","additionalMetricIds":[],"contractKeys":["signals.traces.STACKEXCHANGEREDIS"]}
 {"interceptorKind":"WcfClient.Call","signal":"traces","instrumentationId":"WCFCLIENT","additionalMetricIds":[],"contractKeys":["signals.traces.WCFCLIENT"]}

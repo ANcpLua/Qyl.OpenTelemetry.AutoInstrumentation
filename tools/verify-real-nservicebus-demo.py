@@ -56,11 +56,11 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 3:
-        fail(f"{name} expected exactly 3 NServiceBus activities, got {activities!r}")
-    metrics = report.get("Metrics")
-    if not isinstance(metrics, list) or len(metrics) != 3:
-        fail(f"{name} expected exactly 3 NServiceBus duration measurements, got {metrics!r}")
+    # NServiceBus traces its own pipeline: the publish, the routed send, the send that cannot be
+    # routed, the incoming "process message" span and the handler invocation beneath it. The last
+    # two are the consumer side the interceptor never produced.
+    if not isinstance(activities, list) or len(activities) != 5:
+        fail(f"{name} expected exactly 5 NServiceBus activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

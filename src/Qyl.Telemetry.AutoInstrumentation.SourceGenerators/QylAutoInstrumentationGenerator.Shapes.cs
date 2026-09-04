@@ -45,8 +45,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchKafkaProduce(symbol, out match);
             case "KafkaConsume":
                 return TryMatchKafkaConsume(symbol, out match);
-            case "NServiceBusOperation":
-                return TryMatchMessagingOperation(symbol, matchedReceiver, recoverGenerics: true, out match);
             case "RedisCommand":
                 return TryMatchRedisCommand(symbol, integration.HelperType, out match);
             case "GraphQlExecute":
@@ -568,37 +566,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return false;
     }
 
-    private static bool TryMatchMessagingOperation(IMethodSymbol symbol, ITypeSymbol matchedReceiver, bool recoverGenerics, out ShapeMatch match)
-    {
-        match = default;
-        if (!IsTask(symbol.ReturnType) || symbol.Parameters.Length is 0)
-            return false;
-
-        var typeParameterList = GetTypeParameterList(symbol);
-        var receiverTypeName = CleanTypeName(matchedReceiver);
-        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
-        var parameters = BuildParameters(symbol);
-        if (recoverGenerics)
-        {
-            // NServiceBus reaches its generic Send<T>/Publish<T> through non-generic extension wrappers, so
-            // the type parameters the emitted signature must redeclare are recovered from the visible types.
-            if (string.IsNullOrEmpty(typeParameterList))
-                typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, matchedReceiver);
-            if (string.IsNullOrEmpty(typeParameterList))
-                typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
-        }
-
-        match = new ShapeMatch(
-            receiverTypeName,
-            returnTypeName,
-            parameters,
-            true,
-            typeParameterList,
-            GetConstraintClauses(symbol),
-            GetReducedExtensionContainingType(symbol));
-        return true;
-    }
-
     private static bool TryMatchGraphQlExecute(IMethodSymbol symbol, out ShapeMatch match)
     {
         match = default;
@@ -1113,11 +1080,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return -1;
     }
 
-    private static string GetReducedExtensionContainingType(IMethodSymbol symbol)
-        => symbol.ReducedFrom is null
-            ? string.Empty
-            : CleanTypeName(symbol.ReducedFrom.ContainingType);
-
     private static bool CanEmitByValueOrInParameters(IMethodSymbol symbol)
     {
         foreach (var parameter in symbol.Parameters)
@@ -1129,150 +1091,12 @@ public sealed partial class QylAutoInstrumentationGenerator
         return true;
     }
 
-    private static string GetTypeParameterList(IMethodSymbol symbol)
-    {
-        var genericSymbol = GetGenericMethodForEmission(symbol);
-        if (genericSymbol.TypeParameters.Length is 0)
-            return string.Empty;
-
-        var builder = new StringBuilder();
-        builder.Append('<');
-        for (var i = 0; i < genericSymbol.TypeParameters.Length; i++)
-        {
-            if (i > 0)
-                builder.Append(", ");
-
-            builder.Append(genericSymbol.TypeParameters[i].Name);
-        }
-
-        builder.Append('>');
-        return builder.ToString();
-    }
-
-    private static string GetConstraintClauses(IMethodSymbol symbol)
-    {
-        var genericSymbol = GetGenericMethodForEmission(symbol);
-        if (genericSymbol.TypeParameters.Length is 0)
-            return string.Empty;
-
-        var builder = new StringBuilder();
-        foreach (var typeParameter in genericSymbol.TypeParameters)
-        {
-            var constraintClause = GetConstraintClause(typeParameter);
-            if (string.IsNullOrWhiteSpace(constraintClause))
-                continue;
-
-            builder.Append(' ');
-            builder.Append(constraintClause);
-        }
-
-        return builder.ToString();
-    }
-
-    private static string GetTypeParameterListFromVisibleTypes(IMethodSymbol symbol, ITypeSymbol receiverType)
-    {
-        var names = new List<string>();
-        AddTypeParameterNames(receiverType, names);
-        AddTypeParameterNames(symbol.ReturnType, names);
-
-        foreach (var parameter in symbol.Parameters)
-            AddTypeParameterNames(parameter.Type, names);
-
-        return names.Count is 0
-            ? string.Empty
-            : "<" + string.Join(", ", names) + ">";
-    }
-
-    private static string GetTypeParameterListFromFormattedTypes(
-        string receiverType,
-        string returnType,
-        EquatableArray<ParameterSpec> parameters)
-    {
-        var names = new List<string>();
-        AddFormattedTypeParameterNames(receiverType, names);
-        AddFormattedTypeParameterNames(returnType, names);
-
-        foreach (var parameter in parameters)
-            AddFormattedTypeParameterNames(parameter.TypeName, names);
-
-        return names.Count is 0
-            ? string.Empty
-            : "<" + string.Join(", ", names) + ">";
-    }
-
-    private static void AddFormattedTypeParameterNames(string typeName, List<string> names)
-    {
-        for (var i = 0; i < typeName.Length; i++)
-        {
-            if (typeName[i] is not 'T' ||
-                i > 0 && typeName[i - 1] is not '<' and not ',' and not ' ')
-            {
-                continue;
-            }
-
-            var end = i + 1;
-            while (end < typeName.Length && (char.IsLetterOrDigit(typeName[end]) || typeName[end] == '_'))
-                end++;
-
-            var candidate = typeName.Substring(i, end - i);
-            if (candidate.Length > 1 && !names.Contains(candidate))
-                names.Add(candidate);
-        }
-    }
-
-    private static void AddTypeParameterNames(ITypeSymbol symbol, List<string> names)
-    {
-        if (symbol is ITypeParameterSymbol typeParameter)
-        {
-            if (!names.Contains(typeParameter.Name))
-                names.Add(typeParameter.Name);
-
-            return;
-        }
-
-        if (symbol is IArrayTypeSymbol array)
-        {
-            AddTypeParameterNames(array.ElementType, names);
-            return;
-        }
-
-        if (symbol is INamedTypeSymbol named)
-        {
-            foreach (var typeArgument in named.TypeArguments)
-                AddTypeParameterNames(typeArgument, names);
-        }
-    }
-
     private static IMethodSymbol GetGenericMethodForEmission(IMethodSymbol symbol)
         => symbol.TypeParameters.Length > 0
             ? symbol
             : symbol.ReducedFrom is { TypeParameters.Length: > 0 } reducedFrom
                 ? reducedFrom
                 : symbol;
-
-    private static string GetConstraintClause(ITypeParameterSymbol typeParameter)
-    {
-        var constraints = ImmutableArray.CreateBuilder<string>();
-
-        if (typeParameter.HasUnmanagedTypeConstraint)
-            constraints.Add("unmanaged");
-        else if (typeParameter.HasValueTypeConstraint)
-            constraints.Add("struct");
-        else if (typeParameter.HasReferenceTypeConstraint)
-            constraints.Add("class");
-        else if (typeParameter.HasNotNullConstraint)
-            constraints.Add("notnull");
-
-        foreach (var constraintType in typeParameter.ConstraintTypes)
-            constraints.Add(CleanTypeName(constraintType));
-
-        if (typeParameter.HasConstructorConstraint)
-            constraints.Add("new()");
-
-        return constraints.Count is 0
-            ? string.Empty
-            : "where " + typeParameter.Name + " : " + string.Join(", ", constraints);
-    }
 
     private static EquatableArray<ParameterSpec> BuildParameters(IMethodSymbol symbol)
     {

@@ -379,16 +379,19 @@ ownership_items:
     - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
   key: signals.traces.NSERVICEBUS
-  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
-  lane: source_interceptor
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; native ActivitySource "NServiceBus.Core"
+    (enabled by default from v10)
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: NServiceBus's own NServiceBus.Core ActivitySource enabled by Qyl.Telemetry.Hosting,
+    with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealNServiceBusDemo
   - tools/verify-real-nservicebus-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
@@ -692,19 +695,19 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
   key: signals.metrics.NSERVICEBUS
-  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
-  lane: source_interceptor
-  qyl_status: implemented
-  call_site_visibility: user_code
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core
+    and NServiceBus.Core.Pipeline.Incoming, registered by the consumer through
+    OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator + QylNServiceBusMetrics
+  primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylNServiceBusMetrics.cs
-  - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealNServiceBusDemo
-  - tools/verify-real-nservicebus-demo.py
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
+  - tools/verify-environment-options-behavior.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_033
   key: signals.metrics.PROCESS
   lane: runtime_public_telemetry

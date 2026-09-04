@@ -100,8 +100,13 @@ the major this repository pins.
   `error.type` — not messaging or database semantic conventions. Migrating it changes what a
   consumer receives, not only where it comes from.
 - **NServiceBus** publishes no attribute list, and its documentation teaches the wildcard
-  `NServiceBus.*` rather than the literal source name. Subscribe to the wildcard; do not treat
-  `NServiceBus.Core` as contract.
+  `NServiceBus.*` alongside the literal source name. **The row is the literal**,
+  `NServiceBus.Core`, for two reasons the migration settled: it is the only `ActivitySource` the
+  pinned `10.2.9` assembly declares — the sibling name `NServiceBus.Core.Pipeline.Incoming` is a
+  `Meter`, not a source — and constraint 7 admits only names that exist as generated constants in
+  the `Qyl.Telemetry.SemanticConventions` pin, where `VendorActivitySources.NServiceBusCore` is the
+  literal. A wildcard would also subscribe to sources this repository has not audited and would
+  stamp a domain onto spans it has not seen.
 - **Elasticsearch before the 8.10 client stack** used a different source name. No Elastic page
   documents it and the claim is unverified, which is why the floors table claims nothing below
   `Elastic.Transport` `1.0.0`. It does not affect the pinned version, which owns no source of its own.
@@ -270,7 +275,7 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
 | RabbitMQ.Client | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.rabbitmq`), set without the call site. The interceptor read the exchange and routing key from the call arguments; `RabbitMQActivitySource` sets both itself, so nothing is lost. | Source `Qyl.Telemetry.AutoInstrumentation` span `publish {exchange}:{routing_key}` -> source `RabbitMQ.Client.Publisher` span `publish {routing_key}` (`RabbitMQTracingOptions.UseRoutingKeyAsOperationName` defaults to true). `messaging.destination.name` stops being qyl's `{exchange}:{routing_key}` composite and becomes the exchange alone (`amq.default` for the default exchange), with the routing key in `messaging.rabbitmq.destination.routing_key` where the convention puts it. `error.type` is gone. Gained: `messaging.message.body.size`, `messaging.rabbitmq.delivery_tag`, `network.protocol.*`, `server.*`, `network.peer.*`, `client.*`, and the consumer side — `RabbitMQ.Client.Subscriber` spans (`deliver`, `fetch`) that the interceptor never produced at all. |
 | MongoDB.Driver | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `db.mongodb`), set without the call site. The interceptor derived `db.operation.name` from the intercepted method name and the collection and database from the receiver; the driver sets all three itself, from the wire command rather than from the API surface. | Source `Qyl.Telemetry.AutoInstrumentation` span `{operation} {collection}` -> **two** nested spans from source `MongoDB.Driver` per call: an operation span `{command} {namespace}.{collection}` carrying `db.operation.name` and `db.operation.summary`, and the command span beneath it named after the wire command, carrying `db.command.name` and `db.query.summary`. One qyl span becomes two native ones, and the demo asserts one of each layer per command. `db.operation.name` becomes the **command** MongoDB actually sends rather than the method qyl saw, so `CountDocuments` reports `aggregate` and the API-level names disappear. `error.type` is gone. Gained: `db.operation.summary`, `db.response.status_code`, `db.mongodb.*` (cursor id, lsid, connection ids, transaction number), `server.address`, `server.port`, `network.transport`, and spans for the commands the driver issues on its own. |
 | Quartz | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `job.quartz`), set without the call site. The interceptor read the job group and name off the `IJobExecutionContext` argument; Quartz puts both on its own span. | Source `Qyl.Telemetry.AutoInstrumentation` span `{group}.{name}` -> source `Quartz` span `Quartz.Job.Execute`. The span name stops carrying the job identity, which moves into `quartz.job.group` and `quartz.job.name`. `error.type` survives, because Quartz sets it itself (`Quartz.Diagnostics.ErrorType`). Gained: `quartz.job.type`, `quartz.trigger.group`, `quartz.trigger.name`, `quartz.scheduler.name`, `quartz.scheduler.id`, `quartz.fire.instance.id`, a `Quartz.Job.Veto` span for vetoed firings, and a span for every call the scheduler makes into its job store. Still true: the native span carries **no** messaging or database semantic conventions — the vendor `quartz.*` namespace and `error.type` are the whole vocabulary. |
-| NServiceBus | open | — | — |
+| NServiceBus | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.nservicebus`), so the processor sets them without the call site. The interceptor derived `messaging.operation.name` from the intercepted method name (`Send` -> `send`, `Publish` -> `publish`); the native span has no equivalent, because NServiceBus emits no messaging conventions at all — see the output change. | Source `Qyl.Telemetry.AutoInstrumentation` spans `send`/`publish` -> source `NServiceBus.Core` spans `send message` and `publish event`. NServiceBus publishes **no** messaging semantic conventions: `messaging.system` (the qyl-owned `nservicebus`), `messaging.operation.type` and `messaging.operation.name` are gone, and so is `error.type` — a failed send reports `otel.status_code` = `ERROR` with `otel.status_description` instead. Gained: the `nservicebus.*` vendor namespace (message and conversation ids, intent, enclosed message types, originating endpoint/machine/host, reply-to address, content type, version) and the consumer side the interceptor never produced at all — a `process message` span carrying `nservicebus.native_message_id`, and a span named after each handler type carrying `nservicebus.handler.handler_type`. **The metrics signal follows the traces signal**: the qyl-synthesized `nservicebus.messaging.operation.duration` histogram and its `Qyl.Telemetry.AutoInstrumentation.NServiceBus` meter are deleted with the interceptor that was their only producer, and `signals.metrics.NSERVICEBUS` becomes `control_bound` — NServiceBus's own `NServiceBus.Core` and `NServiceBus.Core.Pipeline.Incoming` meters carry the real instruments and the consumer registers them through `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES`. |
 | Npgsql | open | — | — |
 | MySqlConnector | open | — | — |
 | MySql.Data | open | — | — |
@@ -340,6 +345,32 @@ the files of the library being migrated. `git rm` stages its deletion immediatel
   this is not, and removing a value the consumer deliberately configured would be the same mistake
   as injecting an opt-in. The demo asserts the attribute's absence instead. `TracingOptions.Disabled`
   defaults to `false`, so the source needs no opt-in either.
+
+- **NServiceBus's metrics signal could not stay behind while its traces migrated.** The plan
+  recorded the two signals as independent. They are not: `nservicebus.messaging.operation.duration`
+  was produced only by `QylInterceptedNServiceBus.RecordDuration`, which the generator calls from
+  the interceptor body it emits for the `[QylIntercept]` declarations. Deleting the interceptor
+  removes the metric's only producer, and there are exactly three ways it could have survived, all
+  of them closed. Subscribing to NServiceBus's own meters is forbidden by an enforcer:
+  `verify-contract-invariants.py`'s `FORBIDDEN_REGISTERED_METER_NAME_VALUES` lists
+  `NServiceBus.Core` and `NServiceBus.Core.Pipeline.Incoming`, recording the 8.0.0 decision that
+  `Qyl.Sdk` does not force-register a library's own meters. A metric-only interception would need a
+  new `QylInterceptorBody` template, because the generator emits the `Start` helper call
+  unconditionally. A `Start` helper that returned `null` would be a shim. Reproducing the histogram
+  from the native span is impossible without inventing data: its tags are `messaging.system`,
+  `messaging.operation.type` and `messaging.operation.name`, and the native span carries none of
+  the three. The metric therefore goes with its producer, following the precedent this repository
+  already set in 8.0.0 — "deleted the custom HTTP duration producer; the
+  `System.Net.Http/http.client.request.duration` instrument is authoritative" — and
+  `signals.metrics.NSERVICEBUS` becomes `control_bound` on
+  `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES`. Four pinned sets moved with it, deliberately:
+  `MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS`, `MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS`,
+  `REQUIRED_REGISTERED_METER_NAME_VALUES` and `QYL_OWNED_METRIC_NAME_VALUES`. The same question is
+  open for the four database providers, where the answer differs in blast radius: their metric is
+  `db.client.operation.duration` on the shared `Qyl.Telemetry.AutoInstrumentation.Database` meter,
+  which SqlClient, ADO.NET and Sqlite keep producing, so only the per-provider contract row moves.
+  A leftover for the semantic-convention side: the registry still declares
+  `nservicebus.messaging.operation.duration`, which nothing emits after this commit.
 
 - **CoreWCF has no instrumentation-domain value.** The registry's
   `qyl.instrumentation.domain` value set publishes `rpc.wcf.client`, which belongs to the

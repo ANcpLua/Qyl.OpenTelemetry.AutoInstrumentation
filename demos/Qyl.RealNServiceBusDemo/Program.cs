@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -8,38 +7,33 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NServiceBus;
-using Qyl.Telemetry.AutoInstrumentation;
+using OpenTelemetry.Trace;
+using Qyl;
+using MessagingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
+using NservicebusAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Nservicebus.NservicebusAttributes;
+using OtelAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Otel.OtelAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
-var capturedMetrics = new List<CapturedMetric>();
-using var listener = new ActivityListener
+// The real registration path: AddQyl subscribes to NServiceBus's own ActivitySource and installs
+// the one native-span processor.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
-
-ActivitySource.AddActivityListener(listener);
-
-using var meterListener = new MeterListener();
-meterListener.InstrumentPublished = static (instrument, listener) =>
+    ApplicationName = "Qyl.RealNServiceBusDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
 {
-    if (StringComparer.Ordinal.Equals(instrument.Meter.Name, DemoMetricNames.NServiceBus) &&
-        StringComparer.Ordinal.Equals(instrument.Name, "nservicebus.messaging.operation.duration"))
-    {
-        listener.EnableMeasurementEvents(instrument);
-    }
-};
-meterListener.SetMeasurementEventCallback<double>(
-    (instrument, measurement, tags, _) => capturedMetrics.Add(CapturedMetric.From(instrument, measurement, tags)));
-meterListener.Start();
+    options.ServiceName = "qyl-real-nservicebus-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
 var storageDirectory = Path.Combine(Path.GetTempPath(), "qyl-nservicebus-learning");
 if (Directory.Exists(storageDirectory))
@@ -49,16 +43,15 @@ var configuration = new EndpointConfiguration("qyl-probe");
 var routing = configuration.UseTransport(new LearningTransport { StorageDirectory = storageDirectory });
 routing.RouteToEndpoint(typeof(ProbeCommand), "qyl-probe");
 var serialization = configuration.UseSerialization<SystemJsonSerializer>();
-serialization.Options(new System.Text.Json.JsonSerializerOptions
+serialization.Options(new JsonSerializerOptions
 {
     TypeInfoResolver = ProbeMessageJsonContext.Default,
 });
 
-var hostBuilder = Host.CreateApplicationBuilder(args);
-hostBuilder.Logging.ClearProviders();
-hostBuilder.Services.AddNServiceBusEndpoint(configuration);
+builder.Logging.ClearProviders();
+builder.Services.AddNServiceBusEndpoint(configuration);
 
-using (var host = hostBuilder.Build())
+using (var host = builder.Build())
 {
     await host.StartAsync();
     var session = host.Services.GetRequiredService<IMessageSession>();
@@ -79,6 +72,7 @@ using (var host = hostBuilder.Build())
         Console.WriteLine("expected-nservicebus-error=no-route");
     }
 
+    host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
     await host.StopAsync();
 }
 
@@ -86,8 +80,7 @@ Directory.Delete(storageDirectory, recursive: true);
 
 var report = NServiceBusReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray(),
-    capturedMetrics.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealNServiceBusJsonContext.Default.NServiceBusReport);
 Console.WriteLine(json);
@@ -130,6 +123,7 @@ public sealed class ProbeCommandHandler : IHandleMessages<ProbeCommand>
 }
 
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -137,6 +131,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -146,126 +141,112 @@ internal sealed record CapturedActivity(
                 StringComparer.Ordinal));
 }
 
-internal sealed record CapturedMetric(
-    string MeterName,
-    string Name,
-    double Value,
-    IReadOnlyDictionary<string, string> Tags)
-{
-    public static CapturedMetric From(
-        Instrument instrument,
-        double value,
-        ReadOnlySpan<KeyValuePair<string, object?>> tags)
-        => new(
-            instrument.Meter.Name,
-            instrument.Name,
-            value,
-            TagsToDictionary(tags));
-
-    private static Dictionary<string, string> TagsToDictionary(ReadOnlySpan<KeyValuePair<string, object?>> tags)
-    {
-        var values = new Dictionary<string, string>(tags.Length, StringComparer.Ordinal);
-        foreach (var tag in tags)
-            values[tag.Key] = Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty;
-
-        return values;
-    }
-}
-
 internal sealed record NServiceBusReport(
     string RuntimeMode,
     bool Pass,
     string[] Failures,
-    CapturedActivity[] Activities,
-    CapturedMetric[] Metrics)
+    CapturedActivity[] Activities)
 {
-    public static NServiceBusReport Create(
-        string runtimeMode,
-        CapturedActivity[] activities,
-        CapturedMetric[] metrics)
+    // NServiceBus's own span names, ActivityNames in NServiceBus.Core. The outgoing pipeline names
+    // the span after the intent, the incoming pipeline names it "process message", and the handler
+    // invocation is named after the handler type.
+    private const string SendSpanName = "send message";
+    private const string PublishSpanName = "publish event";
+    private const string ProcessSpanName = "process message";
+
+    // NServiceBus's own values for nservicebus.message_intent.
+    private const string SendIntent = "Send";
+    private const string PublishIntent = "Publish";
+
+    public static NServiceBusReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
-        var nServiceBusSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "messaging.nservicebus"))
-            .ToArray();
-        var nServiceBusMetrics = metrics
-            .Where(static metric =>
-                StringComparer.Ordinal.Equals(metric.MeterName, DemoMetricNames.NServiceBus) &&
-                StringComparer.Ordinal.Equals(metric.Name, "nservicebus.messaging.operation.duration"))
+
+        var spans = activities
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.NServiceBusCore))
             .ToArray();
 
-        if (nServiceBusSpans.Length != 3)
-            failures.Add($"expected 3 NServiceBus message spans, got {nServiceBusSpans.Length}");
-        if (nServiceBusMetrics.Length != 3)
-            failures.Add($"expected 3 NServiceBus duration measurements, got {nServiceBusMetrics.Length}");
+        // One outgoing span per operation, not one per run: the publish, the routed send and the
+        // send that cannot be routed. The incoming pipeline adds the consumer span the interceptor
+        // never produced at all.
+        RequireExactlyOne(
+            spans.Where(static span => IsIntent(span, PublishIntent) && StringComparer.Ordinal.Equals(span.Name, PublishSpanName)),
+            "publish event span",
+            failures);
+        RequireExactlyOne(
+            spans.Where(static span =>
+                IsIntent(span, SendIntent) &&
+                StringComparer.Ordinal.Equals(span.Name, SendSpanName)),
+            "routed send message span",
+            failures);
+        RequireExactlyOne(
+            spans.Where(static span =>
+                StringComparer.Ordinal.Equals(span.Name, SendSpanName) &&
+                span.Tags.ContainsKey(OtelAttributes.StatusCode)),
+            "failed send message span",
+            failures);
+        RequireExactlyOne(
+            spans.Where(static span => StringComparer.Ordinal.Equals(span.Name, ProcessSpanName)),
+            "process message span",
+            failures);
 
-        var publishSuccess = FindByOperationAndStatus(nServiceBusSpans, "publish", "Unset");
-        var sendSuccess = FindByOperationAndStatus(nServiceBusSpans, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Unset");
-        var sendError = FindByOperationAndStatus(nServiceBusSpans, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Error");
-        var publishMetrics = FindMetricsByOperation(nServiceBusMetrics, "publish");
-        var sendMetrics = FindMetricsByOperation(nServiceBusMetrics, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send);
-
-        Require(publishSuccess, "successful publish span", failures);
-        Require(sendSuccess, "successful send span", failures);
-        Require(sendError, "error send span", failures);
-        RequireTag(sendError, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "System.Exception", failures);
-        if (publishMetrics.Length != 1)
-            failures.Add($"expected 1 publish duration measurement, got {publishMetrics.Length}");
-        if (sendMetrics.Length != 2)
-            failures.Add($"expected 2 send duration measurements, got {sendMetrics.Length}");
-
-        foreach (var span in nServiceBusSpans)
+        foreach (var span in spans)
         {
-            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName) ||
-                !StringComparer.Ordinal.Equals(span.Name, operationName))
-                failures.Add($"expected the NServiceBus span to be named after messaging.operation.name, got {span.Name}");
+            // The attribute the qyl processor owns: without it the collector cannot classify the
+            // span, because it classifies on attribute presence and never on the span name.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.MessagingNServiceBus,
+                failures);
 
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "nservicebus", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
-
-            if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
-                failures.Add($"expected kind Producer, got {span.Kind}");
+            // The output change, asserted rather than described: NServiceBus publishes no messaging
+            // semantic conventions at all, and qyl does not invent them on its behalf.
+            RequireAbsentTag(span, MessagingAttributes.System, failures);
+            RequireAbsentTag(span, MessagingAttributes.OperationName, failures);
+            RequireAbsentTag(span, MessagingAttributes.OperationType, failures);
         }
 
-        foreach (var metric in nServiceBusMetrics)
+        // NServiceBus's own vocabulary on the spans that carry a message.
+        foreach (var span in spans.Where(static span => !StringComparer.Ordinal.Equals(span.Name, ProcessSpanName)
+            && span.Tags.ContainsKey(NservicebusAttributes.MessageId)))
         {
-            if (metric.Value < 0)
-                failures.Add($"expected non-negative NServiceBus duration, got {metric.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            RequireMetricTag(metric, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "nservicebus", failures);
-            RequireMetricTag(metric, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
+            RequirePresentTag(span, NservicebusAttributes.MessageIntent, failures);
+            RequirePresentTag(span, NservicebusAttributes.ConversationId, failures);
+            RequirePresentTag(span, NservicebusAttributes.EnclosedMessageTypes, failures);
+            RequirePresentTag(span, NservicebusAttributes.Version, failures);
         }
 
-        return new NServiceBusReport(runtimeMode, failures.Count is 0, failures.ToArray(), nServiceBusSpans, nServiceBusMetrics);
-    }
-
-    private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
-        => activities.FirstOrDefault(activity =>
-            StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
-            StringComparer.Ordinal.Equals(actual, operation));
-
-    private static CapturedMetric[] FindMetricsByOperation(IEnumerable<CapturedMetric> metrics, string operation)
-        => metrics.Where(metric =>
-            metric.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
-            StringComparer.Ordinal.Equals(actual, operation)).ToArray();
-
-    private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
-    {
-        if (activity is null)
-            failures.Add($"missing {label}");
-    }
-
-    private static void RequireTag(CapturedActivity? activity, string key, string expected, ICollection<string> failures)
-    {
-        if (activity is null)
-            return;
-
-        if (!activity.Tags.TryGetValue(key, out var actual))
+        var processSpan = spans.FirstOrDefault(static span =>
+            StringComparer.Ordinal.Equals(span.Name, ProcessSpanName));
+        if (processSpan is not null)
         {
-            failures.Add($"missing {key}");
+            RequirePresentTag(processSpan, NservicebusAttributes.NativeMessageId, failures);
+            if (!StringComparer.Ordinal.Equals(processSpan.Kind, "Consumer"))
+                failures.Add($"expected the process span kind Consumer, got {processSpan.Kind}");
+        }
+
+        return new NServiceBusReport(runtimeMode, failures.Count is 0, failures.ToArray(), spans);
+    }
+
+    private static bool IsIntent(CapturedActivity span, string intent)
+        => span.Tags.TryGetValue(NservicebusAttributes.MessageIntent, out var actual) &&
+           StringComparer.Ordinal.Equals(actual, intent);
+
+    private static void RequireExactlyOne(IEnumerable<CapturedActivity> matches, string label, ICollection<string> failures)
+    {
+        var count = matches.Count();
+        if (count != 1)
+            failures.Add($"expected exactly 1 {label}, got {count.ToString(CultureInfo.InvariantCulture)}");
+    }
+
+    private static void RequireTag(CapturedActivity span, string key, string expected, ICollection<string> failures)
+    {
+        if (!span.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing {key} on {span.Name}");
             return;
         }
 
@@ -273,22 +254,17 @@ internal sealed record NServiceBusReport(
             failures.Add($"expected {key}={expected}, got {actual}");
     }
 
-    private static void RequireMetricTag(CapturedMetric metric, string key, string expected, ICollection<string> failures)
+    private static void RequirePresentTag(CapturedActivity span, string key, ICollection<string> failures)
     {
-        if (!metric.Tags.TryGetValue(key, out var actual))
-        {
-            failures.Add($"missing metric {key}");
-            return;
-        }
-
-        if (!StringComparer.Ordinal.Equals(actual, expected))
-            failures.Add($"expected metric {key}={expected}, got {actual}");
+        if (!span.Tags.ContainsKey(key))
+            failures.Add($"missing {key} on {span.Name}");
     }
-}
 
-internal static class DemoMetricNames
-{
-    internal const string NServiceBus = "Qyl.Telemetry.AutoInstrumentation.NServiceBus";
+    private static void RequireAbsentTag(CapturedActivity span, string key, ICollection<string> failures)
+    {
+        if (span.Tags.ContainsKey(key))
+            failures.Add($"unexpected {key} on {span.Name}");
+    }
 }
 
 [JsonSerializable(typeof(NServiceBusReport))]

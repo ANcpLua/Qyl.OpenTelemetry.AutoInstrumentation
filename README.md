@@ -38,9 +38,8 @@ unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V12` in the
 package major, so it moved from `V11` with the 12.0.0 line — so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
 misbehaving. The emitted scope names move to the package family in 10.0.0: the
-`ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the two qyl meters
-are `Qyl.Telemetry.AutoInstrumentation.Database` and
-`Qyl.Telemetry.AutoInstrumentation.NServiceBus`. Update `AddSource(...)`,
+`ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the qyl meter is
+`Qyl.Telemetry.AutoInstrumentation.Database`. Update `AddSource(...)`,
 `AddMeter(...)` and `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. This package
 emits the `Qyl.Telemetry.AutoInstrumentation*` scope names and nothing else, and
 makes no compatibility promise for the old spellings. The strings are owned by
@@ -135,6 +134,35 @@ routes `Publish` and `Send` through the same send transport, so the two are no
 longer distinguishable in the span. MassTransit 9 is commercially licensed and is
 neither referenced nor redistributed by this package, and the repository's own
 demo pin is the range `[8.5.10,9.0.0)`.
+
+### NServiceBus
+
+NServiceBus emits its own spans from an `ActivitySource` named `NServiceBus.Core`
+(`NServiceBus.Core/OpenTelemetry/Tracing/ActivitySources.cs`), on by default from
+v10, so qyl subscribes to that source and stamps `qyl.instrumentation.domain`
+onto its spans instead of intercepting `IMessageSession` and
+`IMessageHandlerContext`. The floor is NServiceBus `8.0`, the version that
+introduced OpenTelemetry support; verified against `10.2.9`.
+
+What the native spans carry differs from the interceptor they replace. The
+outgoing spans are named `send message` and `publish event`, the incoming
+pipeline adds a `process message` span and a span named after each handler type,
+and the whole vocabulary is the vendor `nservicebus.*` namespace plus
+`otel.status_code` / `otel.status_description`: NServiceBus publishes **no**
+messaging semantic conventions, so `messaging.system`,
+`messaging.operation.type`, `messaging.operation.name` and `error.type` are gone
+rather than reconstructed by qyl.
+
+The qyl-synthesized `nservicebus.messaging.operation.duration` histogram, and
+the `Qyl.Telemetry.AutoInstrumentation.NServiceBus` meter that carried it, are
+gone with the interceptor that produced them. NServiceBus publishes its own
+instruments — `nservicebus.messaging.successes`, `.fetches`, `.failures`,
+`.handler_time`, `.critical_time`, `.processing_time` — on the meters
+`NServiceBus.Core` and `NServiceBus.Core.Pipeline.Incoming`. `Qyl.Telemetry.Hosting`
+does not force-register a library's own meters; a consumer that wants those
+instruments exported registers them through
+`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` (or `QylSdkOptions.AdditionalMeters`),
+exactly as for the native `Npgsql` meter.
 
 ### AI, MCP, and CoreWCF paths in 12.0
 

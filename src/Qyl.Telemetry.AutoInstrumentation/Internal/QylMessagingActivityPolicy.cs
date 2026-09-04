@@ -11,10 +11,7 @@ internal static class QylMessagingActivityPolicy
     // messaging.operation.type's own "publish" member is deprecated in favour of "send", so every
     // qyl producer span reports OperationTypeValues.Send and distinguishes itself by NAME here.
     private const string Send = "send";
-    private const string Publish = "publish";
     private const string Receive = "receive";
-    // messaging.system does not enumerate NServiceBus, so the value is qyl-owned.
-    internal const string NServiceBusSystemName = "nservicebus";
 
     public static Activity? StartKafkaProducerActivity(string? topic, int? partitionId)
     {
@@ -41,19 +38,6 @@ internal static class QylMessagingActivityPolicy
             MessagingAttributes.OperationTypeValues.Receive,
             Receive,
             destination: null);
-
-    public static Activity? StartNServiceBusActivity(string method)
-        => Start(
-            QylAutoInstrumentationIds.NServiceBus,
-            ActivityKind.Producer,
-            QylAttributes.InstrumentationDomainValues.MessagingNServiceBus,
-            NServiceBusSystemName,
-            MessagingAttributes.OperationTypeValues.Send,
-            OperationName(method),
-            destination: null);
-
-    public static string OperationName(string method)
-        => string.Equals(method, "Send", StringComparison.Ordinal) ? Send : Publish;
 
     private static Activity? Start(
         string instrumentationId,
