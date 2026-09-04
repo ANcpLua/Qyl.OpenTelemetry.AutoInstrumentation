@@ -16,7 +16,8 @@ on:
 # so superseded work never wastes runner minutes.
 concurrency:
   group: qyl-verify-${{ github.ref }}
-  cancel-in-progress: true
+  # Sequential commits on main must each run to completion, so only other refs cancel.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verify:
