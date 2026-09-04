@@ -283,6 +283,19 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
 | StackExchange.Redis | stays interceptor | n/a | none — profiling API only |
 | WCF client | stays interceptor | n/a | none — no `ActivitySource` in `System.ServiceModel.*` |
 
+### Commits that did not stand alone
+
+The wave's rule is one commit per library, each releasable on its own. Two commits broke it and are
+recorded here rather than rewritten, because `main` is a published branch.
+
+| Commit | What went wrong | Closed by |
+| --- | --- | --- |
+| `af295f9` | mixed. It was meant to carry only the MongoDB demo's two-layer assertion, but `git rm` had already staged the Quartz interceptor's deletion, so the commit deleted `QylInterceptedQuartz.cs` while leaving the `QuartzJob` shape declared. `verify-contract-invariants.py` failed on every workflow with `QylShapes declares predicates no declaration selects: ['QuartzJob']`. | `a3d123c`, which carries the rest of the Quartz migration — the shape constant, the generator case, the matcher, the PublicAPI removals and the table row — and makes the predicate set match the declarations again. |
+
+The lesson is a procedure, not a rule change: read `git status` before every commit and stage only
+the files of the library being migrated. `git rm` stages its deletion immediately, so a later
+`git add <paths>` does not narrow the commit to those paths.
+
 ### Findings the wave recorded against its own plan
 
 - **MassTransit's native span does not carry `messaging.operation.name`.** The plan assumed it did.
