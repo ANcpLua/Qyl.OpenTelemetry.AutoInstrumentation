@@ -22,7 +22,7 @@
          redistribution); this repo stays on the Apache-2.0 8.x line by decision of the
          maintainer on 2026-09-04. Do not bump to 9.x. This is the one deliberate
          exception to the move-every-pin-to-latest-stable rule. -->
-    <PackageVersion Include="MassTransit.RabbitMQ" Version="8.5.10" />
+    <PackageVersion Include="MassTransit.RabbitMQ" Version="[8.5.10,9.0.0)" />
     <PackageVersion Include="Microsoft.Agents.AI" Version="1.20.0" />
     <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.20.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />

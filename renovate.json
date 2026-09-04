@@ -1,4 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>ANcpLua/github-settings-automation"]
+  "extends": ["github>ANcpLua/github-settings-automation"],
+  "packageRules": [
+    {
+      "description": "MassTransit 9 replaced the Apache-2.0 licence of the 8.x line with the commercial massient.com licence, which is non-transferable, non-sublicensable and forbids redistribution. This repository stays on 8.x by decision of the maintainer on 2026-09-04; the pin in Directory.Packages.props is the range [8.5.10,9.0.0) for the same reason. Minor and patch updates inside 8.x are still offered.",
+      "matchPackagePatterns": ["^MassTransit"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
 }

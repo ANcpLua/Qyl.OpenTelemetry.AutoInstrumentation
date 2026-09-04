@@ -41,11 +41,11 @@ misbehaving. The emitted scope names move to the package family in 10.0.0: the
 `ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the two qyl meters
 are `Qyl.Telemetry.AutoInstrumentation.Database` and
 `Qyl.Telemetry.AutoInstrumentation.NServiceBus`. Update `AddSource(...)`,
-`AddMeter(...)` and `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`; the qyl
-collector accepts the `Qyl.OpenTelemetry.AutoInstrumentation*` spellings for the
-lifetime of this major. The strings are owned by the semantic-convention
-registry, not by this repository — the code reads them from
-`QylTelemetryNames.Scopes`.
+`AddMeter(...)` and `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. This package
+emits the `Qyl.Telemetry.AutoInstrumentation*` scope names and nothing else, and
+makes no compatibility promise for the old spellings. The strings are owned by
+the semantic-convention registry, not by this repository — the code reads them
+from `QylTelemetryNames.Scopes`.
 
 ```bash
 dotnet add package Qyl.Telemetry.Hosting
@@ -118,6 +118,17 @@ SDK tracing is the first-party exception: `Qyl.Telemetry.Hosting` enables
 exported Azure spans. A manually wired application must make those two choices
 explicitly if it wants Azure SDK spans.
 
+### MassTransit
+
+Bound at compile time to the MassTransit version the consumer has installed: this
+package references no MassTransit assembly, and the source generator matches
+`IPublishEndpoint`, `ISendEndpoint` and `ISendEndpointProvider` `Publish`/`Send`
+calls in the consumer's own compilation. Verified against MassTransit `8.5.10`
+(Apache-2.0). For 9.x: it works if the intercepted signatures are unchanged; that
+is not tested here and is not a commitment. MassTransit 9 is commercially
+licensed and is neither referenced nor redistributed by this package, and the
+repository's own demo pin is the range `[8.5.10,9.0.0)`.
+
 ### AI, MCP, and CoreWCF paths in 12.0
 
 These are version-pinned library-hook claims, not provider- or protocol-wide claims.
@@ -154,6 +165,12 @@ signal-specific variable to `false` to disable it:
 The global `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` and per-signal
 `OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_INSTRUMENTATION_ENABLED` switches still take
 precedence.
+
+## Design
+
+`DESIGN.md` records how a library gets instrumented: whether `AddSource("<name>")` alone delivers
+spans decides between subscribing to the library's own `ActivitySource` and generating a Roslyn
+interceptor, and the audit behind that decision per library.
 
 ## Coverage and evidence
 
