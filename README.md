@@ -120,14 +120,21 @@ explicitly if it wants Azure SDK spans.
 
 ### MassTransit
 
-Bound at compile time to the MassTransit version the consumer has installed: this
-package references no MassTransit assembly, and the source generator matches
-`IPublishEndpoint`, `ISendEndpoint` and `ISendEndpointProvider` `Publish`/`Send`
-calls in the consumer's own compilation. Verified against MassTransit `8.5.10`
-(Apache-2.0). For 9.x: it works if the intercepted signatures are unchanged; that
-is not tested here and is not a commitment. MassTransit 9 is commercially
-licensed and is neither referenced nor redistributed by this package, and the
-repository's own demo pin is the range `[8.5.10,9.0.0)`.
+MassTransit emits its own spans from an `ActivitySource` named `MassTransit`
+(`MassTransit.Logging.DiagnosticHeaders.DefaultListenerName`), so qyl subscribes
+to that source and stamps `qyl.instrumentation.domain` onto its spans instead of
+intercepting the call sites. The floor is MassTransit `8.0.0`, the version that
+introduced the source; verified against `8.5.10` (Apache-2.0). Below the floor
+the source does not exist and no span is produced.
+
+What the native span carries differs from the interceptor it replaces: the
+producer span is named `{destination} send`, reports the *transport* in
+`messaging.system` (`rabbitmq`, not `masstransit`), and reports the operation
+through the deprecated `messaging.operation` key, always as `send` — MassTransit
+routes `Publish` and `Send` through the same send transport, so the two are no
+longer distinguishable in the span. MassTransit 9 is commercially licensed and is
+neither referenced nor redistributed by this package, and the repository's own
+demo pin is the range `[8.5.10,9.0.0)`.
 
 ### AI, MCP, and CoreWCF paths in 12.0
 

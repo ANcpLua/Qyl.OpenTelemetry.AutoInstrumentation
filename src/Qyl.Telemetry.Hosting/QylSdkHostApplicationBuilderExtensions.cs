@@ -82,11 +82,9 @@ public static class QylSdkHostApplicationBuilderExtensions
                 foreach (var source in options.AdditionalSources)
                     tracing.AddSource(source);
 
-                if (QylTelemetrySources.IsAzureTracingEnabled())
-                    tracing.AddProcessor(new QylAzureSpanProcessor());
-
-                if (QylTelemetrySources.IsCoreWcfTracingEnabled())
-                    tracing.AddProcessor(new QylCoreWcfSpanProcessor());
+                var nativeSourceRows = QylTelemetrySources.GetEnabledNativeSourceRows();
+                if (nativeSourceRows.Length > 0)
+                    tracing.AddProcessor(new QylNativeSpanProcessor(nativeSourceRows));
 
                 if (options.EnableSessionPropagation)
                     tracing.AddProcessor(new QylSessionSpanProcessor());

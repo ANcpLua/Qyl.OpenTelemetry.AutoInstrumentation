@@ -284,15 +284,14 @@
       "expected_signals": [
         {
           "kind": "span",
-          "name": "masstransit.message",
+          "name": "{destination} send",
           "required_attributes": [
             "messaging.system",
-            "messaging.operation.type",
-            "messaging.operation.name",
+            "messaging.destination.name",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "messaging.masstransit.message_types"
           ],
           "opt_in_attributes": []
         },

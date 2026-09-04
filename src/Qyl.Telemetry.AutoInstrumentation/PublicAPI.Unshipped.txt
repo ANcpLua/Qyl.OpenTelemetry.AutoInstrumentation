@@ -1,1 +1,4 @@
 #nullable enable
+*REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMassTransit
+*REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MassTransitOperation = "MassTransitOperation" -> string!
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMassTransit.Send(string! operationName) -> System.Diagnostics.Activity?

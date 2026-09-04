@@ -27,6 +27,7 @@ internal sealed class QylSignalAttribute : Attribute
 [QylSignal(QylAutoInstrumentationIds.Azure, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.EntityFrameworkCore, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.GrpcNetClient, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.MassTransit, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.MicrosoftAgentsAi, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.MicrosoftAgentsAi, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.MicrosoftAgentsAiWorkflows, QylAutoInstrumentationSignal.Traces)]

@@ -78,7 +78,7 @@ CONFORMANCE_PROFILES = [
         "service_name": "qyl-messaging-aot-demo",
         "profile_id": "qyl-aot-messaging",
         "signal_names": [
-            "masstransit.message",
+            "{destination} send",
             "rabbitmq.publish",
         ],
     },
@@ -245,7 +245,7 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
         "NServiceBus >=8.0.0; verified against 10.2.9"
     ),
     "signals.traces.MASSTRANSIT": (
-        "MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider Publish/Send calls only"
+        'MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"'
     ),
     "signals.traces.QUARTZ": (
         "Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only"

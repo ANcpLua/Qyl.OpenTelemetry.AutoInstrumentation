@@ -104,8 +104,6 @@ public static class QylShapes
     public const string KafkaProduce = "KafkaProduce";
     /// <summary>The <c>IConsumer&lt;TKey, TValue&gt;</c> consume overloads.</summary>
     public const string KafkaConsume = "KafkaConsume";
-    /// <summary>A <c>Task</c>-returning MassTransit publish or send.</summary>
-    public const string MassTransitOperation = "MassTransitOperation";
     /// <summary>A <c>Task</c>-returning NServiceBus publish or send.</summary>
     public const string NServiceBusOperation = "NServiceBusOperation";
     /// <summary>The <c>IJob.Execute(IJobExecutionContext, CancellationToken)</c> operation.</summary>

@@ -49,7 +49,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     for token in [
         "published=alpha",
         "sent=beta",
-        "expected-masstransit-error=ArgumentException",
     ]:
         if token not in completed.stdout:
             fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
@@ -60,9 +59,11 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
+    # One native span per command: the publish and the explicit send. A third means the deleted
+    # interceptor is still emitting alongside MassTransit's own ActivitySource.
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 3:
-        fail(f"{name} expected exactly 3 MassTransit activities, got {activities!r}")
+    if not isinstance(activities, list) or len(activities) != 2:
+        fail(f"{name} expected exactly 2 MassTransit activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

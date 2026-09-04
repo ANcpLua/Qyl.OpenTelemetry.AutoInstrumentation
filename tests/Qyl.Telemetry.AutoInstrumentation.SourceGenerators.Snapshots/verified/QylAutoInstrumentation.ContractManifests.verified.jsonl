@@ -11,7 +11,6 @@
 {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
 {"interceptorKind":"Kafka.Receive","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
 {"interceptorKind":"Kafka.Send","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
-{"interceptorKind":"MassTransit.Send","signal":"traces","instrumentationId":"MASSTRANSIT","additionalMetricIds":[],"contractKeys":["signals.traces.MASSTRANSIT"]}
 {"interceptorKind":"MongoDb.Operation","signal":"traces","instrumentationId":"MONGODB","additionalMetricIds":[],"contractKeys":["signals.traces.MONGODB"]}
 {"interceptorKind":"NServiceBus.Send","signal":"traces","instrumentationId":"NSERVICEBUS","additionalMetricIds":["NSERVICEBUS"],"contractKeys":["signals.traces.NSERVICEBUS","signals.metrics.NSERVICEBUS"]}
 {"interceptorKind":"Quartz.Execute","signal":"traces","instrumentationId":"QUARTZ","additionalMetricIds":[],"contractKeys":["signals.traces.QUARTZ"]}

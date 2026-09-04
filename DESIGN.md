@@ -208,11 +208,11 @@ only thing qyl refuses to do is call `UseTelemetry()` on the consumer's behalf.
    library, driven by a single source-name table.
 2. **Per library, a call-site-dependence check, with the result recorded.** The qyl attributes are
    constants per integration — `qyl.instrumentation.domain` and the instrumentation id — so a
-   processor can normally set them without knowing the call site. What a call site supplies is
-   semantic-convention data, which the native span already carries. This was verified end to end
-   only for MassTransit, whose sole call-site-derived value is `messaging.operation.name`
-   (`Publish` vs `Send`), supplied by MassTransit's own span. Every other library needs the same
-   check before it moves; do not inherit this conclusion.
+   processor can set them without knowing the call site, and that is what decides whether a library
+   may move. Semantic-convention data is a separate question: the native span carries whatever the
+   library chose to carry, which is not always what the interceptor carried. The check is recorded
+   per library in the status table below, and the loss is named in the CHANGELOG rather than
+   invented in the processor. Do not inherit another library's conclusion.
 3. **Per library, demo-lane proof**: exactly one span from the native source, carrying the qyl
    attributes and the library's own attributes. One span, not two — a duplicate means the
    interceptor was not fully removed. Where the library emits more than one span per operation by
@@ -247,3 +247,48 @@ only thing qyl refuses to do is call `UseTelemetry()` on the consumer's behalf.
    README names `OTEL_SEMCONV_STABILITY_OPT_IN=database` and the demo sets it, because a processor
    that rewrote legacy keys into stable ones would be inventing semantic-convention data the
    library did not emit.
+
+## 13.0.0 wave status
+
+One row per library, closed as **migrated** or **stays interceptor with the reason**. The
+call-site-dependence check of constraint 2 is recorded here, per library, before the deletion.
+
+| Library | Status | Call-site-dependence check | Output change |
+| --- | --- | --- | --- |
+| MassTransit | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.masstransit`), so the processor sets them without the call site. The interceptor's `messaging.operation.name` **was** call-site-derived and the native span does **not** replace it — see the output change. | Source `Qyl.Telemetry.AutoInstrumentation` span `publish`/`send` -> source `MassTransit` span `{destination} send`. `messaging.system` changes from the qyl-owned `masstransit` to the transport MassTransit reports (`rabbitmq`). `messaging.operation.type` and `messaging.operation.name` are gone; MassTransit reports the deprecated `messaging.operation`, always `send`, for both `Publish` and `Send`, so the two are no longer distinguishable. `error.type` is gone: a publish that fails before the transport produces no span at all. Gained: `messaging.destination.name` and the `messaging.masstransit.*` vendor keys. |
+| Elastic.Transport | open | — | — |
+| Elasticsearch | open | — | — |
+| RabbitMQ.Client | open | — | — |
+| MongoDB.Driver | open | — | — |
+| Quartz | open | — | — |
+| NServiceBus | open | — | — |
+| Npgsql | open | — | — |
+| MySqlConnector | open | — | — |
+| MySql.Data | open | — | — |
+| ODP.NET | open | — | — |
+| GraphQL | open | — | — |
+| Kafka | stays interceptor | n/a | none — no native `ActivitySource` at `2.15.0` |
+| ADO.NET | stays interceptor | n/a | none — `System.Data.Common` declares no `ActivitySource` |
+| SqlClient | stays interceptor | n/a | none — `SqlClientDiagnosticListener` only; re-check at the next major |
+| Sqlite | stays interceptor | n/a | none — `Microsoft.Data.Sqlite.Core` declares no `ActivitySource` |
+| StackExchange.Redis | stays interceptor | n/a | none — profiling API only |
+| WCF client | stays interceptor | n/a | none — no `ActivitySource` in `System.ServiceModel.*` |
+
+### Findings the wave recorded against its own plan
+
+- **MassTransit's native span does not carry `messaging.operation.name`.** The plan assumed it did.
+  `LogContextActivityExtensions.StartSendActivity` at tag `v8.5.10` sets
+  `DiagnosticHeaders.Messaging.Operation` — the string `"messaging.operation"`, deprecated in the
+  registry — to the constant `"send"`, and sets `messaging.system` from
+  `SendTransportContext.ActivitySystem`, which `RabbitMqSendTransportContext` defines as
+  `"rabbitmq"`. `IPublishEndpoint.Publish` and `ISendEndpoint.Send` both reach the same
+  `SendTransport.Send`, so no span distinguishes them. Migrating MassTransit therefore loses the
+  publish/send distinction; it is named in the CHANGELOG rather than reconstructed by the
+  processor, because a processor that guessed it from the destination shape would be inventing
+  semantic-convention data the library never emitted.
+- **CoreWCF has no instrumentation-domain value.** The registry's
+  `qyl.instrumentation.domain` value set publishes `rpc.wcf.client`, which belongs to the
+  intercepted WCF *client*; there is no value for the CoreWCF server spans. The CoreWCF row of the
+  native-source table therefore carries no domain and only normalises `rpc.system` to
+  `rpc.system.name`, exactly as the processor it replaced did. This is a semantic-convention gap,
+  not a name to invent in this repository. No enforcer fails on it.

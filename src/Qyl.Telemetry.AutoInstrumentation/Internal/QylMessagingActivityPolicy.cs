@@ -14,8 +14,7 @@ internal static class QylMessagingActivityPolicy
     private const string Publish = "publish";
     private const string Receive = "receive";
     private const string RabbitMqDefaultDestination = "amq.default";
-    // messaging.system enumerates neither transport, so both values are qyl-owned.
-    internal const string MassTransitSystemName = "masstransit";
+    // messaging.system does not enumerate NServiceBus, so the value is qyl-owned.
     internal const string NServiceBusSystemName = "nservicebus";
 
     public static Activity? StartKafkaProducerActivity(string? topic, int? partitionId)
@@ -42,16 +41,6 @@ internal static class QylMessagingActivityPolicy
             MessagingAttributes.SystemValues.Kafka,
             MessagingAttributes.OperationTypeValues.Receive,
             Receive,
-            destination: null);
-
-    public static Activity? StartMassTransitActivity(string method)
-        => Start(
-            QylAutoInstrumentationIds.MassTransit,
-            ActivityKind.Producer,
-            QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
-            MassTransitSystemName,
-            MessagingAttributes.OperationTypeValues.Send,
-            OperationName(method),
             destination: null);
 
     public static Activity? StartNServiceBusActivity(string method)

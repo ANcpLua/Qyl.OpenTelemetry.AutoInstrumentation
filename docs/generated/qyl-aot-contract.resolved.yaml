@@ -185,7 +185,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylInstrumentation.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - src/Qyl.Telemetry.Hosting/QylAzureSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealAzureDemo
   - tools/verify-real-azure-demo.py
@@ -515,8 +515,7 @@ contract_items:
   libraries:
   - name: MassTransit
     url: https://www.nuget.org/packages/MassTransit
-  supported_versions: MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider
-    Publish/Send calls only
+  supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -529,27 +528,28 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L155
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: MassTransit's own MassTransit ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped
+    by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealMassTransitDemo
   - tools/verify-real-masstransit-demo.py
   conformance_signals:
   - kind: span
-    name: masstransit.message
+    name: '{destination} send'
     required_attributes:
     - messaging.system
-    - messaging.operation.type
-    - messaging.operation.name
+    - messaging.destination.name
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
+    - messaging.masstransit.message_types
     opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MONGODB

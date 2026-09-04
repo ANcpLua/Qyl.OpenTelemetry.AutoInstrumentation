@@ -76,7 +76,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylInstrumentation.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - src/Qyl.Telemetry.Hosting/QylAzureSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealAzureDemo
   - tools/verify-real-azure-demo.py
@@ -262,28 +262,28 @@ ownership_items:
   - tools/verify-real-kafka-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   key: signals.traces.MASSTRANSIT
-  supported_versions: MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider Publish/Send calls only
-  lane: source_interceptor
+  supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: MassTransit's own MassTransit ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealMassTransitDemo
   - tools/verify-real-masstransit-demo.py
   conformance_signals:
   - kind: span
-    name: masstransit.message
+    name: '{destination} send'
     required_attributes:
     - messaging.system
-    - messaging.operation.type
-    - messaging.operation.name
+    - messaging.destination.name
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
+    - messaging.masstransit.message_types
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
   key: signals.traces.MONGODB

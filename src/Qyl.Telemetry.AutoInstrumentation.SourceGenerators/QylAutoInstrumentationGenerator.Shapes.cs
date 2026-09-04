@@ -49,8 +49,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchKafkaProduce(symbol, out match);
             case "KafkaConsume":
                 return TryMatchKafkaConsume(symbol, out match);
-            case "MassTransitOperation":
-                return TryMatchMessagingOperation(symbol, matchedReceiver, recoverGenerics: false, out match);
             case "NServiceBusOperation":
                 return TryMatchMessagingOperation(symbol, matchedReceiver, recoverGenerics: true, out match);
             case "QuartzJob":

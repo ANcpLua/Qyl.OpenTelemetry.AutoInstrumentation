@@ -1,4 +1,6 @@
 using Qyl.Telemetry.AutoInstrumentation;
+using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 namespace Qyl;
 
@@ -12,11 +14,43 @@ internal static class QylTelemetrySources
     internal const string Azure = "Azure.*";
     internal const string AspNetCore = "Microsoft.AspNetCore";
     internal const string HttpClient = "System.Net.Http";
+    internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
+
+    /// <summary>
+    /// The libraries whose own <c>ActivitySource</c> qyl subscribes to instead of intercepting: the
+    /// source name, the instrumentation id whose toggle gates it, the domain stamped on its spans,
+    /// and the normalisation that source needs. One table drives both the <c>AddSource</c> calls and
+    /// <see cref="QylNativeSpanProcessor"/>, so a library is added in one place.
+    /// </summary>
+    /// <remarks>
+    /// CoreWCF carries no domain: its spans are the WCF <em>server</em> side, and the registry
+    /// publishes no instrumentation-domain value for it — <c>rpc.wcf.client</c> belongs to the
+    /// intercepted client. The row still normalises the span exactly as before, and the missing
+    /// value is a semantic-convention gap rather than a name to invent here.
+    /// </remarks>
+    private static readonly QylNativeSourceRow[] NativeSourceRows =
+    [
+        new(
+            Azure,
+            QylAutoInstrumentationIds.Azure,
+            QylAttributes.InstrumentationDomainValues.AzureSdk,
+            QylNativeSpanProcessor.NormalizeAzure),
+        new(
+            CoreWcf,
+            QylAutoInstrumentationIds.WcfCore,
+            Domain: null,
+            QylNativeSpanProcessor.NormalizeCoreWcf),
+        new(
+            MassTransit,
+            QylAutoInstrumentationIds.MassTransit,
+            QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
+            Normalize: null),
+    ];
 
     internal static string[] GetEnabledActivitySourceNames()
     {
         var options = QylAutoInstrumentationOptions.Current;
-        var names = new List<string>(8);
+        var names = new List<string>(8 + NativeSourceRows.Length);
 
         if (options.HasAnyActivityInstrumentationEnabled())
             names.Add(QylActivitySource.Name);
@@ -31,21 +65,26 @@ internal static class QylTelemetrySources
         AddIfEnabled(names, options, QylAutoInstrumentationIds.MicrosoftAgentsAi, MicrosoftAgentsAi);
         AddIfEnabled(names, options, QylAutoInstrumentationIds.MicrosoftAgentsAiWorkflows, MicrosoftAgentsAiWorkflows);
         AddIfEnabled(names, options, QylAutoInstrumentationIds.ModelContextProtocol, ModelContextProtocol);
-        AddIfEnabled(names, options, QylAutoInstrumentationIds.WcfCore, CoreWcf);
-        AddIfEnabled(names, options, QylAutoInstrumentationIds.Azure, Azure);
+
+        foreach (var row in GetEnabledNativeSourceRows())
+            names.Add(row.SourceName);
 
         return [.. names];
     }
 
-    internal static bool IsAzureTracingEnabled()
-        => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(
-            QylAutoInstrumentationSignal.Traces,
-            QylAutoInstrumentationIds.Azure);
+    internal static QylNativeSourceRow[] GetEnabledNativeSourceRows()
+    {
+        var options = QylAutoInstrumentationOptions.Current;
+        var rows = new List<QylNativeSourceRow>(NativeSourceRows.Length);
 
-    internal static bool IsCoreWcfTracingEnabled()
-        => QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(
-            QylAutoInstrumentationSignal.Traces,
-            QylAutoInstrumentationIds.WcfCore);
+        foreach (var row in NativeSourceRows)
+        {
+            if (options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, row.InstrumentationId))
+                rows.Add(row);
+        }
+
+        return [.. rows];
+    }
 
     internal static bool IsLogRecordCaptureEnabled()
         => QylAutoInstrumentationOptions.Current.LogsEnabled;

@@ -5,8 +5,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
-using Qyl.Telemetry.AutoInstrumentation;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
+using Qyl;
 using Qyl.RealMassTransitDemo;
+using MessagingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 var uriText = Environment.GetEnvironmentVariable("QYL_RABBITMQ_URI");
 if (string.IsNullOrWhiteSpace(uriText))
@@ -15,25 +20,26 @@ if (string.IsNullOrWhiteSpace(uriText))
     return 2;
 }
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
-using var listener = new ActivityListener
+// The real registration path: AddQyl subscribes to MassTransit's own ActivitySource and installs the
+// one native-span processor, so what the exporter receives is what a consumer receives.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
-
-ActivitySource.AddActivityListener(listener);
-
-var services = new ServiceCollection();
-services.AddMassTransit(configure => configure.UsingRabbitMq((_, rabbit) =>
+    ApplicationName = "Qyl.RealMassTransitDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-masstransit-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
+builder.Services.AddMassTransit(configure => configure.UsingRabbitMq((_, rabbit) =>
 {
     rabbit.Host(new Uri(uriText));
     rabbit.ConfigureJsonSerializerOptions(options =>
@@ -43,33 +49,27 @@ services.AddMassTransit(configure => configure.UsingRabbitMq((_, rabbit) =>
     });
 }));
 
-await using (var provider = services.BuildServiceProvider())
-{
-    var bus = provider.GetRequiredService<IBusControl>();
-    await WaitForBusAsync(bus);
+using var host = builder.Build();
+await host.StartAsync();
 
-    await bus.Publish(new ProbeEvent("alpha"));
-    Console.WriteLine("published=alpha");
+var bus = host.Services.GetRequiredService<IBusControl>();
+await WaitForBusAsync(bus);
 
-    var sendEndpoint = await bus.GetSendEndpoint(new Uri("queue:qyl-probe"));
-    await sendEndpoint.Send(new ProbeCommand("beta"));
-    Console.WriteLine("sent=beta");
+await bus.Publish(new ProbeEvent("alpha"));
+Console.WriteLine("published=alpha");
 
-    try
-    {
-        await bus.Publish(new BrokenEvent("gamma"));
-    }
-    catch (ArgumentException exception)
-    {
-        Console.WriteLine("expected-masstransit-error=" + exception.GetType().Name);
-    }
+var sendEndpoint = await bus.GetSendEndpoint(new Uri("queue:" + MassTransitReport.SendDestination));
+await sendEndpoint.Send(new ProbeCommand("beta"));
+Console.WriteLine("sent=beta");
 
-    await bus.StopAsync();
-}
+await bus.StopAsync();
+
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
 
 var report = MassTransitReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealMassTransitJsonContext.Default.MassTransitReport);
 Console.WriteLine(json);
@@ -98,10 +98,8 @@ static async Task WaitForBusAsync(IBusControl bus)
     throw new InvalidOperationException("RabbitMQ did not become ready for MassTransit.", lastException);
 }
 
-/// <summary>Namespace-less message type that MassTransit deterministically rejects inside the intercepted publish.</summary>
-public sealed record BrokenEvent(string Name);
-
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -109,6 +107,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -124,35 +123,53 @@ internal sealed record MassTransitReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    internal const string SendDestination = "qyl-probe";
+
     public static MassTransitReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
         var massTransitSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "messaging.masstransit"))
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.MassTransit))
             .ToArray();
 
-        if (massTransitSpans.Length != 3)
-            failures.Add($"expected 3 MassTransit message spans, got {massTransitSpans.Length}");
+        // One span per command, not per run: the explicit send names its queue, the publish names
+        // the exchange MassTransit derives from the message type. A second span for either means the
+        // interceptor was not fully removed.
+        var sendSpans = massTransitSpans
+            .Where(static span =>
+                span.Tags.TryGetValue(MessagingAttributes.DestinationName, out var destination) &&
+                StringComparer.Ordinal.Equals(destination, SendDestination))
+            .ToArray();
+        var publishSpans = massTransitSpans.Except(sendSpans).ToArray();
 
-        var publishSuccess = FindByOperationAndStatus(massTransitSpans, "publish", "Unset");
-        var sendSuccess = FindByOperationAndStatus(massTransitSpans, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, "Unset");
-        var publishError = FindByOperationAndStatus(massTransitSpans, "publish", "Error");
-
-        Require(publishSuccess, "successful publish span", failures);
-        Require(sendSuccess, "successful send span", failures);
-        Require(publishError, "error publish span", failures);
-        RequireTag(publishError, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(ArgumentException).FullName!, failures);
+        if (sendSpans.Length != 1)
+            failures.Add($"expected exactly 1 MassTransit span for the '{SendDestination}' send, got {sendSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+        if (publishSpans.Length != 1)
+            failures.Add($"expected exactly 1 MassTransit span for the publish, got {publishSpans.Length.ToString(CultureInfo.InvariantCulture)}");
 
         foreach (var span in massTransitSpans)
         {
-            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var operationName) ||
-                !StringComparer.Ordinal.Equals(span.Name, operationName))
-                failures.Add($"expected the MassTransit span to be named after messaging.operation.name, got {span.Name}");
+            // The two attributes the qyl processor owns: without them the collector cannot classify
+            // the span, because it classifies on attribute presence and never on the span name.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
+                failures);
 
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.System, "masstransit", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationType, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationTypeValues.Send, failures);
+            // MassTransit's own attributes: the transport it published through, the destination the
+            // span is named after, and the message types it carried. MassTransit still reports the
+            // operation through the deprecated messaging.operation key, which is why nothing here
+            // asserts a stable messaging.operation.type or .name — it emits neither.
+            RequireTag(span, MessagingAttributes.System, MessagingAttributes.SystemValues.Rabbitmq, failures);
+            RequirePresentTag(span, MessagingAttributes.DestinationName, failures);
+            RequirePresentTag(span, MessagingAttributes.MasstransitMessageTypes, failures);
+
+            if (span.Tags.TryGetValue(MessagingAttributes.DestinationName, out var destination) &&
+                !StringComparer.Ordinal.Equals(span.Name, destination + " send"))
+                failures.Add($"expected the MassTransit span to be named '{destination} send', got {span.Name}");
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Producer"))
                 failures.Add($"expected kind Producer, got {span.Kind}");
@@ -161,23 +178,8 @@ internal sealed record MassTransitReport(
         return new MassTransitReport(runtimeMode, failures.Count is 0, failures.ToArray(), massTransitSpans);
     }
 
-    private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
-        => activities.FirstOrDefault(activity =>
-            StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes.OperationName, out var actual) &&
-            StringComparer.Ordinal.Equals(actual, operation));
-
-    private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
+    private static void RequireTag(CapturedActivity activity, string key, string expected, ICollection<string> failures)
     {
-        if (activity is null)
-            failures.Add($"missing {label}");
-    }
-
-    private static void RequireTag(CapturedActivity? activity, string key, string expected, ICollection<string> failures)
-    {
-        if (activity is null)
-            return;
-
         if (!activity.Tags.TryGetValue(key, out var actual))
         {
             failures.Add($"missing {key}");
@@ -186,6 +188,12 @@ internal sealed record MassTransitReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequirePresentTag(CapturedActivity activity, string key, ICollection<string> failures)
+    {
+        if (!activity.Tags.ContainsKey(key))
+            failures.Add($"missing {key}");
     }
 }
 
