@@ -90,6 +90,7 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
   key: signals.traces.ELASTICSEARCH
+  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -374,6 +375,7 @@ ownership_items:
     - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
   key: signals.traces.NSERVICEBUS
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code
@@ -683,6 +685,7 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
   key: signals.metrics.NSERVICEBUS
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code

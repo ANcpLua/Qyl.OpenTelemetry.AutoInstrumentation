@@ -206,7 +206,7 @@ contract_items:
   libraries:
   - name: Elastic.Clients.Elasticsearch
     url: https://www.nuget.org/packages/Elastic.Clients.Elasticsearch
-  supported_versions: '>=8.0.0 && <8.10.0'
+  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -729,7 +729,7 @@ contract_items:
   libraries:
   - name: NServiceBus
     url: https://www.nuget.org/packages/NServiceBus
-  supported_versions: '>=8.0.0 && <10.0.0'
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
   instrumentation_types:
   - source
   - bytecode
@@ -1358,7 +1358,7 @@ contract_items:
   libraries:
   - name: NServiceBus
     url: https://www.nuget.org/packages/NServiceBus
-  supported_versions: '>=8.0.0 && <10.0.0'
+  supported_versions: NServiceBus >=8.0.0; verified against 10.2.9
   instrumentation_types:
   - source
   - bytecode

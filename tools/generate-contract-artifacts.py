@@ -235,6 +235,15 @@ QYL_NATIVE_8_SUPPORTED_PATHS = {
     ),
 }
 QYL_SUPPORTED_VERSION_OVERRIDES = {
+    "signals.traces.ELASTICSEARCH": (
+        "Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1"
+    ),
+    "signals.metrics.NSERVICEBUS": (
+        "NServiceBus >=8.0.0; verified against 10.2.9"
+    ),
+    "signals.traces.NSERVICEBUS": (
+        "NServiceBus >=8.0.0; verified against 10.2.9"
+    ),
     "signals.traces.MASSTRANSIT": (
         "MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider Publish/Send calls only"
     ),
