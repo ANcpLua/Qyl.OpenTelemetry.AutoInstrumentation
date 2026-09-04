@@ -866,7 +866,8 @@ contract_items:
   libraries:
   - name: Quartz
     url: https://www.nuget.org/packages/Quartz
-  supported_versions: Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only
+  supported_versions: Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" (3.x used DiagnosticListener
+    and has none)
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -879,15 +880,16 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L163
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Quartz's own Quartz ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
 - kind: signal_specific_instrumentation_promise

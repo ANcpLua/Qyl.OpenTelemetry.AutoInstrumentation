@@ -43,7 +43,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
 
     for token in [
         "scheduler-fired=true",
-        "expected-quartz-error=qyl-quartz-error",
     ]:
         if token not in completed.stdout:
             fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
@@ -55,8 +54,10 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
     activities = report.get("Activities")
+    # One Quartz.Job.Execute span per scheduled job. The scheduler traces its job-store calls on
+    # the same source; the demo reports only the firings.
     if not isinstance(activities, list) or len(activities) != 2:
-        fail(f"{name} expected exactly 2 Quartz activities, got {activities!r}")
+        fail(f"{name} expected exactly 2 Quartz job-execute activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

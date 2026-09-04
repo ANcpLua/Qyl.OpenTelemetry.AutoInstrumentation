@@ -446,16 +446,17 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ
-  supported_versions: Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only
-  lane: source_interceptor
+  supported_versions: Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" (3.x used DiagnosticListener and has none)
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Quartz's own Quartz ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021

@@ -69,17 +69,24 @@ the declaring type at the pinned tag.
 
 ### Version floors
 
-The floor is the library version at which the native `ActivitySource` first exists. Below it, the
-source name resolves to nothing.
+This table is the owner of every floor in this document: the "Every integration" table below repeats
+the value and nothing else, and the contract's `supported_versions` is generated from the same
+number. The floor is the library version at which the native `ActivitySource` first exists. Below
+it, the source name resolves to nothing.
 
 | Library | Floor | How the floor was established | Confidence |
 | --- | --- | --- | --- |
 | MassTransit | `8.0.0` | OTel contrib deprecation README states v8.0.0 and later have built-in `ActivitySource` support | stated by upstream |
+| Elastic.Transport | `1.0.0` | the package pinned here; `ElasticTransportActivitySourceName` is declared in `Diagnostics/OpenTelemetry/OpenTelemetry.cs` at tag `1.0.0`. The name predates it in the 8.10 client stack, but no earlier package version was checked, so nothing below `1.0.0` is claimed | declaring type at tag |
+| Elastic.Clients.Elasticsearch | `8.0.0` | the client owns no source; it enriches Elastic.Transport's, so its floor is the client range this repository already claimed, and the transport's floor is what actually gates the spans | inherited from the transport |
 | RabbitMQ.Client | `7.0.0` | CHANGELOG, PR #1261, first shipped in `7.0.0-alpha.3`; 6.x has none | repository changelog |
-| Quartz.NET | `4.0.0` | `Quartz.Diagnostics.QuartzInstrumentation.ActivitySourceName` at tag `v4.0.0`; 3.x used `DiagnosticListener`, so 3.x is bucket "no native" | declaring type at tag |
 | MongoDB.Driver | `3.7.0` | release notes "Adds support for OpenTelemetry tracing" plus tag bisect (`MongoTelemetry.cs` absent at `v3.6.0`, present at `v3.7.0`) | bisect + release note |
+| Quartz.NET | `4.0.0` | `Quartz.Diagnostics.QuartzInstrumentation.ActivitySourceName` at tag `v4.0.0`; 3.x used `DiagnosticListener`, so 3.x is bucket "no native" | declaring type at tag |
 | NServiceBus | `8.0` | documentation states OpenTelemetry support since v8; enabled by default from v10 | vendor documentation |
-| Elastic.Transport | `8.10.0` of the client stack | name present in `Elastic.Transport` `1.0.0`; the pre-8.10 name is **unverified** | partial |
+| Npgsql | `6.0.0` | tag bisect: `src/Npgsql/NpgsqlActivitySource.cs` declares `Source = new("Npgsql", version)` at `v6.0.0`; the path is absent at `v5.0.0`, whose tree has no `*Activity*` file under `src/Npgsql/` | bisect |
+| MySqlConnector | `2.0.0` | tag bisect: `Utilities/ActivitySourceHelper.cs` exists at `2.0.0` and 404s at `1.3.14` and `2.0.0-beta.1`; agrees with upstream `>=2.0.0` | bisect |
+| MySql.Data | `8.1.0` | tag bisect: `MySQL.Data/src/MySQLActivitySource.cs` exists at `8.1.0` and 404s at `8.0.33`; `#if NET5_0_OR_GREATER`, so .NET 5+ only | bisect |
+| Oracle.ManagedDataAccess.Core | `23.4.0` | package bisect: `OpenTelemetryTracing` and the source literal are in `lib/netstandard2.1/Oracle.ManagedDataAccess.dll` of `23.4.0` (first stable) and absent from `23.2.0-dev`; agrees with upstream `>=23.4.0` | bisect |
 | GraphQL | `7.3.0` | tag bisect (absent `7.2.0`, present `7.3.0`); no changelog entry found | bisect only |
 
 **Quartz 4 re-check, as asked:** `Quartz.Diagnostics.QuartzInstrumentation.ActivitySourceName` is a
@@ -95,8 +102,9 @@ the major this repository pins.
 - **NServiceBus** publishes no attribute list, and its documentation teaches the wildcard
   `NServiceBus.*` rather than the literal source name. Subscribe to the wildcard; do not treat
   `NServiceBus.Core` as contract.
-- **Elasticsearch before 8.10.0** used a different source name. No Elastic page documents it and the
-  claim is unverified. It does not affect the pinned version, which owns no source of its own.
+- **Elasticsearch before the 8.10 client stack** used a different source name. No Elastic page
+  documents it and the claim is unverified, which is why the floors table claims nothing below
+  `Elastic.Transport` `1.0.0`. It does not affect the pinned version, which owns no source of its own.
 - **RabbitMQ.Client** exposes process-wide mutable statics (`RabbitMQActivitySource.ContextInjector`,
   `.UseRoutingKeyAsOperationName`) that change propagation and span names. A processor shares that
   state with application code.
@@ -168,8 +176,8 @@ audit tables above.
 | Integration | Mechanism today | Bucket | Floor | After 13.0.0 |
 | --- | --- | --- | --- | --- |
 | MASSTRANSIT | interceptor | native | `8.0.0` | source + processor |
-| ELASTICTRANSPORT | interceptor | native | `8.10.0` stack | source + processor |
-| ELASTICSEARCH | interceptor | native, via transport | `8.10.0` stack | source + processor |
+| ELASTICTRANSPORT | interceptor | native | `1.0.0` | source + processor |
+| ELASTICSEARCH | interceptor | native, via transport | `8.0.0` client, gated by the transport's `1.0.0` | source + processor |
 | QUARTZ | interceptor | native | `4.0.0` | source + processor |
 | MONGODB | interceptor | native | `3.7.0` | source + processor |
 | NSERVICEBUS | interceptor | native | `8.0` | source + processor |
@@ -191,7 +199,8 @@ audit tables above.
 | MICROSOFTEXTENSIONSAI | official library hook | native + consumer opt-in | — | unchanged |
 | MICROSOFTAGENTSAI | official library hook | native + consumer opt-in | — | unchanged |
 | MICROSOFTAGENTSAIWORKFLOWS | official library hook | native + consumer opt-in | — | unchanged |
-| ASPNETCORE, HTTPCLIENT, GRPCNETCLIENT, ENTITYFRAMEWORKCORE, ILOGGER, NETRUNTIME, PROCESS | runtime public telemetry | BCL/framework, out of scope | — | unchanged |
+| HTTPCLIENT | interceptor on `System.Net.Http.HttpClient`, plus the `System.Net.Http` source and a `DiagnosticListener` lane, arbitrated by `QylSignalOwnership` | BCL/framework | — | interceptor (the forwarding interceptor resolves the request URI against `HttpClient.BaseAddress`, enriches from the typed `HttpResponseMessage`, and maps `HttpRequestException.StatusCode` onto the response status — none of which the framework source carries) |
+| ASPNETCORE, GRPCNETCLIENT, ENTITYFRAMEWORKCORE, ILOGGER, NETRUNTIME, PROCESS | runtime public telemetry | BCL/framework, out of scope | — | unchanged |
 | ASPNET, WCFSERVICE | unsupported on NativeAOT | — | — | unchanged |
 | LOG4NET, NLOG | not implemented | — | — | unchanged |
 
@@ -259,8 +268,8 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
 | Elastic.Transport | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `elastic.transport`), set without the call site. The interceptor's `db.operation.name` was derived from the intercepted method name; the native span has no equivalent. | Source `Qyl.Telemetry.AutoInstrumentation` span `request` -> source `Elastic.Transport` span named after the HTTP method. Elastic.Transport emits **no database semantic conventions of its own**: `db.system.name`, `db.operation.name` and `db.query.summary` are gone, as is `error.type`. Gained: `elastic.transport.*` (7 keys), `http.request.method`, `server.address`, `server.port`, `url.full`, `user_agent.original`. |
 | Elasticsearch | migrated | Same constants. The client owns no `ActivitySource`; its spans are Elastic.Transport's, so ELASTICSEARCH and ELASTICTRANSPORT share one table row and the domain is selected per span from `elastic.transport.product.name` (`elasticsearch-net` -> `db.elasticsearch`, otherwise `elastic.transport`). | Source `Qyl.Telemetry.AutoInstrumentation` span `request` -> source `Elastic.Transport` span named after the client operation (`ping`). The stable `db.system.name` / `db.operation.name` become the client's pre-stable `db.system` = `elasticsearch` and `db.operation`; `db.query.summary` and `error.type` are gone. Gained: `db.elasticsearch.*`, `elastic.transport.*`, and the HTTP/server keys. |
 | RabbitMQ.Client | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `messaging.rabbitmq`), set without the call site. The interceptor read the exchange and routing key from the call arguments; `RabbitMQActivitySource` sets both itself, so nothing is lost. | Source `Qyl.Telemetry.AutoInstrumentation` span `publish {exchange}:{routing_key}` -> source `RabbitMQ.Client.Publisher` span `publish {routing_key}` (`RabbitMQTracingOptions.UseRoutingKeyAsOperationName` defaults to true). `messaging.destination.name` stops being qyl's `{exchange}:{routing_key}` composite and becomes the exchange alone (`amq.default` for the default exchange), with the routing key in `messaging.rabbitmq.destination.routing_key` where the convention puts it. `error.type` is gone. Gained: `messaging.message.body.size`, `messaging.rabbitmq.delivery_tag`, `network.protocol.*`, `server.*`, `network.peer.*`, `client.*`, and the consumer side — `RabbitMQ.Client.Subscriber` spans (`deliver`, `fetch`) that the interceptor never produced at all. |
-| MongoDB.Driver | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `db.mongodb`), set without the call site. The interceptor derived `db.operation.name` from the intercepted method name and the collection and database from the receiver; the driver sets all three itself, from the wire command rather than from the API surface. | Source `Qyl.Telemetry.AutoInstrumentation` span `{operation} {collection}` -> source `MongoDB.Driver` span named from `db.query.summary`. `db.operation.name` becomes the **command** MongoDB actually sends rather than the method qyl saw, so `CountDocuments` reports `aggregate` and the API-level names disappear. `error.type` is gone. Gained: `db.operation.summary`, `db.response.status_code`, `db.mongodb.*` (cursor id, lsid, connection ids, transaction number), `server.address`, `server.port`, `network.transport`, and spans for the commands the driver issues on its own. |
-| Quartz | open | — | — |
+| MongoDB.Driver | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `db.mongodb`), set without the call site. The interceptor derived `db.operation.name` from the intercepted method name and the collection and database from the receiver; the driver sets all three itself, from the wire command rather than from the API surface. | Source `Qyl.Telemetry.AutoInstrumentation` span `{operation} {collection}` -> **two** nested spans from source `MongoDB.Driver` per call: an operation span `{command} {namespace}.{collection}` carrying `db.operation.name` and `db.operation.summary`, and the command span beneath it named after the wire command, carrying `db.command.name` and `db.query.summary`. One qyl span becomes two native ones, and the demo asserts one of each layer per command. `db.operation.name` becomes the **command** MongoDB actually sends rather than the method qyl saw, so `CountDocuments` reports `aggregate` and the API-level names disappear. `error.type` is gone. Gained: `db.operation.summary`, `db.response.status_code`, `db.mongodb.*` (cursor id, lsid, connection ids, transaction number), `server.address`, `server.port`, `network.transport`, and spans for the commands the driver issues on its own. |
+| Quartz | migrated | qyl-owned attributes are constants (`qyl.instrumentation.domain` = `job.quartz`), set without the call site. The interceptor read the job group and name off the `IJobExecutionContext` argument; Quartz puts both on its own span. | Source `Qyl.Telemetry.AutoInstrumentation` span `{group}.{name}` -> source `Quartz` span `Quartz.Job.Execute`. The span name stops carrying the job identity, which moves into `quartz.job.group` and `quartz.job.name`. `error.type` survives, because Quartz sets it itself (`Quartz.Diagnostics.ErrorType`). Gained: `quartz.job.type`, `quartz.trigger.group`, `quartz.trigger.name`, `quartz.scheduler.name`, `quartz.scheduler.id`, `quartz.fire.instance.id`, a `Quartz.Job.Veto` span for vetoed firings, and a span for every call the scheduler makes into its job store. Still true: the native span carries **no** messaging or database semantic conventions — the vendor `quartz.*` namespace and `error.type` are the whole vocabulary. |
 | NServiceBus | open | — | — |
 | Npgsql | open | — | — |
 | MySqlConnector | open | — | — |
@@ -304,6 +313,12 @@ call-site-dependence check of constraint 2 is recorded here, per library, before
   `messaging.message.body.size` — from `CreationTags` and `PopulateMessagingTags`, and it owns a
   second source, `RabbitMQ.Client.Subscriber`, for `deliver` and `fetch`. Subscribing therefore adds
   consumer spans qyl never emitted. Two source names, one instrumentation id, two table rows.
+
+- **MongoDB traces every call in two layers.** The driver emits an operation span and, beneath it,
+  the command span that carries the wire details — `db.command.name`, `db.query.summary`,
+  `server.address`, `server.port`, `network.transport` and the `db.mongodb.*` connection ids. Only
+  the operation layer carries `db.operation.name`. This is the multi-span case constraint 3
+  anticipates: the demo's assertion is one span of each layer per command, not one span per call.
 
 - **MongoDB does not need the query-text strip; its own default is already off.**
   `MongoClientSettings.TracingOptions.QueryTextMaxLength` defaults to `0`, documented as "attribute

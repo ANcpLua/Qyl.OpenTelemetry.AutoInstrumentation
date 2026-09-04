@@ -14,3 +14,6 @@
 *REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb
 *REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MongoDbCollection = "MongoDbCollection" -> string!
 *REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb.Operation(string! operationName, string? collectionName, string? databaseName) -> System.Diagnostics.Activity?
+*REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz
+*REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.QuartzJob = "QuartzJob" -> string!
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz.Execute(string? jobGroup, string? jobName) -> System.Diagnostics.Activity?

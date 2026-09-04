@@ -259,7 +259,8 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
         'MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"'
     ),
     "signals.traces.QUARTZ": (
-        "Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only"
+        'Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" '
+        "(3.x used DiagnosticListener and has none)"
     ),
     "signals.traces.WCFCORE": (
         "CoreWCF.Primitives ==1.9.1; CoreWCF.Http ==1.9.1; server ActivitySource path only"

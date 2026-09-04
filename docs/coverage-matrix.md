@@ -33,12 +33,12 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | Lane | Count |
 |---|---:|
 | `environment_control` | 7 |
-| `framework_initialization` | 6 |
+| `framework_initialization` | 7 |
 | `instrumentation_option` | 12 |
 | `not_implemented` | 2 |
 | `official_library_hook` | 7 |
 | `runtime_public_telemetry` | 9 |
-| `source_interceptor` | 16 |
+| `source_interceptor` | 15 |
 | `unsupported_nativeaot` | 7 |
 
 ## Evidence counts
@@ -72,7 +72,7 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 17 | upstream 60 | `signals.traces.NSERVICEBUS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L160) | NServiceBus >=8.0.0; verified against 10.2.9 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 18 | upstream 60 | `signals.traces.ORACLEMDA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L161) | >=23.4.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 19 | upstream 60 | `signals.traces.RABBITMQ` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L162-L204) | RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources "RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber" | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_nativeaot` | RabbitMQ.Client's own publisher and subscriber ActivitySources enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
-| 20 | upstream 60 | `signals.traces.QUARTZ` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L163) | Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 20 | upstream 60 | `signals.traces.QUARTZ` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L163) | Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" (3.x used DiagnosticListener and has none) | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_managed` | Quartz's own Quartz ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
 | 21 | upstream 60 | `signals.traces.SQLCLIENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L164-L210) | * | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator; dependency-specific SqlClient listener fallback when no interceptor is emitted |
 | 22 | upstream 60 | `signals.traces.SQLITE` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L165) | >=8.0.0 && <12.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 23 | upstream 60 | `signals.traces.STACKEXCHANGEREDIS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L166-L213) | >=2.6.122 && <4.0.0 on .NET; >=2.6.122 && <3.0.0 on .NET Framework | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |

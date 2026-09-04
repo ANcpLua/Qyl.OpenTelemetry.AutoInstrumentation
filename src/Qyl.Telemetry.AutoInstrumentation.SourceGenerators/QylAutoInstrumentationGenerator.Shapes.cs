@@ -47,8 +47,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchKafkaConsume(symbol, out match);
             case "NServiceBusOperation":
                 return TryMatchMessagingOperation(symbol, matchedReceiver, recoverGenerics: true, out match);
-            case "QuartzJob":
-                return TryMatchQuartzJob(symbol, out match);
             case "RedisCommand":
                 return TryMatchRedisCommand(symbol, integration.HelperType, out match);
             case "GraphQlExecute":
@@ -598,25 +596,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             typeParameterList,
             GetConstraintClauses(symbol),
             GetReducedExtensionContainingType(symbol));
-        return true;
-    }
-
-    private static bool TryMatchQuartzJob(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        if (!IsValueTask(symbol.ReturnType) ||
-            symbol.Parameters.Length is not 2 ||
-            !IsType(symbol.Parameters[0].Type, "global::Quartz.IJobExecutionContext") ||
-            !IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
-        {
-            return false;
-        }
-
-        match = new ShapeMatch(
-            CleanTypeName(symbol.ContainingType),
-            "global::System.Threading.Tasks.ValueTask",
-            BuildParameters(symbol),
-            true);
         return true;
     }
 

@@ -3,93 +3,100 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Trace;
 using Quartz;
-using Qyl.Telemetry.AutoInstrumentation;
+using Qyl;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
+using QuartzAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Quartz.QuartzAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
-using var listener = new ActivityListener
+// The real registration path: AddQyl subscribes to Quartz's own ActivitySource and installs the one
+// native-span processor.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
+    ApplicationName = "Qyl.RealQuartzDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-quartz-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-ActivitySource.AddActivityListener(listener);
+using var host = builder.Build();
+await host.StartAsync();
 
 await using var factory = QuartzSchedulerBuilder
-    .Create(builder => builder.UseDefaultThreadPool().UseInMemoryStore())
+    .Create(schedulerBuilder => schedulerBuilder.UseDefaultThreadPool().UseInMemoryStore())
     .Build();
 
 var scheduler = await factory.GetScheduler();
 await scheduler.Start();
 
-var job = JobBuilder.Create<OuterJob>().WithIdentity("qyl-outer").Build();
-var trigger = TriggerBuilder.Create().WithIdentity("qyl-now").StartNow().Build();
-await scheduler.ScheduleJob(job, trigger);
+await scheduler.ScheduleJob(
+    JobBuilder.Create<ProbeJob>().WithIdentity(QuartzReport.ProbeJobName).Build(),
+    TriggerBuilder.Create().WithIdentity("qyl-probe-now").StartNow().Build());
+await scheduler.ScheduleJob(
+    JobBuilder.Create<FailingJob>().WithIdentity(QuartzReport.FailingJobName).Build(),
+    TriggerBuilder.Create().WithIdentity("qyl-failing-now").StartNow().Build());
 
-await OuterJob.Completed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+await ProbeJob.Completed.Task.WaitAsync(TimeSpan.FromSeconds(30));
+await FailingJob.Completed.Task.WaitAsync(TimeSpan.FromSeconds(30));
 await scheduler.Shutdown(waitForJobsToComplete: true);
 Console.WriteLine("scheduler-fired=true");
 
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
+
 var report = QuartzReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealQuartzJsonContext.Default.QuartzReport);
 Console.WriteLine(json);
 
 return report.Pass ? 0 : 1;
 
-/// <summary>Delegation target job whose source-visible Execute call is intercepted.</summary>
+/// <summary>Scheduler-fired job whose execution the native source traces.</summary>
 public sealed class ProbeJob : IJob
-{
-    /// <inheritdoc />
-    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
-        => ValueTask.CompletedTask;
-}
-
-/// <summary>Failing delegation target proving the interceptor error path.</summary>
-public sealed class FailingJob : IJob
-{
-    /// <inheritdoc />
-    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
-        => throw new InvalidOperationException("qyl-quartz-error");
-}
-
-/// <summary>Scheduler-fired job that delegates to inner jobs through source-visible calls.</summary>
-public sealed class OuterJob : IJob
 {
     /// <summary>Signals that the scheduler executed this job to completion.</summary>
     public static TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <inheritdoc />
-    public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
     {
-        IJob probe = new ProbeJob();
-        await probe.Execute(context, cancellationToken);
-
-        IJob failing = new FailingJob();
-        try
-        {
-            await failing.Execute(context, cancellationToken);
-        }
-        catch (InvalidOperationException exception)
-        {
-            Console.WriteLine("expected-quartz-error=" + exception.Message);
-        }
-
         Completed.TrySetResult();
+        return ValueTask.CompletedTask;
+    }
+}
+
+/// <summary>Scheduler-fired job that fails, proving the native source records error.type itself.</summary>
+public sealed class FailingJob : IJob
+{
+    /// <summary>Signals that the scheduler executed this job.</summary>
+    public static TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <inheritdoc />
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
+    {
+        Completed.TrySetResult();
+        throw new InvalidOperationException("qyl-quartz-error");
     }
 }
 
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -97,6 +104,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -112,43 +120,82 @@ internal sealed record QuartzReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    internal const string ProbeJobName = "qyl-probe";
+    internal const string FailingJobName = "qyl-failing";
+
+    // Quartz's own name for the span covering one firing, Quartz.Diagnostics.OperationName.Job.Execute.
+    private const string ExecuteSpanName = "Quartz.Job.Execute";
+
     public static QuartzReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
-        var quartzSpans = activities
-            .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "job.quartz"))
+
+        // The scheduler also traces every call into its job store on the same source. The job
+        // firings are the Quartz.Job.Execute spans, and each scheduled job must produce exactly one.
+        var executeSpans = activities
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.Quartz))
+            .Where(static activity => StringComparer.Ordinal.Equals(activity.Name, ExecuteSpanName))
             .ToArray();
 
-        if (quartzSpans.Length != 2)
-            failures.Add($"expected 2 Quartz execute spans, got {quartzSpans.Length}");
-
-        var success = quartzSpans.FirstOrDefault(static span => StringComparer.Ordinal.Equals(span.Status, "Unset"));
-        var error = quartzSpans.FirstOrDefault(static span => StringComparer.Ordinal.Equals(span.Status, "Error"));
-
-        if (success is null)
-            failures.Add("missing successful Quartz execute span");
-
-        if (error is null)
-            failures.Add("missing error Quartz execute span");
-        else if (!error.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, out var errorType) ||
-                 !StringComparer.Ordinal.Equals(errorType, "System.InvalidOperationException"))
-            failures.Add("expected error.type=InvalidOperationException on error span");
-
-        foreach (var span in quartzSpans)
+        foreach (var jobName in new[] { ProbeJobName, FailingJobName })
         {
-            // The intercepted ProbeJob/FailingJob calls receive the scheduler-fired OuterJob's
-            // context, so both spans are named after that job's {group}.{name} identity. OuterJob
-            // is scheduled WithIdentity("qyl-outer") with no group, i.e. Quartz's DEFAULT group.
-            if (!StringComparer.Ordinal.Equals(span.Name, "DEFAULT.qyl-outer"))
-                failures.Add($"unexpected Quartz span name: {span.Name}");
-
-            if (!StringComparer.Ordinal.Equals(span.Kind, "Internal"))
-                failures.Add($"expected kind Internal, got {span.Kind}");
+            var matching = executeSpans
+                .Where(span =>
+                    span.Tags.TryGetValue(QuartzAttributes.JobName, out var name) &&
+                    StringComparer.Ordinal.Equals(name, jobName))
+                .ToArray();
+            if (matching.Length != 1)
+                failures.Add($"expected exactly 1 Quartz execute span for '{jobName}', got {matching.Length.ToString(CultureInfo.InvariantCulture)}");
         }
 
-        return new QuartzReport(runtimeMode, failures.Count is 0, failures.ToArray(), quartzSpans);
+        foreach (var span in executeSpans)
+        {
+            // The attribute the qyl processor owns: without it the collector cannot classify the
+            // span, because it classifies on attribute presence and never on the span name.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.JobQuartz,
+                failures);
+
+            // Quartz's own attributes. It publishes no messaging or database conventions: the
+            // vendor quartz.* namespace and error.type are the whole vocabulary.
+            RequirePresentTag(span, QuartzAttributes.JobName, failures);
+            RequirePresentTag(span, QuartzAttributes.JobGroup, failures);
+            RequirePresentTag(span, QuartzAttributes.JobType, failures);
+            RequirePresentTag(span, QuartzAttributes.SchedulerName, failures);
+            RequirePresentTag(span, QuartzAttributes.FireInstanceId, failures);
+        }
+
+        var failingSpan = executeSpans.FirstOrDefault(static span =>
+            span.Tags.TryGetValue(QuartzAttributes.JobName, out var name) &&
+            StringComparer.Ordinal.Equals(name, FailingJobName));
+        if (failingSpan is null)
+            failures.Add("missing the failing job's execute span");
+        else
+            RequireTag(failingSpan, ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
+
+        return new QuartzReport(runtimeMode, failures.Count is 0, failures.ToArray(), executeSpans);
+    }
+
+    private static void RequireTag(CapturedActivity span, string key, string expected, ICollection<string> failures)
+    {
+        if (!span.Tags.TryGetValue(key, out var actual))
+        {
+            failures.Add($"missing {key}");
+            return;
+        }
+
+        if (!StringComparer.Ordinal.Equals(actual, expected))
+            failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequirePresentTag(CapturedActivity span, string key, ICollection<string> failures)
+    {
+        if (!span.Tags.ContainsKey(key))
+            failures.Add($"missing {key}");
     }
 }
 

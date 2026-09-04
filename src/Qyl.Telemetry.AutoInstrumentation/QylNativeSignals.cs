@@ -39,6 +39,7 @@ internal sealed class QylSignalAttribute : Attribute
 [QylSignal(QylAutoInstrumentationIds.MongoDb, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.NetRuntime, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.Process, QylAutoInstrumentationSignal.Metrics)]
+[QylSignal(QylAutoInstrumentationIds.Quartz, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.RabbitMq, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.WcfCore, QylAutoInstrumentationSignal.Traces)]
 internal static class QylNativeSignals;
