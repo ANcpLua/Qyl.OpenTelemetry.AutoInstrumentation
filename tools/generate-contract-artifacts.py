@@ -235,6 +235,9 @@ QYL_NATIVE_8_SUPPORTED_PATHS = {
     ),
 }
 QYL_SUPPORTED_VERSION_OVERRIDES = {
+    "signals.traces.QUARTZ": (
+        "Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only"
+    ),
     "signals.traces.WCFCORE": (
         "CoreWCF.Primitives ==1.9.1; CoreWCF.Http ==1.9.1; server ActivitySource path only"
     ),

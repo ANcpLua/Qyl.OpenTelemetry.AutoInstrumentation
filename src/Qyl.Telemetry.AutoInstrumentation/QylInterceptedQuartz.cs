@@ -7,7 +7,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 /// <summary>Quartz job execution spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.Quartz, QylAttributes.InstrumentationDomainValues.JobQuartz)]
-[QylIntercept("Quartz.IJob", "Execute", Shape = QylShapes.QuartzJob, Start = nameof(Execute), ObserveAsync = true)]
+[QylIntercept("Quartz.IJob", "Execute", Shape = QylShapes.QuartzJob, Start = nameof(Execute))]
 public static class QylInterceptedQuartz
 {
     /// <summary>Starts the internal span named after the job's group and name.</summary>

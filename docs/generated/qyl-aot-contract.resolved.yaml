@@ -856,7 +856,7 @@ contract_items:
   libraries:
   - name: Quartz
     url: https://www.nuget.org/packages/Quartz
-  supported_versions: '>=3.4.0'
+  supported_versions: Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only
   instrumentation_types:
   - source
   instrumentation_type_operator: single

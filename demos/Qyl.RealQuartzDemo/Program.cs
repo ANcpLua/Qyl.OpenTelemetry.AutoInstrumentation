@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Quartz;
-using Quartz.Impl;
 using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<CapturedActivity>();
@@ -24,7 +23,10 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
-var factory = new StdSchedulerFactory();
+await using var factory = QuartzSchedulerBuilder
+    .Create(builder => builder.UseDefaultThreadPool().UseInMemoryStore())
+    .Build();
+
 var scheduler = await factory.GetScheduler();
 await scheduler.Start();
 
@@ -49,14 +51,16 @@ return report.Pass ? 0 : 1;
 public sealed class ProbeJob : IJob
 {
     /// <inheritdoc />
-    public Task Execute(IJobExecutionContext context) => Task.CompletedTask;
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
+        => ValueTask.CompletedTask;
 }
 
 /// <summary>Failing delegation target proving the interceptor error path.</summary>
 public sealed class FailingJob : IJob
 {
     /// <inheritdoc />
-    public Task Execute(IJobExecutionContext context) => throw new InvalidOperationException("qyl-quartz-error");
+    public ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
+        => throw new InvalidOperationException("qyl-quartz-error");
 }
 
 /// <summary>Scheduler-fired job that delegates to inner jobs through source-visible calls.</summary>
@@ -66,15 +70,15 @@ public sealed class OuterJob : IJob
     public static TaskCompletionSource Completed { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <inheritdoc />
-    public async Task Execute(IJobExecutionContext context)
+    public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
     {
         IJob probe = new ProbeJob();
-        await probe.Execute(context);
+        await probe.Execute(context, cancellationToken);
 
         IJob failing = new FailingJob();
         try
         {
-            await failing.Execute(context);
+            await failing.Execute(context, cancellationToken);
         }
         catch (InvalidOperationException exception)
         {

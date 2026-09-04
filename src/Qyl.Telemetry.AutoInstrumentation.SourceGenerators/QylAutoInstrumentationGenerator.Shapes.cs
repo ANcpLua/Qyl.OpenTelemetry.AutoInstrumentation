@@ -680,16 +680,17 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static bool TryMatchQuartzJob(IMethodSymbol symbol, out ShapeMatch match)
     {
         match = default;
-        if (!IsTask(symbol.ReturnType) ||
-            symbol.Parameters.Length is not 1 ||
-            !IsType(symbol.Parameters[0].Type, "global::Quartz.IJobExecutionContext"))
+        if (!IsValueTask(symbol.ReturnType) ||
+            symbol.Parameters.Length is not 2 ||
+            !IsType(symbol.Parameters[0].Type, "global::Quartz.IJobExecutionContext") ||
+            !IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken"))
         {
             return false;
         }
 
         match = new ShapeMatch(
             CleanTypeName(symbol.ContainingType),
-            "global::System.Threading.Tasks.Task",
+            "global::System.Threading.Tasks.ValueTask",
             BuildParameters(symbol),
             true);
         return true;
