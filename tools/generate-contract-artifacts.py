@@ -248,6 +248,9 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
     "signals.traces.NSERVICEBUS": (
         "NServiceBus >=8.0.0; verified against 10.2.9"
     ),
+    "signals.traces.MONGODB": (
+        'MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver"'
+    ),
     "signals.traces.RABBITMQ": (
         'RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources '
         '"RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber"'

@@ -16,6 +16,7 @@ internal static class QylTelemetrySources
     internal const string HttpClient = "System.Net.Http";
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
+    internal const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
     internal const string RabbitMqPublisher = QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher;
     internal const string RabbitMqSubscriber = QylTelemetryNames.VendorActivitySources.RabbitMQClientSubscriber;
 
@@ -52,6 +53,11 @@ internal static class QylTelemetrySources
             MassTransit,
             QylAutoInstrumentationIds.MassTransit,
             QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
+            Normalize: null),
+        new(
+            MongoDbDriver,
+            QylAutoInstrumentationIds.MongoDb,
+            QylAttributes.InstrumentationDomainValues.DbMongoDb,
             Normalize: null),
         new(
             RabbitMqPublisher,

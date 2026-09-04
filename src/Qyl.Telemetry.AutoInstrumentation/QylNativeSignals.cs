@@ -36,6 +36,7 @@ internal sealed class QylSignalAttribute : Attribute
 [QylSignal(QylAutoInstrumentationIds.MicrosoftExtensionsAi, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.MicrosoftExtensionsAi, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.ModelContextProtocol, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.MongoDb, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.NetRuntime, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.Process, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.RabbitMq, QylAutoInstrumentationSignal.Traces)]

@@ -11,3 +11,6 @@
 *REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq
 *REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RabbitMqPublish = "RabbitMqPublish" -> string!
 *REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRabbitMq.Publish(string? exchange, string? routingKey) -> System.Diagnostics.Activity?
+*REMOVED*Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb
+*REMOVED*const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MongoDbCollection = "MongoDbCollection" -> string!
+*REMOVED*static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb.Operation(string! operationName, string? collectionName, string? databaseName) -> System.Diagnostics.Activity?

@@ -47,7 +47,6 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedQuartz
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
@@ -68,7 +67,6 @@ const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.GraphQlExecute =
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.HttpClient = "HttpClient" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.MongoDbCollection = "MongoDbCollection" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.NServiceBusOperation = "NServiceBusOperation" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.QuartzJob = "QuartzJob" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RedisCommand = "RedisCommand" -> string!
@@ -128,7 +126,6 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Receive() -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Send(string? topic, int? partitionId) -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedMongoDb.Operation(string! operationName, string? collectionName, string? databaseName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.RecordDuration(long startTimestamp, string! operationName) -> void
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedNServiceBus.Send(string! operationName) -> System.Diagnostics.Activity?

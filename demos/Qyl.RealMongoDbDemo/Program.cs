@@ -3,9 +3,16 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Qyl.Telemetry.AutoInstrumentation;
+using OpenTelemetry.Trace;
+using Qyl;
+using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
+using DbIncubatingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 var connectionString = Environment.GetEnvironmentVariable("QYL_MONGODB_CONNECTION_STRING");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -14,50 +21,55 @@ if (string.IsNullOrWhiteSpace(connectionString))
     return 2;
 }
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
-using var listener = new ActivityListener
+// The real registration path: AddQyl subscribes to MongoDB.Driver's own ActivitySource and installs
+// the one native-span processor.
+var exportedActivities = new List<Activity>();
+var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
+    ApplicationName = "Qyl.RealMongoDbDemo",
+    DisableDefaults = true,
+});
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-mongodb-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.EnableSessionPropagation = false;
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-ActivitySource.AddActivityListener(listener);
+using var host = builder.Build();
+await host.StartAsync();
 
 var client = new MongoClient(connectionString);
 await WaitForMongoDbAsync(client);
 
-var database = client.GetDatabase("qyl");
-await database.DropCollectionAsync("probe");
-var collection = database.GetCollection<BsonDocument>("probe");
+// The container is fresh for every run, so the collection is never dropped first: a drop would be a
+// fourth command naming the collection, and the assertion is one span per command.
+var database = client.GetDatabase(MongoDbReport.DatabaseName);
+var collection = database.GetCollection<BsonDocument>(MongoDbReport.CollectionName);
 
 await collection.InsertOneAsync(new BsonDocument { { "_id", 1 }, { "name", "alpha" } });
+Console.WriteLine("inserted-documents=1");
 
-var count = await collection.CountDocumentsAsync(Builders<BsonDocument>.Filter.Eq("_id", 1));
-Console.WriteLine("counted-documents=" + count.ToString(CultureInfo.InvariantCulture));
-
-try
+using (var cursor = await collection.FindAsync(Builders<BsonDocument>.Filter.Eq("_id", 1)))
 {
-    await collection.InsertOneAsync(new BsonDocument { { "_id", 1 }, { "name", "duplicate" } });
-}
-catch (MongoWriteException exception)
-{
-    Console.WriteLine("expected-mongodb-error=" + exception.WriteError.Category);
+    var found = await cursor.ToListAsync();
+    Console.WriteLine("found-documents=" + found.Count.ToString(CultureInfo.InvariantCulture));
 }
 
 var deleted = await collection.DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
 Console.WriteLine("deleted-documents=" + deleted.DeletedCount.ToString(CultureInfo.InvariantCulture));
 
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+await host.StopAsync();
+
 var report = MongoDbReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealMongoDbJsonContext.Default.MongoDbReport);
 Console.WriteLine(json);
@@ -92,6 +104,7 @@ static async Task WaitForMongoDbAsync(MongoClient client)
 }
 
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -99,6 +112,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -114,39 +128,55 @@ internal sealed record MongoDbReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    internal const string DatabaseName = "qyl";
+    internal const string CollectionName = "probe";
+
     public static MongoDbReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
+
+        // The driver's source also carries the commands it issues on its own -- the handshake and the
+        // topology checks. The probe's own commands are the ones naming the collection, and each of
+        // them must appear exactly once.
         var mongoSpans = activities
+            .Where(static activity => StringComparer.Ordinal.Equals(
+                activity.Source,
+                QylTelemetryNames.VendorActivitySources.MongoDBDriver))
             .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "db.mongodb"))
+                activity.Tags.TryGetValue(DbIncubatingAttributes.CollectionName, out var collection) &&
+                StringComparer.Ordinal.Equals(collection, CollectionName))
             .ToArray();
 
-        if (mongoSpans.Length != 4)
-            failures.Add($"expected 4 MongoDB command spans, got {mongoSpans.Length}");
-
-        var insertSuccess = FindByOperationAndStatus(mongoSpans, "insert", "Unset");
-        var insertError = FindByOperationAndStatus(mongoSpans, "insert", "Error");
-        var countSuccess = FindByOperationAndStatus(mongoSpans, "count", "Unset");
-        var deleteSuccess = FindByOperationAndStatus(mongoSpans, "delete", "Unset");
-
-        Require(insertSuccess, "successful insert span", failures);
-        Require(insertError, "error insert span", failures);
-        Require(countSuccess, "successful count span", failures);
-        Require(deleteSuccess, "successful delete span", failures);
-        RequireTag(insertError, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, typeof(MongoDB.Driver.MongoWriteException).FullName!, failures);
+        foreach (var command in new[] { "insert", "find", "delete" })
+        {
+            var matching = mongoSpans
+                .Where(span =>
+                    span.Tags.TryGetValue(DbAttributes.OperationName, out var operation) &&
+                    StringComparer.Ordinal.Equals(operation, command))
+                .ToArray();
+            if (matching.Length != 1)
+                failures.Add($"expected exactly 1 MongoDB '{command}' span, got {matching.Length.ToString(CultureInfo.InvariantCulture)}");
+        }
 
         foreach (var span in mongoSpans)
         {
-            if (!span.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var operation) ||
-                !StringComparer.Ordinal.Equals(span.Name, operation + " probe"))
-                failures.Add($"expected the MongoDB span to be named '{{operation}} probe', got {span.Name}");
+            // The attribute the qyl processor owns: without it the collector cannot classify the
+            // span, because it classifies on attribute presence and never on the span name.
+            RequireTag(
+                span,
+                QylAttributes.InstrumentationDomain,
+                QylAttributes.InstrumentationDomainValues.DbMongoDb,
+                failures);
 
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.SystemName, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.SystemNameValues.Mongodb, failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Db.DbAttributes.CollectionName, "probe", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.Namespace, "qyl", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.QuerySummary, operation + " probe", failures);
+            // The driver's own attributes, which are the stable database conventions.
+            RequireTag(span, DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Mongodb, failures);
+            RequireTag(span, DbAttributes.Namespace, DatabaseName, failures);
+            RequirePresentTag(span, DbAttributes.OperationName, failures);
+
+            // The driver adds db.query.text only when the consumer raises
+            // MongoClientSettings.TracingOptions.QueryTextMaxLength, which defaults to 0. qyl does
+            // not raise it, so the command text never leaves the process.
+            RequireMissingTag(span, DbAttributes.QueryText, failures);
 
             if (!StringComparer.Ordinal.Equals(span.Kind, "Client"))
                 failures.Add($"expected kind Client, got {span.Kind}");
@@ -155,24 +185,9 @@ internal sealed record MongoDbReport(
         return new MongoDbReport(runtimeMode, failures.Count is 0, failures.ToArray(), mongoSpans);
     }
 
-    private static CapturedActivity? FindByOperationAndStatus(IEnumerable<CapturedActivity> activities, string operation, string status)
-        => activities.FirstOrDefault(activity =>
-            StringComparer.Ordinal.Equals(activity.Status, status) &&
-            activity.Tags.TryGetValue(Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes.OperationName, out var actual) &&
-            StringComparer.Ordinal.Equals(actual, operation));
-
-    private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)
+    private static void RequireTag(CapturedActivity span, string key, string expected, ICollection<string> failures)
     {
-        if (activity is null)
-            failures.Add($"missing {label}");
-    }
-
-    private static void RequireTag(CapturedActivity? activity, string key, string expected, ICollection<string> failures)
-    {
-        if (activity is null)
-            return;
-
-        if (!activity.Tags.TryGetValue(key, out var actual))
+        if (!span.Tags.TryGetValue(key, out var actual))
         {
             failures.Add($"missing {key}");
             return;
@@ -180,6 +195,18 @@ internal sealed record MongoDbReport(
 
         if (!StringComparer.Ordinal.Equals(actual, expected))
             failures.Add($"expected {key}={expected}, got {actual}");
+    }
+
+    private static void RequirePresentTag(CapturedActivity span, string key, ICollection<string> failures)
+    {
+        if (!span.Tags.ContainsKey(key))
+            failures.Add($"missing {key}");
+    }
+
+    private static void RequireMissingTag(CapturedActivity span, string key, ICollection<string> failures)
+    {
+        if (span.Tags.ContainsKey(key))
+            failures.Add($"unexpected {key}");
     }
 }
 

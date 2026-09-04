@@ -45,8 +45,8 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
     for token in [
-        "counted-documents=1",
-        "expected-mongodb-error=DuplicateKey",
+        "inserted-documents=1",
+        "found-documents=1",
         "deleted-documents=1",
     ]:
         if token not in completed.stdout:
@@ -58,9 +58,11 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
+    # The probe issues three commands against the collection; the driver's own handshake and
+    # topology commands name no collection and are filtered out by the demo.
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 4:
-        fail(f"{name} expected exactly 4 MongoDB activities, got {activities!r}")
+    if not isinstance(activities, list) or len(activities) != 3:
+        fail(f"{name} expected exactly 3 MongoDB collection activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

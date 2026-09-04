@@ -53,8 +53,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchRedisCommand(symbol, integration.HelperType, out match);
             case "GraphQlExecute":
                 return TryMatchGraphQlExecute(symbol, out match);
-            case "MongoDbCollection":
-                return TryMatchMongoDbCollection(symbol, matchedReceiver, out match);
             default:
                 throw new InvalidOperationException("Unknown interceptor shape: " + shape);
         }
@@ -639,39 +637,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             true);
         return true;
     }
-
-    private static bool TryMatchMongoDbCollection(IMethodSymbol symbol, ITypeSymbol matchedReceiver, out ShapeMatch match)
-    {
-        match = default;
-        if (!CanEmitMongoDbReturn(symbol.ReturnType))
-            return false;
-
-        var typeParameterList = GetTypeParameterList(symbol);
-        var receiverTypeName = CleanTypeName(matchedReceiver);
-        var returnTypeName = CleanTypeName(symbol.ReturnType, symbol);
-        var parameters = BuildParameters(symbol);
-        if (string.IsNullOrEmpty(typeParameterList))
-            typeParameterList = GetTypeParameterListFromVisibleTypes(symbol, matchedReceiver);
-        if (string.IsNullOrEmpty(typeParameterList))
-            typeParameterList = GetTypeParameterListFromFormattedTypes(receiverTypeName, returnTypeName, parameters);
-
-        match = new ShapeMatch(
-            receiverTypeName,
-            returnTypeName,
-            parameters,
-            IsTask(symbol.ReturnType) || TryGetTaskResult(symbol.ReturnType, out _),
-            typeParameterList,
-            string.Empty,
-            GetReducedExtensionContainingType(symbol));
-        return true;
-    }
-
-    private static bool CanEmitMongoDbReturn(ITypeSymbol returnType)
-        => returnType.SpecialType is SpecialType.System_Void ||
-           IsTask(returnType) ||
-           TryGetTaskResult(returnType, out _) ||
-           returnType.SpecialType is not SpecialType.None ||
-           returnType is INamedTypeSymbol;
 
     private static bool TryMatchRedisCommand(IMethodSymbol symbol, string helperType, out ShapeMatch match)
     {

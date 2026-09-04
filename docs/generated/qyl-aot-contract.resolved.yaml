@@ -568,7 +568,7 @@ contract_items:
   - name:
       name: MongoDB.Driver
       url: https://www.nuget.org/packages/MongoDB.Driver
-  supported_versions: '>=2.7.0'
+  supported_versions: MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver"
   instrumentation_types:
   - source
   - bytecode
@@ -582,15 +582,17 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L156-L201
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: source_interceptor
+  lane: framework_initialization
   qyl_status: implemented
-  call_site_visibility: user_code
+  call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: MongoDB.Driver's own MongoDB.Driver ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain
+    stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealMongoDbDemo
   - tools/verify-real-mongodb-demo.py
 - kind: signal_specific_instrumentation_promise

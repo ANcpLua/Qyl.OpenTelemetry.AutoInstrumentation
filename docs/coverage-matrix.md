@@ -33,12 +33,12 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | Lane | Count |
 |---|---:|
 | `environment_control` | 7 |
-| `framework_initialization` | 5 |
+| `framework_initialization` | 6 |
 | `instrumentation_option` | 12 |
 | `not_implemented` | 2 |
 | `official_library_hook` | 7 |
 | `runtime_public_telemetry` | 9 |
-| `source_interceptor` | 17 |
+| `source_interceptor` | 16 |
 | `unsupported_nativeaot` | 7 |
 
 ## Evidence counts
@@ -65,7 +65,7 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 10 | upstream 60 | `signals.traces.HTTPCLIENT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L153) | * | `runtime_public_telemetry` | `implemented` | `both` | `typed_public` | `verified_nativeaot` | Qyl public telemetry listeners/meters |
 | 11 | upstream 60 | `signals.traces.KAFKA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L154-L198) | >=1.4.0 && <3.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
 | 12 | upstream 60 | `signals.traces.MASSTRANSIT` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L155) | MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit" | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_nativeaot` | MassTransit's own MassTransit ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
-| 13 | upstream 60 | `signals.traces.MONGODB` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L156-L201) | >=2.7.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_managed` | QylAutoInstrumentationGenerator |
+| 13 | upstream 60 | `signals.traces.MONGODB` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L156-L201) | MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver" | `framework_initialization` | `implemented` | `library_internal` | `not_applicable` | `verified_managed` | MongoDB.Driver's own MongoDB.Driver ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor |
 | 14 | upstream 60 | `signals.traces.MYSQLCONNECTOR` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L157) | >=2.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 15 | upstream 60 | `signals.traces.MYSQLDATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L158) | >=8.1.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
 | 16 | upstream 60 | `signals.traces.NPGSQL` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L159-L195) | >=6.0.0 | `source_interceptor` | `implemented` | `user_code` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationGenerator |
