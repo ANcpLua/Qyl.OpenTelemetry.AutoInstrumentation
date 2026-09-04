@@ -18,8 +18,11 @@ There is a third bucket. A library may own an `ActivitySource` that stays silent
 opts in **in their own code** (`UseTelemetry()` on GraphQL.NET's builder, `AddInstrumentation()` on
 HotChocolate, a driver setting on MongoDB). Those still take **source + processor** for the spans.
 qyl does not inject the opt-in — an interceptor that called it would be the mechanism this rule
-exists to remove. The opt-in is documented in the README and checked by an analyzer diagnostic, in
-the pattern of the existing `QYL0101`-style rules in the Analyzers package.
+exists to remove. The opt-in is documented in the README and checked by a diagnostic the qyl source
+generator reports itself, in the pattern of `QYL1001`: the generator already sees the consumer's
+call sites, so it is the only component that can tell "this application uses the library" from
+"this application opted the library's telemetry in". The rule does not belong in the
+SemanticConventions Analyzers package, which sees attribute constants and not call sites.
 
 A library whose version floor for the native `ActivitySource` is not proven **stays an interceptor**.
 The floor is part of the evidence, not a detail: subscribing to a source that does not exist in the
@@ -54,7 +57,7 @@ pinned version, with vendor documentation as corroboration.
 | MongoDB.Driver | `3.11.1` | Yes | `MongoDB.Driver` | `MongoDB.Driver.MongoTelemetry.ActivitySourceName` | source + processor |
 | NServiceBus | `10.2.9` | Yes | `NServiceBus.Core` | `NServiceBus.Core/OpenTelemetry/Tracing/ActivitySources.cs` | source + processor |
 | RabbitMQ.Client | `7.2.2` | Yes | `RabbitMQ.Client.Publisher`, `RabbitMQ.Client.Subscriber` | `RabbitMQActivitySource.PublisherSourceName` / `.SubscriberSourceName` | source + processor |
-| GraphQL | `8.8.5` | **No** — needs `UseTelemetry()` on the app's `IGraphQLBuilder` | `GraphQL` | `GraphQL.Telemetry.GraphQLTelemetryProvider.SourceName` | interceptor |
+| GraphQL | `8.8.5` | Yes for the spans, after the consumer calls `UseTelemetry()` on their `IGraphQLBuilder` | `GraphQL` | `GraphQL.Telemetry.GraphQLTelemetryProvider.SourceName` | source + processor, opt-in documented and checked by `QYL1002` |
 | Confluent.Kafka | `2.15.0` | **No** — no native source at all | n/a | contrib wraps `ProducerBuilder`/`ConsumerBuilder` | interceptor |
 
 Documentation used: MassTransit <https://masstransit.massient.com/documentation/configuration/observability>;
@@ -171,7 +174,7 @@ audit tables above.
 | MONGODB | interceptor | native | `3.7.0` | source + processor |
 | NSERVICEBUS | interceptor | native | `8.0` | source + processor |
 | RABBITMQ | interceptor | native | `7.0.0` | source + processor |
-| GRAPHQL | interceptor | native + consumer opt-in | `7.3.0` | interceptor (opt-in cannot be injected) |
+| GRAPHQL | interceptor | native + consumer opt-in | `7.3.0` | source + processor; `UseTelemetry()` documented, `QYL1002` reports its absence |
 | KAFKA | interceptor | no native source | n/a | interceptor |
 | ADONET | interceptor | no native source | n/a | interceptor (`System.Data.Common` declares no `ActivitySource`) |
 | SQLCLIENT | interceptor | `DiagnosticSource` only | n/a | interceptor (`SqlClientDiagnosticListener`, no `ActivitySource`) |
@@ -192,11 +195,12 @@ audit tables above.
 | ASPNET, WCFSERVICE | unsupported on NativeAOT | — | — | unchanged |
 | LOG4NET, NLOG | not implemented | — | — | unchanged |
 
-Every integration is audited. Eleven rows move to source + processor in the 13.0.0 wave —
+Every integration is audited. Twelve rows move to source + processor in the 13.0.0 wave —
 MassTransit, Elastic.Transport, Elasticsearch (via the transport), Quartz, MongoDB, NServiceBus,
-RabbitMQ, Npgsql, MySqlConnector, MySql.Data and ODP.NET — and seven stay interceptors with a
-reason in the row: Kafka and GraphQL from the first pass, ADO.NET, SqlClient, Sqlite,
-StackExchange.Redis and the WCF client from the second.
+RabbitMQ, Npgsql, MySqlConnector, MySql.Data, ODP.NET and GraphQL — and six stay interceptors with
+the reason in the row: Kafka, ADO.NET, SqlClient, Sqlite, StackExchange.Redis and the WCF client.
+GraphQL is the third bucket, not an exception to it: the spans come from the native source, and the
+only thing qyl refuses to do is call `UseTelemetry()` on the consumer's behalf.
 
 ## Constraints on the 13.0.0 wave
 
@@ -211,7 +215,9 @@ StackExchange.Redis and the WCF client from the second.
    check before it moves; do not inherit this conclusion.
 3. **Per library, demo-lane proof**: exactly one span from the native source, carrying the qyl
    attributes and the library's own attributes. One span, not two — a duplicate means the
-   interceptor was not fully removed.
+   interceptor was not fully removed. Where the library emits more than one span per operation by
+   design — Npgsql's `CONNECT`, ODP.NET's `Connect`/`Open`/`Close` — the assertion is written per
+   command rather than per run, and the CHANGELOG names the extra spans.
 4. **The CHANGELOG names every output change** as old source and span name to new. This is what a
    consumer's dashboards and alerts are keyed on.
 5. **The processor must stamp `qyl.instrumentation.domain` and the instrumentation id on every
@@ -224,6 +230,20 @@ StackExchange.Redis and the WCF client from the second.
    reaches the collector without them is unclassifiable no matter what it is called.
 6. **One commit per library**, each containing the interceptor deletion, the processor table row,
    the contract change and the demo-lane proof together. `main` is consistent and releasable after
-   every commit, and the demo lane is green before the next one starts. MassTransit first. No
-   `v13.0.0` tag until every row in the status table is closed as either migrated or
-   stays-interceptor-with-reason.
+   every commit, and the demo lane is green before the next one starts. The order is MassTransit,
+   Elastic.Transport, RabbitMQ, MongoDB, Quartz, NServiceBus, Npgsql, MySqlConnector, MySql.Data,
+   ODP.NET, GraphQL. No `v13.0.0` tag until every row in the status table is closed as either
+   migrated or stays-interceptor-with-reason.
+7. **No source name is typed in this repository.** The native `ActivitySource` names are generated
+   constants published by `Qyl.Telemetry.SemanticConventions` 8.1.0; `Qyl.Telemetry.Hosting`'s
+   `AddSource` calls and the processor table read those constants and nothing else. A name missing
+   from the pin is a semantic-convention release blocker, not a string to write out by hand.
+8. **The processor carries qyl's output policy, table-driven, with no per-library file.** Three
+   rules, all of them in the one processor or in the demo, none of them a special case in code:
+   qyl's `SET_DBSTATEMENT_FOR_TEXT` policy still holds over native spans, so the processor removes
+   `db.statement` and `db.query.text` when the policy is off — a native source that sets the query
+   text unconditionally, as MySql.Data does, must not become a way around the policy.
+   MySqlConnector's experimental-versus-stable attribute flavor is **documented**, not mapped: the
+   README names `OTEL_SEMCONV_STABILITY_OPT_IN=database` and the demo sets it, because a processor
+   that rewrote legacy keys into stable ones would be inventing semantic-convention data the
+   library did not emit.
