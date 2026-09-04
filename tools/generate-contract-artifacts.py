@@ -235,6 +235,9 @@ QYL_NATIVE_8_SUPPORTED_PATHS = {
     ),
 }
 QYL_SUPPORTED_VERSION_OVERRIDES = {
+    "signals.traces.MASSTRANSIT": (
+        "MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider Publish/Send calls only"
+    ),
     "signals.traces.QUARTZ": (
         "Quartz ==4.0.0; source-visible IJob.Execute(IJobExecutionContext, CancellationToken) calls only"
     ),

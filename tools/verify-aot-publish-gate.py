@@ -69,13 +69,11 @@ VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
         approved("IL3053", "GraphQL", "GraphQL", "8.8.5"),
     ),
     "Qyl.RealMassTransitDemo": (
-        approved("IL2104", "MassTransit", "MassTransit", "9.2.1"),
-        approved("IL3053", "MassTransit", "MassTransit", "9.2.1"),
-        approved("IL2104", "MassTransit.Abstractions", "MassTransit.Abstractions", "9.2.1"),
-        approved("IL3053", "MassTransit.Abstractions", "MassTransit.Abstractions", "9.2.1"),
-        approved("IL3000", "MassTransit.Abstractions", "MassTransit.Abstractions", "9.2.1", marker="MassTransit.Metadata.BusHostInfo."),
-        approved("IL2104", "MassTransit.RabbitMqTransport", "MassTransit.RabbitMQ", "9.2.1"),
-        approved("IL3053", "MassTransit.RabbitMqTransport", "MassTransit.RabbitMQ", "9.2.1"),
+        approved("IL2104", "MassTransit", "MassTransit", "8.5.10"),
+        approved("IL3053", "MassTransit", "MassTransit", "8.5.10"),
+        approved("IL2104", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10"),
+        approved("IL3053", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10"),
+        approved("IL3000", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10", marker="MassTransit.Metadata.BusHostInfo."),
     ),
     "Qyl.RealMySqlDataDemo": (
         approved("IL2104", "MySql.Data", "MySql.Data", "26.7.0"),

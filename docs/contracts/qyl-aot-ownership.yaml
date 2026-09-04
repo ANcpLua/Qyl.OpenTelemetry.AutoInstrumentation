@@ -261,6 +261,7 @@ ownership_items:
   - tools/verify-real-kafka-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   key: signals.traces.MASSTRANSIT
+  supported_versions: MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider Publish/Send calls only
   lane: source_interceptor
   qyl_status: implemented
   call_site_visibility: user_code

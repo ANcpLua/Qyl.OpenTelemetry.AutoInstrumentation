@@ -16,7 +16,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
 {
     internal static class QylGeneratedInterceptors
     {
-        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V11;
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V12;
 
         // qyl-interceptor-manifest: {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(6,21)

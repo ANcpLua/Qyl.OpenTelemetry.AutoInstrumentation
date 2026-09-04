@@ -19,9 +19,9 @@ sources:
   qyl_native:
     title: qyl-native version-pinned instrumentation promises
     source_kind: qyl_owned_contract_with_official_library_sources
-    content_basis: First-class telemetry hooks registered by Qyl.Telemetry.Hosting 11.0.0 and exercised by owned real-library
+    content_basis: First-class telemetry hooks registered by Qyl.Telemetry.Hosting 12.0.0 and exercised by owned real-library
       demos
-    release: 11.0.0
+    release: 12.0.0
 generated_from:
   upstream_contract: docs/contracts/otel-dotnet-auto-60.upstream.yaml
   qyl_native_contract: docs/contracts/qyl-native-instrumentations.yaml
@@ -515,7 +515,8 @@ contract_items:
   libraries:
   - name: MassTransit
     url: https://www.nuget.org/packages/MassTransit
-  supported_versions: '>=8.0.0'
+  supported_versions: MassTransit 8.x (Apache-2.0); verified against 8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider
+    Publish/Send calls only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -2426,7 +2427,7 @@ contract_items:
   status: experimental
   notes:
   - Qyl.Telemetry.Hosting registers Microsoft.Agents.AI.Workflows; the application explicitly calls WithOpenTelemetry.
-  - The 11.0.0 promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
+  - The 12.0.0 promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
   index: 65
   contract_item_id: QYL_NATIVE_CONTRACT_005
@@ -2462,7 +2463,7 @@ contract_items:
   status: experimental
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.ModelContextProtocol; the official SDK emits the client/server spans automatically.
-  - MCP metrics are deliberately outside the 11.0.0 contract because the official instruments attach dynamic tool and resource
+  - MCP metrics are deliberately outside the 12.0.0 contract because the official instruments attach dynamic tool and resource
     names as dimensions, violating qyl's bounded-cardinality policy.
   - This exact path and version is verified in managed and NativeAOT execution; it is not a protocol-wide claim.
   index: 66

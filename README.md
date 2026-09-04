@@ -25,7 +25,7 @@ Add the package that owns the integration you need. The supported zero-configura
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
 The family ships as one line; `Directory.Build.props` owns its version and
-`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: an `11.x` package pairs with `QylGeneratedCodeAbi.V11`
+`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: a `12.x` package pairs with `QylGeneratedCodeAbi.V12`
 and nothing else, which is why the number is ahead of the rest of qyl and does not move
 with the product version.
 
@@ -33,9 +33,9 @@ with the product version.
 `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
 updated further; change the ID and take the current version. `Qyl.Telemetry.Hosting` is the
 successor to `Qyl.Sdk`, and `builder.AddQyl()` is
-unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V11` in the
+unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V12` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — the anchor tracks the
-package major, so it moved from `V10` with the 11.0.0 line — so a stale generated
+package major, so it moved from `V11` with the 12.0.0 line — so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
 misbehaving. The emitted scope names move to the package family in 10.0.0: the
 `ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the two qyl meters
@@ -118,7 +118,7 @@ SDK tracing is the first-party exception: `Qyl.Telemetry.Hosting` enables
 exported Azure spans. A manually wired application must make those two choices
 explicitly if it wants Azure SDK spans.
 
-### AI, MCP, and CoreWCF paths in 11.0
+### AI, MCP, and CoreWCF paths in 12.0
 
 These are version-pinned library-hook claims, not provider- or protocol-wide claims.
 The exact `ModelContextProtocol` 2.2.0 client/server path has strict NativeAOT
@@ -134,7 +134,7 @@ evidence; the other paths in this table have managed evidence only:
 
 MCP metrics are intentionally not registered: the official instruments attach
 dynamic tool and resource names as dimensions, which conflicts with qyl's bounded-cardinality
-policy. The 11.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
+policy. The 12.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
 instrumentation, `Azure.AI.Inference`, Amazon Bedrock, or A2A.
 
 Every path is enabled by default when its signal is enabled. Set the applicable

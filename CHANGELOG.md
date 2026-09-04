@@ -5,6 +5,80 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [12.0.0] - 2026-09-04
+
+Every third-party pin moves to its current latest stable in one wave. One of those
+moves changes what the published packages do rather than only what they build
+against: Quartz 4 rewrote `IJob.Execute`, so the interception contract follows it and
+drops the Quartz 3 shape.
+
+### Breaking changes
+
+- **BREAKING:** Quartz 3 jobs are no longer intercepted. Quartz 4 rewrote `IJob.Execute`
+  into `ValueTask Execute(IJobExecutionContext, CancellationToken)`, and the generator's
+  shape predicate `TryMatchQuartzJob` follows the method it was written for: it now
+  requires a `ValueTask` return and exactly two parameters, `IJobExecutionContext`
+  followed by `CancellationToken`, and the emitted interceptor's return type moves from
+  `Task` to `ValueTask`. The Quartz 3 shape is deleted rather than kept alongside the new
+  one, so an application still on `Quartz` 3.x compiles and runs with no qyl Quartz spans
+  at all. `QylInterceptedQuartz` drops `ObserveAsync = true` with it — that flag routes
+  through `QylInterceptedActivity.ObserveAsync`, which observes a `Task` — and the
+  interceptor takes the generator's ordinary asynchronous path, forwarding the
+  scheduler's cancellation token to the intercepted job. `signals.traces.QUARTZ` carries
+  the qyl `supported_versions` override `Quartz ==4.0.0; source-visible
+  IJob.Execute(IJobExecutionContext, CancellationToken) calls only` in place of
+  upstream's `>=3.4.0`, which stopped being a claim qyl could keep once the shape
+  changed.
+- **BREAKING:** the generated-code ABI anchor moves from `QylGeneratedCodeAbi.V11` to
+  `QylGeneratedCodeAbi.V12`, tracking the package major as it always does. Generated
+  interceptors built against an `11.x` runtime fail to compile against `12.x` rather
+  than binding to it.
+
+### Changed
+
+- Every third-party package in `Directory.Packages.props` that was behind the latest
+  listed stable on nuget.org moves: `Azure.Storage.Blobs` `12.29.1` -> `12.29.2`,
+  `Elastic.Clients.Elasticsearch` `9.5.0` -> `9.5.1`, `GraphQL` `8.8.4` -> `8.8.5`,
+  `Microsoft.Agents.AI` and
+  `Microsoft.Agents.AI.Workflows` `1.17.0` -> `1.20.0`, `MongoDB.Driver` `3.11.0` ->
+  `3.11.1`, `NServiceBus` `10.2.8` -> `10.2.9`, `Quartz` `3.19.1` -> `4.0.0`,
+  `Roslynator.Analyzers` `4.16.1` -> `5.0.0`, and `StackExchange.Redis` `3.1.13` ->
+  `3.1.31`. `MassTransit.RabbitMQ` is the one deliberate exception and stays on
+  `8.5.10`.
+- The semantic-convention pin moves to `8.0.1` across
+  `Qyl.Telemetry.SemanticConventions`, `.Incubating` and `.Analyzers`. It is a patch on
+  the `8.0.0` vocabulary this package already consumed; no constant this package reads
+  changes shape. Consumers receive `Qyl.Telemetry.SemanticConventions` and `.Incubating`
+  `8.0.1` transitively; `.Analyzers` is `PrivateAssets="all"` and does not flow.
+- The exact-version contract claims for `Microsoft.Agents.AI` and
+  `Microsoft.Agents.AI.Workflows` move to `==1.20.0` in
+  `docs/contracts/qyl-native-instrumentations.yaml`, and the generated coverage matrix,
+  the resolved contract and the README table follow. These stay exact managed
+  path/version claims, not provider-wide ones.
+- MassTransit instrumentation is version-independent at the package level: the library
+  references no MassTransit package; the generator binds the consumer's own MassTransit
+  at compile time. Verified against MassTransit `8.5.10` (Apache-2.0). MassTransit 9 is
+  commercially licensed and is neither referenced nor shipped by this package; the
+  repository's demo pin stays on the 8.x line. `signals.traces.MASSTRANSIT` now carries
+  the qyl `supported_versions` override `MassTransit 8.x (Apache-2.0); verified against
+  8.5.10; source-visible IPublishEndpoint/ISendEndpoint/ISendEndpointProvider
+  Publish/Send calls only` in place of upstream's `>=8.0.0`, which claimed a range this
+  repository does not exercise.
+- The NativeAOT publish gate pins each tolerated vendor diagnostic to its resolved
+  package version, so the GraphQL and NServiceBus entries move with their packages.
+  Approvals are keyed by diagnostic id, owning assembly, package, resolved version,
+  marker and count; the MassTransit approvals stay on `8.5.10` with the pin.
+- The published contract stops naming the retired `Qyl.Sdk`. `Qyl.Telemetry.Hosting` is
+  the registration package in the `content_basis`, the twelve promise notes and the
+  `primary_owner` fields of `docs/contracts/qyl-native-instrumentations.yaml`, and in the
+  AZURE and WCFCORE owners of `docs/contracts/qyl-aot-ownership.yaml`; the contract's
+  `release` had drifted three majors behind at `8.0.0`. Shipped since the `11.0.0` tag
+  and recorded here.
+- `demos/Qyl.RealQuartzDemo` follows the Quartz 4 rewrite: `ProbeJob`, `FailingJob` and
+  `OuterJob` take the new signature and pass the token on, and the standalone scheduler
+  comes from `QuartzSchedulerBuilder.Create(...).Build()` because `StdSchedulerFactory`
+  is gone in Quartz 4.
+
 ## [11.0.0] - 2026-09-03
 
 ### Changed

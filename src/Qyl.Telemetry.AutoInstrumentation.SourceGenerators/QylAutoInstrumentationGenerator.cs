@@ -238,7 +238,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("{");
         builder.AppendLine("    internal static class QylGeneratedInterceptors");
         builder.AppendLine("    {");
-        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V11;");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V12;");
         builder.AppendLine();
 
         for (var index = 0; index < invocations.Length; index++)
