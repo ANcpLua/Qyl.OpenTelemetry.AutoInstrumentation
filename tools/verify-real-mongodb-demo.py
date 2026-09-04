@@ -58,11 +58,12 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
-    # The probe issues three commands against the collection; the driver's own handshake and
-    # topology commands name no collection and are filtered out by the demo.
+    # Three commands against the collection, each traced in two layers -- an operation span and the
+    # command span beneath it. The driver's own handshake and topology commands name no collection
+    # and are filtered out by the demo.
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 3:
-        fail(f"{name} expected exactly 3 MongoDB collection activities, got {activities!r}")
+    if not isinstance(activities, list) or len(activities) != 6:
+        fail(f"{name} expected exactly 6 MongoDB collection activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:

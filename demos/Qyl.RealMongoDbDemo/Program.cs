@@ -147,15 +147,13 @@ internal sealed record MongoDbReport(
                 StringComparer.Ordinal.Equals(collection, CollectionName))
             .ToArray();
 
+        // The driver traces each call in two layers: an operation span carrying db.operation.name,
+        // and the command span beneath it carrying db.command.name and the wire details. Each layer
+        // must appear exactly once per command.
         foreach (var command in new[] { "insert", "find", "delete" })
         {
-            var matching = mongoSpans
-                .Where(span =>
-                    span.Tags.TryGetValue(DbAttributes.OperationName, out var operation) &&
-                    StringComparer.Ordinal.Equals(operation, command))
-                .ToArray();
-            if (matching.Length != 1)
-                failures.Add($"expected exactly 1 MongoDB '{command}' span, got {matching.Length.ToString(CultureInfo.InvariantCulture)}");
+            RequireExactlyOne(mongoSpans, DbAttributes.OperationName, command, "operation", failures);
+            RequireExactlyOne(mongoSpans, DbIncubatingAttributes.CommandName, command, "command", failures);
         }
 
         foreach (var span in mongoSpans)
@@ -168,10 +166,13 @@ internal sealed record MongoDbReport(
                 QylAttributes.InstrumentationDomainValues.DbMongoDb,
                 failures);
 
-            // The driver's own attributes, which are the stable database conventions.
+            // The driver's own attributes, which are the stable database conventions. Only the
+            // operation layer names the operation; the command layer names the wire command.
             RequireTag(span, DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Mongodb, failures);
             RequireTag(span, DbAttributes.Namespace, DatabaseName, failures);
-            RequirePresentTag(span, DbAttributes.OperationName, failures);
+            if (!span.Tags.ContainsKey(DbAttributes.OperationName) &&
+                !span.Tags.ContainsKey(DbIncubatingAttributes.CommandName))
+                failures.Add($"span {span.Name} names neither an operation nor a command");
 
             // The driver adds db.query.text only when the consumer raises
             // MongoClientSettings.TracingOptions.QueryTextMaxLength, which defaults to 0. qyl does
@@ -183,6 +184,20 @@ internal sealed record MongoDbReport(
         }
 
         return new MongoDbReport(runtimeMode, failures.Count is 0, failures.ToArray(), mongoSpans);
+    }
+
+    private static void RequireExactlyOne(
+        CapturedActivity[] spans,
+        string key,
+        string expected,
+        string layer,
+        ICollection<string> failures)
+    {
+        var matching = spans
+            .Where(span => span.Tags.TryGetValue(key, out var actual) && StringComparer.Ordinal.Equals(actual, expected))
+            .ToArray();
+        if (matching.Length != 1)
+            failures.Add($"expected exactly 1 MongoDB '{expected}' {layer} span, got {matching.Length.ToString(CultureInfo.InvariantCulture)}");
     }
 
     private static void RequireTag(CapturedActivity span, string key, string expected, ICollection<string> failures)
