@@ -127,8 +127,8 @@ evidence; the other paths in this table have managed evidence only:
 | Library path | Application opt-in | Signals registered by `Qyl.Telemetry.Hosting` | Integration ID |
 | --- | --- | --- | --- |
 | `Microsoft.Extensions.AI` 10.9.0 | `chatClient.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Extensions.AI` | `MICROSOFTEXTENSIONSAI` |
-| `Microsoft.Agents.AI` 1.17.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
-| `Microsoft.Agents.AI.Workflows` 1.17.0 | `WorkflowBuilder.WithOpenTelemetry()` | traces from `Microsoft.Agents.AI.Workflows` | `MICROSOFTAGENTSAIWORKFLOWS` |
+| `Microsoft.Agents.AI` 1.20.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
+| `Microsoft.Agents.AI.Workflows` 1.20.0 | `WorkflowBuilder.WithOpenTelemetry()` | traces from `Microsoft.Agents.AI.Workflows` | `MICROSOFTAGENTSAIWORKFLOWS` |
 | `ModelContextProtocol` 2.2.0 | none; the official client/server SDK emits automatically | managed and strict NativeAOT traces from `Experimental.ModelContextProtocol` | `MCP` |
 | `CoreWCF.Http` 1.9.1 | none; CoreWCF emits server activities | managed traces from `CoreWCF.Primitives` | `WCFCORE` |
 

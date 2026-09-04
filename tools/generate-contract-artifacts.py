@@ -222,13 +222,13 @@ QYL_NATIVE_8_SUPPORTED_PATHS = {
         "Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.traces.MICROSOFTAGENTSAI": (
-        "Microsoft.Agents.AI ==1.17.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+        "Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.metrics.MICROSOFTAGENTSAI": (
-        "Microsoft.Agents.AI ==1.17.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+        "Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.traces.MICROSOFTAGENTSAIWORKFLOWS": (
-        "Microsoft.Agents.AI.Workflows ==1.17.0; WorkflowBuilder.WithOpenTelemetry() path only"
+        "Microsoft.Agents.AI.Workflows ==1.20.0; WorkflowBuilder.WithOpenTelemetry() path only"
     ),
     "signals.traces.MCP": (
         "ModelContextProtocol ==2.2.0; automatic official client/server ActivitySource path only"
