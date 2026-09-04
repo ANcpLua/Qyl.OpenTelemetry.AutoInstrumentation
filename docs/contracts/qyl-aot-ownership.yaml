@@ -72,7 +72,7 @@ ownership_items:
   call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Sdk with Qyl enrichment
+  primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Telemetry.Hosting with Qyl enrichment
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylInstrumentation.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
@@ -547,7 +547,7 @@ ownership_items:
   payload_access: typed_public
   supported_versions: CoreWCF.Primitives ==1.9.1; CoreWCF.Http ==1.9.1; server ActivitySource path only
   evidence_level: verified_managed
-  primary_owner: Qyl.Sdk CoreWCF.Primitives ActivitySource registration
+  primary_owner: Qyl.Telemetry.Hosting CoreWCF.Primitives ActivitySource registration
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealCoreWcfDemo

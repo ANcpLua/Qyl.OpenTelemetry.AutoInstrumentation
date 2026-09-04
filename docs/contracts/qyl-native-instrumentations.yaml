@@ -4,8 +4,8 @@ generated_at: '2026-07-19'
 source:
   title: qyl-native version-pinned instrumentation promises
   source_kind: qyl_owned_contract_with_official_library_sources
-  content_basis: First-class telemetry hooks registered by Qyl.Sdk 8.0.0 and exercised by owned real-library demos
-  release: 8.0.0
+  content_basis: First-class telemetry hooks registered by Qyl.Telemetry.Hosting 11.0.0 and exercised by owned real-library demos
+  release: 11.0.0
 contract_items:
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MICROSOFTEXTENSIONSAI
@@ -22,7 +22,7 @@ contract_items:
   instrumentation_type_operator: single
   status: experimental
   notes:
-  - Qyl.Sdk registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
   index: 61
   contract_item_id: QYL_NATIVE_CONTRACT_001
@@ -36,7 +36,7 @@ contract_items:
   call_site_visibility: user_code
   payload_access: typed_public
   evidence_level: verified_managed
-  primary_owner: Qyl.Sdk source registration plus Microsoft.Extensions.AI UseOpenTelemetry
+  primary_owner: Qyl.Telemetry.Hosting source registration plus Microsoft.Extensions.AI UseOpenTelemetry
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
@@ -56,7 +56,7 @@ contract_items:
   instrumentation_type_operator: single
   status: experimental
   notes:
-  - Qyl.Sdk registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
   index: 62
   contract_item_id: QYL_NATIVE_CONTRACT_002
@@ -70,7 +70,7 @@ contract_items:
   call_site_visibility: user_code
   payload_access: typed_public
   evidence_level: verified_managed
-  primary_owner: Qyl.Sdk meter registration plus Microsoft.Extensions.AI UseOpenTelemetry
+  primary_owner: Qyl.Telemetry.Hosting meter registration plus Microsoft.Extensions.AI UseOpenTelemetry
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
@@ -90,7 +90,7 @@ contract_items:
   instrumentation_type_operator: single
   status: experimental
   notes:
-  - Qyl.Sdk registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
   index: 63
   contract_item_id: QYL_NATIVE_CONTRACT_003
@@ -104,7 +104,7 @@ contract_items:
   call_site_visibility: user_code
   payload_access: typed_public
   evidence_level: verified_managed
-  primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI UseOpenTelemetry
+  primary_owner: Qyl.Telemetry.Hosting source registration plus Microsoft.Agents.AI UseOpenTelemetry
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
@@ -124,7 +124,7 @@ contract_items:
   instrumentation_type_operator: single
   status: experimental
   notes:
-  - Qyl.Sdk registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
+  - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
   index: 64
   contract_item_id: QYL_NATIVE_CONTRACT_004
@@ -138,7 +138,7 @@ contract_items:
   call_site_visibility: user_code
   payload_access: typed_public
   evidence_level: verified_managed
-  primary_owner: Qyl.Sdk meter registration plus Microsoft.Agents.AI UseOpenTelemetry
+  primary_owner: Qyl.Telemetry.Hosting meter registration plus Microsoft.Agents.AI UseOpenTelemetry
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
@@ -158,8 +158,8 @@ contract_items:
   instrumentation_type_operator: single
   status: experimental
   notes:
-  - Qyl.Sdk registers Microsoft.Agents.AI.Workflows; the application explicitly calls WithOpenTelemetry.
-  - The 8.0.0 promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
+  - Qyl.Telemetry.Hosting registers Microsoft.Agents.AI.Workflows; the application explicitly calls WithOpenTelemetry.
+  - The 11.0.0 promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
   index: 65
   contract_item_id: QYL_NATIVE_CONTRACT_005
@@ -173,7 +173,7 @@ contract_items:
   call_site_visibility: user_code
   payload_access: typed_public
   evidence_level: verified_managed
-  primary_owner: Qyl.Sdk source registration plus Microsoft.Agents.AI.Workflows WithOpenTelemetry
+  primary_owner: Qyl.Telemetry.Hosting source registration plus Microsoft.Agents.AI.Workflows WithOpenTelemetry
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
@@ -193,8 +193,8 @@ contract_items:
   instrumentation_type_operator: single
   status: experimental
   notes:
-  - Qyl.Sdk registers Experimental.ModelContextProtocol; the official SDK emits the client/server spans automatically.
-  - MCP metrics are deliberately outside the 8.0.0 contract because the official instruments attach dynamic tool and resource names as dimensions, violating qyl's bounded-cardinality policy.
+  - Qyl.Telemetry.Hosting registers Experimental.ModelContextProtocol; the official SDK emits the client/server spans automatically.
+  - MCP metrics are deliberately outside the 11.0.0 contract because the official instruments attach dynamic tool and resource names as dimensions, violating qyl's bounded-cardinality policy.
   - This exact path and version is verified in managed and NativeAOT execution; it is not a protocol-wide claim.
   index: 66
   contract_item_id: QYL_NATIVE_CONTRACT_006
@@ -208,7 +208,7 @@ contract_items:
   call_site_visibility: library_internal
   payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: Qyl.Sdk source registration plus automatic ModelContextProtocol telemetry
+  primary_owner: Qyl.Telemetry.Hosting source registration plus automatic ModelContextProtocol telemetry
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealMcpDemo

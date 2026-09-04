@@ -118,7 +118,7 @@ SDK tracing is the first-party exception: `Qyl.Telemetry.Hosting` enables
 exported Azure spans. A manually wired application must make those two choices
 explicitly if it wants Azure SDK spans.
 
-### AI, MCP, and CoreWCF paths in 9.0
+### AI, MCP, and CoreWCF paths in 11.0
 
 These are version-pinned library-hook claims, not provider- or protocol-wide claims.
 The exact `ModelContextProtocol` 2.2.0 client/server path has strict NativeAOT
@@ -134,7 +134,7 @@ evidence; the other paths in this table have managed evidence only:
 
 MCP metrics are intentionally not registered: the official instruments attach
 dynamic tool and resource names as dimensions, which conflicts with qyl's bounded-cardinality
-policy. The 9.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
+policy. The 11.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
 instrumentation, `Azure.AI.Inference`, Amazon Bedrock, or A2A.
 
 Every path is enabled by default when its signal is enabled. Set the applicable
