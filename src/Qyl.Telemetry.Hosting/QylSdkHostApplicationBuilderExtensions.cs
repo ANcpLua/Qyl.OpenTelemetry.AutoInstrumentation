@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Exporter;
@@ -13,21 +14,31 @@ namespace Qyl;
 
 /// <summary>
 /// The one-line qyl onboarding surface: <c>builder.AddQyl()</c> activates the qyl
-/// auto-instrumentation listeners, wires the OpenTelemetry SDK with ASP.NET Core's own server span
-/// (enriched by the qyl middleware, never duplicated), qyl-owned HttpClient spans, version-pinned
-/// GenAI, Azure SDK, MCP, and CoreWCF sources plus the native and
+/// auto-instrumentation bootstrap, wires the OpenTelemetry SDK with ASP.NET Core's own server span
+/// (enriched by the qyl middleware, never duplicated), every row of the native-source table — the
+/// BCL's outbound <c>System.Net.Http</c> span among them — plus the native and
 /// qyl-owned meter inventory, carries
 /// <c>session.id</c> from a span to its in-process descendants, and exports traces, metrics, and
 /// logs over OTLP — to
 /// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl collector.
-/// The specialist EF Core and SqlClient packages and the gRPC-client listener emit spans under
-/// the single qyl ActivitySource, so they need no extra source registration here. Applications
-/// still install the specialist package for each dependency-heavy database integration; adding
-/// competing native sources would double-report the same operations.
+/// <c>session.id</c> is a span tag and never baggage, so it does not reach the next process on its
+/// own. The specialist EF Core and SqlClient packages emit spans under the single qyl
+/// ActivitySource, so they need no extra source registration here. Applications still install the
+/// specialist package for each dependency-heavy database integration; adding competing native
+/// sources would double-report the same operations.
+/// <para>
+/// The method is idempotent: a second call — a composing library and the application both asking
+/// for it — returns the builder untouched, so the pipeline is built once. The first call's options
+/// win.
+/// </para>
 /// </summary>
 public static class QylSdkHostApplicationBuilderExtensions
 {
     private const string OtlpEndpointVariable = "OTEL_EXPORTER_OTLP_ENDPOINT";
+
+    // Four 100 ms connect attempts plus a DNS lookup; the probe runs while the host wires itself, so
+    // this bound is only reached when the SDK builds its pipeline immediately after AddQyl.
+    private static readonly TimeSpan DiscoveryTimeout = TimeSpan.FromMilliseconds(600);
 
     /// <summary>Activate qyl instrumentation, session propagation, and OTLP export.</summary>
     /// <remarks>
@@ -65,16 +76,25 @@ public static class QylSdkHostApplicationBuilderExtensions
         var endpointFromEnvironment =
             !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OtlpEndpointVariable));
         var endpoint = options.CollectorEndpoint;
-        if (endpoint is null && options.EnableCollectorDiscovery && !endpointFromEnvironment)
-        {
-            endpoint = CollectorDiscovery.DiscoverEndpoint();
-        }
+        var probe = endpoint is null && options.EnableCollectorDiscovery && !endpointFromEnvironment
+            ? CollectorDiscovery.Start()
+            : null;
+
+        // RequireConfiguredEndpoint is the one caller that needs the answer now: it means "no
+        // endpoint, no export", and the exporter is either registered or it is not. Everyone else
+        // gets the probe's answer in the exporter's options callback, which the SDK invokes when it
+        // builds the pipeline — so AddQyl returns without touching a socket.
+        if (probe is not null && options.RequireConfiguredEndpoint)
+            endpoint = CollectorDiscovery.WaitForEndpoint(probe, DiscoveryTimeout);
 
         // A null endpoint is not the same as "no destination": the exporter still reads the standard
         // environment variables, and failing that falls back to its own localhost default. Only a
         // caller that is itself a telemetry destination cares about the difference, and for it that
         // fallback points at its own ingest port — so it opts out of exporting entirely.
         var exportEnabled = !options.RequireConfiguredEndpoint || endpoint is not null || endpointFromEnvironment;
+        var resolvedEndpoint = endpoint;
+        Uri? ResolveEndpoint()
+            => resolvedEndpoint ??= probe is null ? null : CollectorDiscovery.WaitForEndpoint(probe, DiscoveryTimeout);
 
         var serviceName = options.ServiceName
                           ?? Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME")
@@ -113,7 +133,7 @@ public static class QylSdkHostApplicationBuilderExtensions
                 options.ConfigureTracing?.Invoke(tracing);
 
                 if (exportEnabled)
-                    tracing.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/traces"));
+                    tracing.AddOtlpExporter(exporter => ConfigureExporter(exporter, ResolveEndpoint(), "/v1/traces"));
             });
 
         if (options.EnableMetricsExport)
@@ -137,7 +157,7 @@ public static class QylSdkHostApplicationBuilderExtensions
                 }
 
                 if (exportEnabled)
-                    metrics.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/metrics"));
+                    metrics.AddOtlpExporter(exporter => ConfigureExporter(exporter, ResolveEndpoint(), "/v1/metrics"));
             });
         }
 
@@ -151,7 +171,7 @@ public static class QylSdkHostApplicationBuilderExtensions
                 logging.IncludeScopes = true;
 
                 if (exportEnabled)
-                    logging.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/logs"));
+                    logging.AddOtlpExporter(exporter => ConfigureExporter(exporter, ResolveEndpoint(), "/v1/logs"));
             });
         }
 

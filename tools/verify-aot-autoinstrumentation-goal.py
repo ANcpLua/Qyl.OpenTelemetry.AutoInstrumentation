@@ -25,6 +25,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("version sync", [sys.executable, "tools/verify-version-sync.py"]),
     ("xml doc enforcement", [sys.executable, "tools/verify-xml-doc-enforcement.py"]),
     ("environment options behavior", [sys.executable, "tools/verify-environment-options-behavior.py"]),
+    ("addqyl behavior", [sys.executable, "tools/verify-addqyl-behavior.py"]),
     ("instrumentation disabled behavior", [sys.executable, "tools/verify-instrumentation-disabled-behavior.py"]),
     ("generator snapshots", [sys.executable, "tools/verify-generator-snapshots.py"]),
     ("aspnetcore middleware delegate", [sys.executable, "tools/verify-aspnetcore-middleware-delegate.py"]),

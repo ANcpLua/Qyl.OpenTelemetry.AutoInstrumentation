@@ -7,10 +7,16 @@ namespace Qyl;
 /// and caches the result; the standard OTLP environment variables always take precedence and are
 /// handled by the exporter itself, so discovery only runs when nothing is configured.
 /// </summary>
+/// <remarks>
+/// The probe costs four 100 ms connect attempts plus a DNS lookup for <c>qyl</c> when nothing is
+/// listening, so it never runs on the caller's thread. <see cref="Start"/> hands back a task the
+/// exporter's options callback awaits when the OpenTelemetry SDK builds its pipeline — after the
+/// host has finished wiring itself — and <c>AddQyl()</c> itself touches no socket.
+/// </remarks>
 internal static class CollectorDiscovery
 {
-    private static readonly Lazy<Uri?> s_cachedEndpoint =
-        new(ProbeForCollector, LazyThreadSafetyMode.ExecutionAndPublication);
+    private static readonly Lazy<Task<Uri?>> s_probe =
+        new(static () => Task.Run(ProbeForCollector), LazyThreadSafetyMode.ExecutionAndPublication);
 
     // OTLP/HTTP first: it works over HTTP/1.1 everywhere, while plaintext gRPC needs an explicit
     // HTTP/2-without-TLS arrangement. The "qyl" hostname covers the container-network default.
@@ -22,7 +28,16 @@ internal static class CollectorDiscovery
         ("qyl", 4317)
     ];
 
-    internal static Uri? DiscoverEndpoint() => s_cachedEndpoint.Value;
+    /// <summary>Starts the one process-wide probe, or returns the running one. Never blocks.</summary>
+    internal static Task<Uri?> Start() => s_probe.Value;
+
+    /// <summary>
+    /// The probe's answer, waited for at most <paramref name="timeout"/>. Called from the exporter's
+    /// options callback, which the SDK invokes when it builds the pipeline; a probe that has not
+    /// finished by then yields no endpoint rather than holding the build open.
+    /// </summary>
+    internal static Uri? WaitForEndpoint(Task<Uri?> probe, TimeSpan timeout)
+        => probe.Wait(timeout) ? probe.GetAwaiter().GetResult() : null;
 
     private static Uri? ProbeForCollector()
     {
