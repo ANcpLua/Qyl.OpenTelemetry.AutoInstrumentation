@@ -30,13 +30,20 @@ Add the package that owns the integration you need; the supported zero-configura
 is a `PackageReference`, and build and analyzer assets flow through NuGet.
 
 ```bash
-dotnet add package Qyl.Telemetry.Hosting
+dotnet add package Qyl.Telemetry.Hosting --version 14.0.1
 ```
 
 ```csharp
 using Qyl;
 
 builder.AddQyl();
+```
+
+That consumer publishes NativeAOT warning-free — the package contributes no trim, AOT or analyzer
+warning to the publish:
+
+```bash
+dotnet publish -r <rid> -p:PublishAot=true
 ```
 
 `AddQyl()` activates the qyl listeners; registers the qyl `ActivitySource`, the framework-native
@@ -47,6 +54,12 @@ traces, metrics and logs over OTLP — to `OTEL_EXPORTER_OTLP_ENDPOINT` when it 
 `QYL_ENDPOINT` when that is set, otherwise to a qyl collector discovered on `localhost` or the host
 `qyl` at 4318/4317. `QYL_ENDPOINT` names a collector for the qyl exporters alone, where the
 standard variable would redirect every OTLP exporter in the process.
+
+There is no per-integration enable step: `AddQyl()` subscribes every enabled row of the
+native-source table below, and every `[QylIntercept]` declaration is compiled into the consumer's
+build by the package's own analyzer and build assets. An integration is on unless the
+`OTEL_DOTNET_AUTO_*_INSTRUMENTATION_ENABLED` toggle for its instrumentation id turns it off —
+those default to enabled, and they are the only switch.
 
 An application that wires the SDK itself references
 `Qyl.Telemetry.AutoInstrumentation.Hosting` alongside `OpenTelemetry.Extensions.Hosting` and
@@ -63,6 +76,32 @@ builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 
 The instrumentation packages ship no exporter of their own, and a manually wired application that
 subscribes a native source qyl also owns exports the same operation twice.
+
+## See a span without a collector
+
+No package here ships a console exporter, and neither does the OpenTelemetry SDK
+`Qyl.Telemetry.Hosting` pulls in. Add OpenTelemetry's own, hand it to the `ConfigureTracing` hook
+`AddQyl()` exposes, and run:
+
+```bash
+dotnet add package OpenTelemetry.Exporter.Console
+```
+
+```csharp
+builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
+```
+
+```bash
+dotnet run
+```
+
+The console exporter writes each activity as it ends, so nothing has to be listening. One
+`HttpClient` call prints two client spans: the framework's, under the `System.Net.Http` scope, and
+the intercepted one, under `Qyl.Telemetry.AutoInstrumentation` and carrying
+`qyl.instrumentation.domain`. The same spans reach `weaver registry live-check`, which listens for
+OTLP/gRPC on 4317 and prints every span it receives, when `OTEL_EXPORTER_OTLP_ENDPOINT` points at it
+— judged against the qyl registry, as the [live check](#live-check) below runs it, because the
+upstream registry alone does not declare `qyl.instrumentation.domain`.
 
 ## How a library gets instrumented
 
@@ -239,7 +278,19 @@ all twenty-nine demos, the live check, the smoke test and the published-consumer
 python3 tools/verify-aot-autoinstrumentation-goal.py
 ```
 
-`--list` prints the command names, and `--only NAME` / `--skip NAME` select from them.
+`--list` prints the command names, and `--only NAME` / `--skip NAME` select from them. The two
+verifiers take different vocabularies and they do not overlap: this gate's names are the ones
+`--list` prints, so a skip is quoted gate names —
+
+```bash
+python3 tools/verify-aot-autoinstrumentation-goal.py --skip "real mongodb demo,live check"
+```
+
+— while `verify-live-check.py` names its demo lanes, one per row of the native-source table:
+
+```bash
+QYL_SEMCONV_REGISTRY=../Qyl.OpenTelemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
+```
 
 ## Live check
 
