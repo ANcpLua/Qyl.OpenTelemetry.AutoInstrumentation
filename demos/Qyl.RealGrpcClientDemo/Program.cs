@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Trace;
+using Qyl;
 using System.Diagnostics;
 using System.Net;
 using System.Runtime.CompilerServices;
@@ -17,26 +20,14 @@ using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.N
 using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
+// 15.0.0 hands the gRPC client lane to Grpc.Net.Client's own source, and the qyl domain is stamped
+// onto those spans by the processor AddQyl registers. A bare ActivityListener on the qyl source
+// therefore sees nothing, and one on the vendor source sees spans without the domain — so the demo
+// reads what a consumer's collector would receive, out of the pipeline AddQyl builds.
+var exported = new List<Activity>();
 var byteArrayMarshaller = new Marshaller<byte[]>(
     static value => value,
     static value => value);
-
-using var listener = new ActivityListener
-{
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
-
-ActivitySource.AddActivityListener(listener);
 
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.ConfigureKestrel(static server =>
@@ -45,6 +36,15 @@ builder.WebHost.ConfigureKestrel(static server =>
 });
 builder.Logging.ClearProviders();
 builder.Services.AddHealthChecks();
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-grpc-client-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+});
+builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing.AddInMemoryExporter(exported));
 
 var app = builder.Build();
 app.MapHealthChecks("/healthz");
@@ -115,7 +115,7 @@ finally
 
 var report = GrpcClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray(),
+    exported.Select(CapturedActivity.From).ToArray(),
     address);
 
 var json = JsonSerializer.Serialize(report, RealGrpcClientJsonContext.Default.GrpcClientReport);
@@ -151,6 +151,9 @@ internal sealed record GrpcClientReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    private const string NativeSpanName = "Grpc.Net.Client.GrpcOut";
+    private const string NativeMethodTag = "grpc.method";
+    private const string NativeStatusTag = "grpc.status_code";
     private const string RequestMetadata = RpcAttributes.RequestMetadata + ".x-demo-md";
     private const string ResponseMetadata = RpcAttributes.ResponseMetadata + ".x-demo-res-md";
 
@@ -168,54 +171,34 @@ internal sealed record GrpcClientReport(
 
         const string expectedMethod = "qyl.LiveProbe/Collect";
 
-        var successSpan = FindByStatus(grpcSpans, "OK");
-        var failureSpan = FindByStatus(grpcSpans, "UNAVAILABLE");
+        // 15.0.0 stopped normalising this lane. The span is Grpc.Net.Client's own, so its shape is
+        // the library's: the operation name it chose, `grpc.method` with a leading slash and the
+        // numeric `grpc.status_code`, and none of the rpc.*, server.* or network.peer.* attributes
+        // qyl used to synthesise. What is still qyl's is the domain, which is why the spans are
+        // selected by it above. Request and response metadata are gone with the interceptor — a
+        // processor never sees the gRPC call object — and the CHANGELOG records that as intentional.
+        var successSpan = FindByStatus(grpcSpans, "0");
+        var failureSpan = FindByStatus(grpcSpans, "14");
 
         Require(successSpan, "OK span", failures);
         Require(failureSpan, "failure span", failures);
-        RequireTag(successSpan, RpcAttributes.SystemName, RpcAttributes.SystemNameValues.Grpc, failures);
-        RequireTag(successSpan, RpcAttributes.Method, expectedMethod, failures);
-        RequireTag(successSpan, RpcAttributes.ResponseStatusCode, "OK", failures);
-        RequireTag(successSpan, ServerAttributes.Address, serverAddress.Host, failures);
-        RequireTag(successSpan, ServerAttributes.Port, serverAddress.Port.ToString(System.Globalization.CultureInfo.InvariantCulture), failures);
-        RequireTag(successSpan, NetworkAttributes.PeerAddress, serverAddress.Host, failures);
-        RequireTag(successSpan, NetworkAttributes.PeerPort, serverAddress.Port.ToString(System.Globalization.CultureInfo.InvariantCulture), failures);
+        RequireTag(successSpan, NativeMethodTag, "/" + expectedMethod, failures);
+        RequireTag(failureSpan, NativeMethodTag, "/" + expectedMethod, failures);
+        // Both spans carry Unset: Grpc.Net.Client does not translate a non-zero grpc-status into an
+        // Activity error status, where qyl's interceptor did. The failure is still visible, in
+        // grpc.status_code=14, which is how the failing span is selected above — but a consumer
+        // keying dashboards off span status will not see it any more.
         RequireStatus(successSpan, "Unset", failures);
-        RequireStatus(failureSpan, "Error", failures);
-        RequireTag(failureSpan, RpcAttributes.SystemName, RpcAttributes.SystemNameValues.Grpc, failures);
-        RequireTag(failureSpan, RpcAttributes.Method, expectedMethod, failures);
-        RequireTag(failureSpan, RpcAttributes.ResponseStatusCode, "UNAVAILABLE", failures);
-        RequireTag(failureSpan, ServerAttributes.Address, "127.0.0.1", failures);
-        RequireTag(failureSpan, ServerAttributes.Port, "1", failures);
-        RequireTag(failureSpan, NetworkAttributes.PeerAddress, "127.0.0.1", failures);
-        RequireTag(failureSpan, NetworkAttributes.PeerPort, "1", failures);
-        RequireTag(failureSpan, ErrorAttributes.Type, "UNAVAILABLE", failures);
-        RequireMissingTag(successSpan, ErrorAttributes.Type, failures);
-
-        // Metadata capture is asserted in both directions, keyed off the env vars
-        // the runtime honors.
-        var captureOptIn = !string.IsNullOrEmpty(
-            Environment.GetEnvironmentVariable("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"));
-        if (captureOptIn)
-        {
-            RequireTag(successSpan, RequestMetadata, "mv1", failures);
-            RequireTag(successSpan, ResponseMetadata, "sv1", failures);
-        }
-        else if (successSpan is not null &&
-                 (successSpan.Tags.ContainsKey(RequestMetadata) ||
-                  successSpan.Tags.ContainsKey(ResponseMetadata)))
-        {
-            failures.Add("gRPC metadata captured without opt-in");
-        }
+        RequireStatus(failureSpan, "Unset", failures);
 
         foreach (var span in grpcSpans)
         {
             if (!StringComparer.Ordinal.Equals(span.Kind, nameof(ActivityKind.Client)))
                 failures.Add($"expected gRPC Client span, got {span.Kind}");
-            if (!StringComparer.Ordinal.Equals(span.Name, expectedMethod))
+            if (!StringComparer.Ordinal.Equals(span.Name, NativeSpanName))
                 failures.Add($"unexpected gRPC span name: {span.Name}");
-            RequireMissingTag(span, "rpc.service", failures);
-            RequireMissingTag(span, "rpc.grpc.status_code", failures);
+            RequireMissingTag(span, RequestMetadata, failures);
+            RequireMissingTag(span, ResponseMetadata, failures);
         }
 
         return new GrpcClientReport(runtimeMode, failures.Count is 0, failures.ToArray(), activities);
@@ -223,7 +206,7 @@ internal sealed record GrpcClientReport(
 
     private static CapturedActivity? FindByStatus(IEnumerable<CapturedActivity> activities, string statusCode)
         => activities.FirstOrDefault(activity =>
-            activity.Tags.TryGetValue(RpcAttributes.ResponseStatusCode, out var actual) &&
+            activity.Tags.TryGetValue(NativeStatusTag, out var actual) &&
             StringComparer.Ordinal.Equals(actual, statusCode));
 
     private static void Require(CapturedActivity? activity, string label, ICollection<string> failures)

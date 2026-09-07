@@ -11,10 +11,12 @@
   <ItemGroup>
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation.Hosting\Qyl.Telemetry.AutoInstrumentation.Hosting.csproj" />
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.Hosting\Qyl.Telemetry.Hosting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

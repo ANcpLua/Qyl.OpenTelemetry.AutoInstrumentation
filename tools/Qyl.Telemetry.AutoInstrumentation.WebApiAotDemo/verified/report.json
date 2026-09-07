@@ -52,6 +52,31 @@
       }
     },
     {
+      "Kind": "Server",
+      "Name": "GET /probe/{id:int}",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "http.request.method": "GET",
+        "http.response.status_code": "204",
+        "http.route": "/probe/{id:int}",
+        "qyl.instrumentation.domain": "aspnetcore.server",
+        "url.scheme": "http"
+      }
+    },
+    {
+      "Kind": "Client",
+      "Name": "INSERT Items",
+      "Signal": "activity",
+      "Status": "Unset",
+      "Tags": {
+        "db.operation.name": "INSERT",
+        "db.query.summary": "INSERT Items",
+        "db.system.name": "sqlite",
+        "qyl.instrumentation.domain": "db.efcore"
+      }
+    },
+    {
       "Kind": "Client",
       "Name": "INSERT Items",
       "Signal": "activity",

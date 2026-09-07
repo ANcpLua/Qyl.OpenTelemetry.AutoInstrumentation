@@ -27,7 +27,6 @@ WORK = Path("/tmp/qyl-otlp-receiver-evidence")
 FEED = WORK / "feed"
 APP = WORK / "consumer"
 VERIFIED = ROOT / "tools/Qyl.Telemetry.AutoInstrumentation.OtlpReceiver/verified/trace-evidence.json"
-OTEL_VERSION = "1.17.0"
 
 
 @dataclass(frozen=True)
@@ -176,6 +175,7 @@ def pack_local_packages() -> str:
         ROOT / "src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj",
         ROOT / "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj",
         ROOT / "src/Qyl.Telemetry.AutoInstrumentation.Hosting/Qyl.Telemetry.AutoInstrumentation.Hosting.csproj",
+        ROOT / "src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj",
     ):
         run(
             [
@@ -235,9 +235,7 @@ def write_consumer(version: str, *, published: bool) -> None:
                 <RestorePackagesPath>{WORK / "packages"}</RestorePackagesPath>
               </PropertyGroup>
               <ItemGroup>
-                <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
-                <PackageReference Include="OpenTelemetry" Version="{OTEL_VERSION}" />
-                <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="{OTEL_VERSION}" />
+                <PackageReference Include="Qyl.Telemetry.Hosting" Version="{version}" />
               </ItemGroup>
             </Project>
             """
@@ -247,31 +245,44 @@ def write_consumer(version: str, *, published: bool) -> None:
     (APP / "Program.cs").write_text(
         textwrap.dedent(
             """
-            using OpenTelemetry;
-            using OpenTelemetry.Exporter;
+            using Microsoft.Extensions.DependencyInjection;
+            using Microsoft.Extensions.Hosting;
+            using Microsoft.Extensions.Logging;
             using OpenTelemetry.Trace;
-            using Qyl.Telemetry.AutoInstrumentation;
+            using Qyl;
 
             if (args.Length != 2)
                 throw new InvalidOperationException("Expected OTLP and downstream endpoints.");
 
-            using var provider = Sdk.CreateTracerProviderBuilder()
-                .SetSampler(new AlwaysOnSampler())
-                .AddSource("Qyl.Telemetry.AutoInstrumentation")
-                .AddOtlpExporter(options =>
-                {
-                    options.Endpoint = new Uri(args[0]);
-                    options.Protocol = OtlpExportProtocol.HttpProtobuf;
-                    options.TimeoutMilliseconds = 10_000;
-                })
-                .Build();
+            // The consumer onboards the way the README tells it to. Since 15.0.0 the HttpClient span
+            // is System.Net.Http's own, and the qyl domain is stamped onto it by the processor AddQyl
+            // registers — a bare TracerProviderBuilder subscribing the qyl source alone now sees
+            // nothing at all, which is what this gate started failing on.
+            var builder = Host.CreateApplicationBuilder(args);
+            builder.Logging.ClearProviders();
+            builder.AddQyl(options =>
+            {
+                options.ServiceName = "qyl-otlp-receiver-consumer";
+                options.CollectorEndpoint = new Uri(args[0]);
+                options.EnableCollectorDiscovery = false;
+                options.EnableLogExport = false;
+                options.EnableMetricsExport = false;
+            });
 
-            using var http = new HttpClient();
-            using var response = await http.GetAsync(args[1]);
-            if ((int)response.StatusCode != 204)
-                throw new InvalidOperationException("Loopback downstream returned an unexpected status.");
-            if (!provider.ForceFlush(10_000))
+            using var host = builder.Build();
+            await host.StartAsync();
+
+            using (var http = new HttpClient())
+            using (var response = await http.GetAsync(args[1]))
+            {
+                if ((int)response.StatusCode != 204)
+                    throw new InvalidOperationException("Loopback downstream returned an unexpected status.");
+            }
+
+            if (!host.Services.GetRequiredService<TracerProvider>().ForceFlush(10_000))
                 throw new InvalidOperationException("OTLP trace export did not flush.");
+
+            await host.StopAsync();
             """
         ).strip() + "\n",
         encoding="utf-8",
@@ -320,8 +331,13 @@ def build_report(
     for key, expected in required.items():
         if values.get(key) != expected:
             raise SystemExit(f"unexpected {key}: expected={expected!r} actual={values.get(key)!r}")
+    # 15.0.0 handed the client lane to System.Net.Http, so the redaction is the BCL's: it replaces
+    # the whole query with "*" rather than qyl's former per-value "access_token=Redacted". What the
+    # gate is here to prove is unchanged and is asserted directly — the secret does not leave the
+    # process. A consumer that sets System.Net.Http.DisableUriRedaction turns this off, which is why
+    # the assertion is on the secret's absence rather than on the exact placeholder.
     url = values.get("url.full")
-    if not isinstance(url, str) or "access_token=Redacted" not in url or "super-secret" in url:
+    if not isinstance(url, str) or "super-secret" in url or "?*" not in url:
         raise SystemExit(f"url.full was not safely redacted: {url!r}")
     normalized_url, url_port = normalize_loopback_url(url)
     server_port = values.get("server.port")
@@ -335,7 +351,11 @@ def build_report(
         raise SystemExit("OTLP span carries invalid trace/span identifiers")
     if span.start_time_unix_nano <= 0 or span.end_time_unix_nano < span.start_time_unix_nano:
         raise SystemExit("OTLP span carries invalid timestamps")
-    if scope.name != "Qyl.Telemetry.AutoInstrumentation" or scope.version != version:
+    # The scope is the emitting library's, and since 15.0.0 the HttpClient span is emitted by
+    # System.Net.Http rather than by a qyl interceptor. Asserting the qyl package version here would
+    # assert that qyl still owns the span, which is exactly what this release stopped doing; what is
+    # still qyl's, and is checked above, is the domain attribute stamped onto it.
+    if scope.name != "System.Net.Http":
         raise SystemExit(
             "OTLP instrumentation scope did not match the package under test: "
             f"name={scope.name!r} version={scope.version!r} expected_version={version!r}"

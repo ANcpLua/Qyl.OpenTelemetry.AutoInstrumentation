@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using OpenTelemetry.Trace;
+using Qyl;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net;
@@ -17,6 +20,7 @@ using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.RealEfCoreDemo;
 
 var captured = new List<CapturedActivity>();
+var exported = new List<System.Diagnostics.Activity>();
 var capturedLock = new Lock();
 using var listener = new ActivityListener
 {
@@ -38,10 +42,6 @@ ActivitySource.AddActivityListener(listener);
 
 await using var downstreamServer = LoopbackHttpServer.Start();
 using var downstream = new HttpClient();
-using (await downstream.GetAsync(downstreamServer.Uri + "downstream?secret=redacted"))
-{
-}
-await downstreamServer.RequestCompleted;
 
 await using (var sqlConnection = new SqlConnection())
 {
@@ -69,6 +69,18 @@ builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.WebHost.SuppressStatusMessages(true);
 builder.Logging.ClearProviders();
 builder.Services.AddQylAspNetCoreInstrumentation();
+// 15.0.0 emits the HttpClient spans from System.Net.Http's own source and stamps the qyl domain
+// with the processor AddQyl registers, so the demo reads the pipeline a consumer would run rather
+// than an ActivityListener on the qyl source alone.
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-webapi-aot-demo";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+});
+builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing.AddInMemoryExporter(exported));
 var app = builder.Build();
 
 app.MapGet("/probe/{id:int}", async () =>
@@ -83,6 +95,15 @@ app.MapGet("/probe/{id:int}", async () =>
 
 await app.StartAsync();
 
+// The downstream call has to happen after the host starts. Its span is System.Net.Http's own since
+// 15.0.0, so it is only recorded once AddQyl's TracerProvider exists — the old ActivityListener was
+// registered before this point and caught it, an exporter cannot.
+using (await downstream.GetAsync(downstreamServer.Uri + "downstream?secret=redacted"))
+{
+}
+
+await downstreamServer.RequestCompleted;
+
 try
 {
     var address = app.Urls.Single();
@@ -96,6 +117,7 @@ finally
     await app.StopAsync();
 }
 
+captured.AddRange(exported.Select(CapturedActivity.From));
 var report = WebApiAotReport.Create(captured.ToArray(), downstreamServer.Port);
 var json = JsonSerializer.Serialize(report, WebApiAotJsonContext.Default.WebApiAotReport);
 Console.WriteLine(json);

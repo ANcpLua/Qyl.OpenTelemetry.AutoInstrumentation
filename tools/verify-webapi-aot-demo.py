@@ -28,6 +28,7 @@ PROJECTS_TO_PACK = [
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj",
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj",
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.Hosting" / "Qyl.Telemetry.AutoInstrumentation.Hosting.csproj",
+    ROOT / "src" / "Qyl.Telemetry.Hosting" / "Qyl.Telemetry.Hosting.csproj",
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore.csproj",
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SqlClient" / "Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj",
 ]
@@ -100,6 +101,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.Hosting" Version="{version}" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.18.0" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" Version="{version}" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
