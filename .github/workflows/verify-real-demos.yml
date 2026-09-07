@@ -30,7 +30,6 @@ jobs:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4, 5, 6]
-    name: real demos
     # x64 on purpose: mcr.microsoft.com/mssql/server ships no arm64 image (the old
     # OrbStack VM hid that via Rosetta emulation). This lane verifies container-backed
     # runtime behavior, not ARM coverage — verify/smoke/gate keep the ARM legs.
