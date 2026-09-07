@@ -94,6 +94,18 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             static (productionContext, invocations) =>
                 EmitInterceptors(productionContext, invocations));
 
+        // QYL1002: the libraries whose telemetry the consumer turns on in their own code.
+        var optInSignals = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                static (node, _) => node is InvocationExpressionSyntax,
+                static (syntaxContext, cancellationToken) => ScanOptIn(syntaxContext, cancellationToken))
+            .Where(static signal => signal.Row is not 0)
+            .Collect();
+
+        context.RegisterSourceOutput(
+            optInSignals,
+            static (productionContext, signals) => ReportMissingOptIns(productionContext, signals));
+
         var declaredSignals = context.CompilationProvider
             .Select(static (compilation, cancellationToken) => ReadDeclaredSignals(compilation, cancellationToken));
 

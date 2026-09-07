@@ -34,4 +34,29 @@ internal static class QylGeneratorDiagnostics
             + "changed the signature in a new major version. No interceptor is emitted for the call, so "
             + "it produces no qyl telemetry. Update the integration declaration or pin the library to a "
             + "version whose signature the shape describes.");
+
+    /// <summary>
+    /// Reported when a compilation uses a library whose native <c>ActivitySource</c> qyl subscribes,
+    /// but never makes the call that library requires before it emits — or before it emits in full.
+    /// </summary>
+    /// <remarks>
+    /// qyl does not make that call on the application's behalf. Injecting a consumer's opt-in would
+    /// be the interception this package family exists to remove, and it would enable telemetry the
+    /// application did not ask for. The generator is the only qyl component that sees the
+    /// consumer's call sites, so it is the only one that can tell "this application uses the
+    /// library" from "this application opted its telemetry in".
+    /// </remarks>
+    internal static readonly DiagnosticDescriptor NativeTelemetryOptInMissing = new(
+        id: "QYL1002",
+        title: "A subscribed library's own telemetry opt-in is not registered",
+        messageFormat:
+            "qyl subscribes {0}'s ActivitySource, but this compilation never calls '{1}': {2}",
+        category: "Qyl.AutoInstrumentation",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description:
+            "The library owns the spans and decides when to emit them. qyl subscribes its "
+            + "ActivitySource and stamps qyl.instrumentation.domain, but the call that turns the "
+            + "library's telemetry on — or on in full — belongs in the application's own code. Add "
+            + "it, or accept the reduced telemetry the message names.");
 }
