@@ -3,44 +3,56 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Qyl.Telemetry.AutoInstrumentation;
+using OpenTelemetry.Trace;
+using Qyl;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
 using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
-var captured = new List<CapturedActivity>();
-var capturedLock = new Lock();
-
-// The server span is ASP.NET Core's own activity. Listening to the framework source is what a
-// consumer's AddSource("Microsoft.AspNetCore") does; the qyl middleware writes onto that span and
-// creates none of its own, so exactly one SERVER span exists per request.
-using var listener = new ActivityListener
-{
-    ShouldListenTo = static source => source.Name == "Microsoft.AspNetCore",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity =>
-    {
-        lock (capturedLock)
-        {
-            captured.Add(CapturedActivity.From(activity));
-        }
-    },
-};
-
-ActivitySource.AddActivityListener(listener);
-
+// The real registration path: AddQyl subscribes ASP.NET Core's own Microsoft.AspNetCore source and
+// registers the middleware that enriches its activity. qyl starts no server span of its own, so
+// what this demo exports is what a consumer's collector receives — one SERVER span per request.
+var exported = new List<Activity>();
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.Logging.ClearProviders();
 builder.Services.AddHealthChecks();
-builder.Services.AddQylAspNetCoreInstrumentation();
+builder.AddQyl(options =>
+{
+    options.ServiceName = "qyl-real-aspnetcore-demo";
+    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
+    // closed port and asserts on its in-memory exporter alone.
+    options.CollectorEndpoint =
+        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+    options.AdditionalSources.Add(DemoWork.SourceName);
+});
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exported));
+
+// Registered after AddQyl, exactly as a Qyl.Api application registers its session-baggage filter:
+// qyl's own filter stays outermost, and Activity.Current in this one is the hosting activity that
+// the whole request hangs off.
+builder.Services.AddSingleton<IStartupFilter, SessionStartupFilter>();
+
 var app = builder.Build();
 
 app.MapHealthChecks("/healthz");
 app.MapGet("/items/{id:int}", (HttpContext context) =>
 {
+    // A child span of the request, so the session tag the filter puts on the hosting activity has
+    // something to reach.
+    using (DemoWork.Source.StartActivity(DemoWork.ChildSpanName))
+    {
+    }
+
     context.Response.Headers["X-Demo-Res"] = "sv1";
     context.Response.StatusCode = StatusCodes.Status204NoContent;
     return Task.CompletedTask;
@@ -54,6 +66,7 @@ try
     var address = app.Urls.Single();
     using var httpClient = new HttpClient();
     httpClient.DefaultRequestHeaders.Add("X-Demo-Req", "rv1");
+    httpClient.DefaultRequestHeaders.Add("baggage", "session.id=" + AspNetCoreReport.SessionId);
     using (await httpClient.GetAsync($"{address}/items/42?sample=1"))
     {
     }
@@ -67,16 +80,55 @@ finally
     await app.StopAsync();
 }
 
+app.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+
 var report = AspNetCoreReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    exported.Select(CapturedActivity.From).ToArray());
 
 var json = JsonSerializer.Serialize(report, RealAspNetCoreJsonContext.Default.AspNetCoreReport);
 Console.WriteLine(json);
 
 return report.Pass ? 0 : 1;
 
+/// <summary>The application's own span, and the source AddQyl subscribes through AdditionalSources.</summary>
+internal static class DemoWork
+{
+    public const string SourceName = "Qyl.RealAspNetCoreDemo";
+
+    public const string ChildSpanName = "demo child work";
+
+    public static ActivitySource Source { get; } = new(SourceName);
+}
+
+/// <summary>
+/// Stands in for <c>Qyl.Api</c>'s session-baggage filter: it reads the agent's <c>baggage</c> header
+/// and stamps <c>session.id</c> on whatever activity is current. Nothing here knows which activity
+/// that is — which is the point of the assertion it feeds.
+/// </summary>
+internal sealed class SessionStartupFilter : IStartupFilter
+{
+    private const string Member = "session.id=";
+
+    /// <inheritdoc />
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
+        app =>
+        {
+            app.Use(static (context, nextMiddleware) =>
+            {
+                var header = context.Request.Headers["baggage"].ToString();
+                if (Activity.Current is { } activity && header.StartsWith(Member, StringComparison.Ordinal))
+                    activity.SetTag("session.id", header[Member.Length..]);
+
+                return nextMiddleware(context);
+            });
+
+            next(app);
+        };
+}
+
 internal sealed record CapturedActivity(
+    string Source,
     string Name,
     string Kind,
     string Status,
@@ -84,6 +136,7 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -104,20 +157,39 @@ internal sealed record AspNetCoreReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
+    /// <summary>The session an agent claims through the <c>baggage</c> header.</summary>
+    public const string SessionId = "qyl-real-aspnetcore-demo-session";
+
     private const string RequestHeader = HttpAttributes.RequestHeader + ".x-demo-req";
     private const string ResponseHeader = HttpAttributes.ResponseHeader + ".x-demo-res";
+    private const string SessionIdTag = "session.id";
+    private const string AspNetCoreSource = "Microsoft.AspNetCore";
 
     public static AspNetCoreReport Create(string runtimeMode, CapturedActivity[] activities)
     {
         var failures = new List<string>();
-        var httpServerSpans = activities
+
+        // One SERVER span per request, and it is ASP.NET Core's own. A qyl-made server span — from
+        // a middleware or a DiagnosticListener adapter — would show up here as an extra span, or as
+        // one whose source is not the framework's.
+        var serverSpans = activities.Where(static activity => activity.Kind is "Server").ToArray();
+        if (serverSpans.Length != 2)
+            failures.Add($"expected exactly one server span for each of the 2 requests, got {serverSpans.Length}");
+
+        foreach (var span in serverSpans)
+        {
+            if (!StringComparer.Ordinal.Equals(span.Source, AspNetCoreSource))
+                failures.Add($"server span from '{span.Source}' rather than ASP.NET Core's own source: {span.Name}");
+        }
+
+        var httpServerSpans = serverSpans
             .Where(static activity =>
-                activity.Tags.TryGetValue("qyl.instrumentation.domain", out var domain) &&
-                StringComparer.Ordinal.Equals(domain, "aspnetcore.server"))
+                activity.Tags.TryGetValue(QylAttributes.InstrumentationDomain, out var domain) &&
+                StringComparer.Ordinal.Equals(domain, QylAttributes.InstrumentationDomainValues.AspNetCoreServer))
             .ToArray();
 
-        if (httpServerSpans.Length != 2)
-            failures.Add($"expected 2 real ASP.NET Core server spans, got {httpServerSpans.Length}");
+        if (httpServerSpans.Length != serverSpans.Length)
+            failures.Add($"{serverSpans.Length - httpServerSpans.Length} server span(s) carry no qyl.instrumentation.domain");
 
         var successSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
@@ -131,11 +203,20 @@ internal sealed record AspNetCoreReport(
         RequireTag(successSpan, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
         RequireTag(successSpan, HttpAttributes.Route, "/items/{id:int}", failures);
         RequireTag(failureSpan, HttpAttributes.Route, "/fail/{id:int}", failures);
-        // The unhandled exception is the error, so error.type is its type name rather than the
-        // status code the server sends after it.
+        // The unhandled exception is what failed the request, so error.type is its type name rather
+        // than the status code the server sends afterwards.
         RequireTag(failureSpan, ErrorAttributes.Type, "System.InvalidOperationException", failures);
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
+
+        // The session: an agent's baggage header, stamped by the application's own filter onto
+        // whatever Activity.Current is — the hosting activity — and copied from there onto the
+        // request's child spans by QylSessionSpanProcessor.
+        RequireTag(successSpan, SessionIdTag, SessionId, failures);
+        var childSpan = activities.FirstOrDefault(static activity =>
+            StringComparer.Ordinal.Equals(activity.Source, DemoWork.SourceName));
+        Require(childSpan, "child span of the session request", failures);
+        RequireTag(childSpan, SessionIdTag, SessionId, failures);
 
         // Option rows are asserted in both directions, keyed off the same env vars
         // the runtime honors: header capture opt-in and URL query redaction.

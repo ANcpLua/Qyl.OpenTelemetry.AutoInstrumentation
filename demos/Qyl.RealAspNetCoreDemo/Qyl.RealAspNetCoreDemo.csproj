@@ -5,17 +5,15 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Qyl.RealAspNetCoreDemo</RootNamespace>
     <AssemblyName>Qyl.RealAspNetCoreDemo</AssemblyName>
-    <Description>Real zero-code ASP.NET Core DiagnosticSource proof for qyl.</Description>
+    <Description>Real ASP.NET Core proof for qyl: one server span per request, ASP.NET Core's own.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation.Hosting\Qyl.Telemetry.AutoInstrumentation.Hosting.csproj" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\Qyl.Telemetry.AutoInstrumentation.Hosting\buildTransitive\Qyl.Telemetry.AutoInstrumentation.Hosting.Bootstrap.g.cs"
-             Link="Qyl.Telemetry.AutoInstrumentation.Hosting.Bootstrap.g.cs"
-             Visible="false" />
+    <ProjectReference Include="..\..\src\Qyl.Telemetry.Hosting\Qyl.Telemetry.Hosting.csproj" />
   </ItemGroup>
 
 </Project>
