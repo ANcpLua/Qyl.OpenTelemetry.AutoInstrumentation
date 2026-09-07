@@ -74,14 +74,6 @@ PRODUCTIVE_MECHANISM_ROOTS = [
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore",
     ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators",
 ]
-GRPC_AOT_REFLECTION_BOUNDARY = (
-    ROOT
-    / "src"
-    / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners"
-    / "GrpcClient"
-    / "GrpcClientPayloadReader.cs"
-)
-GRPC_AOT_REFLECTION_TOKENS = {"System.Reflection", "GetProperty(", "PropertyInfo"}
 # Philosophy guard: no runtime-dispatch instrumentation substrate (repo contract:
 # no CLR profiler, no runtime dispatch, no reflection-based dispatch).
 FORBIDDEN_GENERATOR_RUNTIME_DISPATCH_TOKENS = [
@@ -141,8 +133,11 @@ FORBIDDEN_ROSLYN_INTERCEPTOR_CONTRACT_TOKENS = [
 # generator deliberately did NOT intercept -- so it cannot be the source of an interceptor location.
 # Anything beyond that single use is a regression and fails.
 DIAGNOSTIC_LOCATION_TOKEN = "GetLocation()"
-DIAGNOSTIC_LOCATION_OWNER = "QylGeneratorDiagnostics.ShapeNotMatched"
-DIAGNOSTIC_LOCATION_MAX_USES = 1
+DIAGNOSTIC_LOCATION_OWNERS = (
+    "QylGeneratorDiagnostics.ShapeNotMatched",
+    "QylGeneratorDiagnostics.NativeTelemetryOptInMissing",
+)
+DIAGNOSTIC_LOCATION_MAX_USES = 2
 # Philosophy guard: runtime telemetry must emit attribute keys through the
 # generated semconv constants, never literal strings.
 FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
@@ -158,6 +153,11 @@ FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS = [
     "new global::System.Diagnostics.Activity",
     "ActivitySource",
 ]
+# Everything the generator writes into a consumer's compilation goes through one of these calls.
+GENERATOR_EMISSION_PATTERN = re.compile(
+    r"builder\.(?:Append|AppendLine)\((?P<argument>.*?)\);",
+    re.DOTALL,
+)
 # Philosophy guard: interceptors must preserve caller exception stack semantics.
 FORBIDDEN_EXCEPTION_REWRITE_TOKENS = [
     "throw exception;",
@@ -243,11 +243,9 @@ SENSITIVE_SEMANTIC_WRITER_PATTERNS = [
 DB_QUERY_TEXT_WRITE_PATTERN = re.compile(
     r"SemanticTagWriter\.Set\(activity,\s*(?:global::)?(?:[A-Za-z0-9_]+\.)*DbAttributes\.QueryText\b"
 )
-SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH = "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs"
 URL_FORMAT_ALLOWED_PATHS = {
     "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs",
     "src/Qyl.Telemetry.AutoInstrumentation/Internal/QylSensitiveCapturePolicy.cs",
-    "src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/Semantics/HttpSemantics.cs",
 }
 DB_QUERY_TEXT_ALLOWED_PATHS = {
     "src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
@@ -737,15 +735,22 @@ def verify_semconv_attribute_contract() -> None:
 
 
 def verify_qyl_vocabulary_literals() -> None:
-    hits = [
-        path.relative_to(ROOT).as_posix()
-        for path in (ROOT / "src").rglob("*.cs")
-        if not path.name.endswith(".g.cs")
-        and not any(part in ("obj", "bin", "artifacts") for part in path.parts)
-        and '"qyl.' in path.read_text()
-    ]
-    if hits:
-        fail(f"qyl.* vocabulary must come from the generated semconv constants, not literals: {sorted(hits)}")
+    """Registry keys are generated constants, never literals — the qyl namespace and the
+    registry-owned keys the instrumentation writes outside a semantics helper. A rename in the
+    registry has to reach the code that writes the key, and only a constant carries it there."""
+    for literal, message in [
+        ('"qyl.', "qyl.* vocabulary must come from the generated semconv constants, not literals"),
+        ('"session.id"', "session.id must come from SessionAttributes.Id, not a literal"),
+    ]:
+        hits = [
+            path.relative_to(ROOT).as_posix()
+            for path in (ROOT / "src").rglob("*.cs")
+            if not path.name.endswith(".g.cs")
+            and not any(part in ("obj", "bin", "artifacts") for part in path.parts)
+            and literal in path.read_text()
+        ]
+        if hits:
+            fail(f"{message}: {sorted(hits)}")
 
 
 def verify_system_value_contract() -> None:
@@ -875,18 +880,20 @@ def verify_sensitive_attribute_emission_policy() -> None:
     for token in [
         "QylCaptureHelpers.RedactQueryValues(",
         "AspNetCoreUrlQueryRedactionDisabled",
-        "GraphQlSetDocument",
     ]:
         if token not in policy:
             fail(f"QylSensitiveCapturePolicy must implement the redaction/opt-in controls: {token}")
 
-    http_semantics = (ROOT / SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH).read_text()
+    # The outbound HTTP span is the BCL's and it redacts its own url.full, so qyl no longer formats
+    # one. The consumer's opt-out now flips the runtime switch, and QylInstrumentation is where that
+    # single write lives.
+    activation = (RUNTIME_SOURCE_ROOT / "QylInstrumentation.cs").read_text()
     for token in [
-        "QylCaptureHelpers.FormatUrlFull(",
         "HttpClientUrlQueryRedactionDisabled",
+        "System.Net.Http.DisableUriRedaction",
     ]:
-        if token not in http_semantics:
-            fail(f"HttpSemantics must implement the HttpClient url.full redaction control: {token}")
+        if token not in activation:
+            fail(f"QylInstrumentation must bind the HttpClient url query redaction opt-out: {token}")
 
     stale_db_query_text_paths = sorted(
         relative_path
@@ -908,11 +915,11 @@ def verify_sensitive_attribute_emission_policy() -> None:
 
             for pattern in SENSITIVE_SEMANTIC_WRITER_PATTERNS:
                 match = pattern.search(text)
-                if match is not None and relative_path != SENSITIVE_SEMANTIC_WRITER_ALLOWED_PATH:
+                if match is not None:
                     fail(f"runtime-public sensitive writes must go through the owning semantics helper: {relative_path} {match.group()}")
 
             if "QylCaptureHelpers.FormatUrlFull(" in text and relative_path not in URL_FORMAT_ALLOWED_PATHS:
-                fail(f"url.full formatting must stay centralized behind sensitive capture policy/HttpSemantics: {relative_path}")
+                fail(f"url.full formatting must stay centralized behind the sensitive capture policy: {relative_path}")
 
             if "QylCaptureHelpers.RedactQueryValues(" in text and relative_path not in URL_FORMAT_ALLOWED_PATHS:
                 fail(f"url query redaction must stay centralized behind sensitive capture policy/helpers: {relative_path}")
@@ -980,8 +987,16 @@ def verify_behavior_semantics_contract() -> None:
     if QYL_ABI_DELEGATION_TOKEN not in generator:
         fail("generator must delegate intercepted call-sites to the Qyl runtime instrumentation assembly")
 
+    # The guard's subject is the source the generator WRITES, which leaves it only through
+    # builder.Append*. Scanning those arguments rather than the whole file is the sharper check: it
+    # still catches an inlined ActivitySource in emitted code, and it lets a diagnostic message say
+    # the word "ActivitySource" to the consumer, which QYL1002 has to.
+    emitted_source = "\n".join(
+        match.group("argument")
+        for match in GENERATOR_EMISSION_PATTERN.finditer(strip_csharp_comments(generator))
+    )
     for token in FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS:
-        if token in generator:
+        if token in emitted_source:
             fail(f"generator must not inline telemetry behavior instead of delegating to runtime: {token}")
 
     behavior_sources = [*generator_partial_paths(), *declaration_paths()]
@@ -1039,8 +1054,6 @@ def verify_productive_mechanism_contract() -> None:
             text = path.read_text()
             scan_text = strip_csharp_comments(text) if path.suffix == ".cs" else text
             for token in FORBIDDEN_MECHANISM_TOKENS:
-                if path == GRPC_AOT_REFLECTION_BOUNDARY and token in GRPC_AOT_REFLECTION_TOKENS:
-                    continue
                 if token in scan_text:
                     fail(f"productive code must not use forbidden instrumentation mechanism {token}: {path.relative_to(ROOT)}")
 
@@ -1202,14 +1215,15 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     if diagnostic_locations > DIAGNOSTIC_LOCATION_MAX_USES:
         fail(
             f"generator may use {DIAGNOSTIC_LOCATION_TOKEN} at most "
-            f"{DIAGNOSTIC_LOCATION_MAX_USES} time(s), for the skipped-call-site diagnostic only; "
+            f"{DIAGNOSTIC_LOCATION_MAX_USES} time(s), for its own diagnostics only; "
             f"found {diagnostic_locations}. Interceptor locations must come from "
             "GetInterceptableLocation."
         )
-    if diagnostic_locations and DIAGNOSTIC_LOCATION_OWNER not in generator:
+    missing_owners = [owner for owner in DIAGNOSTIC_LOCATION_OWNERS if owner not in generator]
+    if diagnostic_locations and missing_owners:
         fail(
-            f"generator uses {DIAGNOSTIC_LOCATION_TOKEN} without reporting "
-            f"{DIAGNOSTIC_LOCATION_OWNER}; the only permitted use is the skipped-call-site diagnostic"
+            f"generator uses {DIAGNOSTIC_LOCATION_TOKEN} without reporting {missing_owners}; the "
+            "only permitted uses are the qyl generator diagnostics"
         )
 
     if "InterceptsLocationAttribute(" in generator and "GetInterceptsLocationAttributeSyntax(" not in generator:
@@ -1231,13 +1245,13 @@ def verify_generator_keys(artifacts: ModuleType, contract: dict[str, Any]) -> No
     verify_generated_interceptor_manifests(
         fixture_manifests,
         interceptor_kinds,
-        "two-HttpClient deterministic fixture",
+        "two-DbCommand deterministic fixture",
     )
     fixture_kinds = [manifest["interceptorKind"] for manifest in fixture_manifests]
-    if fixture_kinds != ["HttpClient.Forward", "HttpClient.Forward"]:
+    if fixture_kinds != ["DbCommand.Execute", "DbCommand.Execute"]:
         fail(f"generated interceptor snapshot kind mismatch: {fixture_kinds}")
     fixture_keys = [manifest["contractKeys"] for manifest in fixture_manifests]
-    expected_fixture_keys = ["signals.traces.HTTPCLIENT", "signals.metrics.HTTPCLIENT"]
+    expected_fixture_keys = ["signals.traces.ADONET"]
     if fixture_keys != [expected_fixture_keys, expected_fixture_keys]:
         fail(f"generated interceptor snapshot contract-key mismatch: {fixture_keys}")
 

@@ -150,7 +150,10 @@ OPTION_KIND = "instrumentation_option"
 LANES = {
     "source_interceptor",
     "runtime_public_telemetry",
-    "framework_initialization",
+    # The library owns the ActivitySource; Qyl.Telemetry.Hosting subscribes it and
+    # QylNativeSpanProcessor stamps qyl.instrumentation.domain onto its spans. Nothing is
+    # intercepted and nothing the library wrote is rewritten.
+    "native_source",
     "official_library_hook",
     "environment_control",
     "instrumentation_option",
@@ -285,10 +288,9 @@ MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
 IMPLEMENTED_COMPILE_BINDING_ONLY_ALLOWLIST: set[str] = set()
 # Signals whose contract row is owned by the runtime_public_telemetry listener/meter lane while a
 # source interceptor also binds their call sites.
-GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = {
-    "signals.traces.HTTPCLIENT",
-    "signals.metrics.HTTPCLIENT",
-}
+# Empty since 15.0.0: no signal has both an interceptor and another producing lane. HTTPCLIENT was
+# the last one, and its interceptor is deleted.
+GENERATED_INTERCEPTOR_ALTERNATE_PATH_SIGNAL_ALLOWLIST: set[str] = set()
 COMMON_ITEM_PROPERTIES = {
     "kind",
     "key",
@@ -681,6 +683,21 @@ def verify_contract_item(item: dict[str, Any]) -> None:
 
     if visibility == "library_internal" and lane == "source_interceptor":
         fail(f"library_internal item cannot use source_interceptor lane: {key}")
+    if lane == "native_source":
+        if payload != "typed_public":
+            fail(f"native_source item must use typed_public payload access: {key}")
+        if status == "implemented":
+            for token in [
+                "src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs",
+                "src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs",
+            ]:
+                if token not in evidence:
+                    fail(f"native_source item must carry the source table and processor as evidence for {key}: missing {token}")
+            if not any(
+                entry.startswith("tools/verify-real-") and entry.endswith("-demo.py")
+                for entry in evidence
+            ):
+                fail(f"native_source item must carry real demo verifier evidence: {key}")
     if lane == "runtime_public_telemetry" and payload not in {"typed_public", "aot_reflection"}:
         fail(f"runtime_public_telemetry item must use typed_public or aot_reflection payload access: {key}")
     if payload == "aot_reflection" and evidence_level != "verified_nativeaot":

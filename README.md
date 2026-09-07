@@ -10,7 +10,7 @@ Roslyn interceptors are supported by this repository's .NET SDK 10.0.400. See th
 contract.
 
 Every attribute key, attribute value and telemetry scope name this package writes is a generated
-constant from `Qyl.Telemetry.SemanticConventions` 9.2.0. The instrumentation writes those constants
+constant from `Qyl.Telemetry.SemanticConventions` 9.3.0. The instrumentation writes those constants
 and nothing else: it never renames, drops or coerces what a library emitted. Deprecated keys and
 vendor keys travel as the library wrote them and the qyl collector rewrites them; the live check
 below is what proves it.
@@ -22,7 +22,7 @@ below is what proves it.
 | `Qyl.Telemetry.Hosting` | One-line onboarding. `builder.AddQyl()` wires the OpenTelemetry SDK, subscribes the native `ActivitySource` table, adds the two processors, registers the meter inventory and exports OTLP with collector discovery. |
 | `Qyl.Telemetry.AutoInstrumentation` | The core runtime: the single qyl `ActivitySource`, the interceptor declarations and helper bodies, the options surface, the compiler-facing ABI, the build assets and the source generator. |
 | `Qyl.Telemetry.AutoInstrumentation.Hosting` | Process bootstrap: a `[ModuleInitializer]` activates the qyl listeners when the assembly loads, and `AddQylAutoInstrumentation()` wires them explicitly. |
-| `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners` | The `DiagnosticListener` subscribers for ASP.NET Core, HttpClient and the gRPC client. |
+| `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners` | The base `DiagnosticListener` subscriber and the shared semantics helpers the EF Core and SqlClient packages build on. |
 | `Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore` | EF Core `DiagnosticSource` instrumentation. |
 | `Qyl.Telemetry.AutoInstrumentation.SqlClient` | `Microsoft.Data.SqlClient` `DiagnosticSource` instrumentation. |
 
@@ -30,7 +30,7 @@ Add the package that owns the integration you need; the supported zero-configura
 is a `PackageReference`, and build and analyzer assets flow through NuGet.
 
 ```bash
-dotnet add package Qyl.Telemetry.Hosting --version 14.0.1
+dotnet add package Qyl.Telemetry.Hosting --version 15.0.0
 ```
 
 ```csharp
@@ -96,9 +96,9 @@ dotnet run
 ```
 
 The console exporter writes each activity as it ends, so nothing has to be listening. One
-`HttpClient` call prints two client spans: the framework's, under the `System.Net.Http` scope, and
-the intercepted one, under `Qyl.Telemetry.AutoInstrumentation` and carrying
-`qyl.instrumentation.domain`. The same spans reach `weaver registry live-check`, which listens for
+`HttpClient` call prints exactly one client span, the framework's, under the `System.Net.Http`
+scope and carrying the `qyl.instrumentation.domain` the processor stamped on it. The same span
+reaches `weaver registry live-check`, which listens for
 OTLP/gRPC on 4317 and prints every span it receives, when `OTEL_EXPORTER_OTLP_ENDPOINT` points at it
 — judged against the qyl registry, as the [live check](#live-check) below runs it, because the
 upstream registry alone does not declare `qyl.instrumentation.domain`.
@@ -133,10 +133,17 @@ other row is an ordinal exact match.
 | --- | --- | --- | --- | --- |
 | Azure SDK | `Azure.Storage.Blobs` `12.29.2` | `Azure.*` | `AZURE` | `azure.sdk` |
 | CoreWCF | `CoreWCF.Http` `1.9.1` | `CoreWCF.Primitives` | `WCFCORE` | none — see below |
+| HttpClient | `System.Net.Http` (BCL) | `System.Net.Http` | `HTTPCLIENT` | `http.client` |
+| MySql.Data | `26.7.0` | `connector-net` | `MYSQLDATA` | `db.client` |
 | Elastic.Transport, Elastic.Clients.Elasticsearch | `1.0.0`, `9.5.1` | `Elastic.Transport` | `ELASTICTRANSPORT` | `elastic.transport` |
+| GraphQL.NET | `8.8.5` | `GraphQL` | `GRAPHQL` | `graphql` |
+| Grpc.Net.Client | `2.83.0` | `Grpc.Net.Client` | `GRPCNETCLIENT` | `rpc.grpc` |
 | MassTransit | `[8.5.10,9.0.0)` | `MassTransit` | `MASSTRANSIT` | `messaging.masstransit` |
 | MongoDB.Driver | `3.11.1` | `MongoDB.Driver` | `MONGODB` | `db.mongodb` |
+| MySqlConnector | `2.6.2` | `MySqlConnector` | `MYSQLCONNECTOR` | `db.client` |
+| Npgsql | `10.0.3` | `Npgsql` | `NPGSQL` | `db.client` |
 | NServiceBus | `10.2.9` | `NServiceBus.Core` | `NSERVICEBUS` | `messaging.nservicebus` |
+| Oracle.ManagedDataAccess.Core | `23.26.300` | `Oracle.ManagedDataAccess.Core` | `ORACLEMDA` | `db.client` |
 | Quartz.NET | `4.0.0` | `Quartz` | `QUARTZ` | `job.quartz` |
 | RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Publisher` | `RABBITMQ` | `messaging.rabbitmq` |
 | RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Subscriber` | `RABBITMQ` | `messaging.rabbitmq` |
@@ -165,21 +172,42 @@ One row per `[QylIntercept]` declaration in `src/Qyl.Telemetry.AutoInstrumentati
 
 | Integration | Pinned | Intercepted receiver | Instrumentation id | Domain |
 | --- | --- | --- | --- | --- |
-| ADO.NET | `System.Data.Common` | `System.Data.Common.DbCommand` | `ADONET`, fanned out to `MYSQLCONNECTOR`, `MYSQLDATA`, `NPGSQL`, `ORACLEMDA`, `SQLCLIENT`, `SQLITE` by the receiver's namespace | `db.client` |
-| HttpClient | `System.Net.Http` | `System.Net.Http.HttpClient` | `HTTPCLIENT` | `http.client` |
+| ADO.NET | `System.Data.Common` | `System.Data.Common.DbCommand` | `ADONET`, fanned out to `SQLCLIENT` and `SQLITE` by the receiver's namespace | `db.client` |
 | Confluent.Kafka | `2.15.0` | `Confluent.Kafka.IProducer<TKey, TValue>` and `IConsumer<TKey, TValue>` | `KAFKA` | `messaging.kafka` |
 | StackExchange.Redis | `3.1.31` | `StackExchange.Redis.IDatabaseAsync` | `STACKEXCHANGEREDIS` | `db.redis` |
-| GraphQL.NET | `8.8.5` | `GraphQL.IDocumentExecuter` | `GRAPHQL` | `graphql` |
 | WCF client | `System.ServiceModel.Primitives` `10.0.652802` | `System.ServiceModel.ClientBase<TChannel>` | `WCFCLIENT` | `rpc.wcf.client` |
 
 `System.Data.Common`, `Microsoft.Data.SqlClient` 7.0.2, `Microsoft.Data.Sqlite` 10.0.11,
 `Confluent.Kafka` 2.15.0, `StackExchange.Redis` 3.1.31 and `System.ServiceModel.*` declare no
-`ActivitySource` at the pinned version, so the rule puts them here. Five integrations are the open
-work of the rule rather than an exception to it: `Npgsql` 10.0.3, `MySqlConnector` 2.6.2,
-`MySql.Data` 26.7.0, `Oracle.ManagedDataAccess.Core` 23.26.300 and `GraphQL` 8.8.5 each declare a
-native `ActivitySource` and are still intercepted. Their source names are already published as
-`QylTelemetryNames.VendorActivitySources` constants, and moving them is a table row plus a demo
-lane each.
+`ActivitySource` at the pinned version, so the rule puts them here. There is no longer an
+integration in this table whose library owns a native source: the four database providers that did
+— Npgsql, MySqlConnector, MySql.Data and Oracle ODP.NET — moved to the table above in 15.0.0, and
+the ADO.NET declaration names them in `NativeSourceReceivers`, so a call site on one of those
+receivers emits no interceptor and reports no `QYL1001`. It is not a shape mismatch; it is a lane
+that belongs to the library.
+
+### The libraries whose telemetry the consumer turns on
+
+Three rows of the native-source table stay silent, or stay poorer, until the application makes a
+call in its own code. qyl never makes that call: injecting a consumer's opt-in would be the
+interception this package family exists to remove, and it would turn on telemetry the application
+did not ask for. The source generator reports `QYL1002` when a compilation uses the library and
+never makes the call.
+
+| Library | The call | Without it |
+| --- | --- | --- |
+| GraphQL.NET | `IGraphQLBuilder.UseTelemetry()` | the `GraphQL` `ActivitySource` stays silent: no spans at all |
+| Oracle ODP.NET | `TracerProviderBuilder.AddOracleDataProviderInstrumentation()` (package `Oracle.ManagedDataAccess.OpenTelemetry`) | the command spans still arrive, carrying only `db.system`, `db.odp.roundtrip.count`, `db.odp.roundtrip.duration` and `db.response.returned_rows`; `db.name`, `db.user`, `db.statement`, `server.address`, `server.port`, `db.odp.connection.id`, `db.odp.sql_id` and exception recording stay off |
+| Microsoft.Extensions.AI, Microsoft.Agents.AI, Workflows | `UseOpenTelemetry()` / `WithOpenTelemetry()` | the GenAI sources stay silent |
+
+**MySql.Data needs nothing.** `MySql.Data.OpenTelemetry`'s `AddConnectorNet()` is
+`builder.AddSource("connector-net")` and nothing else, which is exactly what `AddQyl()` already
+does, so there is no opt-in for a consumer to add and no `QYL1002` row for it.
+
+**MySql.Data sends the statement text unmasked.** Its `db.statement` carries the full command text
+on every span, unconditionally, with no option to turn it off — `OTEL_SEMCONV_STABILITY_OPT_IN` is a
+no-op for it and qyl does not strip what a library wrote. The value leaves the process; masking it
+is the collector's job.
 
 ### ASP.NET Core: one server span, and it is the framework's
 
@@ -195,10 +223,11 @@ name after routing, `http.response.status_code`, `error.type` on failure, and th
 and response headers. Each write fills only what is absent, so a runtime that starts setting these
 itself takes them over without a change here.
 
-Four integrations use a framework's public hook instead of either mechanism: HttpClient and the gRPC
-client through `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners`, EF Core through
-`.EntityFrameworkCore`, and `Microsoft.Data.SqlClient` through `.SqlClient`. HttpClient has both an
-interceptor and a listener lane; `QylSignalOwnership` arbitrates so one operation produces one span.
+Two integrations use a framework's public `DiagnosticListener` hook instead of either mechanism:
+EF Core through `.EntityFrameworkCore` and `Microsoft.Data.SqlClient` through `.SqlClient`. Neither
+library declares an `ActivitySource`, so a listener is the only managed hook there is. No signal has
+two qyl lanes any more, which is why there is no arbitration between them: 15.0.0 deleted the last
+pair, HttpClient's.
 
 ### Toggles
 
@@ -239,28 +268,34 @@ Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `
 descendant spans that do not carry one. Remote parents and unrelated trace branches propagate
 nothing, and the copy happens on end, the last moment the ancestor's tag can be observed.
 
+`session.id` is a **span tag and nothing else**. Nothing in `Qyl.Telemetry.Hosting` puts it on the
+wire: an outgoing request carries the trace context and whatever baggage the application itself put
+on `Activity.Current`, which is what `System.Net.Http` propagates. A tag is not baggage, so the
+next process sees the session only if the application put it in baggage on purpose.
+
 qyl's own spans and instruments carry the registry-owned scope names
 `Qyl.Telemetry.AutoInstrumentation` (`ActivitySource`) and
 `Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
 Mirror them in `AddSource(...)`, `AddMeter(...)` or
 `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V14` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V15` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 
 ## Analyzers and generator diagnostics
 
-The source generator reports one diagnostic of its own:
+The source generator reports two diagnostics of its own:
 
 | Id | Severity | Reported when |
 | --- | --- | --- |
 | `QYL1001` | Info | A call site names a declared integration's receiver type and method but its signature does not fit the declared shape, typically because the library changed the signature in a new major. No interceptor is emitted for that call, so it produces no qyl telemetry. Update the declaration or pin the library to a version the shape describes. |
+| `QYL1002` | Info | The compilation uses a library whose native `ActivitySource` qyl subscribes but never makes the call that library needs before it emits, or before it emits in full — see [the opt-in table](#the-libraries-whose-telemetry-the-consumer-turns-on). The message names the call and what is lost without it. |
 
 Skipping in silence would hide the loss of instrumentation, and emitting an interceptor with a
 mismatched signature would break the consumer's build; the diagnostic is the third option.
 
 `Qyl.Telemetry.AutoInstrumentation` also consumes
-`Qyl.Telemetry.SemanticConventions.Analyzers` 9.2.0 with `PrivateAssets="all"`, so the `QYL0xxx`
+`Qyl.Telemetry.SemanticConventions.Analyzers` 9.3.0 with `PrivateAssets="all"`, so the `QYL0xxx`
 rules run over this repository's own sources and ship to no consumer. `Directory.Build.props` sets
 `OtelSemConvInstrumentationLibrary=true`: this is an instrumentation library that version-locks with
 the incubating tier on purpose, so `QYL0008` ("copy incubating constants locally") does not apply.
@@ -276,12 +311,16 @@ container it needs, runs it and asserts the spans and metrics it emitted:
 python3 tools/verify-real-quartz-demo.py
 ```
 
-Six verifiers need Docker, and each names its image in an overridable variable: `masstransit`
+Ten verifiers need Docker, and each names its image in an overridable variable: `masstransit`
 and `rabbitmq` use `QYL_RABBITMQ_IMAGE` (`rabbitmq:4.1-alpine`), `kafka` uses `QYL_KAFKA_IMAGE`
 (`apache/kafka:4.1.0`), `mongodb` uses `QYL_MONGODB_IMAGE` (`mongo:8-noble`), `redis` uses
-`QYL_REDIS_IMAGE` (`redis:8-alpine`), and `sqlclient` uses `QYL_SQLSERVER_IMAGE`
-(`mcr.microsoft.com/mssql/server:2022-latest`, which ships no arm64 image, so that lane runs on x64
-in CI).
+`QYL_REDIS_IMAGE` (`redis:8-alpine`), `npgsql` uses `QYL_POSTGRES_IMAGE` (`postgres:18-alpine`),
+`mysqlconnector` and `mysqldata` use `QYL_MYSQL_IMAGE` (`mysql:9`), `oraclemda` uses
+`QYL_ORACLE_IMAGE` (`gvenzl/oracle-free:23-slim-faststart`), and `sqlclient` uses
+`QYL_SQLSERVER_IMAGE` (`mcr.microsoft.com/mssql/server:2022-latest`, which ships no arm64 image, so
+that lane runs on x64 in CI). The four database verifiers gained their containers in 15.0.0: a
+native source only emits against a real server, where the old interceptor demos proved themselves
+against a connectionless exception.
 
 The complete local gate runs every verifier in order — contract invariants, release and demo
 builds, package layout, public API baselines, generator snapshots, the NativeAOT publish matrix,
@@ -319,7 +358,7 @@ it receives: the library's keys, the vendor keys it passes through and the
 
 `--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is closed by
 changing what the instrumentation writes or by declaring the key in the registry, never by waving it
-through. Against the `v9.2.0` registry the nine lanes report zero violations.
+through. Against the `v9.3.0` registry the lanes report zero violations.
 
 How a finding is *levelled* is the registry's decision, and it takes two flags that must travel
 together:
@@ -368,7 +407,7 @@ and only then creates the GitHub release. A push to `main` builds and verifies t
 workflows and never publishes.
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
-ahead of the rest of qyl: a `14.x` package pairs with `QylGeneratedCodeAbi.V14` and nothing else.
+ahead of the rest of qyl: a `15.x` package pairs with `QylGeneratedCodeAbi.V15` and nothing else.
 
 Two files name the semantic-convention release and they must agree: the
 `Qyl.Telemetry.SemanticConventions` `PackageVersion` in `Directory.Packages.props`, whose generated

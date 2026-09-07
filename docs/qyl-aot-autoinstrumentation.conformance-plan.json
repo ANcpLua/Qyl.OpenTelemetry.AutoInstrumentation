@@ -24,12 +24,15 @@
           "name": "httpclient.downstream",
           "required_attributes": [
             "http.request.method",
-            "http.response.status_code",
             "server.address",
+            "server.port",
+            "url.full",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "network.protocol.version"
+            "http.response.status_code",
+            "network.protocol.version",
+            "error.type"
           ],
           "opt_in_attributes": []
         },
@@ -38,13 +41,15 @@
           "name": "httpclient.self",
           "required_attributes": [
             "http.request.method",
-            "http.response.status_code",
             "server.address",
             "server.port",
+            "url.full",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "network.protocol.version"
+            "http.response.status_code",
+            "network.protocol.version",
+            "error.type"
           ],
           "opt_in_attributes": []
         }
@@ -89,64 +94,68 @@
           "name": "mysqlconnector.command",
           "required_attributes": [
             "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
+            "db.namespace",
+            "db.query.text",
+            "server.address",
+            "server.port",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "network.peer.address",
+            "network.peer.port",
+            "db.connection_id"
           ],
-          "opt_in_attributes": [
-            "db.query.text"
-          ]
+          "opt_in_attributes": []
         },
         {
           "kind": "span",
           "name": "mysqldata.command",
           "required_attributes": [
-            "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
+            "db.system",
+            "db.name",
+            "db.user",
+            "db.statement",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "otel.status_code",
+            "thread.id",
+            "thread.name"
           ],
-          "opt_in_attributes": [
-            "db.query.text"
-          ]
+          "opt_in_attributes": []
         },
         {
           "kind": "span",
           "name": "npgsql.command",
           "required_attributes": [
             "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
+            "db.namespace",
+            "db.query.text",
+            "server.address",
+            "server.port",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "error.type",
+            "db.response.status_code",
+            "db.npgsql.connection_id",
+            "db.npgsql.data_source"
           ],
-          "opt_in_attributes": [
-            "db.query.text"
-          ]
+          "opt_in_attributes": []
         },
         {
           "kind": "span",
           "name": "oraclemda.command",
           "required_attributes": [
-            "db.system.name",
-            "db.operation.name",
-            "db.query.summary",
+            "db.system",
+            "db.odp.roundtrip.count",
+            "db.odp.roundtrip.duration",
             "qyl.instrumentation.domain"
           ],
           "recommended_attributes": [
-            "error.type"
+            "db.response.returned_rows"
           ],
-          "opt_in_attributes": [
-            "db.query.text"
-          ]
+          "opt_in_attributes": []
         },
         {
           "kind": "span",
@@ -190,18 +199,11 @@
           "kind": "span",
           "name": "grpc.client",
           "required_attributes": [
-            "rpc.system.name",
-            "rpc.method",
-            "rpc.response.status_code",
-            "server.address",
+            "grpc.method",
+            "grpc.status_code",
             "qyl.instrumentation.domain"
           ],
-          "recommended_attributes": [
-            "server.port",
-            "network.peer.address",
-            "network.peer.port",
-            "error.type"
-          ],
+          "recommended_attributes": [],
           "opt_in_attributes": []
         }
       ]
@@ -265,12 +267,10 @@
           "name": "graphql.execute",
           "required_attributes": [
             "graphql.operation.name",
+            "graphql.operation.type",
             "qyl.instrumentation.domain"
           ],
-          "recommended_attributes": [
-            "error.type",
-            "graphql.operation.type"
-          ],
+          "recommended_attributes": [],
           "opt_in_attributes": [
             "graphql.document"
           ]

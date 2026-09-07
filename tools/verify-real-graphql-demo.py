@@ -14,6 +14,18 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealGraphQlDemo" / "Qyl.RealGraphQlDemo.csproj"
 TARGET_FRAMEWORK = "net10.0"
 
+# The one exclusion the demo's raw ActivityListener applies: the runtime's own socket / DNS / TLS /
+# connection diagnostics. Any other scope has to appear in an asserted span set.
+EXCLUDED_SCOPE_PREFIX = "Experimental."
+
+# GraphQL.NET's ActivitySource is silent until the application calls UseTelemetry() itself. The
+# opted-in executer produces exactly one span; the identical executer without the opt-in produces
+# none, and qyl's AddSource cannot change that.
+EXPECTED_SPAN_SETS = {
+    "query-with-telemetry": ["GraphQL/Internal"],
+    "query-without-telemetry": [],
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(message)
@@ -34,6 +46,32 @@ def parse_report(stdout: str) -> dict[str, Any]:
     return report
 
 
+def verify_span_sets(name: str, report: dict[str, Any]) -> None:
+    span_sets = report.get("SpanSets")
+    if not isinstance(span_sets, list) or len(span_sets) != len(EXPECTED_SPAN_SETS):
+        fail(f"{name} expected {len(EXPECTED_SPAN_SETS)} operation span sets, got {span_sets!r}")
+
+    for span_set in span_sets:
+        operation = span_set.get("Operation")
+        if operation not in EXPECTED_SPAN_SETS:
+            fail(f"{name} unexpected operation {operation!r} in span sets")
+
+        expected = EXPECTED_SPAN_SETS[operation]
+        # The demo asserts the exact sorted multiset itself; the verifier pins the expected side so
+        # a demo that quietly relaxes its own expectation still fails here.
+        if span_set.get("Expected") != expected:
+            fail(f"{name} operation {operation} expected span set drifted: {span_set.get('Expected')!r} != {expected!r}")
+        if span_set.get("Actual") != expected:
+            fail(f"{name} operation {operation} span set mismatch: {span_set.get('Actual')!r} != {expected!r}")
+
+    excluded = report.get("ExcludedScopes")
+    if not isinstance(excluded, list):
+        fail(f"{name} report is missing ExcludedScopes: {excluded!r}")
+    for scope in excluded:
+        if not isinstance(scope, str) or not scope.startswith(EXCLUDED_SCOPE_PREFIX):
+            fail(f"{name} excluded a scope outside the {EXCLUDED_SCOPE_PREFIX!r} prefix: {scope!r}")
+
+
 def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str) -> None:
     if completed.returncode != 0:
         fail(
@@ -43,10 +81,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
-    for token in [
-        "graphql-success=true",
-        "expected-graphql-error=ArgumentNullException",
-    ]:
+    for token in ["graphql-with-telemetry-success=true", "graphql-without-telemetry-success=true"]:
         if token not in completed.stdout:
             fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
 
@@ -56,9 +91,11 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
+    verify_span_sets(name, report)
+
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 2:
-        fail(f"{name} expected exactly 2 GraphQL activities, got {activities!r}")
+    if not isinstance(activities, list) or len(activities) != 1:
+        fail(f"{name} expected exactly 1 GraphQL activity, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -98,10 +135,9 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    env["OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT"] = "true"
     managed = run_managed(env)
-    nativeaot = run_nativeaot(env)
     verify_report("managed GraphQL demo", managed, "dynamic-code-supported")
+    nativeaot = run_nativeaot(env)
     verify_report("NativeAOT GraphQL demo", nativeaot, "nativeaot")
     print("real-graphql-demo-ok")
 

@@ -38,24 +38,19 @@ Console.WriteLine("metric.sql=" + options.IsInstrumentationEnabled(QylAutoInstru
 Console.WriteLine("log.fallback=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Logs, "UNDECLARED"));
 Console.WriteLine("meters=" + string.Join("|", QylMetricMeters.GetEnabledMeterNames()));
 Console.WriteLine("ef.text=" + options.EntityFrameworkCoreSetDbStatementForText);
-Console.WriteLine("graphql.document=" + options.GraphQlSetDocument);
-Console.WriteLine("oracle.text=" + options.OracleMdaSetDbStatementForText);
 Console.WriteLine("sql.text=" + options.SqlClientSetDbStatementForText);
 Console.WriteLine("aspnetcore.req=" + string.Join("|", options.AspNetCoreCapturedRequestHeaders));
 Console.WriteLine("aspnetcore.res=" + string.Join("|", options.AspNetCoreCapturedResponseHeaders));
-Console.WriteLine("grpc.req=" + string.Join("|", options.GrpcNetClientCapturedRequestMetadata));
-Console.WriteLine("grpc.res=" + string.Join("|", options.GrpcNetClientCapturedResponseMetadata));
-Console.WriteLine("http.req=" + string.Join("|", options.HttpClientCapturedRequestHeaders));
-Console.WriteLine("http.res=" + string.Join("|", options.HttpClientCapturedResponseHeaders));
 Console.WriteLine("aspnetcore.query.unredacted=" + options.AspNetCoreUrlQueryRedactionDisabled);
 Console.WriteLine("http.query.unredacted=" + options.HttpClientUrlQueryRedactionDisabled);
 '''
 
 
 # External-consumer runtime probe: public API only (no IVT — the assembly name is
-# deliberately NOT VerifierProbe). Proves option env vars change EMITTED SPANS,
-# not merely parsed option values: a real HttpClient call through the Hosting runtime
-# listener against a loopback server, asserting url.full redaction on the stopped activity.
+# deliberately NOT VerifierProbe). Proves the one remaining HttpClient option changes an EMITTED
+# span, not merely a parsed option value. The span is the BCL's own now, so the probe listens to
+# System.Net.Http: qyl's contribution is flipping the runtime's System.Net.Http.DisableUriRedaction
+# switch from the upstream opt-out variable, and the observable result is the query in url.full.
 RUNTIME_PROGRAM = r'''
 using System.Diagnostics;
 using System.Net;
@@ -65,7 +60,7 @@ using System.Text;
 var captured = new List<Activity>();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
+    ShouldListenTo = static source => source.Name == "System.Net.Http",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity => captured.Add(activity),
 };
@@ -119,7 +114,7 @@ foreach (var activity in captured)
             Console.WriteLine("url.full=" + value.Replace(":" + port, ":PORT"));
         else if (key.StartsWith("http.request.header.", StringComparison.Ordinal)
                  || key.StartsWith("http.response.header.", StringComparison.Ordinal))
-            Console.WriteLine(key + "=" + value);
+            Console.WriteLine("unexpected-captured-header:" + key + "=" + value);
     }
 }
 '''
@@ -136,15 +131,9 @@ metric.sql=True
 log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.Telemetry.AutoInstrumentation.Database|System.Runtime
 ef.text=False
-graphql.document=False
-oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
-grpc.req=
-grpc.res=
-http.req=
-http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -160,15 +149,9 @@ metric.sql=True
 log.fallback=False
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.Telemetry.AutoInstrumentation.Database|System.Runtime
 ef.text=False
-graphql.document=False
-oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
-grpc.req=
-grpc.res=
-http.req=
-http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -184,15 +167,9 @@ metric.sql=False
 log.fallback=False
 meters=
 ef.text=False
-graphql.document=False
-oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
-grpc.req=
-grpc.res=
-http.req=
-http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -208,15 +185,9 @@ metric.sql=False
 log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.Telemetry.AutoInstrumentation.Database|System.Runtime
 ef.text=False
-graphql.document=False
-oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
-grpc.req=
-grpc.res=
-http.req=
-http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
@@ -232,15 +203,9 @@ metric.sql=True
 log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.Telemetry.AutoInstrumentation.Database|System.Runtime
 ef.text=True
-graphql.document=True
-oracle.text=True
 sql.text=True
 aspnetcore.req=x-core-request|tenant
 aspnetcore.res=x-core-response|etag
-grpc.req=traceparent|authorization
-grpc.res=grpc-status|trailers
-http.req=authorization|x-client
-http.res=set-cookie|server
 aspnetcore.query.unredacted=True
 http.query.unredacted=True
 """
@@ -256,30 +221,18 @@ metric.sql=True
 log.fallback=True
 meters=Microsoft.AspNetCore.Hosting|Microsoft.AspNetCore.Routing|Microsoft.AspNetCore.Diagnostics|Microsoft.AspNetCore.RateLimiting|Microsoft.AspNetCore.HeaderParsing|Microsoft.AspNetCore.Server.Kestrel|Microsoft.AspNetCore.Http.Connections|Microsoft.AspNetCore.Authorization|Microsoft.AspNetCore.Authentication|Microsoft.AspNetCore.Components|Microsoft.AspNetCore.Components.Lifecycle|Microsoft.AspNetCore.Components.Server.Circuits|System.Net.Http|System.Net.NameResolution|Qyl.Telemetry.AutoInstrumentation.Database|System.Runtime|YourCompany.CustomMeter|custom.case.Meter
 ef.text=False
-graphql.document=False
-oracle.text=False
 sql.text=False
 aspnetcore.req=
 aspnetcore.res=
-grpc.req=
-grpc.res=
-http.req=
-http.res=
 aspnetcore.query.unredacted=False
 http.query.unredacted=False
 """
 
 
+# The BCL replaces the whole query with "*", where the deleted qyl span redacted per value.
 RUNTIME_DEFAULT_EXPECTED = """http.status=204
 activity.count=1
-url.full=http://127.0.0.1:PORT/probe?user=Redacted&token=Redacted
-"""
-
-RUNTIME_CAPTURE_EXPECTED = """http.status=204
-activity.count=1
-http.request.header.x-client=abc
-http.response.header.x-server=srv1
-url.full=http://127.0.0.1:PORT/probe?user=Redacted&token=Redacted
+url.full=http://127.0.0.1:PORT/probe?*
 """
 
 RUNTIME_UNREDACTED_EXPECTED = """http.status=204
@@ -422,15 +375,9 @@ def main() -> None:
                 env,
                 {
                     "OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT": "true",
-                    "OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT": "true",
-                    "OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT": "true",
                     "OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT": "true",
                     "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Core-Request,Tenant",
                     "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Core-Response,ETag",
-                    "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA": "TraceParent, Authorization",
-                    "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA": "Grpc-Status, Trailers",
-                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "Authorization, X-Client",
-                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "Set-Cookie, Server",
                     "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION": "true",
                     "OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION": "true",
                 },
@@ -462,32 +409,8 @@ def main() -> None:
         runtime_assembly = runtime_project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Qyl.OpenTelemetry.RuntimeProbe.dll"
 
         assert_scenario(
-            "runtime: default redaction, no header capture",
+            "runtime: the BCL redacts the query of its own url.full",
             run_scenario(runtime_assembly, env, {}),
-            RUNTIME_DEFAULT_EXPECTED,
-        )
-        assert_scenario(
-            "runtime: captured headers on emitted span",
-            run_scenario(
-                runtime_assembly,
-                env,
-                {
-                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "X-Client",
-                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "X-Server",
-                },
-            ),
-            RUNTIME_CAPTURE_EXPECTED,
-        )
-        assert_scenario(
-            "runtime: MCP argument headers excluded from generic capture",
-            run_scenario(
-                runtime_assembly,
-                env,
-                {
-                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS": "Mcp-Param-Region",
-                    "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS": "mcp-param-result",
-                },
-            ),
             RUNTIME_DEFAULT_EXPECTED,
         )
         assert_scenario(

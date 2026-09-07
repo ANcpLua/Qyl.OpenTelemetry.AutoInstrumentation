@@ -16,6 +16,7 @@
     <PackageVersion Include="ErrorProne.NET.CoreAnalyzers" Version="0.9.0-beta.4" />
     <PackageVersion Include="ErrorProne.NET.Structs" Version="0.6.1-beta.1" />
     <PackageVersion Include="GraphQL" Version="8.8.5" />
+    <PackageVersion Include="GraphQL.MicrosoftDI" Version="8.8.5" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.83.0" />
     <PackageVersion Include="Grpc.Net.Client" Version="2.83.0" />
     <!-- MassTransit 9 is commercially licensed (non-transferable, non-sublicensable, no

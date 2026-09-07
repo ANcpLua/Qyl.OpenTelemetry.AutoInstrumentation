@@ -2,17 +2,41 @@
 from __future__ import annotations
 
 import json
+import os
 import platform
 import subprocess
 from pathlib import Path
 from typing import Any
 
+from verify_container_helpers import run_published_container
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealMySqlConnectorDemo" / "Qyl.RealMySqlConnectorDemo.csproj"
-GENERATOR_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
+MYSQL_IMAGE = os.environ.get("QYL_MYSQL_IMAGE", "mysql:9")
+DATABASE = "qyl"
+
+# MySqlConnector picks its attribute flavour from this variable, and the README documents qyl
+# against the stable one. The demo sets it too, so neither side can silently drift.
+STABILITY_OPT_IN = "database"
+
+# The exact sorted multiset of (ActivitySource.Name, Activity.Kind) tuples each operation must
+# produce -- pinned here as well as in the demo, so shrinking the demo's own expectation cannot
+# quietly shrink the evidence. Unlike Npgsql, MySqlConnector traces EVERY Open, pooled or not;
+# closing the connection is what it does not trace.
+EXPECTED_WINDOWS = {
+    "connection-open": ["MySqlConnector|Client"],
+    "select": ["MySqlConnector|Client"],
+    "failing-select": ["MySqlConnector|Client"],
+    "connection-close": [],
+    "pooled-reopen": ["MySqlConnector|Client"],
+}
+
+# The runtime's own socket / DNS / TLS diagnostics are the only spans the demo drops. Any other
+# source -- an OpenTelemetry.Instrumentation.* package, or the deleted qyl DbCommand interceptor --
+# stays in the asserted multiset and fails the gate.
+EXPECTED_EXCLUDED_PREFIXES = ["Experimental."]
 
 
 def fail(message: str) -> None:
@@ -56,8 +80,15 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
-    if completed.stdout.count("expected-mysqlconnector-error=InvalidOperationException") != 2:
-        fail(f"{name} expected exactly 2 MySqlConnector error tokens\nstdout={completed.stdout}")
+    for token in [
+        "connection-state=Open",
+        "select-scalar=1",
+        # ER_BAD_FIELD_ERROR, which the failed span carries in error.type and
+        # db.response.status_code -- but never as an exception event.
+        "expected-mysql-error-number=1054",
+    ]:
+        if token not in completed.stdout:
+            fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
 
     report = parse_report(completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
@@ -65,9 +96,33 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
+    if report.get("ExcludedSourcePrefixes") != EXPECTED_EXCLUDED_PREFIXES:
+        fail(
+            f"{name} excluded prefixes changed: expected={EXPECTED_EXCLUDED_PREFIXES} "
+            f"actual={report.get('ExcludedSourcePrefixes')!r}"
+        )
+
+    operations = report.get("Operations")
+    if not isinstance(operations, list):
+        fail(f"{name} report has no Operations list: {operations!r}")
+
+    observed = {operation.get("Operation"): operation for operation in operations}
+    if set(observed) != set(EXPECTED_WINDOWS):
+        fail(f"{name} operations mismatch: expected={sorted(EXPECTED_WINDOWS)} actual={sorted(observed)}")
+
+    for operation, expected in EXPECTED_WINDOWS.items():
+        window = observed[operation]
+        for field in ("Expected", "Actual"):
+            if window.get(field) != expected:
+                fail(
+                    f"{name} operation {operation!r} {field} was {window.get(field)!r}, expected {expected!r}\n"
+                    f"{json.dumps(report, indent=2, sort_keys=True)}"
+                )
+
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) != 2:
-        fail(f"{name} expected exactly 2 MySqlConnector activities, got {activities!r}")
+    expected_total = sum(len(spans) for spans in EXPECTED_WINDOWS.values())
+    if not isinstance(activities, list) or len(activities) != expected_total:
+        fail(f"{name} expected exactly {expected_total} MySqlConnector activities, got {activities!r}")
 
 
 def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -85,7 +140,6 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(GENERATOR_PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
     output = artifacts_publish_dir(PROJECT, "nativeaot")
     run_checked(
         [
@@ -107,7 +161,9 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
         ROOT,
         env,
     )
-    executable = output / ("Qyl.RealMySqlConnectorDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealMySqlConnectorDemo")
+    executable = output / (
+        "Qyl.RealMySqlConnectorDemo.exe" if platform.system().lower() == "windows" else "Qyl.RealMySqlConnectorDemo"
+    )
     if not executable.exists():
         fail(f"NativeAOT MySqlConnector executable missing: {executable}")
 
@@ -124,9 +180,29 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
+    env["OTEL_SEMCONV_STABILITY_OPT_IN"] = STABILITY_OPT_IN
+    with run_published_container(
+        cwd=ROOT,
+        env=env,
+        name_prefix="mysql",
+        image=MYSQL_IMAGE,
+        container_port=3306,
+        container_env={
+            "MYSQL_ROOT_PASSWORD": DATABASE,
+            "MYSQL_DATABASE": DATABASE,
+            "MYSQL_USER": DATABASE,
+            "MYSQL_PASSWORD": DATABASE,
+        },
+        timeout_seconds=120,
+    ) as mysql:
+        env["QYL_MYSQL_CONNECTION_STRING"] = (
+            f"Server={mysql.host};Port={mysql.port};User ID={DATABASE};"
+            f"Password={DATABASE};Database={DATABASE}"
+        )
+        managed = run_managed(env)
+        nativeaot = run_nativeaot(env)
+
     verify_report("managed MySqlConnector demo", managed, "dynamic-code-supported")
-    nativeaot = run_nativeaot(env)
     verify_report("NativeAOT MySqlConnector demo", nativeaot, "nativeaot")
     print("real-mysqlconnector-demo-ok")
 

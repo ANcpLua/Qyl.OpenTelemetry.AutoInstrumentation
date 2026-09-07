@@ -5,6 +5,164 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [15.0.0] - 2026-09-07
+
+The mapping rule 14.1.0 applied to ASP.NET Core, applied to everything else: **a library with its
+own `ActivitySource` gets `AddSource` plus the qyl domain stamp, and the qyl span for it is
+deleted.** Six integrations produced two spans for one operation; each now produces one. The whole
+release is output changes, so every one of them is named below as old source and span name to new.
+
+### Changed
+
+- **HttpClient: the framework's span is the client span.** `QylInterceptedHttpClient` (the
+  forwarding interceptor) and `HttpClientDiagnosticListener` are both deleted, and `System.Net.Http`
+  is an ordinary row of the native-source table. Source `Qyl.Telemetry.AutoInstrumentation` span
+  `{method}` -> source `System.Net.Http` span `{method}`. The BCL writes `http.request.method`,
+  `server.address`, `server.port`, `url.full`, `http.response.status_code`,
+  `network.protocol.version` and `error.type` itself; `QylNativeSpanProcessor` adds
+  `qyl.instrumentation.domain` = `http.client` and nothing else. Two measured losses, both
+  intentional:
+  - **`url.full` is redacted the BCL's way, not qyl's.** The whole query becomes `?*` where qyl
+    wrote `key=Redacted` per value. And the control changed hands:
+    `OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION` now flips the runtime's own
+    `System.Net.Http.DisableUriRedaction` switch. The query in `url.full` is redacted only while
+    that switch is unset, so a consumer who flips it for their own debugging turns the raw query
+    back on in exported spans — a reach the old qyl-owned control did not have.
+  - **HttpClient request and response header capture is gone.**
+    `OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` and
+    `..._RESPONSE_HEADERS` have no producer: the span is the BCL's and a processor has no
+    `HttpRequestMessage` to read. Both are `not_implemented` in the contract.
+- **`QylSignalOwnership` is deleted.** HttpClient was the one signal two qyl lanes could both
+  produce, and the arbitration existed only for it. With the interceptor and the listener gone there
+  is no second lane to arbitrate against, anywhere.
+- **gRPC client: `Grpc.Net.Client`'s own source, and two spans that are two operations.**
+  `GrpcClientDiagnosticListener` and `GrpcClientPayloadReader` are deleted. Source
+  `Qyl.Telemetry.AutoInstrumentation` span `{method}` -> source `Grpc.Net.Client` span
+  `Grpc.Net.Client.GrpcOut`, with the `System.Net.Http` span as its **child** — an RPC and the HTTP
+  request that carries it are two operations, not a duplicate. The loss is large and measured:
+  grpc-dotnet 2.83.0 emits **no** RPC semantic conventions at all. `rpc.system.name`, `rpc.method`,
+  `rpc.method_original`, `rpc.response.status_code`, `server.address`, `server.port`,
+  `network.peer.*` and `error.type` are gone; the native span carries exactly two vendor keys,
+  `grpc.method` (the full `/service/method` path) and `grpc.status_code` (a decimal **string**), and
+  a failed call is distinguishable from a successful one only by that value — `Activity.Status`
+  stays `Unset`. Captured request and response metadata go with the listener:
+  `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_{REQUEST,RESPONSE}_METADATA` are
+  `not_implemented`.
+- **The four database providers leave the ADO.NET interceptor.** Npgsql, MySqlConnector, MySql.Data
+  and Oracle ODP.NET are named in the ADO.NET declaration's `NativeSourceReceivers`, so a call site
+  on one of those receivers emits no interceptor — and reports no `QYL1001`, because it is not a
+  shape mismatch but a lane that belongs to the library. Source
+  `Qyl.Telemetry.AutoInstrumentation` span `{db.query.summary}`, carrying `db.system.name`,
+  `db.operation.name`, `db.query.summary` and `error.type`, is replaced per provider:
+  - **Npgsql** -> source `Npgsql`, one span per command named `postgresql` (the span name no longer
+    summarises the statement), plus a `CONNECT {database}` span per *physical* connection open.
+    `error.type` and `db.response.status_code` are the **SQLSTATE** (`42703`), not the CLR exception
+    type. Gained: `db.namespace`, `server.address`, `server.port`, `db.npgsql.data_source`,
+    `db.npgsql.connection_id`, a `received-first-response` event and an `exception` event.
+    **`db.query.text` is now unconditional** — Npgsql emits the stable flavour always, there is no
+    option to turn it off, and qyl does not strip what a library wrote.
+  - **MySqlConnector** -> source `MySqlConnector`, one `Execute` span per command and one `Open`
+    span per `Open()` call, pooled or not. A failed command reports `error.type` and
+    `db.response.status_code` as the **MySQL error number** (`1054`), with `Activity.Status` `Error`
+    and `StatusDescription` the `MySqlErrorCode` name (`BadFieldError`); what it does not emit is an
+    `exception` event, so the CLR exception type, message and stack trace never leave the process.
+    The attribute flavour is the consumer's environment:
+    without `OTEL_SEMCONV_STABILITY_OPT_IN=database` the span carries `db.system`, `db.name`,
+    `db.statement` and `net.peer.*` instead of `db.system.name`, `db.namespace`, `db.query.text`
+    and `server.*`. This is documented, not mapped — a processor that rewrote them would be
+    inventing convention data the library did not emit.
+  - **MySql.Data** -> source `connector-net`, one span per command, and every one of them is named
+    `SQL Statement`. It reports failure as `otel.status_code` = `ERROR` plus an `exception` event
+    while leaving `Activity.Status` `Unset`, so an exporter that reads the status sees a failed
+    command as OK. It sets `db.statement` to the full command text unconditionally. A physical
+    connection open additionally emits five `SQL Statement` spans for the driver's own handshake
+    queries and one `Connection (pooled)` span that stops at `Close`.
+  - **Oracle ODP.NET** -> source `Oracle.ManagedDataAccess.Core`, **two** spans per command: a root
+    named after the method (`ExecuteScalar`) and its child `SendExecuteRequest`. Without the
+    `Oracle.ManagedDataAccess.OpenTelemetry` add-on the whole vocabulary is `db.system`,
+    `db.odp.roundtrip.count`, `db.odp.roundtrip.duration` (a `TimeSpan`) and
+    `db.response.returned_rows`; `db.name`, `db.user`, `db.statement`, `server.address`,
+    `server.port` and `error.type` are gone. `QYL1002` says so at compile time.
+    `OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT` is `not_implemented`: ODP.NET's own
+    `SetDbStatementForText` owns that decision now.
+  - **`db.client.operation.duration` is no longer produced for Npgsql.** The interceptor was its
+    only producer, exactly as with the NServiceBus histogram in 14.0.0, so `signals.metrics.NPGSQL`
+    becomes `control_bound`: a consumer who wants Npgsql's own instruments registers them through
+    `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES`. SqlClient, ADO.NET and Sqlite keep producing it.
+- **GraphQL.NET** -> source `GraphQL`. `QylInterceptedGraphQl` and its GraphQL document parser are
+  deleted. It is the third bucket: the source stays silent until the application calls
+  `UseTelemetry()` on its own `IGraphQLBuilder`, and qyl does not call it — an interceptor that did
+  would be the mechanism this rule removes. `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` is
+  `not_implemented`; GraphQL.NET's own `UseTelemetry(o => o.RecordDocument)` owns the document.
+- **`AddQyl()` is idempotent.** Every call used to queue another `WithTracing`/`WithMetrics`/logging
+  callback, so an application that called it and then called something that calls it — `AddQylApi`
+  does — built two `BatchExportProcessor` + `OtlpExporter` pairs, two `QylSessionSpanProcessor` and
+  two `QylNativeSpanProcessor`, and exported every span twice. A marker service registered with
+  `TryAdd` makes the second call return the builder untouched. **First call wins**; a later call's
+  `QylSdkOptions` are ignored, silently, because the composing library and the application both ask
+  for the defaults and neither is wrong.
+- **`AddQyl()` no longer blocks on collector discovery.** The probe cost about 400 ms — four 100 ms
+  TCP connect attempts plus a DNS lookup for `qyl` — on the caller's thread in every process without
+  a reachable collector, which is a cold-start cost every Qyl API pays. Discovery now starts on the
+  thread pool and the exporter reads its result in the options callback the SDK invokes when it
+  builds the pipeline; `AddQyl` itself touches no socket. `RequireConfiguredEndpoint` keeps its
+  meaning — no endpoint means do not export — and is the one caller that still resolves the probe
+  eagerly, because for it the exporter is either registered or it is not.
+- **`AddQyl()` deduplicates `AdditionalSources` and `AdditionalMeters`** against what it already
+  subscribed, so a consumer naming `System.Net.Http` again does not double-subscribe.
+- **`session.id` is a span tag and never baggage.** The README and the `AddQyl` summary said it was
+  "propagated across traces"; nothing in `Qyl.Telemetry.Hosting` puts it on the wire. It is copied
+  onto the descendants of a tagged span within the process, and the next process sees it only if
+  the application put it in baggage itself.
+
+### Removed
+
+- `QylInterceptedHttpClient`, `QylInterceptedGraphQl`, `HttpClientDiagnosticListener`,
+  `GrpcClientDiagnosticListener`, `GrpcClientPayloadReader`, `HttpSemantics`, `QylGrpcSemantics`
+  and `QylSignalOwnership`.
+- The `HttpClient` and `GraphQlExecute` shape predicates and the `Forward` interceptor body
+  template: no declaration selects them any more, so they are gone from `QylShapes`,
+  `QylInterceptorBody` and the generator. `QylInterceptorBody.DbCommand` changes value from `2`
+  to `1`.
+- **The last reflection in the productive code.** `GrpcClientPayloadReader` was the one sanctioned
+  `System.Reflection` site in the whole package family, and it went with the listener it served.
+  The contract-invariants gate no longer carries an exception for it.
+- The `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners` package loses its HttpClient and
+  gRPC lanes. What remains of it is the base subscriber and the shared semantics helpers that the
+  EF Core and SqlClient packages build on.
+
+### Added
+
+- **`QYL1002`**, an `Info` diagnostic from the source generator: a compilation uses a library whose
+  native `ActivitySource` qyl subscribes but never makes the call that library needs before it
+  emits, or before it emits in full. One parameterised id, one table: GraphQL.NET's
+  `IGraphQLBuilder.UseTelemetry()` (without it, no spans at all) and ODP.NET's
+  `AddOracleDataProviderInstrumentation()` (without it, the four-key vocabulary above). The
+  generator is the only qyl component that sees the consumer's call sites, so it is the only one
+  that can tell "this application uses the library" from "this application opted its telemetry in".
+  **MySql.Data has no row on purpose**: `MySql.Data.OpenTelemetry`'s `AddConnectorNet()` is
+  `AddSource("connector-net")` and nothing else, which is exactly what `AddQyl()` already does.
+- `QylIntercept.NativeSourceReceivers`, the declaration data that keeps the ADO.NET interceptor off
+  the four providers whose own source qyl subscribes.
+- A `native_source` lane in the ownership contract, replacing `framework_initialization`: the name
+  now says what the row means — the library owns the `ActivitySource`, `Qyl.Telemetry.Hosting`
+  subscribes it, `QylNativeSpanProcessor` stamps the domain, and nothing is intercepted or
+  rewritten. Fifteen rows carry it. A `native_source` row must name the source table, the processor
+  and a real demo verifier as evidence, which the gate checks.
+
+### Gates
+
+- Every touched `verify-real-*-demo.py` asserts the **exact** multiset of `(scope, kind)` tuples for
+  each operation across **all** scopes, not a filtered view of one scope: a third source producing a
+  span for the same operation fails the gate. The only excluded prefix is `Experimental.`, the
+  runtime's own socket, DNS, TLS and connection diagnostics, which qyl never subscribes.
+- The generator snapshot fixture moves off `HttpClient.GetAsync` to `DbCommand.ExecuteScalar` — the
+  ADO.NET lane is what stays an interceptor — and `QYL1001` is proven there.
+- The semantic-convention pin moves to `9.3.0`, which adds the `Grpc.Net.Client` vendor source
+  constant and the `grpc.method` / `grpc.status_code` vendor keys, and removes the `qyl.http.client`
+  event: it had no producer — its only use was an event-name comparison inside the deleted
+  HttpClient listener, and it was never emitted as a span event at all.
+
 ## [14.1.0] - 2026-09-07
 
 ### Changed

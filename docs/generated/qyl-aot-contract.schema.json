@@ -120,8 +120,8 @@
       "lane": {
         "enum": [
           "environment_control",
-          "framework_initialization",
           "instrumentation_option",
+          "native_source",
           "not_implemented",
           "official_library_hook",
           "runtime_public_telemetry",
@@ -284,8 +284,8 @@
         "lane": {
           "enum": [
             "environment_control",
-            "framework_initialization",
             "instrumentation_option",
+            "native_source",
             "not_implemented",
             "official_library_hook",
             "runtime_public_telemetry",
@@ -513,8 +513,8 @@
         "lane": {
           "enum": [
             "environment_control",
-            "framework_initialization",
             "instrumentation_option",
+            "native_source",
             "not_implemented",
             "official_library_hook",
             "runtime_public_telemetry",
@@ -744,8 +744,8 @@
         "lane": {
           "enum": [
             "environment_control",
-            "framework_initialization",
             "instrumentation_option",
+            "native_source",
             "not_implemented",
             "official_library_hook",
             "runtime_public_telemetry",

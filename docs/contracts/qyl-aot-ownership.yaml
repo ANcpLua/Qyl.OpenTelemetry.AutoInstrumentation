@@ -68,18 +68,18 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_004
   key: signals.traces.AZURE
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
   primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
+  - demos/Qyl.RealAzureDemo
   - src/Qyl.Telemetry.AutoInstrumentation/QylInstrumentation.cs
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealAzureDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-azure-demo.py
   conformance_signals:
   - kind: span
@@ -92,17 +92,17 @@ ownership_items:
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
   key: signals.traces.ELASTICSEARCH
   supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the Elastic.Transport ActivitySource the client enriches
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
   primary_owner: Elastic.Transport's ActivitySource enriched by Elastic.Clients.Elasticsearch, enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealElasticsearchDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealElasticsearchDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-elasticsearch-demo.py
   conformance_signals:
   - kind: span
@@ -117,17 +117,17 @@ ownership_items:
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
   key: signals.traces.ELASTICTRANSPORT
   supported_versions: Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
   primary_owner: Elastic.Transport's own Elastic.Transport ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealElasticTransportDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealElasticTransportDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-elastictransport-demo.py
   conformance_signals:
   - kind: span
@@ -165,91 +165,92 @@ ownership_items:
     - db.query.text
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_008
   key: signals.traces.GRAPHQL
-  lane: source_interceptor
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: user_code
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: GraphQL.NET's own GraphQL ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealGraphQlDemo
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-graphql-demo.py
   conformance_signals:
   - kind: span
     name: graphql.execute
     required_attributes:
     - graphql.operation.name
-    - qyl.instrumentation.domain
-    recommended_attributes:
-    - error.type
     - graphql.operation.type
+    - qyl.instrumentation.domain
+    recommended_attributes: []
     opt_in_attributes:
     - graphql.document
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
   key: signals.traces.GRPCNETCLIENT
-  lane: runtime_public_telemetry
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: both
-  payload_access: aot_reflection
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: GrpcClientDiagnosticListener
+  primary_owner: Grpc.Net.Client's own Grpc.Net.Client ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners
-  - src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners/GrpcClient/GrpcClientPayloadReader.cs
   - demos/Qyl.RealGrpcClientDemo
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-grpc-client-demo.py
   conformance_signals:
   - kind: span
     name: grpc.client
     required_attributes:
-    - rpc.system.name
-    - rpc.method
-    - rpc.response.status_code
-    - server.address
+    - grpc.method
+    - grpc.status_code
     - qyl.instrumentation.domain
-    recommended_attributes:
-    - server.port
-    - network.peer.address
-    - network.peer.port
-    - error.type
+    recommended_attributes: []
     opt_in_attributes: []
+
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
   key: signals.traces.HTTPCLIENT
-  lane: runtime_public_telemetry
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: both
   payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: Qyl public telemetry listeners/meters
+  primary_owner: the .NET runtime's own System.Net.Http ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners
   - demos/Qyl.RealHttpClientDemo
-  - tools/verify-real-http-client-demo.py
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-otlp-receiver.py
+  - tools/verify-real-http-client-demo.py
   conformance_signals:
   - kind: span
     name: httpclient.downstream
     required_attributes:
     - http.request.method
-    - http.response.status_code
     - server.address
+    - server.port
+    - url.full
     - qyl.instrumentation.domain
     recommended_attributes:
+    - http.response.status_code
     - network.protocol.version
+    - error.type
     opt_in_attributes: []
   - kind: span
     name: httpclient.self
     required_attributes:
     - http.request.method
-    - http.response.status_code
     - server.address
     - server.port
+    - url.full
     - qyl.instrumentation.domain
     recommended_attributes:
+    - http.response.status_code
     - network.protocol.version
+    - error.type
     opt_in_attributes: []
+
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_011
   key: signals.traces.KAFKA
   lane: source_interceptor
@@ -266,17 +267,17 @@ ownership_items:
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   key: signals.traces.MASSTRANSIT
   supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
   primary_owner: MassTransit's own MassTransit ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealMassTransitDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealMassTransitDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-masstransit-demo.py
   conformance_signals:
   - kind: span
@@ -291,149 +292,163 @@ ownership_items:
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
   key: signals.traces.MONGODB
   supported_versions: MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver"
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_managed
   primary_owner: MongoDB.Driver's own MongoDB.Driver ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealMongoDbDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealMongoDbDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-mongodb-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
   key: signals.traces.MYSQLCONNECTOR
-  lane: source_interceptor
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: user_code
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: MySqlConnector's own MySqlConnector ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlConnectorDemo
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-mysqlconnector-demo.py
   conformance_signals:
   - kind: span
     name: mysqlconnector.command
     required_attributes:
     - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - db.namespace
+    - db.query.text
+    - server.address
+    - server.port
     - qyl.instrumentation.domain
     recommended_attributes:
     - error.type
-    opt_in_attributes:
-    - db.query.text
+    - db.response.status_code
+    - network.peer.address
+    - network.peer.port
+    - db.connection_id
+    opt_in_attributes: []
+
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
   key: signals.traces.MYSQLDATA
-  lane: source_interceptor
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: user_code
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: MySql.Data's own connector-net ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealMySqlDataDemo
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-mysqldata-demo.py
   conformance_signals:
   - kind: span
     name: mysqldata.command
     required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - db.system
+    - db.name
+    - db.user
+    - db.statement
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
-    opt_in_attributes:
-    - db.query.text
+    - otel.status_code
+    - thread.id
+    - thread.name
+    opt_in_attributes: []
+
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
   key: signals.traces.NPGSQL
-  lane: source_interceptor
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: user_code
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Npgsql's own Npgsql ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealNpgsqlDemo
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-npgsql-demo.py
   conformance_signals:
   - kind: span
     name: npgsql.command
     required_attributes:
     - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - db.namespace
+    - db.query.text
+    - server.address
+    - server.port
     - qyl.instrumentation.domain
     recommended_attributes:
     - error.type
-    opt_in_attributes:
-    - db.query.text
+    - db.response.status_code
+    - db.npgsql.connection_id
+    - db.npgsql.data_source
+    opt_in_attributes: []
+
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
   key: signals.traces.NSERVICEBUS
   supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; native ActivitySource "NServiceBus.Core"
     (enabled by default from v10)
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_managed
   primary_owner: NServiceBus's own NServiceBus.Core ActivitySource enabled by Qyl.Telemetry.Hosting,
     with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealNServiceBusDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealNServiceBusDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-nservicebus-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
   key: signals.traces.ORACLEMDA
-  lane: source_interceptor
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: user_code
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator
+  primary_owner: Oracle ODP.NET's own Oracle.ManagedDataAccess.Core ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
   - demos/Qyl.RealOracleMdaDemo
+  - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-oraclemda-demo.py
   conformance_signals:
   - kind: span
     name: oraclemda.command
     required_attributes:
-    - db.system.name
-    - db.operation.name
-    - db.query.summary
+    - db.system
+    - db.odp.roundtrip.count
+    - db.odp.roundtrip.duration
     - qyl.instrumentation.domain
     recommended_attributes:
-    - error.type
-    opt_in_attributes:
-    - db.query.text
+    - db.response.returned_rows
+    opt_in_attributes: []
+
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
   key: signals.traces.RABBITMQ
   supported_versions: RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources "RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber"
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_nativeaot
   primary_owner: RabbitMQ.Client's own publisher and subscriber ActivitySources enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealRabbitMqDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealRabbitMqDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-rabbitmq-demo.py
   conformance_signals:
   - kind: span
@@ -451,17 +466,17 @@ ownership_items:
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ
   supported_versions: Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" (3.x used DiagnosticListener and has none)
-  lane: framework_initialization
+  lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
-  payload_access: not_applicable
+  payload_access: typed_public
   evidence_level: verified_managed
   primary_owner: Quartz's own Quartz ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
+  - demos/Qyl.RealQuartzDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
-  - demos/Qyl.RealQuartzDemo
+  - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-quartz-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
   key: signals.traces.SQLCLIENT
@@ -673,27 +688,15 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
   key: signals.metrics.NPGSQL
-  lane: source_interceptor
-  qyl_status: implemented
-  call_site_visibility: user_code
+  lane: environment_control
+  qyl_status: control_bound
+  call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationGenerator + QylDbClientMetrics
+  evidence_level: verified_managed
+  primary_owner: QylAutoInstrumentationOptions
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylDbClientMetrics.cs
-  - tools/verify-source-interceptor-consumer.py
-  - demos/Qyl.RealSqlClientDemo
-  - tools/verify-real-sqlclient-demo.py
-  - demos/Qyl.RealNpgsqlDemo
-  - tools/verify-real-npgsql-demo.py
-  conformance_signals:
-  - kind: metric
-    name: db.client.operation.duration
-    required_attributes:
-    - db.system.name
-    recommended_attributes: []
-    opt_in_attributes: []
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - tools/verify-contract-invariants.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
   key: signals.metrics.NSERVICEBUS
   supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core
@@ -898,30 +901,22 @@ ownership_items:
   - tools/verify-real-efcore-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
   key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: not_implemented
+  qyl_status: research_required
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - demos/Qyl.RealGraphQlDemo
-  - tools/verify-real-graphql-demo.py
+  evidence_level: none
+  primary_owner: "unowned: GraphQL.NET's own UseTelemetry(o => o.RecordDocument) owns the document now; the qyl span that read this variable is deleted."
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_047
   key: instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: not_implemented
+  qyl_status: research_required
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - demos/Qyl.RealOracleMdaDemo
-  - tools/verify-real-oraclemda-demo.py
+  evidence_level: none
+  primary_owner: "unowned: ODP.NET's own add-on option SetDbStatementForText owns db.statement now; the qyl span that read this variable is deleted."
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_048
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
   lane: instrumentation_option
@@ -985,54 +980,40 @@ ownership_items:
   - tools/verify-real-aspnetcore-demo.py
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: not_implemented
+  qyl_status: research_required
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - demos/Qyl.RealGrpcClientDemo
-  - tools/verify-real-grpc-client-demo.py
+  evidence_level: none
+  primary_owner: "unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it."
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_054
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: not_implemented
+  qyl_status: research_required
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_nativeaot
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - demos/Qyl.RealGrpcClientDemo
-  - tools/verify-real-grpc-client-demo.py
+  evidence_level: none
+  primary_owner: "unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it."
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_055
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: not_implemented
+  qyl_status: research_required
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-environment-options-behavior.py
+  evidence_level: none
+  primary_owner: "unowned: The outbound HTTP span is the BCL's; a processor has no HttpRequestMessage, so qyl can capture no header onto it."
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_056
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
-  lane: instrumentation_option
-  qyl_status: option_bound
+  lane: not_implemented
+  qyl_status: research_required
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: verified_managed
-  primary_owner: QylAutoInstrumentationOptions
-  evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-environment-options-behavior.py
+  evidence_level: none
+  primary_owner: "unowned: The outbound HTTP span is the BCL's; a processor has no HttpResponseMessage, so qyl can capture no header onto it."
+  evidence: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_057
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
   lane: instrumentation_option

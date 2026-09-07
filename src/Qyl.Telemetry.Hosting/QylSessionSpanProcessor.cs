@@ -5,7 +5,7 @@ using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attribute
 namespace Qyl;
 
 /// <summary>
-/// Propagates the qyl session key across a trace. Applications stamp <c>session.id</c> on one
+/// Copies the qyl session key down a trace, in-process. Applications stamp <c>session.id</c> on one
 /// span (typically the request handler); qyl groups spans into sessions per span, so without
 /// propagation the tagged span's children — including the GenAI spans that carry token usage —
 /// would fall back to trace-keyed sessions.
