@@ -5,6 +5,110 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [14.0.0] - 2026-09-07
+
+Two waves in one release. Seven libraries stopped being intercepted and are subscribed to
+instead, and the semantic conventions moved to the Weaver-only 9.0.0 registry. No `13.0.0` was
+published: the native-source wave landed on `main` after the `v12.0.0` tag and never got a tag of
+its own, so it ships here.
+
+### Breaking changes
+
+- **BREAKING: seven libraries emit their own spans now, not qyl's.** The rule is one question —
+  does `AddSource("<name>")` alone deliver spans? — and where the answer is yes the interceptor is
+  deleted and `Qyl.Telemetry.Hosting` subscribes to the library's `ActivitySource`, with one
+  processor stamping `qyl.instrumentation.domain`. Every consumer dashboard keyed on the old
+  source or span name has to move. Per library, old to new:
+
+  | Library | Was | Is |
+  | --- | --- | --- |
+  | MassTransit | `Qyl.Telemetry.AutoInstrumentation` span `publish` / `send` | `MassTransit` span `{destination} send` |
+  | Elastic.Transport | `Qyl.Telemetry.AutoInstrumentation` span `request` | `Elastic.Transport` span named after the HTTP method |
+  | Elasticsearch | `Qyl.Telemetry.AutoInstrumentation` span `request` | `Elastic.Transport` span named after the client operation |
+  | RabbitMQ.Client | `Qyl.Telemetry.AutoInstrumentation` span `publish {exchange}:{routing_key}` | `RabbitMQ.Client.Publisher` span `publish {routing_key}`, plus `RabbitMQ.Client.Subscriber` `deliver` and `fetch` |
+  | MongoDB.Driver | `Qyl.Telemetry.AutoInstrumentation` span `{operation} {collection}` | two nested `MongoDB.Driver` spans, an operation span and the wire-command span beneath it |
+  | Quartz | `Qyl.Telemetry.AutoInstrumentation` span `{group}.{name}` | `Quartz` span `Quartz.Job.Execute`, plus `Quartz.Job.Veto` and the job-store spans |
+  | NServiceBus | `Qyl.Telemetry.AutoInstrumentation` spans `send` / `publish` | `NServiceBus.Core` spans `send message` and `publish event`, plus `process message` and a span per handler type |
+
+  What the native spans do not carry is not reconstructed. MassTransit reports the transport in
+  `messaging.system` (`rabbitmq`, not the qyl-owned `masstransit`) and the deprecated
+  `messaging.operation`, always `send`, so `Publish` and `Send` are no longer distinguishable.
+  Elastic.Transport emits no database conventions of its own. NServiceBus emits no messaging
+  conventions at all and reports failure as `otel.status_code`. `error.type` is gone from all
+  seven. In exchange the vendor namespaces arrive — `messaging.masstransit.*`,
+  `elastic.transport.*`, `quartz.*`, `nservicebus.*`, `db.mongodb.*`,
+  `messaging.rabbitmq.delivery_tag` — and so do the consumer-side spans the interceptors never
+  produced.
+
+- **BREAKING: `nservicebus.messaging.operation.duration` and the
+  `Qyl.Telemetry.AutoInstrumentation.NServiceBus` meter are gone.** The interceptor was the
+  histogram's only producer. NServiceBus publishes its own instruments on `NServiceBus.Core` and
+  `NServiceBus.Core.Pipeline.Incoming`; a consumer that wants them registers them through
+  `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES`, exactly as for the native `Npgsql` meter.
+  `signals.metrics.NSERVICEBUS` becomes `control_bound`.
+
+- **BREAKING: the instrumentation no longer normalises what a library emitted.** It writes
+  `qyl.instrumentation.domain` and nothing else onto a native span. Three normalisers are deleted
+  rather than moved:
+  - CoreWCF's deprecated `rpc.system` is exported as CoreWCF wrote it. The collector's
+    `AttributeMapping.TryGetRename` maps it to `rpc.system.name`.
+  - Azure SDK spans keep `url.full` and the namespace-qualified `error.type`
+    (`Azure.RequestFailedException`, not `RequestFailedException`).
+  - Elastic.Transport and Elasticsearch share one source and now one domain, `elastic.transport`.
+    `qyl.instrumentation.domain` no longer resolves to `db.elasticsearch` per span:
+    `elastic.transport.product.name` is a vendor pass-through key in the 9.0.0 registry, so the
+    distinction is drawn where the mapping table is.
+
+- **BREAKING: the generated-code ABI anchor moves from `QylGeneratedCodeAbi.V12` to
+  `QylGeneratedCodeAbi.V14`**, tracking the package major. Generated interceptors built against a
+  `12.x` runtime fail to compile against `14.x` rather than binding to it.
+
+### Changed
+
+- The semantic-convention pin moves to `9.0.0` across `Qyl.Telemetry.SemanticConventions`,
+  `.Incubating` and `.Analyzers`. Weaver is the only generator behind them and the four-package
+  family becomes three — `.SourceGeneration` is retired at `8.1.0`, and this repository never
+  referenced it. Every constant read here keeps its name.
+- `db.client.operation.duration` is created from
+  `Metrics.DbMetricDefinitions.DbClientOperationDuration`, name and unit together. `QylMetricNames`
+  held nothing else and is deleted; no metric name is spelled in this repository any more.
+- `DESIGN.md` is deleted. Its audit is a section of the workspace `DECISIONS.md`; the version
+  floors it owned belong in the registry's vendor annotations, and `supported_versions` in
+  `docs/contracts/` is the generated copy that remains.
+
+### Added
+
+- **`live check`**, a gate that judges what this package emits against the registry it pins.
+  `tools/verify-live-check.py` starts `weaver registry live-check`, points the nine native-source
+  demo lanes at its OTLP listener and exits with weaver's verdict at `--fail-on violation`;
+  `.github/workflows/live-check.yml` runs it with Weaver `0.26.1` pinned by commit and the registry
+  checked out at the tag the package pin names. There is no allowlist in the gate.
+
+  Its first run reports no key this package writes. Every finding is a library's own output on a
+  span qyl subscribes to, and the fix for each is a registry declaration, not a rewrite here:
+
+  | Source | Finding |
+  | --- | --- |
+  | `CoreWCF.Primitives` | `rpc.system` deprecated for `rpc.system.name`; `soap.message_version`, `soap.reply_action`, `wcf.channel.path`, `wcf.channel.scheme` undeclared |
+  | `Azure.*` | `az.namespace` deprecated for `azure.resource_provider.namespace`; `az.schema_url`, `az.client_request_id` undeclared |
+  | `Elastic.Transport` | `db.system` deprecated for `db.system.name`; `db.operation` deprecated for `db.operation.name`; `db.elasticsearch.schema_url` undeclared |
+  | `MassTransit` | `messaging.operation` deprecated for `messaging.operation.type`; `messaging.message.body.size` written as a string where the registry types it `int` |
+  | `NServiceBus.Core` | `exception.escaped`, obsoleted with no replacement |
+
+  `Quartz`, `RabbitMQ.Client.Publisher` and `Qyl.Telemetry.AutoInstrumentation` itself report none.
+  `MongoDB.Driver` is unreported: `mongo:8-noble` refuses to start on a Linux kernel 6.19 or newer
+  (SERVER-121912), so that lane did not run on the machine this list was taken from.
+
+- Two enforcers in `verify-contract-invariants.py`. `verify_system_value_contract` fails when a
+  `messaging.system`, `rpc.system.name` or `db.system.name` value is written as a literal, or when
+  an emitting source spells a registry system value at all; the one recorded gap is `dotnet_wcf`,
+  which `rpc.system.name` does not enumerate, allowed by file and required to keep the comment
+  naming the gap. `verify_metric_contract` now requires every instrument to be created from a
+  `MetricDefinition` row rather than from a constants file.
+- The demo lane reads `QYL_LIVE_CHECK_ENDPOINT` for its collector endpoint, which is how the live
+  check receives what the demos assert on. `Qyl.RealCoreWcfDemo` disposes its host instead of only
+  stopping it, so its exporter flushes.
+
 ## [12.0.0] - 2026-09-04
 
 Every third-party pin moves to its current latest stable in one wave. One of those

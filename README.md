@@ -25,7 +25,7 @@ Add the package that owns the integration you need. The supported zero-configura
 consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
 
 The family ships as one line; `Directory.Build.props` owns its version and
-`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: a `12.x` package pairs with `QylGeneratedCodeAbi.V12`
+`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: a `14.x` package pairs with `QylGeneratedCodeAbi.V14`
 and nothing else, which is why the number is ahead of the rest of qyl and does not move
 with the product version.
 
@@ -33,9 +33,10 @@ with the product version.
 `Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
 updated further; change the ID and take the current version. `Qyl.Telemetry.Hosting` is the
 successor to `Qyl.Sdk`, and `builder.AddQyl()` is
-unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V12` in the
+unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V14` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — the anchor tracks the
-package major, so it moved from `V11` with the 12.0.0 line — so a stale generated
+package major, so it moved from `V12` with the 14.0.0 line, and no `13.x` was ever
+published — so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
 misbehaving. The emitted scope names move to the package family in 10.0.0: the
 `ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the qyl meter is
@@ -200,12 +201,6 @@ signal-specific variable to `false` to disable it:
 The global `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` and per-signal
 `OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_INSTRUMENTATION_ENABLED` switches still take
 precedence.
-
-## Design
-
-`DESIGN.md` records how a library gets instrumented: whether `AddSource("<name>")` alone delivers
-spans decides between subscribing to the library's own `ActivitySource` and generating a Roslyn
-interceptor, and the audit behind that decision per library.
 
 ## Coverage and evidence
 
