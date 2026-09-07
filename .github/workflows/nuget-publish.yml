@@ -385,18 +385,28 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+      # github.token cannot create a release here — v15.0.0 got HTTP 403 "Resource not accessible by
+      # integration" from it while this job already declared contents: write and the repository's
+      # default workflow permission was write. The restriction is on the Actions token itself, so
+      # the release needs a token supplied explicitly. RELEASE_TOKEN is that PAT; without the
+      # secret the step says so and fails rather than retrying the token that is known not to work.
       - name: Tag and create the GitHub release after published-consumer proof
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "RELEASE_TOKEN is not set; github.token cannot create releases in this repository" >&2
+            exit 1
+          fi
           tag="v$VERSION"
           if gh release view "$tag" >/dev/null 2>&1; then
             echo "release $tag already exists"
           else
+            # --verify-tag: the tag is created by the push that triggered this run, never invented here.
             gh release create "$tag" \
-              --target "${{ github.sha }}" \
+              --verify-tag \
               --generate-notes \
               --title "$tag"
           fi
