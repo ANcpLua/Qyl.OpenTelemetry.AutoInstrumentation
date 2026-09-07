@@ -5,6 +5,56 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [14.0.1] - 2026-09-07
+
+`14.0.0` was tagged and never published: its release gate failed in the `verify` job, which ran
+the live check without weaver on `PATH` and without the pinned registry. nuget.org still tops out
+at `12.0.0`, so `14.0.1` is the first release of this wave and carries everything the `14.0.0`
+entry below describes, plus the three changes here.
+
+### Fixed
+
+- **The live check stopped judging spans partway through and still passed.** weaver's
+  `--inactivity-timeout` was 60s, shorter than the silence between two lanes: nothing reaches the
+  listener while the MassTransit lane pulls RabbitMQ and NativeAOT-publishes. The listener
+  self-terminated — 184s in, exit code 0 — port 4317 closed, and every lane after it exported into
+  a closed port while still passing its own in-memory assertions. Four bounds close it. The
+  inactivity timeout is derived from a new per-lane bound and larger than it, so the lane bound is
+  always the enforcer and weaver cannot end the run. The lane subprocess carries that bound, so a
+  hung demo is reported rather than waited on. The listener is polled before and after every lane,
+  and one that has exited stops the gate with weaver's own exit code — with weaver's `0` reported
+  as `1`, because an inactivity exit is exactly the case that must not read as success. And the
+  CoreWCF demo, the one lane with no explicit flush, force-flushes with the same 5s bound the
+  other eight use instead of relying on host disposal, which shuts the batch processor down with
+  `Timeout.Infinite`.
+
+### Changed
+
+- **The registry levels a live-check finding, not this repository.** The gate runs
+  `weaver registry live-check` with both halves of the policy set the pinned semantic-convention
+  release owns: `--config registry/.weaver.toml` drops weaver's built-in deprecated, type and enum
+  findings by id — those advisors are compiled into the binary and emit at a level no policy can
+  lower — and `--advice-policies registry/policies/live_check_advice` re-issues them at the level
+  the registry chose. An open enum carrying `_OTHER` is information, a renamed or obsoleted key a
+  library emits is an improvement, a type mismatch whose value parses is an improvement.
+  `--fail-on violation` is unchanged and there is no allowlist in the gate; a pin missing either
+  half fails it rather than silently restoring weaver's own verdict. Against the `v9.1.0` registry
+  the demo lanes report 403 advisories — 364 improvement, 39 information, zero violations.
+- **The semantic-convention pin moves to `9.1.0`** across `Qyl.Telemetry.SemanticConventions`,
+  `.Incubating` and `.Analyzers`. It brings the vendor models for the keys the first live-check run
+  found undeclared — `soap.*` and `wcf.channel.*` from CoreWCF, `az.schema_url` and
+  `az.client_request_id` from Azure.Core, `db.elasticsearch.schema_url` from the Elasticsearch
+  client — and publishes `Azure.*` and `CoreWCF.Primitives` as
+  `QylTelemetryNames.VendorActivitySources` constants. `QylTelemetrySources` typed both by hand;
+  no `ActivitySource` name is a literal in this repository any more.
+- **The gate fails when the registry checkout and the package pin are different releases.** The ref
+  is named in two workflows and the version in `Directory.Packages.props`, and nothing tied them
+  together; judging spans against a registry other than the one whose constants the code compiled
+  against would have looked like a green gate.
+- The README gains a live-check section, carrying the gap the gate has: the RabbitMQ lane only
+  publishes, so `RabbitMQ.Client.Subscriber` emits nothing and the `deliver` and `fetch` spans the
+  `14.x` line added are unjudged.
+
 ## [14.0.0] - 2026-09-07
 
 Two waves in one release. Seven libraries stopped being intercepted and are subscribed to

@@ -35,7 +35,7 @@ updated further; change the ID and take the current version. `Qyl.Telemetry.Host
 successor to `Qyl.Sdk`, and `builder.AddQyl()` is
 unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V14` in the
 `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — the anchor tracks the
-package major, so it moved from `V12` with the 14.0.0 line, and no `13.x` was ever
+package major, so it moved from `V12` with the 14.x line, and no `13.x` was ever
 published — so a stale generated
 interceptor cannot bind to the new runtime — it fails to compile rather than
 misbehaving. The emitted scope names move to the package family in 10.0.0: the
@@ -254,7 +254,7 @@ never by waving it through.
 One gap is recorded rather than hidden: **`RabbitMQ.Client.Subscriber` has no consuming demo.**
 `Qyl.Telemetry.Hosting` subscribes to both RabbitMQ source names, but the RabbitMQ lane only
 publishes, so the subscriber source emits nothing and the `deliver` and `fetch` spans the
-14.0.0 line added are unjudged by this gate.
+14.x line added are unjudged by this gate.
 
 ## License
 
