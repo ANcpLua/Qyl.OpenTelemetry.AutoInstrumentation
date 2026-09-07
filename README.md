@@ -1,73 +1,37 @@
 # Qyl.Telemetry.AutoInstrumentation
 
-Managed automatic instrumentation for .NET 10 applications, including NativeAOT
-consumers. The package uses compiler-generated Roslyn interceptors, build assets,
-BCL telemetry primitives, public diagnostic hooks, and module-initializer bootstrap.
-It does not use a CLR profiler, startup hooks, ReJIT, runtime IL rewriting, or dynamic
-plugin loading.
+Managed automatic instrumentation for .NET 10 applications, including NativeAOT consumers. It
+works through compiler-generated Roslyn interceptors, `ActivitySource` subscription, public
+`DiagnosticListener` hooks, build assets and module-initializer bootstrap. There is no CLR
+profiler, no startup hook, no ReJIT, no runtime IL rewriting and no dynamic plugin loading.
 
 Roslyn interceptors are supported by this repository's .NET SDK 10.0.400. See the official
 [`interceptors.md`](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md)
 contract.
 
+Every attribute key, attribute value and telemetry scope name this package writes is a generated
+constant from `Qyl.Telemetry.SemanticConventions` 9.1.0. The instrumentation writes those constants
+and nothing else: it never renames, drops or coerces what a library emitted. Deprecated keys and
+vendor keys travel as the library wrote them and the qyl collector rewrites them; the live check
+below is what proves it.
+
 ## Packages
 
-| Package | Responsibility |
+| Package | What it does |
 | --- | --- |
-| `Qyl.Telemetry.Hosting` | One-line onboarding: OpenTelemetry SDK wiring, OTLP export, collector discovery, session propagation |
-| `Qyl.Telemetry.AutoInstrumentation` | Core runtime, compiler-facing ABI, build assets, and source generator |
-| `.Hosting` | Generic DI and process bootstrap |
-| `.DiagnosticListeners` | Framework/library diagnostic event consumption |
-| `.EntityFrameworkCore` | EF Core integration |
-| `.SqlClient` | Microsoft.Data.SqlClient integration |
+| `Qyl.Telemetry.Hosting` | One-line onboarding. `builder.AddQyl()` wires the OpenTelemetry SDK, subscribes the native `ActivitySource` table, adds the two processors, registers the meter inventory and exports OTLP with collector discovery. |
+| `Qyl.Telemetry.AutoInstrumentation` | The core runtime: the single qyl `ActivitySource`, the interceptor declarations and helper bodies, the options surface, the compiler-facing ABI, the build assets and the source generator. |
+| `Qyl.Telemetry.AutoInstrumentation.Hosting` | Process bootstrap: a `[ModuleInitializer]` activates the qyl listeners when the assembly loads, and `AddQylAutoInstrumentation()` wires them explicitly. |
+| `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners` | The `DiagnosticListener` subscribers for ASP.NET Core, HttpClient and the gRPC client. |
+| `Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore` | EF Core `DiagnosticSource` instrumentation. |
+| `Qyl.Telemetry.AutoInstrumentation.SqlClient` | `Microsoft.Data.SqlClient` `DiagnosticSource` instrumentation. |
 
-Add the package that owns the integration you need. The supported zero-configuration
-consumer path is a `PackageReference`; build and analyzer assets flow through NuGet.
-
-The family ships as one line; `Directory.Build.props` owns its version and
-`Directory.Packages.props` the semantic-conventions pin. Its major is the compile-time ABI: a `14.x` package pairs with `QylGeneratedCodeAbi.V14`
-and nothing else, which is why the number is ahead of the rest of qyl and does not move
-with the product version.
-
-**Coming from 8.x?** These are new package IDs, not new versions of the old ones.
-`Qyl.OpenTelemetry.AutoInstrumentation*` and `Qyl.Sdk` stop at `8.5.0` and are not
-updated further; change the ID and take the current version. `Qyl.Telemetry.Hosting` is the
-successor to `Qyl.Sdk`, and `builder.AddQyl()` is
-unchanged. The generated-code ABI anchor is `QylGeneratedCodeAbi.V14` in the
-`Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace — the anchor tracks the
-package major, so it moved from `V12` with the 14.x line, and no `13.x` was ever
-published — so a stale generated
-interceptor cannot bind to the new runtime — it fails to compile rather than
-misbehaving. The emitted scope names move to the package family in 10.0.0: the
-`ActivitySource` is `Qyl.Telemetry.AutoInstrumentation` and the qyl meter is
-`Qyl.Telemetry.AutoInstrumentation.Database`. Update `AddSource(...)`,
-`AddMeter(...)` and `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. This package
-emits the `Qyl.Telemetry.AutoInstrumentation*` scope names and nothing else, and
-makes no compatibility promise for the old spellings. The strings are owned by
-the semantic-convention registry, not by this repository — the code reads them
-from `QylTelemetryNames.Scopes`.
+Add the package that owns the integration you need; the supported zero-configuration consumer path
+is a `PackageReference`, and build and analyzer assets flow through NuGet.
 
 ```bash
 dotnet add package Qyl.Telemetry.Hosting
 ```
-
-## How it works
-
-1. The source generator discovers supported source-visible calls and emits ordinary
-   C# methods annotated with `[InterceptsLocation]`.
-2. `build` and `buildTransitive` assets include the compiler-facing generator and
-   enable the generated namespace in consumers.
-3. Runtime helpers and diagnostic listeners emit bounded `Activity` and `Meter`
-   telemetry using the referenced semantic-convention vocabulary.
-4. Package-specific bootstrap activates the applicable listeners once per process.
-
-Where a framework exposes a first-class DI or runtime hook, the package uses that
-hook. Interception is reserved for source-visible calls that require compile-time
-ownership.
-
-## Exporting to a collector
-
-The shortest path is `Qyl.Telemetry.Hosting`, which owns all of the wiring below as one call:
 
 ```csharp
 using Qyl;
@@ -75,186 +39,298 @@ using Qyl;
 builder.AddQyl();
 ```
 
-That activates the qyl listeners; registers the single qyl source for qyl-owned
-ASP.NET Core, HttpClient, gRPC, and database spans plus the enabled first-party
-library sources; and registers the native and qyl-owned meter inventory (ASP.NET
-Core, HttpClient, DNS, database, messaging, and runtime). It copies `session.id`
-from the nearest tagged in-process
-ancestor to descendant spans (remote parents and unrelated trace branches are not
-propagated); and exports traces, metrics, and logs over OTLP — to
-`OTEL_EXPORTER_OTLP_ENDPOINT` when set, otherwise to `QYL_ENDPOINT` when that is
-set, otherwise to a qyl collector discovered on localhost (4318/4317).
-`QYL_ENDPOINT` names a collector for the qyl exporters alone, where the standard
-variable would redirect every OTLP exporter in the process. It also registers the
-exact library telemetry paths
-listed below; wrapper-based libraries still require their explicit one-line opt-in.
+`AddQyl()` activates the qyl listeners; registers the qyl `ActivitySource`, the framework-native
+`Microsoft.AspNetCore` and `System.Net.Http` sources, the version-pinned GenAI, MCP, Azure SDK and
+CoreWCF sources and every enabled row of the native-source table; adds
+`QylNativeSpanProcessor` and `QylSessionSpanProcessor`; registers the meter inventory; and exports
+traces, metrics and logs over OTLP — to `OTEL_EXPORTER_OTLP_ENDPOINT` when it is set, otherwise to
+`QYL_ENDPOINT` when that is set, otherwise to a qyl collector discovered on `localhost` or the host
+`qyl` at 4318/4317. `QYL_ENDPOINT` names a collector for the qyl exporters alone, where the
+standard variable would redirect every OTLP exporter in the process.
 
-The rest of this section is the manual wiring for apps that want to own it.
-
-The lower-level instrumentation packages emit `Activity` and `Meter` telemetry; they
-ship no exporter. An application that does not use `Qyl.Telemetry.Hosting` wires the OpenTelemetry
-SDK and chooses where the telemetry goes. A working setup against the qyl collector
-adds
-`OpenTelemetry.Extensions.Hosting` and `OpenTelemetry.Exporter.OpenTelemetryProtocol`
-alongside `Qyl.Telemetry.AutoInstrumentation.Hosting`, then registers the sources:
+An application that wires the SDK itself references
+`Qyl.Telemetry.AutoInstrumentation.Hosting` alongside `OpenTelemetry.Extensions.Hosting` and
+`OpenTelemetry.Exporter.OpenTelemetryProtocol`, and registers the sources by hand:
 
 ```csharp
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("my-service"))
     .WithTracing(t => t
-        .AddSource("Qyl.Telemetry.AutoInstrumentation") // the qyl scope name — see note below
+        .AddSource("Qyl.Telemetry.AutoInstrumentation")
         .AddOtlpExporter());
 builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 ```
 
-Configure the exporter through the standard environment variables:
-`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`,
-`OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`, and `OTEL_SERVICE_NAME`.
+The instrumentation packages ship no exporter of their own, and a manually wired application that
+subscribes a native source qyl also owns exports the same operation twice.
 
-Do not also subscribe to `Microsoft.AspNetCore` or `System.Net.Http` traces when the
-qyl listeners own those operations; doing so exports the same request twice. Azure
-SDK tracing is the first-party exception: `Qyl.Telemetry.Hosting` enables
-`Azure.Experimental.EnableActivitySource`, subscribes `Azure.*`, and normalizes the
-exported Azure spans. A manually wired application must make those two choices
-explicitly if it wants Azure SDK spans.
+## How a library gets instrumented
 
-### MassTransit
+One question decides the mechanism:
 
-MassTransit emits its own spans from an `ActivitySource` named `MassTransit`
-(`MassTransit.Logging.DiagnosticHeaders.DefaultListenerName`), so qyl subscribes
-to that source and stamps `qyl.instrumentation.domain` onto its spans instead of
-intercepting the call sites. The floor is MassTransit `8.0.0`, the version that
-introduced the source; verified against `8.5.10` (Apache-2.0). Below the floor
-the source does not exist and no span is produced.
+> Does `AddSource("<name>")` alone deliver spans — without a contrib package and without a
+> `DiagnosticListener` adapter?
+>
+> - **Yes** → the source name goes in `QylTelemetrySources`, `AddQyl()` subscribes it, and
+>   `QylNativeSpanProcessor` stamps the qyl attributes onto the library's own spans.
+> - **No** → a Roslyn source interceptor in `Qyl.Telemetry.AutoInstrumentation`.
 
-What the native span carries differs from the interceptor it replaces: the
-producer span is named `{destination} send`, reports the *transport* in
-`messaging.system` (`rabbitmq`, not `masstransit`), and reports the operation
-through the deprecated `messaging.operation` key, always as `send` — MassTransit
-routes `Publish` and `Send` through the same send transport, so the two are no
-longer distinguishable in the span. MassTransit 9 is commercially licensed and is
-neither referenced nor redistributed by this package, and the repository's own
-demo pin is the range `[8.5.10,9.0.0)`.
+A library that emits only `DiagnosticSource`/`DiagnosticListener` events counts as No: an adapter is
+a contrib package by another name. A library whose `ActivitySource` stays silent until the consumer
+opts in *in their own code* still takes source + processor — qyl does not call the opt-in on the
+application's behalf, because an interceptor that did would be the mechanism this rule removes.
+No source name is typed by hand anywhere: `QylTelemetrySources` reads
+`QylTelemetryNames.VendorActivitySources`, so a name missing from the pin is a
+semantic-convention release blocker rather than a string literal.
 
-### NServiceBus
+### Subscribed native sources
 
-NServiceBus emits its own spans from an `ActivitySource` named `NServiceBus.Core`
-(`NServiceBus.Core/OpenTelemetry/Tracing/ActivitySources.cs`), on by default from
-v10, so qyl subscribes to that source and stamps `qyl.instrumentation.domain`
-onto its spans instead of intercepting `IMessageSession` and
-`IMessageHandlerContext`. The floor is NServiceBus `8.0`, the version that
-introduced OpenTelemetry support; verified against `10.2.9`.
+One row per entry of `QylTelemetrySources.NativeSourceRows`. The row carries the source name, the
+instrumentation id whose toggle gates it, and the `qyl.instrumentation.domain` value the processor
+stamps. `Azure.*` matches by prefix — the Azure SDK publishes one source per service — and every
+other row is an ordinal exact match.
 
-What the native spans carry differs from the interceptor they replace. The
-outgoing spans are named `send message` and `publish event`, the incoming
-pipeline adds a `process message` span and a span named after each handler type,
-and the whole vocabulary is the vendor `nservicebus.*` namespace plus
-`otel.status_code` / `otel.status_description`: NServiceBus publishes **no**
-messaging semantic conventions, so `messaging.system`,
-`messaging.operation.type`, `messaging.operation.name` and `error.type` are gone
-rather than reconstructed by qyl.
+| Library | Pinned | `ActivitySource` | Instrumentation id | Domain |
+| --- | --- | --- | --- | --- |
+| Azure SDK | `Azure.Storage.Blobs` `12.29.2` | `Azure.*` | `AZURE` | `azure.sdk` |
+| CoreWCF | `CoreWCF.Http` `1.9.1` | `CoreWCF.Primitives` | `WCFCORE` | none — see below |
+| Elastic.Transport, Elastic.Clients.Elasticsearch | `1.0.0`, `9.5.1` | `Elastic.Transport` | `ELASTICTRANSPORT` | `elastic.transport` |
+| MassTransit | `[8.5.10,9.0.0)` | `MassTransit` | `MASSTRANSIT` | `messaging.masstransit` |
+| MongoDB.Driver | `3.11.1` | `MongoDB.Driver` | `MONGODB` | `db.mongodb` |
+| NServiceBus | `10.2.9` | `NServiceBus.Core` | `NSERVICEBUS` | `messaging.nservicebus` |
+| Quartz.NET | `4.0.0` | `Quartz` | `QUARTZ` | `job.quartz` |
+| RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Publisher` | `RABBITMQ` | `messaging.rabbitmq` |
+| RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Subscriber` | `RABBITMQ` | `messaging.rabbitmq` |
 
-The qyl-synthesized `nservicebus.messaging.operation.duration` histogram, and
-the `Qyl.Telemetry.AutoInstrumentation.NServiceBus` meter that carried it, are
-gone with the interceptor that produced them. NServiceBus publishes its own
-instruments — `nservicebus.messaging.successes`, `.fetches`, `.failures`,
-`.handler_time`, `.critical_time`, `.processing_time` — on the meters
-`NServiceBus.Core` and `NServiceBus.Core.Pipeline.Incoming`. `Qyl.Telemetry.Hosting`
-does not force-register a library's own meters; a consumer that wants those
-instruments exported registers them through
-`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` (or `QylSdkOptions.AdditionalMeters`),
-exactly as for the native `Npgsql` meter.
+The Elasticsearch client owns no `ActivitySource`; it enriches Elastic.Transport's, so the two
+integrations share one row and one domain. CoreWCF's row carries no domain: those spans are the WCF
+*server* side and the registry publishes no instrumentation-domain value for it —
+`rpc.wcf.client` belongs to the intercepted client. That is a semantic-convention gap, not a value
+to invent here, so the row exists for its `AddSource` call alone.
 
-### AI, MCP, and CoreWCF paths in 12.0
+`QylTelemetrySources` also subscribes sources that need no processor row, because the library
+already writes the semantic conventions and qyl adds nothing: `Microsoft.AspNetCore`,
+`System.Net.Http`, `Experimental.Microsoft.Extensions.AI`, `Experimental.Microsoft.Agents.AI`,
+`Microsoft.Agents.AI.Workflows` and `Experimental.ModelContextProtocol`. The first two make the
+framework create its activities through the sampler instead of the unsampled `DiagnosticListener`
+fallback. Three of the AI paths need the consumer's own opt-in —
+`chatClient.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Extensions.AI` 10.9.0,
+`agent.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Agents.AI` 1.20.0, and
+`WorkflowBuilder.WithOpenTelemetry()` for `Microsoft.Agents.AI.Workflows` 1.20.0. `ModelContextProtocol`
+2.2.0 and CoreWCF emit without one. MCP *metrics* are deliberately not registered: the official
+instruments carry dynamic tool and resource names as dimensions, which conflicts with qyl's
+bounded-cardinality policy.
 
-These are version-pinned library-hook claims, not provider- or protocol-wide claims.
-The exact `ModelContextProtocol` 2.2.0 client/server path has strict NativeAOT
-evidence; the other paths in this table have managed evidence only:
+### Roslyn interceptors
 
-| Library path | Application opt-in | Signals registered by `Qyl.Telemetry.Hosting` | Integration ID |
-| --- | --- | --- | --- |
-| `Microsoft.Extensions.AI` 10.9.0 | `chatClient.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Extensions.AI` | `MICROSOFTEXTENSIONSAI` |
-| `Microsoft.Agents.AI` 1.20.0 | `agent.AsBuilder().UseOpenTelemetry().Build()` | traces and metrics from `Experimental.Microsoft.Agents.AI` | `MICROSOFTAGENTSAI` |
-| `Microsoft.Agents.AI.Workflows` 1.20.0 | `WorkflowBuilder.WithOpenTelemetry()` | traces from `Microsoft.Agents.AI.Workflows` | `MICROSOFTAGENTSAIWORKFLOWS` |
-| `ModelContextProtocol` 2.2.0 | none; the official client/server SDK emits automatically | managed and strict NativeAOT traces from `Experimental.ModelContextProtocol` | `MCP` |
-| `CoreWCF.Http` 1.9.1 | none; CoreWCF emits server activities | managed traces from `CoreWCF.Primitives` | `WCFCORE` |
+One row per `[QylIntercept]` declaration in `src/Qyl.Telemetry.AutoInstrumentation`.
 
-MCP metrics are intentionally not registered: the official instruments attach
-dynamic tool and resource names as dimensions, which conflicts with qyl's bounded-cardinality
-policy. The 12.0 contract does not claim direct OpenAI SDK instrumentation, raw Anthropic SDK
-instrumentation, `Azure.AI.Inference`, Amazon Bedrock, or A2A.
+| Integration | Pinned | Intercepted receiver | Instrumentation id | Domain |
+| --- | --- | --- | --- | --- |
+| ADO.NET | `System.Data.Common` | `System.Data.Common.DbCommand` | `ADONET`, fanned out to `MYSQLCONNECTOR`, `MYSQLDATA`, `NPGSQL`, `ORACLEMDA`, `SQLCLIENT`, `SQLITE` by the receiver's namespace | `db.client` |
+| HttpClient | `System.Net.Http` | `System.Net.Http.HttpClient` | `HTTPCLIENT` | `http.client` |
+| Confluent.Kafka | `2.15.0` | `Confluent.Kafka.IProducer<TKey, TValue>` and `IConsumer<TKey, TValue>` | `KAFKA` | `messaging.kafka` |
+| StackExchange.Redis | `3.1.31` | `StackExchange.Redis.IDatabaseAsync` | `STACKEXCHANGEREDIS` | `db.redis` |
+| GraphQL.NET | `8.8.5` | `GraphQL.IDocumentExecuter` | `GRAPHQL` | `graphql` |
+| WCF client | `System.ServiceModel.Primitives` `10.0.652802` | `System.ServiceModel.ClientBase<TChannel>` | `WCFCLIENT` | `rpc.wcf.client` |
 
-Every path is enabled by default when its signal is enabled. Set the applicable
-signal-specific variable to `false` to disable it:
+`System.Data.Common`, `Microsoft.Data.SqlClient` 7.0.2, `Microsoft.Data.Sqlite` 10.0.11,
+`Confluent.Kafka` 2.15.0, `StackExchange.Redis` 3.1.31 and `System.ServiceModel.*` declare no
+`ActivitySource` at the pinned version, so the rule puts them here. Five integrations are the open
+work of the rule rather than an exception to it: `Npgsql` 10.0.3, `MySqlConnector` 2.6.2,
+`MySql.Data` 26.7.0, `Oracle.ManagedDataAccess.Core` 23.26.300 and `GraphQL` 8.8.5 each declare a
+native `ActivitySource` and are still intercepted. Their source names are already published as
+`QylTelemetryNames.VendorActivitySources` constants, and moving them is a table row plus a demo
+lane each.
 
-- `MICROSOFTEXTENSIONSAI`:
-  `OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED` and
-  `OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED`.
-- `MICROSOFTAGENTSAI`:
-  `OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED` and
-  `OTEL_DOTNET_AUTO_METRICS_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED`.
-- `MICROSOFTAGENTSAIWORKFLOWS`:
-  `OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAIWORKFLOWS_INSTRUMENTATION_ENABLED`.
-- `MCP`: `OTEL_DOTNET_AUTO_TRACES_MCP_INSTRUMENTATION_ENABLED`.
-- `WCFCORE`: `OTEL_DOTNET_AUTO_TRACES_WCFCORE_INSTRUMENTATION_ENABLED`.
+Five integrations use a framework's public hook instead of either mechanism: ASP.NET Core,
+HttpClient and the gRPC client through `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners`, EF
+Core through `.EntityFrameworkCore`, and `Microsoft.Data.SqlClient` through `.SqlClient`. HttpClient
+has both an interceptor and a listener lane; `QylSignalOwnership` arbitrates so one operation
+produces one span.
 
-The global `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` and per-signal
-`OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_INSTRUMENTATION_ENABLED` switches still take
-precedence.
+### Toggles
 
-## Coverage and evidence
+Every row above, native or intercepted, is gated per signal by its instrumentation id:
+`OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_<ID>_INSTRUMENTATION_ENABLED`, with the per-signal
+`OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_INSTRUMENTATION_ENABLED` and the global
+`OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` taking precedence. `AddQyl()` reads the same options, so
+a disabled id contributes neither an `AddSource` call nor a processor row. Query-text capture is
+opt-in per provider — `OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT`,
+`OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT`,
+`OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT`, `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` — and
+so is header capture on the ASP.NET Core, HTTP and gRPC-client lanes.
 
-The generated [`coverage matrix`](docs/coverage-matrix.md) is the detailed contract
-view. It keeps NativeAOT runtime evidence, managed runtime evidence, configuration
-bindings, and unsupported rows separate. A configuration binding is not runtime
-instrumentation, and the matrix is generated from the declared contracts rather than
-being independent empirical proof. Runtime claims are backed by executable demos or
-consumers named in the underlying ownership contracts.
+qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql`'s or
+`NServiceBus.Core`'s native instruments exported registers them through
+`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` or `QylSdkOptions.AdditionalMeters`.
 
-The NativeAOT boundary applies to this compile-time/managed substrate. It does not
-claim parity with the CLR-profiler OpenTelemetry .NET automatic instrumentor, and it
-does not imply that every third-party library itself publishes warning-free under
-NativeAOT.
+The full 66-row contract, with every environment control and instrumentation option, its evidence
+level and its authoritative source, is the generated
+[coverage matrix](docs/coverage-matrix.md).
 
-## Limitations
+## The qyl attributes
 
-- Only source-visible call sites can be intercepted. Calls hidden in compiled
-  dependencies, reflection, or dynamic dispatch need a public runtime hook or remain
-  unsupported.
-- Some integrations are managed-only because the instrumented library requires
-  runtime code generation.
-- Query text and other sensitive or high-cardinality values remain opt-in or redacted
-  according to the package options and upstream OpenTelemetry controls.
-- Generic HTTP header capture never records the reserved `Mcp-Param-*` namespace.
-  Those headers mirror MCP tool arguments; any argument-content capture belongs to an
-  MCP-specific, explicitly enabled policy rather than the HTTP instrumentation layer.
-- Generator snapshots prove emitted source shape; protocol interoperability requires
-  a real OTLP receiver and structural decoding of official protobuf messages.
+`qyl.instrumentation.domain` is the only qyl-owned attribute written onto a span, and
+`QylNativeSpanProcessor` is the only thing that writes it onto a native one. Everything else on a
+native span is the library's own. The domain is what the qyl collector's dashboard classifies on,
+together with the semantic-convention keys the library emits, so a span that reaches the collector
+without it is unclassifiable no matter what it is called.
 
-## Verify
+Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `aspnetcore.server`,
+`azure.sdk`, `db.client`, `db.efcore`, `db.mongodb`, `db.redis`, `db.sqlclient`,
+`elastic.transport`, `graphql`, `http.client`, `job.quartz`, `messaging.kafka`,
+`messaging.masstransit`, `messaging.nservicebus`, `messaging.rabbitmq`, `rpc.grpc` and
+`rpc.wcf.client`.
 
-Run the complete local gate:
+`QylSessionSpanProcessor` copies `session.id` from the nearest tagged in-process ancestor onto
+descendant spans that do not carry one. Remote parents and unrelated trace branches propagate
+nothing, and the copy happens on end, the last moment the ancestor's tag can be observed.
+
+qyl's own spans and instruments carry the registry-owned scope names
+`Qyl.Telemetry.AutoInstrumentation` (`ActivitySource`) and
+`Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
+Mirror them in `AddSource(...)`, `AddMeter(...)` or
+`OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
+`QylGeneratedCodeAbi.V14` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+tracks the package major, so a generated interceptor from another major fails to compile rather
+than binding to this runtime.
+
+## Analyzers and generator diagnostics
+
+The source generator reports one diagnostic of its own:
+
+| Id | Severity | Reported when |
+| --- | --- | --- |
+| `QYL1001` | Info | A call site names a declared integration's receiver type and method but its signature does not fit the declared shape, typically because the library changed the signature in a new major. No interceptor is emitted for that call, so it produces no qyl telemetry. Update the declaration or pin the library to a version the shape describes. |
+
+Skipping in silence would hide the loss of instrumentation, and emitting an interceptor with a
+mismatched signature would break the consumer's build; the diagnostic is the third option.
+
+`Qyl.Telemetry.AutoInstrumentation` also consumes
+`Qyl.Telemetry.SemanticConventions.Analyzers` 9.1.0 with `PrivateAssets="all"`, so the `QYL0xxx`
+rules run over this repository's own sources and ship to no consumer. `Directory.Build.props` sets
+`OtelSemConvInstrumentationLibrary=true`: this is an instrumentation library that version-locks with
+the incubating tier on purpose, so `QYL0008` ("copy incubating constants locally") does not apply.
+The rules themselves are owned and documented by the semantic-conventions repository.
+
+## Demos and verifiers
+
+Twenty-nine demo applications under `demos/` are the runtime evidence. Each has a verifier under
+`tools/` that builds it, publishes it NativeAOT where the integration supports it, starts any
+container it needs, runs it and asserts the spans and metrics it emitted:
+
+```bash
+python3 tools/verify-real-quartz-demo.py
+```
+
+Six verifiers need Docker, and each names its image in an overridable variable: `masstransit`
+and `rabbitmq` use `QYL_RABBITMQ_IMAGE` (`rabbitmq:4.1-alpine`), `kafka` uses `QYL_KAFKA_IMAGE`
+(`apache/kafka:4.1.0`), `mongodb` uses `QYL_MONGODB_IMAGE` (`mongo:8-noble`), `redis` uses
+`QYL_REDIS_IMAGE` (`redis:8-alpine`), and `sqlclient` uses `QYL_SQLSERVER_IMAGE`
+(`mcr.microsoft.com/mssql/server:2022-latest`, which ships no arm64 image, so that lane runs on x64
+in CI).
+
+The complete local gate runs every verifier in order — contract invariants, release and demo
+builds, package layout, public API baselines, generator snapshots, the NativeAOT publish matrix,
+all twenty-nine demos, the live check, the smoke test and the published-consumer evidence:
 
 ```bash
 python3 tools/verify-aot-autoinstrumentation-goal.py
 ```
 
-That gate builds the package and demo solutions, validates generated artifacts and
-public API baselines, and executes managed/NativeAOT consumer evidence.
+`--list` prints the command names, and `--only NAME` / `--skip NAME` select from them.
 
-### Live check
+## Live check
 
-`tools/verify-live-check.py` runs `weaver registry live-check` as an OTLP listener and points
-the native-source demo lanes at it, so every span this package's processor stamps is judged
-against the pinned semantic-convention registry rather than against an assertion written here.
-`--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is
-closed by changing what the instrumentation writes or by declaring the key in the registry —
-never by waving it through.
+`tools/verify-live-check.py` runs `weaver registry live-check` as an OTLP/gRPC listener on 4317 and
+points nine demo lanes at it, so what the instrumentation actually emitted is judged against the
+pinned semantic-convention registry rather than against an assertion written in this repository.
+The lanes are one per row of the native-source table — `azure`, `corewcf`, `elastictransport`,
+`elasticsearch`, `masstransit`, `mongodb`, `nservicebus`, `quartz`, `rabbitmq` — with RabbitMQ's two
+source names on one lane, and Elastic.Transport and Elasticsearch on a lane each because the two
+clients put different attributes on the shared source. Weaver judges every span, metric and resource
+it receives: the library's keys, the vendor keys it passes through and the
+`qyl.instrumentation.domain` the processor stamped.
 
-One gap is recorded rather than hidden: **`RabbitMQ.Client.Subscriber` has no consuming demo.**
-`Qyl.Telemetry.Hosting` subscribes to both RabbitMQ source names, but the RabbitMQ lane only
-publishes, so the subscriber source emits nothing and the `deliver` and `fetch` spans the
-14.x line added are unjudged by this gate.
+`--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is closed by
+changing what the instrumentation writes or by declaring the key in the registry, never by waving it
+through. Against the `v9.1.0` registry the nine lanes report zero violations.
+
+How a finding is *levelled* is the registry's decision, and it takes two flags that must travel
+together:
+
+- `--config <registry>/.weaver.toml` drops weaver's built-in `deprecated`, `type_mismatch` and
+  `undefined_enum_variant` findings by id. Those advisors are compiled into the binary and emit at a
+  level no policy can lower.
+- `--advice-policies <registry>/policies/live_check_advice` re-issues them at the level the registry
+  chose: an open enum carrying `_OTHER` is information, a renamed or obsoleted key a library still
+  emits is an improvement, a type mismatch whose value parses is an improvement.
+
+Passing only the second changes nothing for those three advisors, and an unreadable path fails
+silently, so the gate checks for both halves and refuses to run without them.
+
+The registry is a checkout of
+[Qyl.OpenTelemetry.SemanticConventions](https://github.com/ANcpLua/Qyl.OpenTelemetry.SemanticConventions),
+named by `QYL_SEMCONV_REGISTRY`, with `scripts/fetch-core.sh` already run so `registry/manifest.yaml`
+can resolve its filtered core dependency. The published NuGet packages carry the generated C#, not
+the registry itself, which is why the gate needs the source repository:
+
+```bash
+QYL_SEMCONV_REGISTRY=../Qyl.OpenTelemetry.SemanticConventions python3 tools/verify-live-check.py
+```
+
+`--skip LANE[,LANE...]` skips a lane whose container this machine cannot run, and the skip is named
+in the output as `live-check-partial-ok`. On macOS under OrbStack the MongoDB lane is that lane:
+OrbStack's VM runs a 7.x kernel, and MongoDB 8 refuses to start on Linux 6.19 or newer
+([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)) — the container exits before it
+listens, so the demo cannot connect. Run the other eight locally and let CI cover MongoDB:
+
+```bash
+QYL_SEMCONV_REGISTRY=../Qyl.OpenTelemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
+```
+
+One gap in coverage is recorded rather than hidden: **`RabbitMQ.Client.Subscriber` has no consuming
+demo.** `AddQyl()` subscribes both RabbitMQ source names, but the RabbitMQ lane only publishes, so
+the subscriber source emits nothing and its `deliver` and `fetch` spans are unjudged by this gate.
+
+## Release
+
+The version lives in `Directory.Build.props` `<Version>`, and the `Qyl.Telemetry.*` family ships as
+one line at one version. Pushing the tag `v<version>`, which must equal that version at that commit,
+is the act that publishes: `nuget-publish.yml` runs the full gate set, packs, publishes through NuGet
+trusted publishing, proves the indexed packages restore into clean managed and NativeAOT consumers,
+and only then creates the GitHub release. A push to `main` builds and verifies through the sibling
+workflows and never publishes.
+
+The package major is the compile-time ABI rather than the product version, which is why it runs
+ahead of the rest of qyl: a `14.x` package pairs with `QylGeneratedCodeAbi.V14` and nothing else.
+
+Two files name the semantic-convention release and they must agree: the
+`Qyl.Telemetry.SemanticConventions` `PackageVersion` in `Directory.Packages.props`, whose generated
+constants the code compiles against, and `SEMCONV_REF` in `.github/workflows/live-check.yml`, the
+registry tag the live check judges against. `verify-live-check.py` compares the pin against the
+checkout's `VersionPrefix` and fails when they are different releases — judging spans against a
+registry other than the one that produced the constants is the drift that would otherwise look like
+a green gate.
+
+## Limitations
+
+- Only source-visible call sites can be intercepted. Calls hidden in compiled dependencies,
+  reflection or dynamic dispatch need a public runtime hook or remain unsupported.
+- Some integrations are managed-only because the instrumented library requires runtime code
+  generation. The NativeAOT boundary is this compile-time/managed substrate; it claims no parity
+  with the CLR-profiler OpenTelemetry .NET automatic instrumentor and does not imply that every
+  third-party library publishes warning-free under NativeAOT.
+- Query text and other sensitive or high-cardinality values remain opt-in or redacted according to
+  the package options and the upstream OpenTelemetry controls.
+- Generic HTTP header capture never records the reserved `Mcp-Param-*` namespace. Those headers
+  mirror MCP tool arguments; capturing argument content belongs to an MCP-specific, explicitly
+  enabled policy rather than to the HTTP layer.
+- Generator snapshots prove emitted source shape; protocol interoperability requires a real OTLP
+  receiver and structural decoding of the official protobuf messages.
+- MassTransit 9 is commercially licensed and is neither referenced nor redistributed here; the demo
+  pin is the Apache-2.0 range `[8.5.10,9.0.0)`.
 
 ## License
 
