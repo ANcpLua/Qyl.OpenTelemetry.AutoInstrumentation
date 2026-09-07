@@ -145,8 +145,10 @@ def main() -> None:
         print(f"updated {VERIFIED.relative_to(ROOT)}")
         return
 
+    # The scope version was substituted with the package under test while the span was qyl's own.
+    # Since 15.0.0 it is System.Net.Http's scope, whose version is empty and does not move with a
+    # qyl release, so the recorded value stands as recorded.
     expected_report = json.loads(VERIFIED.read_text(encoding="utf-8"))
-    expected_report["span"]["scope"]["version"] = version
     if report != expected_report:
         print("typed OTLP receiver evidence mismatch", file=sys.stderr)
         print("expected:", json.dumps(expected_report, indent=2, sort_keys=True), file=sys.stderr)

@@ -16,7 +16,7 @@
       "qyl.instrumentation.domain": "http.client",
       "server.address": "127.0.0.1",
       "server.port": "<port>",
-      "url.full": "http://127.0.0.1:<port>/probe?access_token=Redacted"
+      "url.full": "http://127.0.0.1:<port>/probe?*"
     },
     "idBytes": {
       "span": 8,
@@ -25,8 +25,8 @@
     "kind": "SPAN_KIND_CLIENT",
     "name": "GET",
     "scope": {
-      "name": "Qyl.Telemetry.AutoInstrumentation",
-      "version": "5.0.0-otlpreceiver"
+      "name": "System.Net.Http",
+      "version": ""
     },
     "timestampsValid": true
   }
