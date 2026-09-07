@@ -16,8 +16,9 @@ namespace Qyl;
 /// auto-instrumentation listeners, wires the OpenTelemetry SDK with ASP.NET Core's own server span
 /// (enriched by the qyl middleware, never duplicated), qyl-owned HttpClient spans, version-pinned
 /// GenAI, Azure SDK, MCP, and CoreWCF sources plus the native and
-/// qyl-owned meter inventory, propagates
-/// <c>session.id</c> across traces, and exports traces, metrics, and logs over OTLP — to
+/// qyl-owned meter inventory, carries
+/// <c>session.id</c> from a span to its in-process descendants, and exports traces, metrics, and
+/// logs over OTLP — to
 /// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl collector.
 /// The specialist EF Core and SqlClient packages and the gRPC-client listener emit spans under
 /// the single qyl ActivitySource, so they need no extra source registration here. Applications
@@ -41,6 +42,17 @@ public static class QylSdkHostApplicationBuilderExtensions
         Action<QylSdkOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
+
+        // Idempotent, like the instrumentation registration nested below. Each call queues its own
+        // WithTracing callback against the one TracerProvider, so a second one would add a second
+        // session processor, a second native processor and a second OTLP exporter — every span,
+        // metric and log exported twice, silently. That is not a hypothetical: an application that
+        // follows the README's builder.AddQyl() and also calls AddQylApi, which calls AddQyl itself,
+        // does exactly this. The first call wins, including its options.
+        if (builder.Services.Any(static service => service.ServiceType == typeof(QylSdkRegistration)))
+            return builder;
+
+        builder.Services.AddSingleton<QylSdkRegistration>();
 
         var options = new QylSdkOptions();
         configure?.Invoke(options);
@@ -131,6 +143,9 @@ public static class QylSdkHostApplicationBuilderExtensions
 
         return builder;
     }
+
+    /// <summary>Marks the container as already carrying a qyl registration.</summary>
+    private sealed class QylSdkRegistration;
 
     private static void ConfigureExporter(OtlpExporterOptions exporter, Uri? endpoint, string signalPath)
     {

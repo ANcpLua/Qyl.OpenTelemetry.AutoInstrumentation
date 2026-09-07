@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using OpenTelemetry;
+using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
 namespace Qyl;
 
@@ -16,18 +17,16 @@ namespace Qyl;
 /// </remarks>
 internal sealed class QylSessionSpanProcessor : BaseProcessor<Activity>
 {
-    private const string SessionIdTag = "session.id";
-
     public override void OnEnd(Activity data)
     {
-        if (data.GetTagItem(SessionIdTag) is not null)
+        if (data.GetTagItem(SessionAttributes.Id) is not null)
             return;
 
         for (var ancestor = data.Parent; ancestor is not null; ancestor = ancestor.Parent)
         {
-            if (ancestor.GetTagItem(SessionIdTag) is { } sessionId)
+            if (ancestor.GetTagItem(SessionAttributes.Id) is { } sessionId)
             {
-                data.SetTag(SessionIdTag, sessionId);
+                data.SetTag(SessionAttributes.Id, sessionId);
                 return;
             }
         }
