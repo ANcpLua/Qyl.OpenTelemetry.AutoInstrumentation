@@ -2,6 +2,16 @@
 # blocks a push or a release. Findings land in the Security tab (code scanning) and on
 # api.scorecard.dev; the four checks that reach code scanning are BinaryArtifacts,
 # DangerousWorkflow, PinnedDependencies and TokenPermissions.
+#
+# Conventions this repo follows (copy them, do not invent new ones):
+#   * every `uses:` is pinned to a commit SHA with a `# vX.Y.Z` comment; Renovate
+#     (config:best-practices) bumps SHA and comment together
+#   * every workflow declares top-level `permissions: contents: read`; a job that needs more
+#     declares it on the job (publish: id-token/packages, release: contents: write)
+#   * Python deps come from tools/requirements.txt with version pins, not hashes; nuget
+#     restores of generated smoke consumers have no lockfile. Both are dismissed Scorecard
+#     alerts ("won't fix"), because hash pins would break Renovate and a lockfile for a
+#     throwaway consumer proves nothing. Do not re-open them, do not add hashes.
 name: scorecard
 
 on:

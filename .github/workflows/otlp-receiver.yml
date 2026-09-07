@@ -11,6 +11,9 @@ concurrency:
   # Sequential commits on main must each run to completion, so only other refs cancel.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+permissions:
+  contents: read
+
 jobs:
   receiver:
     name: typed OTLP receiver evidence

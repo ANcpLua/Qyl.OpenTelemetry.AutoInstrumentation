@@ -29,6 +29,9 @@ env:
   # pins. It moves in the same commit as Directory.Packages.props.
   SEMCONV_REF: v9.0.0
 
+permissions:
+  contents: read
+
 jobs:
   live-check:
     name: live check

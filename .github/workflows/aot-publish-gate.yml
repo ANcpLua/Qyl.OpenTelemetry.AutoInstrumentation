@@ -19,6 +19,9 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   aot-publish-gate:
     name: aot-publish-gate (${{ matrix.os }})
