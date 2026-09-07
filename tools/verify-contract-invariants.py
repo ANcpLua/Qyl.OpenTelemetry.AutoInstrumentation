@@ -251,6 +251,45 @@ DB_QUERY_TEXT_ALLOWED_PATHS = {
     "src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
 }
 QYL_ABI_DELEGATION_TOKEN = "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntercepted"
+SYSTEM_VALUE_WRITER_PATTERN = re.compile(
+    r"(?:global::)?(?:[A-Za-z0-9_]+\.)*(?:Messaging|Rpc|Db)Attributes\."
+    r"(?:System|SystemName)\s*,\s*(?P<value>[^,)]+)"
+)
+SYSTEM_VALUE_HELPER_CALL_PATTERN = re.compile(
+    r"QylActivityTags\.Set(?:Messaging|Rpc)\(\s*[^,]+,\s*(?P<value>[^,)]+)"
+)
+# Every messaging.system / rpc.system.name / db.system.name value the instrumentation writes is
+# one of these members of the pinned registry's value sets. A literal spelling of any of them in
+# the emitting sources is the failure this gate exists for: SemanticConventions 9.0.0 dropped the
+# qyl-local members masstransit, nservicebus and dotnet_wcf, and re-typing one by hand would put
+# a value into a span that the registry no longer knows.
+FORBIDDEN_SYSTEM_VALUE_LITERALS = {
+    "connect_rpc",
+    "dotnet_wcf",
+    "dubbo",
+    "elasticsearch",
+    "grpc",
+    "ibm.db2",
+    "jsonrpc",
+    "kafka",
+    "masstransit",
+    "mongodb",
+    "mssql",
+    "mysql",
+    "nservicebus",
+    "oracle.db",
+    "other_sql",
+    "postgresql",
+    "rabbitmq",
+    "redis",
+    "sqlite",
+}
+# The one recorded gap: rpc.system.name enumerates connectrpc, dubbo, grpc and jsonrpc, so WCF
+# has no generated member and the value is named locally, with the gap in a comment beside it.
+RECORDED_SYSTEM_VALUE_GAPS = {
+    ("dotnet_wcf", "src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedWcfClient.cs"),
+}
+RECORDED_SYSTEM_VALUE_GAP_COMMENT = "rpc.system.name enumerates only connectrpc, dubbo, grpc and jsonrpc"
 
 
 def fail(message: str) -> None:
@@ -704,6 +743,40 @@ def verify_qyl_vocabulary_literals() -> None:
     ]
     if hits:
         fail(f"qyl.* vocabulary must come from the generated semconv constants, not literals: {sorted(hits)}")
+
+
+def verify_system_value_contract() -> None:
+    """messaging.system, rpc.system.name and db.system.name carry generated values only.
+
+    Two halves. No writer of those three keys, and no call into the helpers that write them,
+    takes a string literal; and no source that emits telemetry spells a registry system value
+    out at all. The single recorded gap is dotnet_wcf, which rpc.system.name does not enumerate.
+    """
+    literal_pattern = re.compile(r'"([^"\\]*)"')
+    value_patterns = (SYSTEM_VALUE_WRITER_PATTERN, SYSTEM_VALUE_HELPER_CALL_PATTERN)
+    for root in RUNTIME_EMISSION_ROOTS:
+        for path in root.rglob("*.cs"):
+            relative = path.relative_to(ROOT).as_posix()
+            raw = path.read_text()
+            source = strip_csharp_comments(raw)
+
+            for pattern in value_patterns:
+                for match in pattern.finditer(source):
+                    value = match.group("value").strip()
+                    if value.startswith('"'):
+                        fail(f"system value must not be written as a literal: {relative}: {value}")
+
+            for literal in literal_pattern.findall(source):
+                if literal not in FORBIDDEN_SYSTEM_VALUE_LITERALS:
+                    continue
+                if (literal, relative) not in RECORDED_SYSTEM_VALUE_GAPS:
+                    fail(f"registry system value must not be spelled as a literal: {relative}: {literal!r}")
+                if RECORDED_SYSTEM_VALUE_GAP_COMMENT not in raw:
+                    fail(f"recorded system-value gap must keep the comment naming it: {relative}")
+
+    for literal, path in RECORDED_SYSTEM_VALUE_GAPS:
+        if literal not in (ROOT / path).read_text():
+            fail(f"recorded system-value gap is stale, {literal!r} is gone from {path}")
 
 
 def verify_demo_solution_release_mapping() -> None:
@@ -1206,6 +1279,7 @@ def main() -> None:
     verify_environment_contract(artifacts, contract)
     verify_semconv_attribute_contract()
     verify_qyl_vocabulary_literals()
+    verify_system_value_contract()
     verify_demo_solution_release_mapping()
     verify_metric_contract()
     verify_sensitive_attribute_emission_policy()
