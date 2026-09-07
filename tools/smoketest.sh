@@ -198,7 +198,10 @@ foreach (var metric in exportedMetrics)
     }
 }
 
-if (exportedQylHttpClientSpanCount != 1 ||
+// 15.0.0 handed the client lane to System.Net.Http's own source: exactly one span per request,
+// the library's own, with the qyl domain stamped onto it by QylNativeSpanProcessor. A qyl-made
+// HttpClient span reappearing here is the duplicate this release exists to remove.
+if (exportedQylHttpClientSpanCount != 0 ||
     exportedNativeHttpClientSpanCount != 1 ||
     rawHttpClientDurationMeasurementCount != 1 ||
     exportedHttpClientDurationMetricCount != 1 ||
@@ -218,6 +221,7 @@ if (exportedQylHttpClientSpanCount != 1 ||
 await qylHost.StopAsync();
 #endif
 
+
 foreach (var activity in captured.OrderBy(static activity => activity.DisplayName, StringComparer.Ordinal))
 {
     var tags = activity.TagObjects.ToDictionary(
@@ -234,7 +238,12 @@ foreach (var activity in captured.OrderBy(static activity => activity.DisplayNam
 
 Console.WriteLine("activity.count=" + captured.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-return captured.Count == 1 ? 0 : 3;
+// The qyl ActivitySource emits nothing for an HttpClient call as of 15.0.0: the client lane is
+// System.Net.Http's own source, and a span appearing here again would be the duplicate this
+// release removed. The generator still reaching this consumer is proven by the interceptor
+// source, not by a qyl-made span.
+return captured.Count == 0 ? 0 : 3;
+
 
 #if QYL_SDK_PACKAGE_SMOKE
 static bool IsApplicationActivity(
@@ -336,6 +345,16 @@ internal sealed class LoopbackHttpServer : IAsyncDisposable
         var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
         await stream.WriteAsync(response);
     }
+}
+
+// A never-executed call site on a surviving interceptor lane. The smoke test asserts that the
+// generator reaches a package consumer at all, and 15.0.0 moved the HttpClient lane to
+// System.Net.Http's own source — so the HTTP work above no longer produces an interceptor and
+// something else has to carry that proof. DbCommand is in the BCL, so this costs no dependency
+// and never runs.
+internal static class QylInterceptorProbe
+{
+    internal static void Emit(System.Data.Common.DbCommand command) => _ = command.ExecuteScalar();
 }
 EOF
 }

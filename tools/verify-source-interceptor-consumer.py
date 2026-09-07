@@ -23,9 +23,9 @@ NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
 using System.Diagnostics;
+using System.Data.Common;
 using System.Globalization;
-using System.Net;
-using System.Net.Http;
+using Microsoft.Data.Sqlite;
 using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
@@ -37,49 +37,64 @@ using var activityListener = new ActivityListener
 };
 ActivitySource.AddActivityListener(activityListener);
 
-var handler = new CountingHandler();
-using var client = new HttpClient(handler);
-using (await client.GetAsync("http://qyl.invalid/accepted"))
+using var connection = new SqliteConnection("Data Source=:memory:");
+connection.Open();
+
+using (var create = connection.CreateCommand())
 {
+    create.CommandText = "CREATE TABLE Probe (Id INTEGER PRIMARY KEY, Name TEXT)";
+    create.ExecuteNonQuery();
+    create.CommandText = "INSERT INTO Probe (Id, Name) VALUES (1, 'ok')";
+    create.ExecuteNonQuery();
 }
 
-using (await client.GetAsync("http://qyl.invalid/unavailable"))
+var calls = 0;
+
+using (DbCommand command = connection.CreateCommand())
 {
+    command.CommandText = "SELECT Name FROM Probe WHERE Id = 1";
+    _ = command.ExecuteScalar();
+    calls++;
 }
 
-var httpActivities = captured
+using (DbCommand command = connection.CreateCommand())
+{
+    command.CommandText = "SELECT Name FROM MissingProbe WHERE Id = 1";
+    try
+    {
+        _ = command.ExecuteScalar();
+    }
+    catch (SqliteException)
+    {
+        // The failing call is the second half of the control: the interceptor has to record the
+        // error as well as the success, which is what makes it an instrumentation proof rather
+        // than a "did anything get emitted" check.
+    }
+
+    calls++;
+}
+
+var dbActivities = captured
     .Where(static activity => activity.TagObjects.Any(static tag =>
         tag.Key == "qyl.instrumentation.domain" &&
-        StringComparer.Ordinal.Equals(tag.Value as string, "http.client")))
+        StringComparer.Ordinal.Equals(tag.Value as string, "db.client")))
     .ToArray();
-var statuses = httpActivities
-    .Select(static activity => Convert.ToString(activity.GetTagItem("http.response.status_code"), CultureInfo.InvariantCulture))
-    .OfType<string>()
-    .OrderBy(static status => status, StringComparer.Ordinal)
+var outcomes = dbActivities
+    .Select(static activity => activity.Status is ActivityStatusCode.Error ? "error" : "ok")
+    .OrderBy(static outcome => outcome, StringComparer.Ordinal)
     .ToArray();
 
-Console.WriteLine("client.calls=" + handler.Calls.ToString(CultureInfo.InvariantCulture));
-Console.WriteLine("activity.count=" + httpActivities.Length.ToString(CultureInfo.InvariantCulture));
-Console.WriteLine("activity.statuses=" + string.Join("|", statuses));
+Console.WriteLine("client.calls=" + calls.ToString(CultureInfo.InvariantCulture));
+Console.WriteLine("activity.count=" + dbActivities.Length.ToString(CultureInfo.InvariantCulture));
+Console.WriteLine("activity.statuses=" + string.Join("|", outcomes));
 
-return handler.Calls == 2 && httpActivities.Length == 2 ? 0 : 1;
-
-internal sealed class CountingHandler : HttpMessageHandler
-{
-    public int Calls { get; private set; }
-
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        Calls++;
-        return Task.FromResult(new HttpResponseMessage(Calls == 1 ? HttpStatusCode.NoContent : HttpStatusCode.ServiceUnavailable));
-    }
-}
+return calls == 2 && dbActivities.Length == 4 ? 0 : 1;
 '''
 
 
 EXPECTED = """client.calls=2
-activity.count=2
-activity.statuses=204|503
+activity.count=4
+activity.statuses=error|ok|ok|ok
 """
 
 
@@ -117,6 +132,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
 </Project>
@@ -146,12 +163,14 @@ def verify_generated_source(directory: Path) -> None:
     text = generated[0].read_text(encoding="utf-8")
     for token in [
         "namespace Qyl.Telemetry.AutoInstrumentation.Generated",
-        "HttpClient_GetAsync_0",
-        "QylInterceptedHttpClient.GetAsync(",
-        '"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]',
+        "DbCommand_ExecuteScalar_",
+        "QylInterceptedDbCommand.Execute(",
+        '"contractKeys":["signals.traces.ADONET"]',
     ]:
         if token not in text:
-            fail(f"generated interceptor source missing token: {token}")
+            import re
+            names = sorted(set(re.findall(r"[A-Za-z]+_[A-Za-z]+_[0-9]+", text)))
+            fail(f"generated interceptor source missing token: {token}; it emitted: {names}")
 
 
 def run_consumer(project: Path, env: dict[str, str], *, nativeaot: bool) -> subprocess.CompletedProcess[str]:
