@@ -57,7 +57,7 @@ HANDOFF_GATE_PATH = ROOT / "tools" / "verify-aot-autoinstrumentation-goal.py"
 DEMO_SOLUTION_PATH = ROOT / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx"
 RUNTIME_PROJECT_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
 METRIC_METERS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylMetricMeters.cs"
-METRIC_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylMetricNames.cs"
+DB_CLIENT_METRICS_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "QylDbClientMetrics.cs"
 ACTIVITY_NAMES_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Internal" / "QylSpanNames.cs"
 SENSITIVE_CAPTURE_POLICY_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Internal" / "QylSensitiveCapturePolicy.cs"
 RUNTIME_EMISSION_ROOTS = [
@@ -211,14 +211,17 @@ FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
     "NServiceBus.Core",
     "NServiceBus.Core.Pipeline.Incoming",
 }
-# External contract: instrument names emitted by qyl-owned metric producers.
-# Native System.Net, ASP.NET Core, and System.Runtime instruments are selected
-# by meter name and must not be mirrored as dead QylMetricNames constants.
-QYL_OWNED_METRIC_NAME_VALUES = {
-    "db.client.operation.duration",
+# External contract: the registry rows qyl creates instruments from. Native System.Net,
+# ASP.NET Core and System.Runtime instruments are selected by meter name and must not be
+# mirrored here. `nservicebus.messaging.operation.duration` is a row this repository no longer
+# produces on: its interceptor was its only producer and went with the native-source wave.
+QYL_OWNED_METRIC_DEFINITIONS = {
+    "DbMetricDefinitions.DbClientOperationDuration",
 }
-# External contract: upstream OTEL .NET auto-instrumentation environment
-# variable for additional metric sources.
+METRIC_INSTRUMENT_FACTORY_PATTERN = re.compile(
+    r"Meter\.Create(?:Histogram|Counter|UpDownCounter|Observable(?:Gauge|Counter|UpDownCounter))"
+    r"<[^>]+>\(\s*(?P<name>[^,]+),\s*(?P<unit>[^,)]+)"
+)
 METRICS_ADDITIONAL_SOURCES_VARIABLE = "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES"
 # Philosophy guard: sensitive raw values (query strings, full URLs, query text,
 # GraphQL documents) may only be written through the capture policy / owning
@@ -795,7 +798,7 @@ def verify_demo_solution_release_mapping() -> None:
 
 def verify_metric_contract() -> None:
     meters = METRIC_METERS_PATH.read_text()
-    names = METRIC_NAMES_PATH.read_text()
+    db_client_metrics = DB_CLIENT_METRICS_PATH.read_text()
     options = OPTIONS_PATH.read_text()
     generator = read_generator_sources()
 
@@ -815,12 +818,27 @@ def verify_metric_contract() -> None:
     if forbidden_meters:
         fail(f"QylMetricMeters must not register superseded native meter names: {sorted(forbidden_meters)}")
 
-    metric_name_values = set(parse_string_constants(names).values())
-    if metric_name_values != QYL_OWNED_METRIC_NAME_VALUES:
+    # Every instrument qyl creates is a registry row: name and unit come off a MetricDefinition,
+    # so no metric name is spelled in this repository at all.
+    created_definitions: set[str] = set()
+    for root in RUNTIME_EMISSION_ROOTS:
+        for path in root.rglob("*.cs"):
+            relative = path.relative_to(ROOT).as_posix()
+            for match in METRIC_INSTRUMENT_FACTORY_PATTERN.finditer(strip_csharp_comments(path.read_text())):
+                name = match.group("name").strip()
+                unit = match.group("unit").strip()
+                if not name.endswith(".Name") or not unit.endswith(".Unit"):
+                    fail(f"instrument must be created from a MetricDefinition row: {relative}: {name}, {unit}")
+                definition = name[: -len(".Name")]
+                if unit[: -len(".Unit")] != definition:
+                    fail(f"instrument name and unit must come from one definition: {relative}: {name}, {unit}")
+                created_definitions.add(".".join(definition.split(".")[-2:]))
+
+    if created_definitions != QYL_OWNED_METRIC_DEFINITIONS:
         fail(
-            "QylMetricNames must contain exactly the qyl-owned instrument names: "
-            f"missing={sorted(QYL_OWNED_METRIC_NAME_VALUES - metric_name_values)} "
-            f"extra={sorted(metric_name_values - QYL_OWNED_METRIC_NAME_VALUES)}"
+            "the instruments qyl creates must be exactly the declared registry definitions: "
+            f"missing={sorted(QYL_OWNED_METRIC_DEFINITIONS - created_definitions)} "
+            f"extra={sorted(created_definitions - QYL_OWNED_METRIC_DEFINITIONS)}"
         )
 
     if METRICS_ADDITIONAL_SOURCES_VARIABLE not in options:
@@ -846,7 +864,7 @@ def verify_metric_contract() -> None:
         fail("QylMetricMeters must append the additional metric sources option to registered meters")
 
     for token in ["NavigationManager", "NavigateTo"]:
-        if token in generator or token in meters or token in names:
+        if token in generator or token in meters or token in db_client_metrics:
             fail(f"productive code must not synthesize source-visible ASP.NET Core component metrics: {token}")
 
 
