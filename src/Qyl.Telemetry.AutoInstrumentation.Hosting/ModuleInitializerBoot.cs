@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
-using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.AspNetCore;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
 
@@ -26,7 +25,6 @@ internal static class ModuleInitializerBoot
     private static readonly QylDiagnosticListenerSubscriber[] DiagnosticListeners =
     [
         new HttpClientDiagnosticListener(),
-        new AspNetCoreDiagnosticListener(),
         new GrpcClientDiagnosticListener(),
     ];
 

@@ -9,17 +9,17 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 /// Registration surface for qyl ASP.NET Core server-request instrumentation.
 /// </summary>
 /// <remarks>
-/// Adds a middleware-based server span (via <see cref="IStartupFilter"/>) that captures request and
-/// response headers plus the query string. Prefer this when you want the richer middleware attributes.
-/// Combining it with the zero-config <c>Qyl.Telemetry.AutoInstrumentation.Hosting</c> module-init
-/// path is safe: the single-owner signal registry lets the higher-priority middleware lane claim the
-/// ASP.NET Core signal and the <c>DiagnosticListener</c> lane defer, so exactly one server span is
-/// emitted per request either way.
+/// The server span is ASP.NET Core's own <c>Microsoft.AspNetCore.Hosting.HttpRequestIn</c> activity,
+/// and exactly one is emitted per request. This registration adds the middleware (via
+/// <see cref="IStartupFilter"/>) that writes onto it what the runtime leaves empty: the qyl domain,
+/// the HTTP and URL conventions, the route and the span name, and the configured request and
+/// response headers. Subscribe to the <c>Microsoft.AspNetCore</c> source to export it —
+/// <c>AddQyl()</c> does both.
 /// </remarks>
 public static class QylAspNetCoreInstrumentationServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the qyl ASP.NET Core server-span middleware. Idempotent — repeated calls keep a single
+    /// Registers the qyl ASP.NET Core enrichment middleware. Idempotent — repeated calls keep a single
     /// registration.
     /// </summary>
     /// <param name="services">The application service collection.</param>
@@ -27,11 +27,10 @@ public static class QylAspNetCoreInstrumentationServiceCollectionExtensions
     public static IServiceCollection AddQylAspNetCoreInstrumentation(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
-        // Claim the ASP.NET Core signal for the middleware lane so the DiagnosticListener lane (if the
-        // Hosting package is also referenced) defers and the server span is emitted exactly once.
-        QylAspNetCoreOwnership.RegisterMiddleware();
-        // IStartupFilters compose in registration order and this one must stay outermost so the server
-        // span wraps the whole pipeline — call this before registering other pipeline-wrapping filters.
+        // IStartupFilters compose in registration order and this one must stay outermost, so the
+        // request attributes are written before anything can short-circuit the pipeline and the
+        // response status is read after everything else has run — call this before registering other
+        // pipeline-wrapping filters.
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IStartupFilter, QylAspNetCoreStartupFilter>());
         return services;
     }

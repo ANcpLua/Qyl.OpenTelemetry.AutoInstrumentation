@@ -12,8 +12,8 @@ internal static class QylTelemetrySources
     internal const string ModelContextProtocol = "Experimental.ModelContextProtocol";
     internal const string CoreWcf = QylTelemetryNames.VendorActivitySources.CoreWCFPrimitives;
     internal const string Azure = QylTelemetryNames.VendorActivitySources.Azure;
-    internal const string AspNetCore = "Microsoft.AspNetCore";
-    internal const string HttpClient = "System.Net.Http";
+    internal const string AspNetCore = QylFrameworkActivitySources.AspNetCore;
+    internal const string HttpClient = QylFrameworkActivitySources.HttpClient;
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
     internal const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
@@ -70,9 +70,10 @@ internal static class QylTelemetrySources
         if (options.HasAnyActivityInstrumentationEnabled())
             names.Add(QylActivitySource.Name);
 
-        // Framework-native sources: registering them makes ASP.NET Core hosting and HttpClient
-        // create their activities through the sampler (proper root sampling decisions, honored
-        // upstream traceparent) instead of the legacy unsampled DiagnosticListener fallback.
+        // Framework-native sources. Registering Microsoft.AspNetCore is what makes the hosting
+        // layer's own HttpRequestIn activity — the one HTTP SERVER span of a request, which
+        // AddQylAspNetCoreInstrumentation's middleware enriches — sampled and exported; registering
+        // System.Net.Http does the same for the outbound side.
         AddIfEnabled(names, options, QylAutoInstrumentationIds.AspNetCore, AspNetCore);
         AddIfEnabled(names, options, QylAutoInstrumentationIds.HttpClient, HttpClient);
 

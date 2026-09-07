@@ -9,20 +9,33 @@ using Qyl.Telemetry.AutoInstrumentation.Internal;
 namespace Qyl.Telemetry.AutoInstrumentation;
 
 /// <summary>
-/// Injects the qyl ASP.NET Core server-request middleware through <see cref="IStartupFilter"/>, so the
-/// per-request server <see cref="System.Diagnostics.Activity"/> is wired without intercepting
-/// <c>WebApplicationBuilder.Build()</c>. Keeping the injection off the call site means it never collides
-/// with a cooperating <c>Build()</c> interceptor (CS9153). The middleware owns request/response
-/// header capture and query-string recording.
+/// Enriches ASP.NET Core's own server activity through <see cref="IStartupFilter"/>, so the qyl
+/// attributes reach it without intercepting <c>WebApplicationBuilder.Build()</c>. Keeping the
+/// injection off the call site means it never collides with a cooperating <c>Build()</c>
+/// interceptor (CS9153).
 /// </summary>
+/// <remarks>
+/// <para>
+/// The span is <c>Microsoft.AspNetCore.Hosting.HttpRequestIn</c>, started by the hosting layer and
+/// current for the whole pipeline. qyl starts no server activity of its own: a second one would be
+/// a duplicate SERVER span for every request.
+/// </para>
+/// <para>
+/// The runtime creates that activity <em>empty</em> — measured on .NET 10.0.11, it carries no tag at
+/// all and keeps its raw operation name — so everything a consumer's dashboards key on is written
+/// here, from the <see cref="HttpContext"/> the middleware already holds. Each write fills only what
+/// is absent; a tag another component set is left alone.
+/// </para>
+/// </remarks>
 internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
 {
     /// <inheritdoc/>
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
         app =>
         {
-            // The middleware lane owns the ASP.NET Core signal when registered, so a DiagnosticListener
-            // subscriber defers and each request emits one server span.
+            // IStartupFilters compose in registration order and this one must stay outermost: the
+            // request attributes are written before anything can short-circuit the pipeline, and the
+            // response status is read after everything else has run.
             app.Use(static (context, requestDelegate) =>
                 InvokeAsync(requestDelegate, context));
             next(app);
@@ -30,72 +43,83 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
 
     private static Task InvokeAsync(RequestDelegate requestDelegate, HttpContext context)
     {
-        var activity = StartRequestActivity(context);
+        var activity = StartRequest(context);
+        if (activity is null)
+            return requestDelegate(context);
+
         try
         {
             return ObserveAsync(requestDelegate(context), context, activity);
         }
         catch (Exception exception)
         {
-            QylActivityStatus.RecordException(activity, exception);
-            activity?.Dispose();
+            RecordFailure(activity, context, exception);
             throw;
         }
     }
 
-    private static Activity? StartRequestActivity(HttpContext context)
+    private static Activity? StartRequest(HttpContext context)
     {
         var options = QylAutoInstrumentationOptions.Current;
         if (!options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.AspNetCore))
             return null;
 
+        // Only the hosting layer's own activity is the server span. Anything else current here is the
+        // application's, and qyl does not write HTTP server attributes onto a span it does not know.
+        if (Activity.Current is not { Kind: ActivityKind.Server, IsAllDataRequested: true } activity ||
+            !StringComparer.Ordinal.Equals(activity.Source.Name, QylFrameworkActivitySources.AspNetCore))
+        {
+            return null;
+        }
+
         var method = QylHttpMethod.Normalize(context.Request.Method, out var methodOriginal);
-        var activity = QylHttpActivityPolicy.StartServerActivity(
+        QylHttpActivityPolicy.SetServerRequest(
+            activity,
             method,
             methodOriginal,
-            GetRoute(context),
             context.Request.Path.Value,
             context.Request.QueryString.HasValue ? context.Request.QueryString.Value![1..] : null,
             context.Request.Scheme);
-        if (activity is null)
-            return null;
-
         QylCaptureHelpers.SetRequestHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, context.Request.Headers);
         return activity;
     }
 
-    private static async Task ObserveAsync(Task originalTask, HttpContext context, Activity? activity)
+    private static async Task ObserveAsync(Task originalTask, HttpContext context, Activity activity)
     {
-        if (activity is null)
-        {
-            await originalTask.ConfigureAwait(false);
-            return;
-        }
-
         try
         {
             await originalTask.ConfigureAwait(false);
-            RecordResponse(activity, context);
         }
         catch (Exception exception)
         {
-            QylActivityStatus.RecordException(activity, exception);
+            RecordFailure(activity, context, exception);
             throw;
         }
-        finally
-        {
-            activity.Dispose();
-        }
+
+        RecordResponse(activity, context, context.Response.StatusCode);
     }
 
-    private static void RecordResponse(Activity activity, HttpContext context)
+    private static void RecordResponse(Activity activity, HttpContext context, int statusCode)
     {
-        QylHttpActivityPolicy.BackfillServerRoute(activity, QylHttpMethod.Normalize(context.Request.Method), GetRoute(context));
-        QylHttpActivityPolicy.SetResponseStatus(activity, context.Response.StatusCode, 500);
+        // Routing runs inside the pipeline, so the endpoint — and with it the route template and the
+        // low-cardinality span name — is only knowable on the way out.
+        QylHttpActivityPolicy.SetServerRoute(activity, QylHttpMethod.Normalize(context.Request.Method), GetRoute(context));
+        QylHttpActivityPolicy.SetServerResponseStatus(activity, statusCode);
         QylCaptureHelpers.SetRequestHeaders(
             activity,
             QylAutoInstrumentationOptions.Current.AspNetCoreCapturedResponseHeaderMap,
             context.Response.Headers);
+    }
+
+    // An exception that unwinds past this middleware has not reached the server yet, so the response
+    // still carries whatever status the pipeline left on it. 500 is what Kestrel sends for it, and
+    // what the span reports, unless the response had already started with a status of its own.
+    private static void RecordFailure(Activity activity, HttpContext context, Exception exception)
+    {
+        // The exception type is the better error.type, so it is written first and the status-code
+        // rule below finds the tag already set rather than replacing it with the bare "500".
+        QylActivityStatus.RecordException(activity, exception);
+        RecordResponse(activity, context, context.Response.HasStarted ? context.Response.StatusCode : 500);
     }
 
     private static string? GetRoute(HttpContext context)

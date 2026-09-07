@@ -20,7 +20,10 @@ var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
+    // The qyl source carries the intercepted and listener-based spans; the framework source carries
+    // the one ASP.NET Core server span, which the qyl middleware enriches instead of duplicating.
+    ShouldListenTo = static source =>
+        source.Name is "Qyl.Telemetry.AutoInstrumentation" or "Microsoft.AspNetCore",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity =>
     {
@@ -199,9 +202,8 @@ internal sealed record WebApiAotReport(
         var failures = new List<string>();
         var signals = new List<MatchedSignal>();
 
-        // Server span is owned by the explicit middleware; the DiagnosticListener observes only the
-        // ambient start in this mode, so exactly one server span is emitted and
-        // it carries the aspnetcore.server domain (with the route backfilled after routing).
+        // The server span is ASP.NET Core's own activity, enriched by the qyl middleware: exactly one
+        // per request, carrying the aspnetcore.server domain and the route resolved by routing.
         AddRequired(signals, failures, "aspnetcore.server", activities.FirstOrDefault(static activity =>
             HasTag(activity, "qyl.instrumentation.domain", "aspnetcore.server") &&
             HasTag(activity, "http.route", "/probe/{id:int}")));

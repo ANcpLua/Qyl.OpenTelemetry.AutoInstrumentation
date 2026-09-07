@@ -13,9 +13,12 @@ using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttrib
 var captured = new List<CapturedActivity>();
 var capturedLock = new Lock();
 
+// The server span is ASP.NET Core's own activity. Listening to the framework source is what a
+// consumer's AddSource("Microsoft.AspNetCore") does; the qyl middleware writes onto that span and
+// creates none of its own, so exactly one SERVER span exists per request.
 using var listener = new ActivityListener
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
+    ShouldListenTo = static source => source.Name == "Microsoft.AspNetCore",
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
     ActivityStopped = activity =>
     {
@@ -32,6 +35,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://127.0.0.1:0");
 builder.Logging.ClearProviders();
 builder.Services.AddHealthChecks();
+builder.Services.AddQylAspNetCoreInstrumentation();
 var app = builder.Build();
 
 app.MapHealthChecks("/healthz");
@@ -127,7 +131,9 @@ internal sealed record AspNetCoreReport(
         RequireTag(successSpan, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
         RequireTag(successSpan, HttpAttributes.Route, "/items/{id:int}", failures);
         RequireTag(failureSpan, HttpAttributes.Route, "/fail/{id:int}", failures);
-        RequireTag(failureSpan, ErrorAttributes.Type, "500", failures);
+        // The unhandled exception is the error, so error.type is its type name rather than the
+        // status code the server sends after it.
+        RequireTag(failureSpan, ErrorAttributes.Type, "System.InvalidOperationException", failures);
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
 

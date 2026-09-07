@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
+using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
 using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
@@ -32,46 +33,50 @@ internal static class QylHttpActivityPolicy
         return activity;
     }
 
-    public static Activity? StartServerActivity(
+    // ASP.NET Core's own server activity carries the qyl domain and the request half of the HTTP
+    // conventions. Every write fills only what the activity does not already have: the runtime creates
+    // it empty today, and a tag another component wrote is that component's to own.
+    public static void SetServerRequest(
+        Activity activity,
         string method,
         string? methodOriginal,
-        string? route,
         string? path,
         string? query,
         string? scheme)
     {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.AspNetCore,
-            QylSpanNames.HttpServer(method, route),
-            ActivityKind.Server,
-            QylAttributes.InstrumentationDomainValues.AspNetCoreServer);
-        if (activity is null)
-            return null;
-
-        SetRequestMethod(activity, method, methodOriginal);
+        SetIfAbsent(activity, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.AspNetCoreServer);
+        if (activity.GetTagItem(HttpAttributes.RequestMethod) is null)
+            SetRequestMethod(activity, method, methodOriginal);
         if (!string.IsNullOrEmpty(scheme))
-            activity.SetTag(UrlAttributes.Scheme, scheme);
+            SetIfAbsent(activity, UrlAttributes.Scheme, scheme);
         if (path is not null)
-            activity.SetTag(UrlAttributes.Path, path);
-        if (!string.IsNullOrEmpty(query))
+            SetIfAbsent(activity, UrlAttributes.Path, path);
+        if (!string.IsNullOrEmpty(query) && activity.GetTagItem(UrlAttributes.Query) is null)
             QylSensitiveCapturePolicy.SetAspNetCoreUrlQuery(activity, query);
-        if (route is not null)
-            activity.SetTag(HttpAttributes.Route, route);
-
-        return activity;
     }
 
-    // Backfills the route template and refines the span name once routing has resolved the endpoint. The
-    // server-span middleware can run outside routing (registered via IStartupFilter), where the endpoint is
-    // not yet available at activity start; call this after the pipeline has run. No-op when the route is
-    // unknown or was already captured (the per-endpoint interceptor path sets it at start).
-    public static void BackfillServerRoute(Activity activity, string method, string? route)
+    // Records the route template and names the span after it, once routing has resolved the endpoint.
+    // The enriching middleware runs outside routing (registered via IStartupFilter), so the endpoint is
+    // unknown while the request goes in; call this on the way out. The display name is refined only
+    // while it is still the raw operation name, so a name another component chose survives.
+    public static void SetServerRoute(Activity activity, string method, string? route)
     {
         if (string.IsNullOrEmpty(route) || activity.GetTagItem(HttpAttributes.Route) is not null)
             return;
 
         activity.SetTag(HttpAttributes.Route, route);
-        activity.DisplayName = QylSpanNames.HttpServer(method, route);
+        if (StringComparer.Ordinal.Equals(activity.DisplayName, activity.OperationName))
+            activity.DisplayName = QylSpanNames.HttpServer(method, route);
+    }
+
+    public static void SetServerResponseStatus(Activity activity, int statusCode)
+    {
+        if (activity.GetTagItem(HttpAttributes.ResponseStatusCode) is not null)
+            return;
+
+        activity.SetTag(HttpAttributes.ResponseStatusCode, statusCode);
+        if (statusCode >= 500 && activity.GetTagItem(ErrorAttributes.Type) is null)
+            QylActivityStatus.RecordError(activity, statusCode);
     }
 
     public static void SetResponseStatus(Activity activity, int statusCode, int errorStatusCodeFloor)
@@ -85,6 +90,12 @@ internal static class QylHttpActivityPolicy
         => activity.SetTag(
             NetworkAttributes.ProtocolVersion,
             version.Major >= 2 && version.Minor is 0 ? version.Major.ToString(CultureInfo.InvariantCulture) : version.ToString(2));
+
+    private static void SetIfAbsent(Activity activity, string key, string value)
+    {
+        if (activity.GetTagItem(key) is null)
+            activity.SetTag(key, value);
+    }
 
     private static void SetRequestMethod(Activity activity, string method, string? methodOriginal)
     {
