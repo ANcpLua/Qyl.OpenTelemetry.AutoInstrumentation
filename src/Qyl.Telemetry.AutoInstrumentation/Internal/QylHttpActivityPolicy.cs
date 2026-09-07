@@ -11,28 +11,6 @@ namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
 internal static class QylHttpActivityPolicy
 {
-    public static Activity? StartClientActivity(
-        string instrumentationDomain,
-        string method,
-        string? methodOriginal,
-        Uri? requestUri,
-        string? rawRequestUri)
-    {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.HttpClient,
-            QylSpanNames.Http(method),
-            ActivityKind.Client,
-            instrumentationDomain);
-        if (activity is null)
-            return null;
-
-        SetRequestMethod(activity, method, methodOriginal);
-        if (requestUri is not null)
-            SetClientUrl(activity, requestUri, rawRequestUri);
-
-        return activity;
-    }
-
     // ASP.NET Core's own server activity carries the qyl domain and the request half of the HTTP
     // conventions. Every write fills only what the activity does not already have: the runtime creates
     // it empty today, and a tag another component wrote is that component's to own.
@@ -80,18 +58,6 @@ internal static class QylHttpActivityPolicy
             QylActivityStatus.RecordError(activity, statusCode);
     }
 
-    public static void SetResponseStatus(Activity activity, int statusCode, int errorStatusCodeFloor)
-    {
-        activity.SetTag(HttpAttributes.ResponseStatusCode, statusCode);
-        if (statusCode >= errorStatusCodeFloor)
-            QylActivityStatus.RecordError(activity, statusCode);
-    }
-
-    public static void SetProtocolVersion(Activity activity, Version version)
-        => activity.SetTag(
-            NetworkAttributes.ProtocolVersion,
-            version.Major >= 2 && version.Minor is 0 ? version.Major.ToString(CultureInfo.InvariantCulture) : version.ToString(2));
-
     private static void SetIfAbsent(Activity activity, string key, string value)
     {
         if (activity.GetTagItem(key) is null)
@@ -103,18 +69,5 @@ internal static class QylHttpActivityPolicy
         activity.SetTag(HttpAttributes.RequestMethod, method);
         if (!string.IsNullOrEmpty(methodOriginal))
             activity.SetTag(HttpAttributes.RequestMethodOriginal, methodOriginal);
-    }
-
-    private static void SetClientUrl(Activity activity, Uri requestUri, string? rawRequestUri)
-    {
-        if (requestUri.IsAbsoluteUri)
-        {
-            activity.SetTag(ServerAttributes.Address, requestUri.Host);
-            if (!requestUri.IsDefaultPort)
-                activity.SetTag(ServerAttributes.Port, requestUri.Port);
-        }
-
-        var urlFull = requestUri.IsAbsoluteUri ? requestUri.ToString() : rawRequestUri ?? requestUri.ToString();
-        QylSensitiveCapturePolicy.SetHttpClientUrlFull(activity, urlFull);
     }
 }

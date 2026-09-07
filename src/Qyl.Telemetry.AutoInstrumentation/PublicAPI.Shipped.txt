@@ -32,6 +32,8 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Enrich.set
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Methods.get -> string![]!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Metric.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Metric.set -> void
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.NativeSourceReceivers.get -> string![]!
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.NativeSourceReceivers.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ObserveAsync.get -> bool
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ObserveAsync.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ObserveByRefOnly.get -> bool
@@ -44,14 +46,11 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Start.get 
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Start.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.DbCommand = 2 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Forward = 1 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.DbCommand = 1 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Trace = 0 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes
 Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions
@@ -59,14 +58,6 @@ Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V14 = 14 -> int
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.DbCommand = "DbCommand" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.GraphQlExecute = "GraphQlExecute" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.HttpClient = "HttpClient" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RedisCommand = "RedisCommand" -> string!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.WcfClient = "WcfClient" -> string!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
@@ -74,55 +65,15 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.E
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.Execute() -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedGraphQl.RecordExecutionOptions(System.Diagnostics.Activity? activity, string? operationName, string? document) -> void
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, string? requestUri) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.DeleteAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpCompletionOption completionOption) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, string? requestUri) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpCompletionOption completionOption) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetByteArrayAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri) -> System.Threading.Tasks.Task<byte[]!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetByteArrayAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<byte[]!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetByteArrayAsync(System.Net.Http.HttpClient! client, string? requestUri) -> System.Threading.Tasks.Task<byte[]!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetByteArrayAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<byte[]!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStreamAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri) -> System.Threading.Tasks.Task<System.IO.Stream!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStreamAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStreamAsync(System.Net.Http.HttpClient! client, string? requestUri) -> System.Threading.Tasks.Task<System.IO.Stream!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStreamAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.IO.Stream!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStringAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri) -> System.Threading.Tasks.Task<string!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStringAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<string!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStringAsync(System.Net.Http.HttpClient! client, string? requestUri) -> System.Threading.Tasks.Task<string!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetStringAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<string!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PatchAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpContent? content) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PatchAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpContent? content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PatchAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpContent? content) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PatchAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpContent? content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PostAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpContent? content) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PostAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpContent? content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PostAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpContent? content) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PostAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpContent? content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PutAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpContent? content) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PutAsync(System.Net.Http.HttpClient! client, System.Uri? requestUri, System.Net.Http.HttpContent? content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PutAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpContent? content) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.PutAsync(System.Net.Http.HttpClient! client, string? requestUri, System.Net.Http.HttpContent? content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.Send(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request) -> System.Net.Http.HttpResponseMessage!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.Send(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption) -> System.Net.Http.HttpResponseMessage!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.Send(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken) -> System.Net.Http.HttpResponseMessage!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.Send(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Net.Http.HttpResponseMessage!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.SendAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Receive() -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Send(string? topic, int? partitionId) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.Command(string? operationName, int databaseIndex) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.Call(string! method, System.Uri? endpointUri) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V15 = 15 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.DbCommand = "DbCommand" -> string!
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RedisCommand = "RedisCommand" -> string!
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.WcfClient = "WcfClient" -> string!

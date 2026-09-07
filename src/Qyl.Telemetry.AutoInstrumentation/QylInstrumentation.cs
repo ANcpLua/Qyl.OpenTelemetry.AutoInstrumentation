@@ -28,11 +28,12 @@ internal static class QylInstrumentation
         if (Interlocked.Exchange(ref _activated, 1) == 1)
             return false;
 
-        // The BCL pre-redacts query strings in its distributed-tracing tags to "*", destroying
-        // the information qyl needs to emit upstream-OTel-shaped url.full values (per-value
-        // "key=Redacted" redaction, raw only behind the upstream redaction-disable flag). qyl
-        // owns telemetry in a zero-code app, so take the raw URI and redact it itself.
-        AppContext.SetSwitch("System.Net.Http.DisableUriRedaction", true);
+        // The outbound HTTP span is the BCL's own, and the BCL redacts the query of its url.full to
+        // "*" by itself. qyl does not rewrite what a library emitted, so the only thing left to bind
+        // is the consumer's opt-out: OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
+        // now flips the runtime's own switch instead of a qyl-owned redaction that no longer exists.
+        if (QylAutoInstrumentationOptions.Current.HttpClientUrlQueryRedactionDisabled)
+            AppContext.SetSwitch("System.Net.Http.DisableUriRedaction", true);
 
         if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(
                 QylAutoInstrumentationSignal.Traces,

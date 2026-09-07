@@ -1,12 +1,6 @@
 {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"ADONET","additionalMetricIds":[],"contractKeys":["signals.traces.ADONET"]}
-{"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"MYSQLCONNECTOR","additionalMetricIds":[],"contractKeys":["signals.traces.MYSQLCONNECTOR"]}
-{"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"MYSQLDATA","additionalMetricIds":[],"contractKeys":["signals.traces.MYSQLDATA"]}
-{"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"NPGSQL","additionalMetricIds":["NPGSQL"],"contractKeys":["signals.traces.NPGSQL","signals.metrics.NPGSQL"]}
-{"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"ORACLEMDA","additionalMetricIds":[],"contractKeys":["signals.traces.ORACLEMDA"]}
 {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"SQLCLIENT","additionalMetricIds":["SQLCLIENT"],"contractKeys":["signals.traces.SQLCLIENT","signals.metrics.SQLCLIENT"]}
 {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"SQLITE","additionalMetricIds":[],"contractKeys":["signals.traces.SQLITE"]}
-{"interceptorKind":"GraphQl.Execute","signal":"traces","instrumentationId":"GRAPHQL","additionalMetricIds":[],"contractKeys":["signals.traces.GRAPHQL"]}
-{"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
 {"interceptorKind":"Kafka.Receive","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
 {"interceptorKind":"Kafka.Send","signal":"traces","instrumentationId":"KAFKA","additionalMetricIds":[],"contractKeys":["signals.traces.KAFKA"]}
 {"interceptorKind":"Redis.Command","signal":"traces","instrumentationId":"STACKEXCHANGEREDIS","additionalMetricIds":[],"contractKeys":["signals.traces.STACKEXCHANGEREDIS"]}

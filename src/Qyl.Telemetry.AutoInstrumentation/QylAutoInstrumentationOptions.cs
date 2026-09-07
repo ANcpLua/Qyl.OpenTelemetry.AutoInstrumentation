@@ -15,9 +15,6 @@ internal sealed class QylAutoInstrumentationOptions
     private const string LogsEnabledVariable = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
     private const string EntityFrameworkCoreDbStatementVariable =
         "OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT";
-    private const string GraphQlSetDocumentVariable = "OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT";
-    private const string OracleMdaSetDbStatementVariable =
-        "OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT";
     private const string SqlClientSetDbStatementVariable = "OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT";
     private const string AspNetCoreRequestHeadersVariable =
         "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
@@ -27,10 +24,6 @@ internal sealed class QylAutoInstrumentationOptions
         "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA";
     private const string GrpcClientResponseMetadataVariable =
         "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA";
-    private const string HttpClientRequestHeadersVariable =
-        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
-    private const string HttpClientResponseHeadersVariable =
-        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
     private const string AspNetCoreUrlQueryRedactionDisabledVariable =
         "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION";
     private const string HttpClientUrlQueryRedactionDisabledVariable =
@@ -47,15 +40,11 @@ internal sealed class QylAutoInstrumentationOptions
         bool logsEnabled,
         IReadOnlyDictionary<InstrumentationLookupKey, bool> instrumentationEnabled,
         bool entityFrameworkCoreSetDbStatementForText,
-        bool graphQlSetDocument,
-        bool oracleMdaSetDbStatementForText,
         bool sqlClientSetDbStatementForText,
         string[] aspNetCoreCapturedRequestHeaders,
         string[] aspNetCoreCapturedResponseHeaders,
         string[] grpcNetClientCapturedRequestMetadata,
         string[] grpcNetClientCapturedResponseMetadata,
-        string[] httpClientCapturedRequestHeaders,
-        string[] httpClientCapturedResponseHeaders,
         string[] additionalMetricMeterNames,
         bool aspNetCoreUrlQueryRedactionDisabled,
         bool httpClientUrlQueryRedactionDisabled)
@@ -66,21 +55,15 @@ internal sealed class QylAutoInstrumentationOptions
         LogsEnabled = logsEnabled;
         _instrumentationEnabled = instrumentationEnabled;
         EntityFrameworkCoreSetDbStatementForText = entityFrameworkCoreSetDbStatementForText;
-        GraphQlSetDocument = graphQlSetDocument;
-        OracleMdaSetDbStatementForText = oracleMdaSetDbStatementForText;
         SqlClientSetDbStatementForText = sqlClientSetDbStatementForText;
         AspNetCoreCapturedRequestHeaders = aspNetCoreCapturedRequestHeaders;
         AspNetCoreCapturedResponseHeaders = aspNetCoreCapturedResponseHeaders;
         GrpcNetClientCapturedRequestMetadata = grpcNetClientCapturedRequestMetadata;
         GrpcNetClientCapturedResponseMetadata = grpcNetClientCapturedResponseMetadata;
-        HttpClientCapturedRequestHeaders = httpClientCapturedRequestHeaders;
-        HttpClientCapturedResponseHeaders = httpClientCapturedResponseHeaders;
         AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", aspNetCoreCapturedRequestHeaders);
         AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", aspNetCoreCapturedResponseHeaders);
         GrpcNetClientCapturedRequestMetadataMap = QylCapturedNameMap.Create(RpcAttributes.RequestMetadata + ".", grpcNetClientCapturedRequestMetadata, normalizeLookupName: true);
         GrpcNetClientCapturedResponseMetadataMap = QylCapturedNameMap.Create(RpcAttributes.ResponseMetadata + ".", grpcNetClientCapturedResponseMetadata, normalizeLookupName: true);
-        HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", httpClientCapturedRequestHeaders);
-        HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", httpClientCapturedResponseHeaders);
         AdditionalMetricMeterNames = additionalMetricMeterNames;
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
@@ -96,10 +79,6 @@ internal sealed class QylAutoInstrumentationOptions
 
     public bool EntityFrameworkCoreSetDbStatementForText { get; }
 
-    public bool GraphQlSetDocument { get; }
-
-    public bool OracleMdaSetDbStatementForText { get; }
-
     public bool SqlClientSetDbStatementForText { get; }
 
     public string[] AspNetCoreCapturedRequestHeaders { get; }
@@ -110,10 +89,6 @@ internal sealed class QylAutoInstrumentationOptions
 
     public string[] GrpcNetClientCapturedResponseMetadata { get; }
 
-    public string[] HttpClientCapturedRequestHeaders { get; }
-
-    public string[] HttpClientCapturedResponseHeaders { get; }
-
     internal QylCapturedNameMap AspNetCoreCapturedRequestHeaderMap { get; }
 
     internal QylCapturedNameMap AspNetCoreCapturedResponseHeaderMap { get; }
@@ -121,10 +96,6 @@ internal sealed class QylAutoInstrumentationOptions
     internal QylCapturedNameMap GrpcNetClientCapturedRequestMetadataMap { get; }
 
     internal QylCapturedNameMap GrpcNetClientCapturedResponseMetadataMap { get; }
-
-    internal QylCapturedNameMap HttpClientCapturedRequestHeaderMap { get; }
-
-    internal QylCapturedNameMap HttpClientCapturedResponseHeaderMap { get; }
 
     internal string[] AdditionalMetricMeterNames { get; }
 
@@ -169,15 +140,11 @@ internal sealed class QylAutoInstrumentationOptions
             logsEnabled,
             new ReadOnlyDictionary<InstrumentationLookupKey, bool>(instrumentationEnabled),
             EnvironmentOptions.ReadBoolean(EntityFrameworkCoreDbStatementVariable) ?? false,
-            EnvironmentOptions.ReadBoolean(GraphQlSetDocumentVariable) ?? false,
-            EnvironmentOptions.ReadBoolean(OracleMdaSetDbStatementVariable) ?? false,
             EnvironmentOptions.ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
             EnvironmentOptions.ReadList(AspNetCoreRequestHeadersVariable),
             EnvironmentOptions.ReadList(AspNetCoreResponseHeadersVariable),
             EnvironmentOptions.ReadList(GrpcClientRequestMetadataVariable),
             EnvironmentOptions.ReadList(GrpcClientResponseMetadataVariable),
-            EnvironmentOptions.ReadList(HttpClientRequestHeadersVariable),
-            EnvironmentOptions.ReadList(HttpClientResponseHeadersVariable),
             EnvironmentOptions.ReadCaseSensitiveList(MetricsAdditionalSourcesVariable),
             EnvironmentOptions.ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
             EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false);

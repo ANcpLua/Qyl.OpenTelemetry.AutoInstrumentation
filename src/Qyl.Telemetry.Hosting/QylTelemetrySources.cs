@@ -14,9 +14,15 @@ internal static class QylTelemetrySources
     internal const string Azure = QylTelemetryNames.VendorActivitySources.Azure;
     internal const string AspNetCore = QylFrameworkActivitySources.AspNetCore;
     internal const string HttpClient = QylFrameworkActivitySources.HttpClient;
+    internal const string ConnectorNet = QylTelemetryNames.VendorActivitySources.ConnectorNet;
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
+    internal const string GraphQl = QylTelemetryNames.VendorActivitySources.GraphQL;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
     internal const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
+    internal const string MySqlConnector = QylTelemetryNames.VendorActivitySources.MySqlConnector;
+    internal const string Npgsql = QylTelemetryNames.VendorActivitySources.Npgsql;
+    internal const string OracleManagedDataAccessCore =
+        QylTelemetryNames.VendorActivitySources.OracleManagedDataAccessCore;
     internal const string NServiceBusCore = QylTelemetryNames.VendorActivitySources.NServiceBusCore;
     internal const string Quartz = QylTelemetryNames.VendorActivitySources.Quartz;
     internal const string RabbitMqPublisher = QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher;
@@ -38,19 +44,31 @@ internal static class QylTelemetrySources
     [
         new(Azure, QylAutoInstrumentationIds.Azure, QylAttributes.InstrumentationDomainValues.AzureSdk),
         new(CoreWcf, QylAutoInstrumentationIds.WcfCore, Domain: null),
+        new(HttpClient, QylAutoInstrumentationIds.HttpClient, QylAttributes.InstrumentationDomainValues.HttpClient),
+        new(ConnectorNet, QylAutoInstrumentationIds.MySqlData, QylAttributes.InstrumentationDomainValues.DbClient),
         new(
             ElasticTransport,
             QylAutoInstrumentationIds.ElasticTransport,
             QylAttributes.InstrumentationDomainValues.ElasticTransport),
+        new(GraphQl, QylAutoInstrumentationIds.GraphQl, QylAttributes.InstrumentationDomainValues.GraphQl),
         new(
             MassTransit,
             QylAutoInstrumentationIds.MassTransit,
             QylAttributes.InstrumentationDomainValues.MessagingMassTransit),
         new(MongoDbDriver, QylAutoInstrumentationIds.MongoDb, QylAttributes.InstrumentationDomainValues.DbMongoDb),
         new(
+            MySqlConnector,
+            QylAutoInstrumentationIds.MySqlConnector,
+            QylAttributes.InstrumentationDomainValues.DbClient),
+        new(Npgsql, QylAutoInstrumentationIds.Npgsql, QylAttributes.InstrumentationDomainValues.DbClient),
+        new(
             NServiceBusCore,
             QylAutoInstrumentationIds.NServiceBus,
             QylAttributes.InstrumentationDomainValues.MessagingNServiceBus),
+        new(
+            OracleManagedDataAccessCore,
+            QylAutoInstrumentationIds.OracleMda,
+            QylAttributes.InstrumentationDomainValues.DbClient),
         new(Quartz, QylAutoInstrumentationIds.Quartz, QylAttributes.InstrumentationDomainValues.JobQuartz),
         new(
             RabbitMqPublisher,
@@ -70,12 +88,12 @@ internal static class QylTelemetrySources
         if (options.HasAnyActivityInstrumentationEnabled())
             names.Add(QylActivitySource.Name);
 
-        // Framework-native sources. Registering Microsoft.AspNetCore is what makes the hosting
-        // layer's own HttpRequestIn activity — the one HTTP SERVER span of a request, which
-        // AddQylAspNetCoreInstrumentation's middleware enriches — sampled and exported; registering
-        // System.Net.Http does the same for the outbound side.
+        // Registering Microsoft.AspNetCore is what makes the hosting layer's own HttpRequestIn
+        // activity — the one HTTP SERVER span of a request, which AddQylAspNetCoreInstrumentation's
+        // middleware enriches — sampled and exported. The outbound side is System.Net.Http, and it
+        // is an ordinary row of the native-source table below: the BCL writes the whole HTTP client
+        // convention itself, so the processor only stamps the qyl domain onto it.
         AddIfEnabled(names, options, QylAutoInstrumentationIds.AspNetCore, AspNetCore);
-        AddIfEnabled(names, options, QylAutoInstrumentationIds.HttpClient, HttpClient);
 
         AddIfEnabled(names, options, QylAutoInstrumentationIds.MicrosoftExtensionsAi, MicrosoftExtensionsAi);
         AddIfEnabled(names, options, QylAutoInstrumentationIds.MicrosoftAgentsAi, MicrosoftAgentsAi);

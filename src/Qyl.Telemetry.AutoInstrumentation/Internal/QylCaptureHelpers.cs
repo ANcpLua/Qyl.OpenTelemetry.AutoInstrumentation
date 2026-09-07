@@ -57,20 +57,6 @@ internal static class QylCaptureHelpers
         }
     }
 
-    public static string RedactQuery(string url)
-    {
-        var queryStart = url.IndexOf('?', StringComparison.Ordinal);
-        if (queryStart < 0)
-            return url;
-
-        var fragmentStart = url.IndexOf('#', queryStart);
-        var queryEnd = fragmentStart < 0 ? url.Length : fragmentStart;
-        var redacted = RedactQueryValues(url[(queryStart + 1)..queryEnd]);
-        return fragmentStart < 0
-            ? url[..(queryStart + 1)] + redacted
-            : url[..(queryStart + 1)] + redacted + url[fragmentStart..];
-    }
-
     public static string RedactQueryValues(string query)
     {
         if (query.IndexOf('=', StringComparison.Ordinal) < 0)
@@ -100,9 +86,6 @@ internal static class QylCaptureHelpers
 
         return builder.ToString();
     }
-
-    public static string FormatUrlFull(string url, bool queryRedactionDisabled)
-        => queryRedactionDisabled ? url : RedactQuery(url);
 
     private static string[] ToTagValues(StringValues values)
         => values.Count is 0

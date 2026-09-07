@@ -19,7 +19,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private enum InterceptorBody
     {
         Trace,
-        Forward,
         DbCommand,
     }
 
@@ -58,7 +57,8 @@ public sealed partial class QylAutoInstrumentationGenerator
         string Enrich,
         EquatableArray<BoundParameter> EnrichParameters,
         string Metric,
-        EquatableArray<BoundParameter> MetricParameters);
+        EquatableArray<BoundParameter> MetricParameters,
+        EquatableArray<string> NativeSourceReceivers);
 
     private sealed record IntegrationDeclaration(
         string Name,
@@ -186,6 +186,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         var body = (InterceptorBody)attribute.GetNamedArgument<int>("Body");
         var observeAsync = attribute.GetNamedArgument<bool>("ObserveAsync");
         var observeByRefOnly = attribute.GetNamedArgument<bool>("ObserveByRefOnly");
+        var nativeSourceReceivers = attribute.GetNamedArgumentArray<string>("NativeSourceReceivers");
         if (shape.Length is 0)
             throw new InvalidOperationException("Interceptor declaration on " + type.Name + " names no shape.");
 
@@ -202,7 +203,8 @@ public sealed partial class QylAutoInstrumentationGenerator
             enrich,
             ReadBoundParameters(type, enrich, skip: 1),
             metric,
-            ReadBoundParameters(type, metric, skip: 1));
+            ReadBoundParameters(type, metric, skip: 1),
+            nativeSourceReceivers.AsEquatableArray());
     }
 
     private static EquatableArray<BoundParameter> ReadBoundParameters(INamedTypeSymbol type, string methodName, int skip)

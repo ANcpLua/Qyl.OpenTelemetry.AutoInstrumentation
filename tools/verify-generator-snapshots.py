@@ -35,9 +35,9 @@ REQUIRED_INTERCEPTOR_TOKENS = [
     "internal static class QylGeneratedInterceptors",
     "// Intercepted call at /_qyl_generator_snapshot/Program.cs",
     "[global::System.Runtime.CompilerServices.InterceptsLocationAttribute(",
-    "HttpClient_GetAsync_",
-    "global::System.Net.Http.HttpClient receiver",
-    "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(",
+    "DbCommand_ExecuteScalar_",
+    "global::SnapshotCommand receiver",
+    "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(",
 ]
 
 FORBIDDEN_INTERCEPTOR_TOKENS = [
@@ -160,10 +160,11 @@ def compare_contract_manifest_coverage() -> None:
 def verify_shape_mismatch_diagnostic(build_output: str, interceptors: str) -> None:
     """A declared call site that does not fit its shape must report QYL1001 and emit no interceptor.
 
-    Fixture/ShapeMismatch.cs calls QylUnmatchedClient.GetAsync(int). The receiver derives from
-    System.Net.Http.HttpClient and the method name is declared, so the declaration matches; the
-    signature returns Task<string> and does not fit the HttpClient shape. The generator must skip it
-    and say so, rather than failing the consumer's build or dropping the call site in silence.
+    Fixture/ShapeMismatch.cs calls QylUnmatchedCommand.ExecuteScalar(int). The receiver derives from
+    System.Data.Common.DbCommand and the method name is declared, so the declaration matches; the
+    signature takes an int and returns string, which the DbCommand shape does not describe. The
+    generator must skip it and say so, rather than failing the consumer's build or dropping the call
+    site in silence.
     """
     reported = {
         line.split("warning QYL1001:", 1)[1].strip().split(" [", 1)[0]
@@ -177,12 +178,12 @@ def verify_shape_mismatch_diagnostic(build_output: str, interceptors: str) -> No
         )
 
     message = reported.pop()
-    for token in ["QylUnmatchedClient", "GetAsync", "'HttpClient' shape", "not instrumented"]:
+    for token in ["QylUnmatchedCommand", "ExecuteScalar", "'DbCommand' shape", "not instrumented"]:
         if token not in message:
             fail(f"QYL1001 message missing {token!r}: {message}")
 
     # The whole point is that no interceptor is produced for the reported call site.
-    for token in ["QylUnmatchedClient", "ShapeMismatch.cs"]:
+    for token in ["QylUnmatchedCommand", "ShapeMismatch.cs"]:
         if token in interceptors:
             fail(f"an interceptor was emitted for the non-matching call site: {token}")
 

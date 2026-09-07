@@ -35,8 +35,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         switch (shape)
         {
-            case "HttpClient":
-                return TryMatchHttpClient(symbol, out match);
             case "DbCommand":
                 return TryMatchDbCommand(symbol, receiverType, out match);
             case "WcfClient":
@@ -47,165 +45,9 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return TryMatchKafkaConsume(symbol, out match);
             case "RedisCommand":
                 return TryMatchRedisCommand(symbol, integration.HelperType, out match);
-            case "GraphQlExecute":
-                return TryMatchGraphQlExecute(symbol, out match);
             default:
                 throw new InvalidOperationException("Unknown interceptor shape: " + shape);
         }
-    }
-
-    private static bool TryMatchHttpClient(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        var receiver = CleanTypeName(symbol.ContainingType);
-        const string response = "global::System.Net.Http.HttpResponseMessage";
-        const string responseTask = "global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>";
-        EquatableArray<ParameterSpec> parameters;
-        switch (symbol.Name)
-        {
-            case "Send":
-                if (!IsType(symbol.ReturnType, response) || !TryGetSendShape(symbol, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, response, parameters, false);
-                return true;
-            case "SendAsync":
-                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetSendShape(symbol, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, responseTask, parameters, false);
-                return true;
-            case "GetAsync":
-                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetRequestUriShape(symbol, allowCompletionOption: true, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, responseTask, parameters, false);
-                return true;
-            case "DeleteAsync":
-                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, responseTask, parameters, false);
-                return true;
-            case "PostAsync":
-            case "PutAsync":
-            case "PatchAsync":
-                if (!IsTaskOf(symbol.ReturnType, response) || !TryGetRequestUriContentShape(symbol, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, responseTask, parameters, false);
-                return true;
-            case "GetStringAsync":
-                if (!IsTaskOf(symbol.ReturnType, "global::System.String") || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, "global::System.Threading.Tasks.Task<string>", parameters, false);
-                return true;
-            case "GetByteArrayAsync":
-                if (!IsTaskOf(symbol.ReturnType, "global::System.Byte[]") || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, "global::System.Threading.Tasks.Task<byte[]>", parameters, false);
-                return true;
-            case "GetStreamAsync":
-                if (!IsTaskOf(symbol.ReturnType, "global::System.IO.Stream") || !TryGetRequestUriShape(symbol, allowCompletionOption: false, out parameters))
-                    return false;
-                match = new ShapeMatch(receiver, "global::System.Threading.Tasks.Task<global::System.IO.Stream>", parameters, false);
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    private static bool TryGetSendShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
-    {
-        parameters = default;
-        if (symbol.Parameters.Length is < 1 or > 3 ||
-            !IsType(symbol.Parameters[0].Type, "global::System.Net.Http.HttpRequestMessage"))
-        {
-            return false;
-        }
-
-        if (symbol.Parameters.Length is 1)
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        if (symbol.Parameters.Length is 2)
-        {
-            if (IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken") ||
-                IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption"))
-            {
-                parameters = BuildParameters(symbol);
-                return true;
-            }
-        }
-
-        if (symbol.Parameters.Length is 3 &&
-            IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption") &&
-            IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryGetRequestUriShape(IMethodSymbol symbol, bool allowCompletionOption, out EquatableArray<ParameterSpec> parameters)
-    {
-        parameters = default;
-        if (symbol.Parameters.Length is < 1 or > 3)
-            return false;
-
-        var firstIsString = IsType(symbol.Parameters[0].Type, "global::System.String");
-        var firstIsUri = IsType(symbol.Parameters[0].Type, "global::System.Uri");
-        if (!firstIsString && !firstIsUri)
-            return false;
-
-        if (symbol.Parameters.Length is 1)
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        if (symbol.Parameters.Length is 2)
-        {
-            if (IsType(symbol.Parameters[1].Type, "global::System.Threading.CancellationToken") ||
-                (allowCompletionOption && IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption")))
-            {
-                parameters = BuildParameters(symbol);
-                return true;
-            }
-        }
-
-        if (allowCompletionOption &&
-            symbol.Parameters.Length is 3 &&
-            IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpCompletionOption") &&
-            IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool TryGetRequestUriContentShape(IMethodSymbol symbol, out EquatableArray<ParameterSpec> parameters)
-    {
-        parameters = default;
-        if (symbol.Parameters.Length is not (2 or 3))
-            return false;
-
-        var firstIsString = IsType(symbol.Parameters[0].Type, "global::System.String");
-        var firstIsUri = IsType(symbol.Parameters[0].Type, "global::System.Uri");
-        if ((!firstIsString && !firstIsUri) ||
-            !IsType(symbol.Parameters[1].Type, "global::System.Net.Http.HttpContent"))
-        {
-            return false;
-        }
-
-        if (symbol.Parameters.Length is 2 || IsType(symbol.Parameters[2].Type, "global::System.Threading.CancellationToken"))
-        {
-            parameters = BuildParameters(symbol);
-            return true;
-        }
-
-        return false;
     }
 
     private static bool TryMatchDbCommand(IMethodSymbol symbol, ITypeSymbol? receiverType, out ShapeMatch match)
@@ -564,24 +406,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         }
 
         return false;
-    }
-
-    private static bool TryMatchGraphQlExecute(IMethodSymbol symbol, out ShapeMatch match)
-    {
-        match = default;
-        if (!TryGetTaskResult(symbol.ReturnType, out var resultType) ||
-            resultType is not INamedTypeSymbol namedResult ||
-            !IsTypeByMetadata(namedResult, "GraphQL", "ExecutionResult"))
-        {
-            return false;
-        }
-
-        match = new ShapeMatch(
-            CleanTypeName(symbol.ContainingType),
-            CleanTypeName(symbol.ReturnType, symbol),
-            BuildParameters(symbol),
-            true);
-        return true;
     }
 
     private static bool TryMatchRedisCommand(IMethodSymbol symbol, string helperType, out ShapeMatch match)

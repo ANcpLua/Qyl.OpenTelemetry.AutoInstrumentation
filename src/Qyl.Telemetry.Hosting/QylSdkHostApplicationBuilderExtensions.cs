@@ -90,10 +90,18 @@ public static class QylSdkHostApplicationBuilderExtensions
             })
             .WithTracing(tracing =>
             {
-                tracing.AddSource(QylTelemetrySources.GetEnabledActivitySourceNames());
+                var subscribedSources = QylTelemetrySources.GetEnabledActivitySourceNames();
+                tracing.AddSource(subscribedSources);
 
+                // A consumer's AdditionalSources are deduplicated against what qyl already
+                // subscribed. Naming a source qyl owns — "System.Net.Http" is the one a consumer
+                // reaches for — must not register it twice.
+                var additionalSources = new HashSet<string>(subscribedSources, StringComparer.Ordinal);
                 foreach (var source in options.AdditionalSources)
-                    tracing.AddSource(source);
+                {
+                    if (additionalSources.Add(source))
+                        tracing.AddSource(source);
+                }
 
                 var nativeSourceRows = QylTelemetrySources.GetEnabledNativeSourceRows();
                 if (nativeSourceRows.Length > 0)
@@ -119,8 +127,14 @@ public static class QylSdkHostApplicationBuilderExtensions
                 metrics.AddMeter(QylMetricMeters.GetEnabledMeterNames());
                 metrics.AddMeter(QylTelemetrySources.GetEnabledMeterNames());
 
+                var additionalMeters = new HashSet<string>(
+                    QylMetricMeters.GetEnabledMeterNames().Concat(QylTelemetrySources.GetEnabledMeterNames()),
+                    StringComparer.Ordinal);
                 foreach (var meter in options.AdditionalMeters)
-                    metrics.AddMeter(meter);
+                {
+                    if (additionalMeters.Add(meter))
+                        metrics.AddMeter(meter);
+                }
 
                 if (exportEnabled)
                     metrics.AddOtlpExporter(exporter => ConfigureExporter(exporter, endpoint, "/v1/metrics"));

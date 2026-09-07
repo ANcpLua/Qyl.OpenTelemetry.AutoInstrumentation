@@ -16,19 +16,57 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
 {
     internal static class QylGeneratedInterceptors
     {
-        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V14;
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V15;
 
-        // qyl-interceptor-manifest: {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
-        // Intercepted call at /_qyl_generator_snapshot/Program.cs(6,21)
-        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "0T8NCMWQIrhqyFBG+phcs3kAAABQcm9ncmFtLmNz")]
-        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> HttpClient_GetAsync_0(this global::System.Net.Http.HttpClient receiver, string p0)
-            => global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(receiver, p0);
+        // qyl-interceptor-manifest: {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"ADONET","additionalMetricIds":[],"contractKeys":["signals.traces.ADONET"]}
+        // Intercepted call at /_qyl_generator_snapshot/Program.cs(3,13)
+        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "eGGksfDdRGwrsWqffSjv1jgAAABQcm9ncmFtLmNz")]
+        public static object DbCommand_ExecuteScalar_0(this global::SnapshotCommand receiver)
+        {
+            var metricStart = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp();
+            var activity = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(receiver, "ADONET", "ExecuteScalar");
+            try
+            {
+                var result = receiver.ExecuteScalar();
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(metricStart, "ADONET");
+                return result;
+            }
+            catch (global::System.Exception exception)
+            {
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(activity, exception);
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(metricStart, "ADONET");
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
 
-        // qyl-interceptor-manifest: {"interceptorKind":"HttpClient.Forward","signal":"traces","instrumentationId":"HTTPCLIENT","additionalMetricIds":["HTTPCLIENT"],"contractKeys":["signals.traces.HTTPCLIENT","signals.metrics.HTTPCLIENT"]}
-        // Intercepted call at /_qyl_generator_snapshot/Probe.cs(11,29)
-        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "uk73+ILVjKhwjuVSYkMzfxACAABQcm9iZS5jcw==")]
-        public static global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> HttpClient_GetAsync_1(this global::System.Net.Http.HttpClient receiver, string p0)
-            => global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedHttpClient.GetAsync(receiver, p0);
+        // qyl-interceptor-manifest: {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"ADONET","additionalMetricIds":[],"contractKeys":["signals.traces.ADONET"]}
+        // Intercepted call at /_qyl_generator_snapshot/Probe.cs(9,21)
+        [global::System.Runtime.CompilerServices.InterceptsLocationAttribute(1, "glSC8NWNHiYnnvfFTRrffO8BAABQcm9iZS5jcw==")]
+        public static object DbCommand_ExecuteScalar_1(this global::SnapshotCommand receiver)
+        {
+            var metricStart = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp();
+            var activity = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(receiver, "ADONET", "ExecuteScalar");
+            try
+            {
+                var result = receiver.ExecuteScalar();
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(metricStart, "ADONET");
+                return result;
+            }
+            catch (global::System.Exception exception)
+            {
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(activity, exception);
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(metricStart, "ADONET");
+                throw;
+            }
+            finally
+            {
+                activity?.Dispose();
+            }
+        }
 
     }
 }

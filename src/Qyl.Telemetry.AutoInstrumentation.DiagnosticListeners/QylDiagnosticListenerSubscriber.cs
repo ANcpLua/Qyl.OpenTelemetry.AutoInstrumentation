@@ -31,10 +31,6 @@ public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<s
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
             return;
 
-        // Claim the DiagnosticListener lane for this signal. If a higher-priority lane (interceptor /
-        // generated middleware) also covers it, this subscriber defers in OnNext so the operation is
-        // instrumented exactly once. See QylSignalOwnership.
-        QylSignalOwnership.Register(InstrumentationId, QylSignalOwnership.DiagnosticListener);
         _allListenersSubscription ??= DiagnosticListener.AllListeners.Subscribe(new AllListenersObserver(this));
     }
 
@@ -43,8 +39,7 @@ public abstract class QylDiagnosticListenerSubscriber : IObserver<KeyValuePair<s
 
     void IObserver<KeyValuePair<string, object?>>.OnNext(KeyValuePair<string, object?> value)
     {
-        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId)
-            && QylSignalOwnership.ShouldEmit(InstrumentationId, QylSignalOwnership.DiagnosticListener))
+        if (QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(Signal, InstrumentationId))
             OnEvent(value.Key, value.Value);
     }
 

@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
-using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.HttpClient;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Hosting;
 
@@ -24,7 +23,6 @@ internal static class ModuleInitializerBoot
 {
     private static readonly QylDiagnosticListenerSubscriber[] DiagnosticListeners =
     [
-        new HttpClientDiagnosticListener(),
         new GrpcClientDiagnosticListener(),
     ];
 

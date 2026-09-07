@@ -72,6 +72,13 @@ public sealed class QylInterceptAttribute : Attribute
 
     /// <summary>The helper method that records the operation's duration metric; the helper also exposes <c>GetTimestamp()</c>.</summary>
     public string Metric { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Receiver-type namespace prefixes whose library owns a native <c>ActivitySource</c> qyl
+    /// subscribes instead. A call site on one of them is left to the native lane: no interceptor is
+    /// emitted, and the skip is not a shape mismatch, so it reports no <c>QYL1001</c>.
+    /// </summary>
+    public string[] NativeSourceReceivers { get; set; } = [];
 }
 
 /// <summary>The closed set of body templates the generator emits.</summary>
@@ -80,8 +87,6 @@ public enum QylInterceptorBody
 {
     /// <summary>Start an activity, invoke, record the exception, dispose.</summary>
     Trace,
-    /// <summary>Forward the call to a same-named helper overload.</summary>
-    Forward,
     /// <summary>Trace a <c>DbCommand</c> execution with the duration metric observed alongside the task.</summary>
     DbCommand,
 }
@@ -90,8 +95,6 @@ public enum QylInterceptorBody
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class QylShapes
 {
-    /// <summary>The <c>HttpClient</c> convenience and <c>Send</c> overloads.</summary>
-    public const string HttpClient = "HttpClient";
     /// <summary>The <c>DbCommand</c> execute overloads, with the provider fan-out by receiver namespace.</summary>
     public const string DbCommand = "DbCommand";
     /// <summary>Operation methods on a <c>ClientBase&lt;TChannel&gt;</c>, named by the contract attributes.</summary>
@@ -102,8 +105,6 @@ public static class QylShapes
     public const string KafkaConsume = "KafkaConsume";
     /// <summary>An <c>IDatabaseAsync</c> command whose wire command the command table resolves.</summary>
     public const string RedisCommand = "RedisCommand";
-    /// <summary>The <c>IDocumentExecuter.ExecuteAsync</c> operation.</summary>
-    public const string GraphQlExecute = "GraphQlExecute";
 }
 
 /// <summary>Binds a helper parameter to an intercepted argument by position, optionally filtered by the argument's type and converted by a format whose <c>{0}</c> is the argument.</summary>

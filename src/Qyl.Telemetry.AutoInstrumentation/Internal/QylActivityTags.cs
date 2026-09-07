@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using DbAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Db.DbAttributes;
-using GraphqlAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Graphql.GraphqlAttributes;
 using MessagingAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Messaging.MessagingAttributes;
 using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 
@@ -51,10 +50,4 @@ internal static class QylActivityTags
         activity.SetTag(RpcAttributes.SystemName, system);
         activity.SetTag(RpcAttributes.Method, method);
     }
-
-    public static void SetGraphQlOperationName(Activity activity, string operationName)
-        => activity.SetTag(GraphqlAttributes.OperationName, operationName);
-
-    public static void SetGraphQlOperationType(Activity activity, string operationType)
-        => activity.SetTag(GraphqlAttributes.OperationType, operationType);
 }

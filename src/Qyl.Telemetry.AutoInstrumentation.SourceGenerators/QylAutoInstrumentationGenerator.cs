@@ -196,6 +196,12 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (!TryMatchReceiver(intercept.ReceiverType, symbol, out var matchedReceiver))
             return false;
 
+        // The library owns a native ActivitySource qyl subscribes, so the call is not this lane's to
+        // intercept. It is not a shape mismatch either: unmatchedShape stays empty and no QYL1001 is
+        // reported for a call site qyl deliberately leaves to the library's own span.
+        if (IsNativeSourceReceiver(intercept, receiverType ?? symbol.ContainingType))
+            return false;
+
         if (!TryMatchShape(intercept.Shape, integration, symbol, receiverType, matchedReceiver, out var shape))
         {
             // Only worth reporting when the declaration actually named this API. A declaration with no
@@ -224,6 +230,30 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             shape.ExtensionContainingType,
             shape.ShapeExpression);
         return true;
+    }
+
+    private static bool IsNativeSourceReceiver(InterceptDeclaration intercept, ITypeSymbol receiverType)
+    {
+        if (intercept.NativeSourceReceivers.Length is 0)
+            return false;
+
+        var containingNamespace = receiverType.ContainingNamespace;
+        if (containingNamespace is null)
+            return false;
+
+        var namespaceName = containingNamespace.ToDisplayString();
+        foreach (var declared in intercept.NativeSourceReceivers)
+        {
+            if (string.Equals(namespaceName, declared, StringComparison.Ordinal) ||
+                (namespaceName.Length > declared.Length &&
+                 namespaceName.StartsWithOrdinal(declared) &&
+                 namespaceName[declared.Length] is '.'))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryMatchReceiver(string declaredReceiverType, IMethodSymbol symbol, out ITypeSymbol receiver)
@@ -303,7 +333,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("{");
         builder.AppendLine("    internal static class QylGeneratedInterceptors");
         builder.AppendLine("    {");
-        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V14;");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V15;");
         builder.AppendLine();
 
         for (var index = 0; index < invocations.Length; index++)
@@ -328,9 +358,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         {
             case InterceptorBody.Trace:
                 EmitTraceInterceptor(builder, in invocation, index);
-                return;
-            case InterceptorBody.Forward:
-                EmitForwardingInterceptor(builder, in invocation, index);
                 return;
             case InterceptorBody.DbCommand:
                 EmitDbCommandInterceptor(builder, in invocation, index);
@@ -445,31 +472,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("            {");
         builder.AppendLine("                activity?.Dispose();");
         builder.AppendLine("            }");
-    }
-
-    private static void EmitForwardingInterceptor(StringBuilder builder, in InterceptedInvocation invocation, int index)
-    {
-        var target = invocation.Target;
-        EmitAttributeAndSignature(
-            builder,
-            invocation.Location,
-            target.ReturnType,
-            GetMethodPrefix(in target),
-            index,
-            target.ReceiverType,
-            target.Parameters,
-            isAsync: false,
-            target.TypeParameterList,
-            target.ConstraintClauses);
-        builder.Append("            => ");
-        builder.Append(target.Integration.HelperType);
-        builder.Append('.');
-        builder.Append(target.MethodName);
-        builder.Append('(');
-        builder.Append(ReceiverName);
-        AppendArgumentList(builder, target.Parameters, includeLeadingComma: true);
-        builder.AppendLine(");");
-        builder.AppendLine();
     }
 
     private static bool RuntimeObservesAsync(in InterceptorTarget target)

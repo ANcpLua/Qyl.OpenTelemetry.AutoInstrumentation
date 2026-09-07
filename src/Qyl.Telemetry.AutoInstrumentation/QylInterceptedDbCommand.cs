@@ -5,7 +5,11 @@ using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
-/// <summary>ADO.NET <see cref="DbCommand"/> execution spans, fanned out to the provider's instrumentation id by the receiver's namespace.</summary>
+/// <summary>
+/// ADO.NET <see cref="DbCommand"/> execution spans, fanned out to the provider's instrumentation id
+/// by the receiver's namespace. Providers that declare a native <c>ActivitySource</c> are excluded:
+/// their spans are their own.
+/// </summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 [QylIntegration(QylAutoInstrumentationIds.AdoNet, QylAttributes.InstrumentationDomainValues.DbClient)]
 [QylIntercept(
@@ -14,12 +18,10 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
     Shape = QylShapes.DbCommand,
     Body = QylInterceptorBody.DbCommand,
     Start = nameof(Execute),
-    Metric = nameof(RecordDuration))]
-[QylSignal(QylAutoInstrumentationIds.MySqlConnector, QylAutoInstrumentationSignal.Traces)]
-[QylSignal(QylAutoInstrumentationIds.MySqlData, QylAutoInstrumentationSignal.Traces)]
-[QylSignal(QylAutoInstrumentationIds.Npgsql, QylAutoInstrumentationSignal.Traces)]
-[QylSignal(QylAutoInstrumentationIds.Npgsql, QylAutoInstrumentationSignal.Metrics)]
-[QylSignal(QylAutoInstrumentationIds.OracleMda, QylAutoInstrumentationSignal.Traces)]
+    Metric = nameof(RecordDuration),
+    // Npgsql, MySqlConnector, MySql.Data and ODP.NET each declare their own ActivitySource, which
+    // Qyl.Telemetry.Hosting subscribes. A command on one of those receivers is theirs to report.
+    NativeSourceReceivers = ["Npgsql", "MySqlConnector", "MySql.Data", "Oracle.ManagedDataAccess"])]
 [QylSignal(QylAutoInstrumentationIds.SqlClient, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.SqlClient, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.Sqlite, QylAutoInstrumentationSignal.Traces)]
