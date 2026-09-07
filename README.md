@@ -10,7 +10,7 @@ Roslyn interceptors are supported by this repository's .NET SDK 10.0.400. See th
 contract.
 
 Every attribute key, attribute value and telemetry scope name this package writes is a generated
-constant from `Qyl.Telemetry.SemanticConventions` 9.1.0. The instrumentation writes those constants
+constant from `Qyl.Telemetry.SemanticConventions` 9.2.0. The instrumentation writes those constants
 and nothing else: it never renames, drops or coerces what a library emitted. Deprecated keys and
 vendor keys travel as the library wrote them and the qyl collector rewrites them; the live check
 below is what proves it.
@@ -247,7 +247,7 @@ Skipping in silence would hide the loss of instrumentation, and emitting an inte
 mismatched signature would break the consumer's build; the diagnostic is the third option.
 
 `Qyl.Telemetry.AutoInstrumentation` also consumes
-`Qyl.Telemetry.SemanticConventions.Analyzers` 9.1.0 with `PrivateAssets="all"`, so the `QYL0xxx`
+`Qyl.Telemetry.SemanticConventions.Analyzers` 9.2.0 with `PrivateAssets="all"`, so the `QYL0xxx`
 rules run over this repository's own sources and ship to no consumer. `Directory.Build.props` sets
 `OtelSemConvInstrumentationLibrary=true`: this is an instrumentation library that version-locks with
 the incubating tier on purpose, so `QYL0008` ("copy incubating constants locally") does not apply.
@@ -306,7 +306,7 @@ it receives: the library's keys, the vendor keys it passes through and the
 
 `--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is closed by
 changing what the instrumentation writes or by declaring the key in the registry, never by waving it
-through. Against the `v9.1.0` registry the nine lanes report zero violations.
+through. Against the `v9.2.0` registry the nine lanes report zero violations.
 
 How a finding is *levelled* is the registry's decision, and it takes two flags that must travel
 together:
