@@ -10,11 +10,19 @@ those demos emit alongside them.
 A finding is never waved through here. `--fail-on violation` is weaver's own threshold, and a
 violation is closed either by changing what the instrumentation writes or by declaring the key in
 the registry. There is no allowlist in this file.
+
+How a finding is *levelled* is the registry's decision, not this repository's. The registry ships
+`registry/policies/live_check_advice/`, and this gate passes it to `--advice-policies`: an open
+enum with `_OTHER` is information, a renamed or obsoleted key a library still emits is an
+improvement, a type mismatch whose value parses is an improvement. Without that policy set weaver
+falls back to its default advisor, which calls all three violations, so a missing policy set fails
+the gate here rather than quietly changing what the threshold means.
 """
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -27,7 +35,11 @@ from pathlib import Path
 from verify_helpers import LIVE_CHECK_ENDPOINT_VARIABLE, clean_env
 
 ROOT = Path(__file__).resolve().parents[1]
+PACKAGES_PROPS = ROOT / "Directory.Packages.props"
+SEMCONV_PACKAGE = "Qyl.Telemetry.SemanticConventions"
 REGISTRY_VARIABLE = "QYL_SEMCONV_REGISTRY"
+ADVICE_POLICIES = Path("registry") / "policies" / "live_check_advice"
+WEAVER_CONFIG = Path("registry") / ".weaver.toml"
 OTLP_GRPC_PORT = 4317
 ADMIN_PORT = 4320
 LISTENER_TIMEOUT_SECONDS = 60
@@ -65,6 +77,14 @@ def fail(message: str) -> None:
     raise SystemExit(message)
 
 
+def read_property(path: Path, pattern: str, what: str) -> str:
+    match = re.search(pattern, path.read_text(encoding="utf-8"))
+    if not match:
+        fail(f"{path} declares no {what}")
+
+    return match.group(1)
+
+
 def resolve_registry() -> Path:
     configured = os.environ.get(REGISTRY_VARIABLE)
     if not configured:
@@ -78,12 +98,50 @@ def resolve_registry() -> Path:
     if not manifest.is_file():
         fail(f"{REGISTRY_VARIABLE} has no registry/manifest.yaml: {registry_root}")
 
+    # The registry checkout and the package pin are named in different files — the workflow's ref
+    # and Directory.Packages.props — so nothing but this check keeps them the same release. Judging
+    # spans against a registry other than the one whose constants the code compiled against is the
+    # failure that would look like a green gate.
+    pinned = read_property(
+        PACKAGES_PROPS,
+        rf'<PackageVersion\s+Include="{re.escape(SEMCONV_PACKAGE)}"\s+Version="([^"]+)"',
+        f"{SEMCONV_PACKAGE} PackageVersion",
+    )
+    checked_out = read_property(
+        registry_root / "Directory.Build.props",
+        r"<VersionPrefix[^>]*>([^<]+)</VersionPrefix>",
+        "VersionPrefix",
+    )
+    if pinned != checked_out:
+        fail(
+            f"{REGISTRY_VARIABLE} is the {checked_out} registry, but this repository pins "
+            f"{SEMCONV_PACKAGE} {pinned}. Check out v{pinned}."
+        )
+
     # manifest.yaml names the filtered core copy by a path relative to the process working
     # directory, so weaver runs from the registry checkout and that copy has to exist first.
     core = registry_root / ".build" / "core-filtered" / "model"
     if not core.is_dir():
         fail(f"run scripts/fetch-core.sh in {registry_root} first: {core} is missing")
 
+    # The policy set has two halves and both are checked here, because weaver reports neither an
+    # unreadable --advice-policies directory nor a missing --config: it would judge the run with
+    # its built-in advisors, call every renamed key a library emits a violation, and this file
+    # rather than the registry would own what a violation means.
+    #
+    # .weaver.toml drops the built-in deprecated/type/enum findings by finding id — those advisors
+    # are compiled into the binary and emit at a level no policy can lower — and the rego policies
+    # re-issue them at the level the registry chose.
+    policies = registry_root / ADVICE_POLICIES
+    rego = sorted(policies.glob("*.rego")) if policies.is_dir() else []
+    if not rego:
+        fail(f"the {checked_out} registry ships no advice policies at {ADVICE_POLICIES}")
+
+    if not (registry_root / WEAVER_CONFIG).is_file():
+        fail(f"the {checked_out} registry ships no {WEAVER_CONFIG}, so the built-in advisors stand")
+
+    print(f"registry {checked_out}: {registry_root}")
+    print("advice policies: " + ", ".join(path.name for path in rego))
     return registry_root
 
 
@@ -159,6 +217,15 @@ def main() -> None:
         "live-check",
         "--registry",
         str(registry_root / "registry"),
+        # The registry decides what level a finding gets; weaver's built-in advisors would decide
+        # it here. Open enums with _OTHER, the deprecated keys the libraries themselves emit and a
+        # parseable type mismatch are not violations, and the registry is where that is written.
+        # Both halves are required: --config drops the built-in findings, --advice-policies
+        # re-issues them at the registry's level.
+        "--config",
+        str(registry_root / WEAVER_CONFIG),
+        "--advice-policies",
+        str(registry_root / ADVICE_POLICIES),
         # Core and genai are dependency registries; without this every key qyl does not itself
         # redeclare — service.name, http.request.method, error.type — reads as unknown.
         "--include-unreferenced",

@@ -10,8 +10,8 @@ internal static class QylTelemetrySources
     internal const string MicrosoftAgentsAi = "Experimental.Microsoft.Agents.AI";
     internal const string MicrosoftAgentsAiWorkflows = "Microsoft.Agents.AI.Workflows";
     internal const string ModelContextProtocol = "Experimental.ModelContextProtocol";
-    internal const string CoreWcf = "CoreWCF.Primitives";
-    internal const string Azure = "Azure.*";
+    internal const string CoreWcf = QylTelemetryNames.VendorActivitySources.CoreWCFPrimitives;
+    internal const string Azure = QylTelemetryNames.VendorActivitySources.Azure;
     internal const string AspNetCore = "Microsoft.AspNetCore";
     internal const string HttpClient = "System.Net.Http";
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
