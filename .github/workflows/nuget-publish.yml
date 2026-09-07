@@ -109,10 +109,18 @@ jobs:
           fi
 
   verify:
+    # Every verifier still runs; only where they run changed. --shard cuts the selected set into
+    # equal stride slices, so the eight runners together execute exactly the gate's own list in its
+    # own order, and the wall clock is the slowest slice instead of the sum of all 52.
+    name: verify ${{ matrix.shard }}/8
     needs: version
     if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
@@ -140,7 +148,18 @@ jobs:
       - name: Full managed, real-integration, and NativeAOT gate
         env:
           QYL_SEMCONV_REGISTRY: ${{ github.workspace }}/.semconv
-        run: python tools/verify-aot-autoinstrumentation-goal.py
+        run: python tools/verify-aot-autoinstrumentation-goal.py --shard ${{ matrix.shard }}/8
+
+  pack:
+    needs: version
+    if: needs.version.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
       - name: Pack release artifacts
         env:
           VERSION: ${{ needs.version.outputs.version }}
@@ -176,7 +195,7 @@ jobs:
           fi
 
           for project in "${projects[@]}"; do
-            dotnet pack "$project" -c Release --no-restore -o artifacts/release -p:Version="$VERSION"
+            dotnet pack "$project" -c Release -o artifacts/release -p:Version="$VERSION"
           done
 
           # Expected count derives from the list, never a literal.
@@ -203,7 +222,7 @@ jobs:
         run: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion
 
   publish:
-    needs: [version, verify, aot-publish]
+    needs: [version, verify, pack, aot-publish]
     if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     environment: nuget

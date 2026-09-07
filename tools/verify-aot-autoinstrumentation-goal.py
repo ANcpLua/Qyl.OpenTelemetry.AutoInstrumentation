@@ -138,6 +138,16 @@ def main() -> None:
         help="Select the central NativeAOT publish classification (always strict-promotion).",
     )
     parser.add_argument(
+        "--shard",
+        metavar="INDEX/COUNT",
+        help=(
+            "Run only the INDEX-th of COUNT equal slices of the selected verifiers, 1-based. "
+            "The slice is cut after --only/--skip/--no-demos/--demos-only have chosen the set, "
+            "and it preserves order, so COUNT runners together run exactly the same commands "
+            "the unsharded gate would run, in the same sequence."
+        ),
+    )
+    parser.add_argument(
         "--keep-publish",
         action="store_true",
         help="Keep artifacts/publish after a successful run (default: removed — pure verification byproduct, multiple GB over the full demo matrix).",
@@ -159,6 +169,14 @@ def main() -> None:
     if args.no_demos:
         skip |= demo_names
     commands = select_commands(only, skip)
+    if args.shard:
+        index, _, count = args.shard.partition("/")
+        if not index.isdigit() or not count.isdigit() or not 1 <= int(index) <= int(count):
+            raise SystemExit(f"--shard expects INDEX/COUNT with 1 <= INDEX <= COUNT, got {args.shard!r}")
+        commands = commands[int(index) - 1 :: int(count)]
+        if not commands:
+            print(f"shard {args.shard} selected no verifiers")
+            return
     full_gate = commands == COMMANDS
     commands = [
         (name, [sys.executable, "tools/verify-aot-publish-gate.py", "--set", args.aot_set,
