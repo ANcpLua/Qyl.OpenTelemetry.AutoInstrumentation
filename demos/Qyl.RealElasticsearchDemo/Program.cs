@@ -26,7 +26,10 @@ var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-elasticsearch-demo";
-    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
+    // closed port and asserts on its in-memory exporter alone.
+    options.CollectorEndpoint =
+        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
     options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;

@@ -36,9 +36,17 @@ def remove_publish_outputs() -> str:
     return f"removed artifacts/publish ({size_bytes / (1024 * 1024):.0f} MB)"
 
 
+# The one qyl variable a demo may inherit: the live-check gate sets it to its OTLP listener so
+# the demo exports the spans it is asserting on. Every other OTEL_/QYL_ variable is stripped, so
+# ambient configuration cannot change what a demo verifies.
+LIVE_CHECK_ENDPOINT_VARIABLE = "QYL_LIVE_CHECK_ENDPOINT"
+
+
 def clean_env() -> dict[str, str]:
     env = dict(os.environ)
     for key in list(env):
+        if key == LIVE_CHECK_ENDPOINT_VARIABLE:
+            continue
         if key.startswith("OTEL_") or key.startswith("QYL_"):
             del env[key]
 

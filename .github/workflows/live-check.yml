@@ -1,0 +1,75 @@
+name: qyl-live-check
+
+# Weaver's live check over the native-source demo lane: the demos export their spans to a
+# `weaver registry live-check` listener instead of into a closed port, and weaver judges every
+# span, metric and resource against the semantic-convention registry this package pins. The
+# registry is the SemanticConventions repository at the tag whose packages Directory.Packages.props
+# names, resolved from its own YAML — the published NuGet packages carry the generated C#, not the
+# registry. Findings at violation level fail the job; there is no allowlist anywhere in this lane.
+#
+# Linux-only and post-merge: the MassTransit, RabbitMQ and MongoDB lanes are container-backed, the
+# same reason verify-real-demos.yml runs where it does.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+# One live run per ref: superseded pushes cancel their queued/running predecessors,
+# so superseded work never wastes runner minutes.
+concurrency:
+  group: qyl-live-check-${{ github.ref }}
+  # Sequential commits on main must each run to completion, so only other refs cancel.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  # The registry tag that produced the Qyl.Telemetry.SemanticConventions packages this repository
+  # pins. It moves in the same commit as Directory.Packages.props.
+  SEMCONV_REF: v9.0.0
+
+jobs:
+  live-check:
+    name: live check
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Check out the semantic-convention registry
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ANcpLua/Qyl.OpenTelemetry.SemanticConventions
+          ref: ${{ env.SEMCONV_REF }}
+          path: .semconv
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+
+      - name: Python verifier dependencies
+        run: python3 -m pip install -r tools/requirements.txt
+
+      - name: NativeAOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Setup Weaver
+        uses: open-telemetry/weaver/.github/actions/setup-weaver@38befce4bc68fe320d20f189465c93835ac20c12 # v0.26.1
+
+      # registry/manifest.yaml names the core dependency by a path relative to the process working
+      # directory; this materialises it, exactly as the registry's own CI does.
+      - name: Materialise the filtered core registry
+        working-directory: .semconv
+        run: ./scripts/fetch-core.sh
+
+      - name: Run the live check over the native-source demo lane
+        env:
+          QYL_SEMCONV_REGISTRY: ${{ github.workspace }}/.semconv
+        run: python3 tools/verify-live-check.py

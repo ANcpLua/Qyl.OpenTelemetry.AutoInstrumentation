@@ -59,6 +59,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("real sqlclient demo", [sys.executable, "tools/verify-real-sqlclient-demo.py"]),
     ("real sqlite demo", [sys.executable, "tools/verify-real-sqlite-demo.py"]),
     ("real wcf client demo", [sys.executable, "tools/verify-real-wcf-client-demo.py"]),
+    ("live check", [sys.executable, "tools/verify-live-check.py"]),
     ("smoketest", ["bash", "tools/smoketest.sh"]),
     ("webapi aot demo", [sys.executable, "tools/verify-webapi-aot-demo.py"]),
     ("otlp receiver evidence", [sys.executable, "tools/verify-otlp-receiver.py"]),

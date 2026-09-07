@@ -22,14 +22,19 @@ builder.Services.AddServiceModelServices();
 builder.AddQyl(options =>
 {
     options.EnableCollectorDiscovery = false;
-    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
+    // closed port and asserts on its in-memory exporter alone.
+    options.CollectorEndpoint =
+        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
 });
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-var app = builder.Build();
+// Disposed, not just stopped: shutting the host down is what flushes the OTLP exporter, and
+// the live-check gate reads what this demo exports.
+await using var app = builder.Build();
 app.MapHealthChecks("/healthz");
 app.UseServiceModel(services =>
 {
