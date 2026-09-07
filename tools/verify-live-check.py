@@ -33,6 +33,7 @@ import urllib.request
 from pathlib import Path
 
 from verify_helpers import LIVE_CHECK_ENDPOINT_VARIABLE, clean_env
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_PROPS = ROOT / "Directory.Packages.props"
@@ -73,7 +74,7 @@ LANES = [
 ]
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

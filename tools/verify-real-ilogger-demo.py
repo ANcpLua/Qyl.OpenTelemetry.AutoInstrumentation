@@ -11,7 +11,7 @@ import json
 import platform
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
 
@@ -30,7 +30,7 @@ EXPECTED_RECORDS = [
 ]
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

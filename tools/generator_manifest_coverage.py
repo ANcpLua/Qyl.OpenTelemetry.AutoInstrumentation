@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Iterable
+from typing import Any, Iterable, NoReturn
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +30,7 @@ class ManifestCoverageError(RuntimeError):
     pass
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise ManifestCoverageError(message)
 
 

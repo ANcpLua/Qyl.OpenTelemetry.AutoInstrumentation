@@ -5,7 +5,7 @@ import argparse
 import difflib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 try:
     import yaml
@@ -356,7 +356,7 @@ class ContractError(RuntimeError):
     pass
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise ContractError(message)
 
 

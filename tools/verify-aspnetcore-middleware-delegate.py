@@ -18,6 +18,7 @@ import tempfile
 from pathlib import Path
 
 from verify_helpers import clean_env, run_checked
+from typing import NoReturn
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,7 +60,7 @@ internal sealed class PassThroughMiddleware(RequestDelegate next)
 """
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

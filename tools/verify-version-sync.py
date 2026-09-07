@@ -18,6 +18,7 @@ from __future__ import annotations
 import re
 import subprocess
 from pathlib import Path
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS = ROOT / "Directory.Build.props"
@@ -47,7 +48,7 @@ STABLE_TAG = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 CHANGELOG_HEADING = re.compile(r"^## \[(?P<version>[^\]]+)\](?: - (?P<date>\d{4}-\d{2}-\d{2}))?\s*$", re.M)
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(f"version-sync: {message}")
 
 

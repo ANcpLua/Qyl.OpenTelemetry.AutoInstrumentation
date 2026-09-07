@@ -6,14 +6,14 @@ import importlib.util
 import json
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, NoReturn
 
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

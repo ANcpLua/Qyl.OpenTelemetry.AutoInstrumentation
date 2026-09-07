@@ -7,7 +7,7 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_container_helpers import run_published_container
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
@@ -52,7 +52,7 @@ NATIVEAOT_ABORT_MARKERS = (
 )
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

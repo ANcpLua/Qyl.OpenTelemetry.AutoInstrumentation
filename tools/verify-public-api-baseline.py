@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import NoReturn
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,11 +24,12 @@ EXCLUDED_PROJECTS = [
     "Qyl.RealEfCoreDemo",
     "Qyl.RealGrpcClientDemo",
     "Qyl.RealHttpClientDemo",
+    "Qyl.RealSessionPropagationDemo",
     "Qyl.RealSqlClientDemo",
 ]
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

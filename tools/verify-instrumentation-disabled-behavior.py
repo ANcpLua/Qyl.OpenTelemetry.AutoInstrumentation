@@ -21,6 +21,7 @@ import tempfile
 from pathlib import Path
 
 from verify_helpers import clean_env, read_version, run_checked
+from typing import NoReturn
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
@@ -151,7 +152,7 @@ internal sealed class ProbeParameterCollection : DbParameterCollection
 '''
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

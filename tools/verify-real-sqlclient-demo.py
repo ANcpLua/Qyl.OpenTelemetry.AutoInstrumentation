@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_container_helpers import run_published_container
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
@@ -23,7 +23,7 @@ SQLSERVER_IMAGE = os.environ.get("QYL_SQLSERVER_IMAGE", "mcr.microsoft.com/mssql
 SQL_PASSWORD = os.environ.get("QYL_SQL_PASSWORD", "Qyl_strong_Password_2026!")
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

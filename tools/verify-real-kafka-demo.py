@@ -6,7 +6,7 @@ import os
 import socket
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_container_helpers import run_published_container
 from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
@@ -17,7 +17,7 @@ TARGET_FRAMEWORK = "net10.0"
 KAFKA_IMAGE = os.environ.get("QYL_KAFKA_IMAGE", "apache/kafka:4.1.0")
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

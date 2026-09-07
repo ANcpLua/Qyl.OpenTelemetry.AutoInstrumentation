@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
 
@@ -21,7 +21,7 @@ GENAI_METERS = {
 }
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

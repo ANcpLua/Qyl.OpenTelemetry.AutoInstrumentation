@@ -26,7 +26,7 @@ import importlib.util
 import re
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, NoReturn
 
 from generator_manifest_coverage import (
     ManifestCoverageError,
@@ -294,7 +294,7 @@ RECORDED_SYSTEM_VALUE_GAPS = {
 RECORDED_SYSTEM_VALUE_GAP_COMMENT = "rpc.system.name enumerates only connectrpc, dubbo, grpc and jsonrpc"
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

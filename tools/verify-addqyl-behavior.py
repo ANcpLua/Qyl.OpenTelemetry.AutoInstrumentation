@@ -26,7 +26,7 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_helpers import clean_env, run_checked
 
@@ -208,7 +208,7 @@ PROJECT = """<Project Sdk="Microsoft.NET.Sdk">
 """
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

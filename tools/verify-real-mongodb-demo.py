@@ -5,7 +5,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_container_helpers import run_published_container
 from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
@@ -16,7 +16,7 @@ TARGET_FRAMEWORK = "net10.0"
 MONGODB_IMAGE = os.environ.get("QYL_MONGODB_IMAGE", "mongo:8-noble")
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

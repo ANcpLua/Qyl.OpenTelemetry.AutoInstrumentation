@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from verify_helpers import clean_env, read_version, run_checked
+from typing import NoReturn
 
 try:
     import fcntl
@@ -45,7 +46,7 @@ EFCORE_COMPILED_MODEL_SOURCES = [
 PROGRAM_TEMPLATE_PATH = ROOT / "tools" / "Qyl.Telemetry.AutoInstrumentation.WebApiAotDemo" / "Program.cs"
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

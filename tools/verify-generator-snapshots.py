@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 from generator_manifest_coverage import ManifestCoverageError, collect_live_manifest_artifact
+from typing import NoReturn
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +50,7 @@ FORBIDDEN_INTERCEPTOR_TOKENS = [
 ]
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

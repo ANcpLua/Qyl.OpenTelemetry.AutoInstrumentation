@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from verify_helpers import clean_env, read_version, run_checked
+from typing import NoReturn
 
 try:
     import fcntl
@@ -108,7 +109,7 @@ url.full=http://127.0.0.1:1/nativeaot/client?*
 """
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 

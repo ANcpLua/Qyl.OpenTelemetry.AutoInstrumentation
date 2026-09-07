@@ -8,7 +8,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from verify_container_helpers import PublishedContainer, run_published_container
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
@@ -70,7 +70,7 @@ ENRICHED_ONLY_KEYS = [
 EXCLUDED_SOURCE_PREFIX = "Experimental."
 
 
-def fail(message: str) -> None:
+def fail(message: str) -> NoReturn:
     raise SystemExit(message)
 
 
