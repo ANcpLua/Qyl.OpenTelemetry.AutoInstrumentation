@@ -74,6 +74,12 @@ try
     using (await httpClient.GetAsync($"{address}/fail/13?sample=1"))
     {
     }
+
+    // A request that resolves no endpoint. It leaves routing without an http.route, and its span has
+    // to be named after its method alone rather than the framework's raw operation name.
+    using (await httpClient.GetAsync($"{address}/nope?sample=1"))
+    {
+    }
 }
 finally
 {
@@ -173,8 +179,8 @@ internal sealed record AspNetCoreReport(
         // a middleware or a DiagnosticListener adapter — would show up here as an extra span, or as
         // one whose source is not the framework's.
         var serverSpans = activities.Where(static activity => activity.Kind is "Server").ToArray();
-        if (serverSpans.Length != 2)
-            failures.Add($"expected exactly one server span for each of the 2 requests, got {serverSpans.Length}");
+        if (serverSpans.Length != 3)
+            failures.Add($"expected exactly one server span for each of the 3 requests, got {serverSpans.Length}");
 
         foreach (var span in serverSpans)
         {
@@ -197,9 +203,17 @@ internal sealed record AspNetCoreReport(
         var failureSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "500"));
+        var routelessSpan = httpServerSpans.FirstOrDefault(static activity =>
+            activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
+            StringComparer.Ordinal.Equals(statusCode, "404"));
 
         Require(successSpan, "204 route span", failures);
         Require(failureSpan, "500 route span", failures);
+        Require(routelessSpan, "404 routeless span", failures);
+        // http.route is conditionally required: the request resolved no endpoint, so there is no
+        // template to record. The span name below is what has to survive that.
+        if (routelessSpan is not null && routelessSpan.Tags.TryGetValue(HttpAttributes.Route, out var absentRoute))
+            failures.Add($"routeless request carries {HttpAttributes.Route}={absentRoute}");
         RequireTag(successSpan, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
         RequireTag(successSpan, HttpAttributes.Route, "/items/{id:int}", failures);
         RequireTag(failureSpan, HttpAttributes.Route, "/fail/{id:int}", failures);

@@ -57,16 +57,17 @@ internal static class QylHttpActivityPolicy
 
     // Records the route template and names the span after it, once routing has resolved the endpoint.
     // The enriching middleware runs outside routing (registered via IStartupFilter), so the endpoint is
-    // unknown while the request goes in; call this on the way out. The display name is refined only
-    // while it is still the raw operation name, so a name another component chose survives.
+    // unknown while the request goes in; call this on the way out. A request that resolved no endpoint
+    // carries no route — a 404, a static file, anything short-circuited ahead of routing — and is named
+    // after its method alone rather than left on the framework's raw operation name. The display name is
+    // refined only while it is still that operation name, so a name another component chose survives.
     public static void SetServerRoute(Activity activity, string method, string? route)
     {
-        if (string.IsNullOrEmpty(route) || activity.GetTagItem(HttpAttributes.Route) is not null)
-            return;
+        if (!string.IsNullOrEmpty(route) && activity.GetTagItem(HttpAttributes.Route) is null)
+            activity.SetTag(HttpAttributes.Route, route);
 
-        activity.SetTag(HttpAttributes.Route, route);
         if (StringComparer.Ordinal.Equals(activity.DisplayName, activity.OperationName))
-            activity.DisplayName = QylSpanNames.HttpServer(method, route);
+            activity.DisplayName = QylSpanNames.HttpServer(method, activity.GetTagItem(HttpAttributes.Route) as string);
     }
 
     public static void SetServerResponseStatus(Activity activity, int statusCode)

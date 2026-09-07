@@ -26,8 +26,10 @@ OWNERSHIP_PATH = ROOT / "docs" / "contracts" / "qyl-aot-ownership.yaml"
 CONTRACT_KEY = "signals.traces.ASPNETCORE"
 CONFORMANCE_SIGNAL = "aspnetcore.server"
 ASPNETCORE_SOURCE = "Microsoft.AspNetCore"
-# The demo drives one 204 request and one 500 request.
-EXPECTED_SERVER_SPANS = 2
+METHOD_KEY = "http.request.method"
+ROUTE_KEY = "http.route"
+# The demo drives one 204 request, one 500 request and one 404 that resolves no endpoint.
+EXPECTED_SERVER_SPANS = 3
 TARGET_FRAMEWORK = "net10.0"
 
 
@@ -110,6 +112,7 @@ def verify_conformance(name: str, activities: list[Any]) -> None:
             + json.dumps(server_spans, indent=2, sort_keys=True)
         )
 
+    required = required_attributes()
     for span in server_spans:
         if span.get("Source") != ASPNETCORE_SOURCE:
             fail(f"{name} server span is not ASP.NET Core's own: source={span.get('Source')!r} name={span.get('Name')!r}")
@@ -118,11 +121,16 @@ def verify_conformance(name: str, activities: list[Any]) -> None:
         if not isinstance(tags, dict):
             fail(f"{name} server span carries no tags: {span!r}")
 
-        missing = [key for key in required_attributes() if key not in tags]
+        # http.route is the one conditionally required attribute of the signal: a request that
+        # resolved no endpoint has no template to carry. Everything else holds either way, and the
+        # name still has to come from qyl rather than from the framework's operation name.
+        route = tags.get(ROUTE_KEY)
+        expected = required if route else [key for key in required if key != ROUTE_KEY]
+        missing = [key for key in expected if key not in tags]
         if missing:
             fail(f"{name} server span {span.get('Name')!r} is missing {missing}")
 
-        expected_name = f"{tags['http.request.method']} {tags['http.route']}"
+        expected_name = f"{tags[METHOD_KEY]} {route}" if route else tags[METHOD_KEY]
         if span.get("Name") != expected_name:
             fail(f"{name} server span is named {span.get('Name')!r}, not after its route ({expected_name!r})")
 
