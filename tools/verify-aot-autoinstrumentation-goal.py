@@ -57,6 +57,7 @@ COMMANDS: list[tuple[str, list[str]]] = [
     ("real quartz demo", [sys.executable, "tools/verify-real-quartz-demo.py"]),
     ("real rabbitmq demo", [sys.executable, "tools/verify-real-rabbitmq-demo.py"]),
     ("real redis demo", [sys.executable, "tools/verify-real-redis-demo.py"]),
+    ("real session propagation demo", [sys.executable, "tools/verify-real-session-propagation-demo.py"]),
     ("real sqlclient demo", [sys.executable, "tools/verify-real-sqlclient-demo.py"]),
     ("real sqlite demo", [sys.executable, "tools/verify-real-sqlite-demo.py"]),
     ("real wcf client demo", [sys.executable, "tools/verify-real-wcf-client-demo.py"]),

@@ -54,7 +54,9 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealAspNetCoreDemo
+  - demos/Qyl.RealSessionPropagationDemo
   - tools/verify-real-aspnetcore-demo.py
+  - tools/verify-real-session-propagation-demo.py
   conformance_signals:
   - kind: span
     name: aspnetcore.server
@@ -219,10 +221,13 @@ ownership_items:
   primary_owner: the .NET runtime's own System.Net.Http ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
   - demos/Qyl.RealHttpClientDemo
+  - demos/Qyl.RealSessionPropagationDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
+  - src/Qyl.Telemetry.Hosting/QylSessionSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-otlp-receiver.py
   - tools/verify-real-http-client-demo.py
+  - tools/verify-real-session-propagation-demo.py
   conformance_signals:
   - kind: span
     name: httpclient.downstream

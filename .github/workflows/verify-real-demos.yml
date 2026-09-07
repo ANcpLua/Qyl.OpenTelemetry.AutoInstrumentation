@@ -1,8 +1,9 @@
 name: qyl-verify-real-demos
 
-# The 29 real-demo verifiers (Kafka, Mongo, Redis, RabbitMQ, Postgres, MySQL, Oracle,
-# Elasticsearch, gRPC, Azure, WCF, …). They execute real consumers and assert emitted
-# telemetry end-to-end; the applicable lanes also NativeAOT-publish and use testcontainers.
+# The 30 real-demo verifiers (Kafka, Mongo, Redis, RabbitMQ, Postgres, MySQL, Oracle,
+# Elasticsearch, gRPC, Azure, WCF, and qyl's own session propagation). They execute real
+# consumers and assert emitted telemetry end-to-end; the applicable lanes also NativeAOT-publish,
+# use testcontainers, or start two processes of one demo.
 # Linux-only because the integration subset needs Docker. Heavy, so it runs post-merge on
 # main and on demand — not on every feature push. Run the whole gate locally with:
 #   python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only --shard ${{ matrix.shard }}/6

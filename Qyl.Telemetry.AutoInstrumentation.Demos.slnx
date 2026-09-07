@@ -32,6 +32,7 @@
   <Project Path="demos/Qyl.RealQuartzDemo/Qyl.RealQuartzDemo.csproj" />
   <Project Path="demos/Qyl.RealRabbitMqDemo/Qyl.RealRabbitMqDemo.csproj" />
   <Project Path="demos/Qyl.RealRedisDemo/Qyl.RealRedisDemo.csproj" />
+  <Project Path="demos/Qyl.RealSessionPropagationDemo/Qyl.RealSessionPropagationDemo.csproj" />
   <Project Path="demos/Qyl.RealSqlClientDemo/Qyl.RealSqlClientDemo.csproj" />
   <Project Path="demos/Qyl.RealSqliteDemo/Qyl.RealSqliteDemo.csproj" />
   <Project Path="demos/Qyl.RealWcfClientDemo/Qyl.RealWcfClientDemo.csproj" />

@@ -37,6 +37,7 @@ CLEAN_DEMOS: list[str] = [
     "Qyl.RealNpgsqlDemo",
     "Qyl.RealRabbitMqDemo",
     "Qyl.RealRedisDemo",
+    "Qyl.RealSessionPropagationDemo",
     "Qyl.RealSqliteDemo",
 ]
 

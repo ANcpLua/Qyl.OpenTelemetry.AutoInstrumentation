@@ -5,6 +5,45 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [17.0.0] - 2026-09-07
+
+The repository had a verifier for every foreign technology it instruments and none for its own.
+`session.id` is the only thing qyl invents — `QylSessionSpanProcessor` copies it down a trace and
+`AddQyl` never puts it on the wire — and how far it travels was argued out from scratch in session
+after session because nothing wrote it down. It is written down now, as a gate.
+
+### Added
+
+- **`demos/Qyl.RealSessionPropagationDemo` and `tools/verify-real-session-propagation-demo.py`: the
+  permanent gate for qyl's own session behaviour.** One executable with a `--role` argument, started
+  as TWO REAL OPERATING-SYSTEM PROCESSES by the verifier — never by the demo, which starts no
+  process at all. Three assertions, on concrete values rather than on presence:
+  - an in-process descendant of a span tagged `session.id` inherits that exact value;
+  - a descendant that already carries its own `session.id` keeps it, and the ancestor does not win;
+  - across a real HTTP boundary into the second process the ASP.NET Core server span carries **no**
+    `session.id` at all — although `traceparent` arrived, both processes are on one trace, the
+    server span parents to the upstream client span, and the session itself reached that span in
+    baggage because the application put it there. qyl still writes no tag from it.
+
+  Two hosts in one process would leave `Activity.Parent` linked across the "boundary" and the third
+  assertion would pass while being false, which is the measurement error this project has already
+  made twice. So the two roles report separately, out of separate SDK pipelines and separate
+  in-memory exporters, and each report has to name the process id the verifier actually launched.
+  The downstream role additionally proves its own propagation works in the same run, on a locally
+  rooted pair of spans: without that control a downstream with no processor at all would satisfy
+  the third assertion by doing nothing.
+
+  Every wait is bounded, both processes are killed in a `finally`, and a run starts exactly two
+  processes. The gate was falsified three ways before it was trusted — stamping the tag from
+  baggage, dropping the "already has a session" guard, and copying nothing at all each turn it red
+  on the property they break.
+
+### Changed
+
+- `QylGeneratedCodeAbi.V16` is renamed to `V17`. The constant is the generated-code ABI anchor and
+  moves with the package major, so code generated against 16.0.0 is rejected at compile time rather
+  than silently mixed with a 17.0.0 runtime.
+
 ## [16.0.0] - 2026-09-07
 
 ### Changed

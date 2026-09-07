@@ -267,6 +267,11 @@ Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `
 `QylSessionSpanProcessor` copies `session.id` from the nearest tagged in-process ancestor onto
 descendant spans that do not carry one. Remote parents and unrelated trace branches propagate
 nothing, and the copy happens on end, the last moment the ancestor's tag can be observed.
+`demos/Qyl.RealSessionPropagationDemo` and `tools/verify-real-session-propagation-demo.py` hold
+that to three assertions across two real operating-system processes: an in-process descendant
+inherits the value, a descendant that already carries one keeps its own, and the server span in
+the second process carries none — although `traceparent` arrived, the trace is the same one, and
+the session itself reached that span in baggage.
 
 `session.id` is a **span tag and nothing else**. Nothing in `Qyl.Telemetry.Hosting` puts it on the
 wire: an outgoing request carries the trace context and whatever baggage the application itself put
@@ -278,7 +283,7 @@ qyl's own spans and instruments carry the registry-owned scope names
 `Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
 Mirror them in `AddSource(...)`, `AddMeter(...)` or
 `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V15` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V17` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 
@@ -303,7 +308,7 @@ The rules themselves are owned and documented by the semantic-conventions reposi
 
 ## Demos and verifiers
 
-Twenty-nine demo applications under `demos/` are the runtime evidence. Each has a verifier under
+Thirty demo applications under `demos/` are the runtime evidence. Each has a verifier under
 `tools/` that builds it, publishes it NativeAOT where the integration supports it, starts any
 container it needs, runs it and asserts the spans and metrics it emitted:
 
@@ -324,7 +329,7 @@ against a connectionless exception.
 
 The complete local gate runs every verifier in order — contract invariants, release and demo
 builds, package layout, public API baselines, generator snapshots, the NativeAOT publish matrix,
-all twenty-nine demos, the live check, the smoke test and the published-consumer evidence:
+all thirty demos, the live check, the smoke test and the published-consumer evidence:
 
 ```bash
 python3 tools/verify-aot-autoinstrumentation-goal.py
