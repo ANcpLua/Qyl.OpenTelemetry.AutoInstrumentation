@@ -5,6 +5,56 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [14.1.0] - 2026-09-07
+
+### Changed
+
+- **One server span per request, and it is ASP.NET Core's own.** `AddQyl()` subscribes
+  `Microsoft.AspNetCore`, and the qyl ASP.NET Core middleware started a second SERVER activity for
+  the same request, so a consumer exported two: the hosting root carrying nothing, and a qyl span
+  beneath it carrying the route. This package's own contract says "exactly one server span per
+  request", and the mapping rule says a library with a native `ActivitySource` gets `AddSource` plus
+  enrichment, never a qyl-made duplicate. **The qyl server span is deleted.**
+  `Microsoft.AspNetCore.Hosting.HttpRequestIn` is the server span. Its source stays
+  `Microsoft.AspNetCore`, so a dashboard or an alert that keyed on the scope name
+  `Qyl.Telemetry.AutoInstrumentation` for HTTP server spans has to move to the framework's.
+- **The middleware writes what the runtime leaves empty.** Measured on .NET 10.0.11: the hosting
+  activity carries *no tag at all* and keeps `Microsoft.AspNetCore.Hosting.HttpRequestIn` as its
+  display name. `AddQylAspNetCoreInstrumentation()` — which `AddQyl()` calls — registers the
+  `IStartupFilter` that sets, from the `HttpContext` it already holds:
+  `qyl.instrumentation.domain` = `aspnetcore.server`, `http.request.method` (and
+  `http.request.method_original`), `url.scheme`, `url.path`, `url.query` under the existing
+  redaction control, `http.route` and the `{method} {route}` span name once routing has resolved the
+  endpoint, `http.response.status_code`, and the configured request and response headers. Every one
+  of them fills only what is absent, so a tag another component wrote survives, and a future runtime
+  that sets these itself silently takes them over.
+- **Consumers of `Activity.Current` in middleware now see the hosting activity**, whatever the
+  registration order. `Qyl.Api`'s session-baggage filter is the case that mattered: its `session.id`
+  landed on whichever span qyl had made current, and now lands on the request's root, from where
+  `QylSessionSpanProcessor` — unchanged — copies it onto every child span. A Qyl.Api session that
+  used to return six spans for three requests returns three.
+- **`error.type` on an unhandled exception is the exception type name**, not the status code the
+  server sends after it — the exception is what failed the request. A route that throws
+  `InvalidOperationException` now reports `System.InvalidOperationException` where it reported
+  `500`; `http.response.status_code` is `500` either way.
+- **The ASP.NET Core `DiagnosticListener` lane is deleted**, and `QylAspNetCoreOwnership` with it.
+  It created the same duplicate whenever the middleware was not registered, and the ownership flag
+  existed only to arbitrate between two lanes that no longer both emit. An application that
+  references `Qyl.Telemetry.AutoInstrumentation.Hosting` without wiring the SDK therefore adds
+  `services.AddQylAspNetCoreInstrumentation()` and `AddSource("Microsoft.AspNetCore")` to keep
+  server spans; `AddQyl()` does both on its own.
+- **The demo lane answers to the contract.** `signals.traces.ASPNETCORE` has declared an
+  `aspnetcore.server` conformance signal all along and nothing read it. `verify-real-aspnetcore-demo.py`
+  now takes its required attributes from `docs/contracts/qyl-aot-ownership.yaml` and holds every run
+  — managed and NativeAOT, with and without the capture opt-in — to exactly one SERVER span per
+  request, from `Microsoft.AspNetCore`, named after its route and carrying all five. The demo itself
+  runs the real registration path (`AddQyl` plus an in-memory exporter) and proves the session
+  reaches child spans.
+- **The semantic-convention pin moves to `9.2.0`** across `Qyl.Telemetry.SemanticConventions`,
+  `.Incubating` and `.Analyzers`, with the live-check workflows' registry ref. The two framework
+  source names the runtime owns, `Microsoft.AspNetCore` and `System.Net.Http`, are not registry rows;
+  they now live in one internal `QylFrameworkActivitySources` instead of being typed in two places.
+
 ## [14.0.1] - 2026-09-07
 
 `14.0.0` was tagged and never published: its release gate failed in the `verify` job, which ran

@@ -48,9 +48,9 @@ dotnet publish -r <rid> -p:PublishAot=true
 
 `AddQyl()` activates the qyl listeners; registers the qyl `ActivitySource`, the framework-native
 `Microsoft.AspNetCore` and `System.Net.Http` sources, the version-pinned GenAI, MCP, Azure SDK and
-CoreWCF sources and every enabled row of the native-source table; adds
-`QylNativeSpanProcessor` and `QylSessionSpanProcessor`; registers the meter inventory; and exports
-traces, metrics and logs over OTLP — to `OTEL_EXPORTER_OTLP_ENDPOINT` when it is set, otherwise to
+CoreWCF sources and every enabled row of the native-source table; adds the ASP.NET Core enrichment
+middleware, `QylNativeSpanProcessor` and `QylSessionSpanProcessor`; registers the meter inventory;
+and exports traces, metrics and logs over OTLP — to `OTEL_EXPORTER_OTLP_ENDPOINT` when it is set, otherwise to
 `QYL_ENDPOINT` when that is set, otherwise to a qyl collector discovered on `localhost` or the host
 `qyl` at 4318/4317. `QYL_ENDPOINT` names a collector for the qyl exporters alone, where the
 standard variable would redirect every OTLP exporter in the process.
@@ -148,11 +148,10 @@ integrations share one row and one domain. CoreWCF's row carries no domain: thos
 to invent here, so the row exists for its `AddSource` call alone.
 
 `QylTelemetrySources` also subscribes sources that need no processor row, because the library
-already writes the semantic conventions and qyl adds nothing: `Microsoft.AspNetCore`,
-`System.Net.Http`, `Experimental.Microsoft.Extensions.AI`, `Experimental.Microsoft.Agents.AI`,
-`Microsoft.Agents.AI.Workflows` and `Experimental.ModelContextProtocol`. The first two make the
-framework create its activities through the sampler instead of the unsampled `DiagnosticListener`
-fallback. Three of the AI paths need the consumer's own opt-in —
+already writes the semantic conventions and qyl adds nothing: `System.Net.Http`,
+`Experimental.Microsoft.Extensions.AI`, `Experimental.Microsoft.Agents.AI`,
+`Microsoft.Agents.AI.Workflows` and `Experimental.ModelContextProtocol`. Three of the AI paths need
+the consumer's own opt-in —
 `chatClient.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Extensions.AI` 10.9.0,
 `agent.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Agents.AI` 1.20.0, and
 `WorkflowBuilder.WithOpenTelemetry()` for `Microsoft.Agents.AI.Workflows` 1.20.0. `ModelContextProtocol`
@@ -182,11 +181,24 @@ native `ActivitySource` and are still intercepted. Their source names are alread
 `QylTelemetryNames.VendorActivitySources` constants, and moving them is a table row plus a demo
 lane each.
 
-Five integrations use a framework's public hook instead of either mechanism: ASP.NET Core,
-HttpClient and the gRPC client through `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners`, EF
-Core through `.EntityFrameworkCore`, and `Microsoft.Data.SqlClient` through `.SqlClient`. HttpClient
-has both an interceptor and a listener lane; `QylSignalOwnership` arbitrates so one operation
-produces one span.
+### ASP.NET Core: one server span, and it is the framework's
+
+ASP.NET Core is the third shape. Its `Microsoft.AspNetCore` source is native, so `AddQyl()`
+subscribes it and `Microsoft.AspNetCore.Hosting.HttpRequestIn` is the one HTTP SERVER span of a
+request — qyl starts none of its own. But unlike every library in the table above, the runtime
+creates that activity *empty*: measured on .NET 10.0.11 it carries no tag at all and keeps its raw
+operation name. So enrichment is not a processor row here. `AddQylAspNetCoreInstrumentation()`,
+which `AddQyl()` calls, registers an `IStartupFilter` whose middleware writes onto the hosting
+activity, from the `HttpContext`: `qyl.instrumentation.domain`, `http.request.method`, `url.scheme`,
+`url.path`, `url.query` under the redaction control, `http.route` and the `{method} {route}` span
+name after routing, `http.response.status_code`, `error.type` on failure, and the configured request
+and response headers. Each write fills only what is absent, so a runtime that starts setting these
+itself takes them over without a change here.
+
+Four integrations use a framework's public hook instead of either mechanism: HttpClient and the gRPC
+client through `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners`, EF Core through
+`.EntityFrameworkCore`, and `Microsoft.Data.SqlClient` through `.SqlClient`. HttpClient has both an
+interceptor and a listener lane; `QylSignalOwnership` arbitrates so one operation produces one span.
 
 ### Toggles
 
@@ -210,9 +222,10 @@ level and its authoritative source, is the generated
 
 ## The qyl attributes
 
-`qyl.instrumentation.domain` is the only qyl-owned attribute written onto a span, and
-`QylNativeSpanProcessor` is the only thing that writes it onto a native one. Everything else on a
-native span is the library's own. The domain is what the qyl collector's dashboard classifies on,
+`qyl.instrumentation.domain` is the only qyl-owned attribute written onto a span.
+`QylNativeSpanProcessor` writes it onto the spans of the native-source table, and the ASP.NET Core
+middleware writes it onto the hosting activity, which is the one native span whose own library
+writes nothing. Everything else on a native span is the library's own. The domain is what the qyl collector's dashboard classifies on,
 together with the semantic-convention keys the library emits, so a span that reaches the collector
 without it is unclassifiable no matter what it is called.
 

@@ -13,8 +13,9 @@ namespace Qyl;
 
 /// <summary>
 /// The one-line qyl onboarding surface: <c>builder.AddQyl()</c> activates the qyl
-/// auto-instrumentation listeners, wires the OpenTelemetry SDK with qyl-owned ASP.NET Core and
-/// HttpClient spans, version-pinned GenAI, Azure SDK, MCP, and CoreWCF sources plus the native and
+/// auto-instrumentation listeners, wires the OpenTelemetry SDK with ASP.NET Core's own server span
+/// (enriched by the qyl middleware, never duplicated), qyl-owned HttpClient spans, version-pinned
+/// GenAI, Azure SDK, MCP, and CoreWCF sources plus the native and
 /// qyl-owned meter inventory, propagates
 /// <c>session.id</c> across traces, and exports traces, metrics, and logs over OTLP — to
 /// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl collector.
