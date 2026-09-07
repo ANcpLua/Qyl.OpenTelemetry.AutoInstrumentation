@@ -1,7 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
-using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.GrpcClient;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Hosting;
 
@@ -15,17 +13,13 @@ namespace Qyl.Telemetry.AutoInstrumentation.Hosting;
 /// </para>
 ///
 /// <para>
-/// The initializer subscribes one observer per DiagnosticListener channel and activates the qyl
-/// ActivityListener. All sites it touches are AOT-safe and avoid dynamic discovery.
+/// The initializer applies the process-wide runtime switches qyl depends on. The specialist EF Core
+/// and SqlClient packages carry the only remaining <c>DiagnosticListener</c> subscribers and
+/// register their own. All sites it touches are AOT-safe and avoid dynamic discovery.
 /// </para>
 /// </summary>
 internal static class ModuleInitializerBoot
 {
-    private static readonly QylDiagnosticListenerSubscriber[] DiagnosticListeners =
-    [
-        new GrpcClientDiagnosticListener(),
-    ];
-
     private static int _booted;
 
     /// <summary>The single qyl entry point invoked by the CLR at module load.</summary>
@@ -38,14 +32,5 @@ internal static class ModuleInitializerBoot
             return;
 
         QylInstrumentation.Activate();
-        RegisterDiagnosticListeners();
-    }
-
-    private static void RegisterDiagnosticListeners()
-    {
-        foreach (var listener in DiagnosticListeners)
-        {
-            listener.Subscribe();
-        }
     }
 }

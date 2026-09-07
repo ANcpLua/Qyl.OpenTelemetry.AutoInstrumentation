@@ -17,6 +17,7 @@ internal static class QylTelemetrySources
     internal const string ConnectorNet = QylTelemetryNames.VendorActivitySources.ConnectorNet;
     internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
     internal const string GraphQl = QylTelemetryNames.VendorActivitySources.GraphQL;
+    internal const string GrpcNetClient = QylTelemetryNames.VendorActivitySources.GrpcNetClient;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
     internal const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
     internal const string MySqlConnector = QylTelemetryNames.VendorActivitySources.MySqlConnector;
@@ -51,6 +52,10 @@ internal static class QylTelemetrySources
             QylAutoInstrumentationIds.ElasticTransport,
             QylAttributes.InstrumentationDomainValues.ElasticTransport),
         new(GraphQl, QylAutoInstrumentationIds.GraphQl, QylAttributes.InstrumentationDomainValues.GraphQl),
+        new(
+            GrpcNetClient,
+            QylAutoInstrumentationIds.GrpcNetClient,
+            QylAttributes.InstrumentationDomainValues.RpcGrpc),
         new(
             MassTransit,
             QylAutoInstrumentationIds.MassTransit,

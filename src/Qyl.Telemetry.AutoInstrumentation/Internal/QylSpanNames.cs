@@ -9,7 +9,6 @@ using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAtt
 internal static class QylSpanNames
 {
     private const string HttpFallback = "HTTP";
-    private const string GrpcFallback = "gRPC";
     private const string JobFallback = "job";
 
     public static string Http(string? method)
@@ -20,11 +19,6 @@ internal static class QylSpanNames
         var name = Http(method);
         return string.IsNullOrEmpty(route) ? name : name + " " + route;
     }
-
-    public static string Grpc(string? method)
-        => string.IsNullOrWhiteSpace(method) || StringComparer.Ordinal.Equals(method, QylGrpcSemantics.OtherMethod)
-            ? GrpcFallback
-            : method;
 
     public static string Db(string? summary, string systemName)
         => string.IsNullOrEmpty(summary) ? systemName : summary;
