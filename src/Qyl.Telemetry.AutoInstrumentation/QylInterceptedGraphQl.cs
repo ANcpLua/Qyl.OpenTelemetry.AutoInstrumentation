@@ -14,7 +14,7 @@ public static class QylInterceptedGraphQl
     // The span kind is deliberately Internal, not the registry's `graphql.server` kind. That group is
     // development-stability, and this span nests inside the ASP.NET Core server span of the same
     // request, so a second Server span per request would be wrong. CHANGELOG 10.0.0 ("GraphQL spans
-    // stay `Internal`") records the decision; qyl's ARCHITECTURE-1.0.0.md restates it.
+    // stay `Internal`") records the decision.
     /// <summary>Starts the internal span; the operation type names it once the document is read.</summary>
     public static Activity? Execute()
         => QylActivityFactory.StartTraceActivity(
