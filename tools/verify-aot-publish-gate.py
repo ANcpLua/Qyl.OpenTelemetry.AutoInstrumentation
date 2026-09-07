@@ -281,6 +281,10 @@ def main() -> None:
     parser.add_argument("--rid", default=None, help="runtime identifier (default: host)")
     parser.add_argument("--strict-promotion", action="store_true",
                         help="treat a promotion (vendor demo gone warning-clean) as a gate failure")
+    parser.add_argument("--shard", metavar="INDEX/COUNT",
+                        help="run only the INDEX-th of COUNT equal slices of the selected demos, 1-based; "
+                             "the slice is cut after --set and --demo have chosen the plan and preserves "
+                             "order, so COUNT runners together publish exactly the same demos")
     parser.add_argument("--list", action="store_true", help="print the classification and exit")
     parser.add_argument("--project", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--policy", choices=sorted(EXTERNAL_WARNED_PROJECTS), help=argparse.SUPPRESS)
@@ -330,6 +334,15 @@ def main() -> None:
         plan = [(d, k) for d, k in plan if d in wanted]
         if not plan:
             raise SystemExit(f"none of {sorted(wanted)} are in the gate classification")
+
+    if args.shard:
+        index, _, count = args.shard.partition("/")
+        if not index.isdigit() or not count.isdigit() or not 1 <= int(index) <= int(count):
+            raise SystemExit(f"--shard expects INDEX/COUNT with 1 <= INDEX <= COUNT, got {args.shard!r}")
+        plan = plan[int(index) - 1 :: int(count)]
+        if not plan:
+            print(f"shard {args.shard} selected no demos")
+            return
 
     print(f"AOT-publish gate | rid={rid} | {len(plan)} demo(s) | set={args.set}", flush=True)
     prebuild_generator(env)

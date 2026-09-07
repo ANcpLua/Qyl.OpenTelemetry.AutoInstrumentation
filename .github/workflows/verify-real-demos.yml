@@ -5,7 +5,7 @@ name: qyl-verify-real-demos
 # telemetry end-to-end; the applicable lanes also NativeAOT-publish and use testcontainers.
 # Linux-only because the integration subset needs Docker. Heavy, so it runs post-merge on
 # main and on demand — not on every feature push. Run the whole gate locally with:
-#   python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only
+#   python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only --shard ${{ matrix.shard }}/6
 
 on:
   push:
@@ -25,12 +25,17 @@ permissions:
 
 jobs:
   real-demos:
+    name: real demos ${{ matrix.shard }}/6
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
     name: real demos
     # x64 on purpose: mcr.microsoft.com/mssql/server ships no arm64 image (the old
     # OrbStack VM hid that via Rosetta emulation). This lane verifies container-backed
     # runtime behavior, not ARM coverage — verify/smoke/gate keep the ARM legs.
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -50,4 +55,4 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
       - name: Run the container-backed real-demo verifiers
-        run: python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only
+        run: python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only --shard ${{ matrix.shard }}/6

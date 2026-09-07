@@ -19,6 +19,7 @@ PACK_LOCK_PATH = Path(tempfile.gettempdir()) / "qyl-dotnet-autoinstrumentation-p
 CORE_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
 DIAGNOSTIC_LISTENERS_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners" / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.csproj"
 HOSTING_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.Hosting" / "Qyl.Telemetry.AutoInstrumentation.Hosting.csproj"
+SDK_PROJECT = ROOT / "src" / "Qyl.Telemetry.Hosting" / "Qyl.Telemetry.Hosting.csproj"
 TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 EVENT_NAME = "qyl.http.client"
@@ -26,19 +27,53 @@ EVENT_NAME = "qyl.http.client"
 
 PROGRAM = r'''
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using Qyl.Telemetry.AutoInstrumentation;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry.Trace;
+using Qyl;
 
-var captured = new List<Activity>();
-using var activityListener = new ActivityListener
+// The gate proves the qyl runtime still works inside a NativeAOT-published consumer. Until 15.0.0
+// it did that by writing a synthetic event into the HttpClient DiagnosticListener, which qyl
+// subscribed. That lane is gone — the DiagnosticListeners package no longer ships a single concrete
+// subscriber — so the consumer now exercises the lane the release kept: System.Net.Http emits the
+// span, and the processor AddQyl registers stamps the qyl domain onto it. The request goes to a
+// closed loopback port, so the proof needs no server and stays deterministic.
+var exported = new List<Activity>();
+var builder = Host.CreateApplicationBuilder(args);
+builder.Logging.ClearProviders();
+builder.AddQyl(options =>
 {
-    ShouldListenTo = static source => source.Name == "Qyl.Telemetry.AutoInstrumentation",
-    Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity => captured.Add(activity),
-};
+    options.ServiceName = "qyl-nativeaot-consumer";
+    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
+    options.EnableCollectorDiscovery = false;
+    options.EnableLogExport = false;
+    options.EnableMetricsExport = false;
+});
+builder.Services.AddOpenTelemetry().WithTracing(tracing => tracing.AddInMemoryExporter(exported));
 
-ActivitySource.AddActivityListener(activityListener);
-EmitSyntheticHttpClientEvent();
+using var host = builder.Build();
+await host.StartAsync();
+
+using (var http = new HttpClient())
+{
+    try
+    {
+        using var response = await http.GetAsync("http://127.0.0.1:1/nativeaot/client?id=42");
+    }
+    catch (HttpRequestException)
+    {
+        // The refused connection is the point: it produces a client span with an error, without a server.
+    }
+}
+
+host.Services.GetRequiredService<TracerProvider>().ForceFlush(10_000);
+await host.StopAsync();
+
+var captured = exported
+    .Where(static activity =>
+        activity.GetTagItem("qyl.instrumentation.domain") is "http.client")
+    .ToList();
 
 if (captured.Count != 1)
 {
@@ -56,40 +91,20 @@ foreach (var tag in activity.TagObjects.OrderBy(static tag => tag.Key, StringCom
 }
 
 return 0;
-
-[UnconditionalSuppressMessage("Trimming", "IL2026",
-    Justification = "Synthetic offline producer for the NativeAOT verified gate; qyl runtime only consumes DiagnosticSource.")]
-static void EmitSyntheticHttpClientEvent()
-{
-    using var diagnosticListener = new DiagnosticListener("HttpHandlerDiagnosticListener");
-    if (!diagnosticListener.IsEnabled("qyl.http.client"))
-    {
-        Console.WriteLine("listener.enabled=false");
-        return;
-    }
-
-    diagnosticListener.Write(
-        "qyl.http.client",
-        new Dictionary<string, object?>
-        {
-            ["http.request.method"] = "GET",
-            ["url.full"] = "https://qyl.local/nativeaot/client?id=42",
-            ["server.address"] = "qyl.local",
-            ["http.response.status_code"] = 503,
-            ["error.type"] = "503",
-        });
-}
 '''
 
 
+# The shape System.Net.Http emits with qyl's domain stamped on it: no status code because the
+# connection was refused, error.type from the BCL rather than a status string, and the query
+# redacted whole rather than per value.
 EXPECTED_VERIFIED = """name=GET
 kind=Client
-error.type=503
+error.type=connection_error
 http.request.method=GET
-http.response.status_code=503
 qyl.instrumentation.domain=http.client
-server.address=qyl.local
-url.full=https://qyl.local/nativeaot/client?id=Redacted
+server.address=127.0.0.1
+server.port=1
+url.full=http://127.0.0.1:1/nativeaot/client?*
 """
 
 
@@ -116,7 +131,7 @@ def pack_runtime(feed: Path, env: dict[str, str]) -> None:
         if fcntl is not None:
             fcntl.flock(lock, fcntl.LOCK_EX)
         try:
-            for project in [CORE_PROJECT, DIAGNOSTIC_LISTENERS_PROJECT, HOSTING_PROJECT]:
+            for project in [CORE_PROJECT, DIAGNOSTIC_LISTENERS_PROJECT, HOSTING_PROJECT, SDK_PROJECT]:
                 run_checked(
                     ["dotnet", "pack", str(project), "-c", "Release", "-o", str(feed), "-v", "quiet"],
                     ROOT,
@@ -144,6 +159,8 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
+    <PackageReference Include="Qyl.Telemetry.Hosting" Version="{version}" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.18.0" />
   </ItemGroup>
 </Project>
 ''',

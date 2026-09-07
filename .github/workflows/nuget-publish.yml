@@ -207,10 +207,15 @@ jobs:
           if-no-files-found: error
 
   aot-publish:
+    name: aot-publish ${{ matrix.shard }}/4
     needs: version
     if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
@@ -219,7 +224,7 @@ jobs:
       - name: NativeAOT prerequisites
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
       - name: NativeAOT publish matrix
-        run: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion
+        run: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion --shard ${{ matrix.shard }}/4
 
   publish:
     needs: [version, verify, pack, aot-publish]

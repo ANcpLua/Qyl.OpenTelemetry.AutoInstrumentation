@@ -24,12 +24,13 @@ permissions:
 
 jobs:
   verify:
-    name: verify (${{ matrix.os }})
+    name: verify ${{ matrix.shard }}/4 (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
+        shard: [1, 2, 3, 4]
         os:
           - ubuntu-24.04-arm
           - macos-latest
