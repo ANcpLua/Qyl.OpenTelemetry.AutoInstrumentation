@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+"""Runs the ASP.NET Core demo and holds it to the contract's own conformance signal.
+
+The server span is ASP.NET Core's own `Microsoft.AspNetCore.Hosting.HttpRequestIn` activity.
+This gate asserts what the contract row `signals.traces.ASPNETCORE` declares — exactly one
+SERVER span per request, from the framework's source, named after its route and carrying every
+attribute of the `aspnetcore.server` conformance signal. The attribute list is read from
+`docs/contracts/qyl-aot-ownership.yaml` rather than retyped here, so adding one to the contract
+without emitting it fails this gate.
+"""
 from __future__ import annotations
 
 import json
@@ -7,10 +16,18 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealAspNetCoreDemo" / "Qyl.RealAspNetCoreDemo.csproj"
+OWNERSHIP_PATH = ROOT / "docs" / "contracts" / "qyl-aot-ownership.yaml"
+CONTRACT_KEY = "signals.traces.ASPNETCORE"
+CONFORMANCE_SIGNAL = "aspnetcore.server"
+ASPNETCORE_SOURCE = "Microsoft.AspNetCore"
+# The demo drives one 204 request and one 500 request.
+EXPECTED_SERVER_SPANS = 2
 TARGET_FRAMEWORK = "net10.0"
 
 
@@ -62,8 +79,52 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
 
     activities = report.get("Activities")
-    if not isinstance(activities, list) or len(activities) < 2:
-        fail(f"{name} expected at least 2 ASP.NET Core activities, got {activities!r}")
+    if not isinstance(activities, list) or len(activities) < EXPECTED_SERVER_SPANS:
+        fail(f"{name} expected at least {EXPECTED_SERVER_SPANS} ASP.NET Core activities, got {activities!r}")
+
+    verify_conformance(name, activities)
+
+
+def required_attributes() -> list[str]:
+    contract = yaml.safe_load(OWNERSHIP_PATH.read_text(encoding="utf-8"))
+    for item in contract.get("ownership_items") or []:
+        if not isinstance(item, dict) or item.get("key") != CONTRACT_KEY:
+            continue
+        for signal in item.get("conformance_signals") or []:
+            if signal.get("name") == CONFORMANCE_SIGNAL:
+                return list(signal["required_attributes"])
+
+    fail(f"{OWNERSHIP_PATH} declares no {CONFORMANCE_SIGNAL} conformance signal on {CONTRACT_KEY}")
+
+
+def verify_conformance(name: str, activities: list[Any]) -> None:
+    """One SERVER span per request, ASP.NET Core's own, named after its route and complete."""
+    server_spans = [
+        activity for activity in activities
+        if isinstance(activity, dict) and activity.get("Kind") == "Server"
+    ]
+    if len(server_spans) != EXPECTED_SERVER_SPANS:
+        fail(
+            f"{name} exported {len(server_spans)} server spans for {EXPECTED_SERVER_SPANS} requests — "
+            "a second one means a qyl-made server span came back:\n"
+            + json.dumps(server_spans, indent=2, sort_keys=True)
+        )
+
+    for span in server_spans:
+        if span.get("Source") != ASPNETCORE_SOURCE:
+            fail(f"{name} server span is not ASP.NET Core's own: source={span.get('Source')!r} name={span.get('Name')!r}")
+
+        tags = span.get("Tags")
+        if not isinstance(tags, dict):
+            fail(f"{name} server span carries no tags: {span!r}")
+
+        missing = [key for key in required_attributes() if key not in tags]
+        if missing:
+            fail(f"{name} server span {span.get('Name')!r} is missing {missing}")
+
+        expected_name = f"{tags['http.request.method']} {tags['http.route']}"
+        if span.get("Name") != expected_name:
+            fail(f"{name} server span is named {span.get('Name')!r}, not after its route ({expected_name!r})")
 
 
 def build_managed(env: dict[str, str]) -> Path:
