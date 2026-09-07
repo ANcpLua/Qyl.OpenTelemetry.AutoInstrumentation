@@ -100,7 +100,8 @@ internal sealed record ElasticsearchReport(
     CapturedActivity[] Activities)
 {
     // The client's own product registration name. It is what tells an Elasticsearch call from a bare
-    // transport call on the one source both share, and therefore what selects the qyl domain.
+    // transport call on the one source both share; it reaches the collector as a vendor
+    // pass-through tag, which is where that distinction is now drawn.
     private const string ElasticsearchProductName = "elasticsearch-net";
 
     public static ElasticsearchReport Create(string runtimeMode, CapturedActivity[] activities)
@@ -118,12 +119,12 @@ internal sealed record ElasticsearchReport(
 
         foreach (var span in elasticsearchSpans)
         {
-            // The attribute the qyl processor owns, and the vendor attribute it selected the value
-            // from: proof that the shared-source row resolved to the Elasticsearch domain.
+            // The one attribute the qyl processor owns. Both integrations share the Elastic.Transport
+            // source and therefore one table row, so the domain is the source's, not the client's.
             RequireTag(
                 span,
                 QylAttributes.InstrumentationDomain,
-                QylAttributes.InstrumentationDomainValues.DbElasticsearch,
+                QylAttributes.InstrumentationDomainValues.ElasticTransport,
                 failures);
             RequireTag(span, ElasticAttributes.TransportProductName, ElasticsearchProductName, failures);
             RequireTag(span, ServerAttributes.Address, IPAddress.Loopback.ToString(), failures);

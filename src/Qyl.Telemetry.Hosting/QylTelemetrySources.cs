@@ -24,63 +24,42 @@ internal static class QylTelemetrySources
 
     /// <summary>
     /// The libraries whose own <c>ActivitySource</c> qyl subscribes to instead of intercepting: the
-    /// source name, the instrumentation id whose toggle gates it, the domain stamped on its spans,
-    /// and the normalisation that source needs. One table drives both the <c>AddSource</c> calls and
+    /// source name, the instrumentation id whose toggle gates it, and the domain stamped on its
+    /// spans. One table drives both the <c>AddSource</c> calls and
     /// <see cref="QylNativeSpanProcessor"/>, so a library is added in one place.
     /// </summary>
     /// <remarks>
     /// CoreWCF carries no domain: its spans are the WCF <em>server</em> side, and the registry
     /// publishes no instrumentation-domain value for it — <c>rpc.wcf.client</c> belongs to the
-    /// intercepted client. The row still normalises the span exactly as before, and the missing
-    /// value is a semantic-convention gap rather than a name to invent here.
+    /// intercepted client. That missing value is a semantic-convention gap rather than a name to
+    /// invent here, so the row exists for its <c>AddSource</c> call alone.
     /// </remarks>
     private static readonly QylNativeSourceRow[] NativeSourceRows =
     [
-        new(
-            Azure,
-            QylAutoInstrumentationIds.Azure,
-            QylAttributes.InstrumentationDomainValues.AzureSdk,
-            QylNativeSpanProcessor.NormalizeAzure),
-        new(
-            CoreWcf,
-            QylAutoInstrumentationIds.WcfCore,
-            Domain: null,
-            QylNativeSpanProcessor.NormalizeCoreWcf),
+        new(Azure, QylAutoInstrumentationIds.Azure, QylAttributes.InstrumentationDomainValues.AzureSdk),
+        new(CoreWcf, QylAutoInstrumentationIds.WcfCore, Domain: null),
         new(
             ElasticTransport,
             QylAutoInstrumentationIds.ElasticTransport,
-            QylAttributes.InstrumentationDomainValues.ElasticTransport,
-            QylNativeSpanProcessor.NormalizeElastic),
+            QylAttributes.InstrumentationDomainValues.ElasticTransport),
         new(
             MassTransit,
             QylAutoInstrumentationIds.MassTransit,
-            QylAttributes.InstrumentationDomainValues.MessagingMassTransit,
-            Normalize: null),
-        new(
-            MongoDbDriver,
-            QylAutoInstrumentationIds.MongoDb,
-            QylAttributes.InstrumentationDomainValues.DbMongoDb,
-            Normalize: null),
+            QylAttributes.InstrumentationDomainValues.MessagingMassTransit),
+        new(MongoDbDriver, QylAutoInstrumentationIds.MongoDb, QylAttributes.InstrumentationDomainValues.DbMongoDb),
         new(
             NServiceBusCore,
             QylAutoInstrumentationIds.NServiceBus,
-            QylAttributes.InstrumentationDomainValues.MessagingNServiceBus,
-            Normalize: null),
-        new(
-            Quartz,
-            QylAutoInstrumentationIds.Quartz,
-            QylAttributes.InstrumentationDomainValues.JobQuartz,
-            Normalize: null),
+            QylAttributes.InstrumentationDomainValues.MessagingNServiceBus),
+        new(Quartz, QylAutoInstrumentationIds.Quartz, QylAttributes.InstrumentationDomainValues.JobQuartz),
         new(
             RabbitMqPublisher,
             QylAutoInstrumentationIds.RabbitMq,
-            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
-            Normalize: null),
+            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq),
         new(
             RabbitMqSubscriber,
             QylAutoInstrumentationIds.RabbitMq,
-            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq,
-            Normalize: null),
+            QylAttributes.InstrumentationDomainValues.MessagingRabbitMq),
     ];
 
     internal static string[] GetEnabledActivitySourceNames()

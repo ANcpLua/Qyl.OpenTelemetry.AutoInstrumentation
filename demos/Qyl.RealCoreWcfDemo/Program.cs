@@ -157,8 +157,10 @@ internal sealed record CoreWcfReport(
         {
             if (!StringComparer.Ordinal.Equals(activity.Kind, nameof(ActivityKind.Server)))
                 failures.Add($"expected CoreWCF Server activity, got {activity.Kind}");
-            RequireTag(activity, RpcAttributes.SystemName, "dotnet_wcf", failures);
-            RequireMissingTag(activity, "rpc.system", failures);
+            // CoreWCF writes the deprecated key and qyl exports it unchanged; the collector's
+            // AttributeMapping.TryGetRename is what rewrites it to rpc.system.name at ingest.
+            RequireTag(activity, "rpc.system", "dotnet_wcf", failures);
+            RequireMissingTag(activity, RpcAttributes.SystemName, failures);
             RequirePresentTag(activity, ServerAttributes.Address, failures);
             RequirePresentTag(activity, ServerAttributes.Port, failures);
             RequireTag(activity, "wcf.channel.path", "/probe.svc", failures);

@@ -180,8 +180,8 @@ contract_items:
   call_site_visibility: library_internal
   payload_access: not_applicable
   evidence_level: verified_nativeaot
-  primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Telemetry.Hosting with Qyl
-    enrichment
+  primary_owner: Azure SDK first-party Azure.* ActivitySources enabled by QylInstrumentation/Qyl.Telemetry.Hosting, with the
+    qyl domain stamped by QylNativeSpanProcessor
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylInstrumentation.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
@@ -226,7 +226,7 @@ contract_items:
   payload_access: not_applicable
   evidence_level: verified_nativeaot
   primary_owner: Elastic.Transport's ActivitySource enriched by Elastic.Clients.Elasticsearch, enabled by Qyl.Telemetry.Hosting,
-    with the qyl domain selected by QylNativeSpanProcessor from elastic.transport.product.name
+    with the qyl domain stamped by QylNativeSpanProcessor
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs

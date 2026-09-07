@@ -127,8 +127,13 @@ internal sealed record AzureReport(
                 failures.Add($"expected Azure span status Error, got {span.Status}");
 
             RequireTag(span, "qyl.instrumentation.domain", "azure.sdk", failures);
-            RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, nameof(RequestFailedException), failures);
-            RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full, failures);
+            // The namespace-qualified name the Azure SDK writes. qyl no longer shortens it: the
+            // processor stamps the domain and touches nothing the library emitted.
+            RequireTag(
+                span,
+                Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type,
+                typeof(RequestFailedException).FullName!,
+                failures);
             RequireMissingTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Path, failures);
         }
 
@@ -138,6 +143,12 @@ internal sealed record AzureReport(
                 failures.Add($"unexpected Azure transport span name: {span.Name}");
             RequireTag(span, HttpAttributes.RequestMethod, HttpAttributes.RequestMethodValues.Get, failures);
             RequireTag(span, ServerAttributes.Address, "127.0.0.1", failures);
+            // The request URL the Azure SDK sets, exported as it was written.
+            RequireTag(
+                span,
+                Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes.Full,
+                "http://127.0.0.1:9/devstoreaccount1/?restype=service&comp=properties",
+                failures);
         }
 
         foreach (var span in operationSpans)

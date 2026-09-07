@@ -1,17 +1,13 @@
 using System.Diagnostics;
 using OpenTelemetry;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
-using ElasticAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Elastic.ElasticAttributes;
-using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
-using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
-using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 namespace Qyl;
 
 /// <summary>
 /// One row of the native-source table: the <c>ActivitySource</c> qyl subscribes to, the
-/// instrumentation id whose toggle gates it, the <c>qyl.instrumentation.domain</c> value stamped on
-/// its spans, and the optional normalisation that row needs.
+/// instrumentation id whose toggle gates it, and the <c>qyl.instrumentation.domain</c> value
+/// stamped on its spans.
 /// </summary>
 /// <remarks>
 /// A <see cref="SourceName"/> ending in <c>*</c> matches by prefix, which is what the Azure SDK's
@@ -20,8 +16,7 @@ namespace Qyl;
 internal readonly record struct QylNativeSourceRow(
     string SourceName,
     string InstrumentationId,
-    string? Domain,
-    Action<Activity>? Normalize)
+    string? Domain)
 {
     internal bool Matches(string sourceName)
         => SourceName.EndsWith('*')
@@ -30,9 +25,16 @@ internal readonly record struct QylNativeSourceRow(
 }
 
 /// <summary>
-/// Stamps the qyl attributes onto the spans the libraries emit themselves, driven by the
-/// native-source table rather than by one processor per library.
+/// Stamps <c>qyl.instrumentation.domain</c> onto the spans the libraries emit themselves, driven
+/// by the native-source table rather than by one processor per library.
 /// </summary>
+/// <remarks>
+/// That attribute is the whole contract: the instrumentation writes only keys the registry
+/// defines and never rewrites, drops or renames what a library emitted. A deprecated key such as
+/// CoreWCF's <c>rpc.system</c> is rewritten by the collector's
+/// <c>AttributeMapping.TryGetRename</c>, and vendor keys such as
+/// <c>elastic.transport.product.name</c> reach it unchanged as pass-through tags.
+/// </remarks>
 internal sealed class QylNativeSpanProcessor(QylNativeSourceRow[] rows) : BaseProcessor<Activity>
 {
     public override void OnEnd(Activity data)
@@ -45,76 +47,7 @@ internal sealed class QylNativeSpanProcessor(QylNativeSourceRow[] rows) : BasePr
             if (row.Domain is { } domain)
                 data.SetTag(QylAttributes.InstrumentationDomain, domain);
 
-            row.Normalize?.Invoke(data);
             return;
         }
-    }
-
-    /// <summary>
-    /// The Azure SDK spans carry the full request URL and the assembly-qualified exception type;
-    /// qyl drops the URL and reports the short type name.
-    /// </summary>
-    internal static void NormalizeAzure(Activity data)
-    {
-        data.SetTag(UrlAttributes.Full, null);
-        data.SetTag(UrlAttributes.Path, null);
-
-        if (data.Status is not ActivityStatusCode.Error)
-            return;
-
-        var exceptionType = data.GetTagItem(ErrorAttributes.Type) as string ?? FindExceptionType(data);
-        if (exceptionType is not null)
-            data.SetTag(ErrorAttributes.Type, GetSimpleTypeName(exceptionType));
-    }
-
-    /// <summary>
-    /// Elastic.Clients.Elasticsearch owns no <c>ActivitySource</c>: it enriches Elastic.Transport's
-    /// span and identifies itself in <c>elastic.transport.product.name</c>, which is the only thing
-    /// that separates an Elasticsearch call from a bare transport call on the one shared source.
-    /// </summary>
-    internal static void NormalizeElastic(Activity data)
-    {
-        // Elastic.Clients.Elasticsearch's own product registration name, not a semantic-convention
-        // value: the registry names the key, the vendor owns what goes in it.
-        const string elasticsearchProductName = "elasticsearch-net";
-
-        if (data.GetTagItem(ElasticAttributes.TransportProductName) is string productName &&
-            StringComparer.Ordinal.Equals(productName, elasticsearchProductName))
-        {
-            data.SetTag(
-                QylAttributes.InstrumentationDomain,
-                QylAttributes.InstrumentationDomainValues.DbElasticsearch);
-        }
-    }
-
-    /// <summary>CoreWCF still reports the pre-stable <c>rpc.system</c> key; qyl reports the stable one.</summary>
-    internal static void NormalizeCoreWcf(Activity data)
-    {
-        const string legacyRpcSystem = "rpc.system";
-
-        if (data.GetTagItem(legacyRpcSystem) is { } system)
-            data.SetTag(RpcAttributes.SystemName, system);
-
-        data.SetTag(legacyRpcSystem, null);
-    }
-
-    private static string? FindExceptionType(Activity activity)
-    {
-        foreach (var activityEvent in activity.Events)
-        {
-            foreach (var tag in activityEvent.Tags)
-            {
-                if (StringComparer.Ordinal.Equals(tag.Key, "exception.type") && tag.Value is string exceptionType)
-                    return exceptionType;
-            }
-        }
-
-        return null;
-    }
-
-    private static string GetSimpleTypeName(string typeName)
-    {
-        var separator = typeName.LastIndexOf('.');
-        return separator >= 0 ? typeName[(separator + 1)..] : typeName;
     }
 }
