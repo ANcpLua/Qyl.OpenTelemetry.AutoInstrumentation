@@ -12,6 +12,10 @@ Three claims, all observable from outside the SDK:
   when nothing is listening. `AddQyl()` must return without paying it.
 * **Deduplicating.** A consumer naming a source qyl already subscribes — `System.Net.Http` is the
   one they reach for — must not subscribe it twice.
+* **Silent at build time.** GetDocument.Insider runs the application's startup path at build time,
+  inside the developer's environment, `OTEL_EXPORTER_OTLP_ENDPOINT` included. It must reach no
+  collector. The proof is the same listener seeing zero requests from that host while the ordinary
+  host under the same variable exports.
 
 The fixture runs the real registration path against a local OTLP/HTTP listener, so nothing here
 reaches into SDK internals.
@@ -114,13 +118,44 @@ using (var activity = source.StartActivity("addqyl-probe", ActivityKind.Internal
 host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
 await host.StopAsync();
 await Task.Delay(250);
+var exportsAfterNormalHost = Volatile.Read(ref exportRequests);
+
+// 4. The same pipeline under the build-time document host, pointed at the listener BOTH ways: the
+//    environment variable it inherits from the developer, and an endpoint configured in code, which
+//    is what Qyl.Api does. Neither may produce a single request. Asserting the explicit endpoint too
+//    is deliberate: it is the stronger claim, and without it the scenario passes even when the gate
+//    is removed, because a null endpoint leaves the exporter on a default nothing is listening on.
+Environment.SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{port}");
+var buildTime = new HostApplicationBuilder(new HostApplicationBuilderSettings
+{
+    ApplicationName = "GetDocument.Insider",
+    DisableDefaults = true,
+});
+buildTime.AddQyl(o =>
+{
+    o.EnableCollectorDiscovery = false;
+    o.CollectorEndpoint = new Uri($"http://127.0.0.1:{port}");
+});
+using (var buildTimeHost = buildTime.Build())
+{
+    await buildTimeHost.StartAsync();
+    using (var source = new ActivitySource("Qyl.Telemetry.AutoInstrumentation"))
+    using (var activity = source.StartActivity("build-time-probe", ActivityKind.Internal))
+    {
+    }
+
+    buildTimeHost.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+    await buildTimeHost.StopAsync();
+}
+
+await Task.Delay(250);
 listener.Stop();
 
 var report = new Dictionary<string, object>
 {
     ["AddQylMilliseconds"] = Math.Round(addQylMilliseconds, 1),
-    ["ExportRequests"] = Volatile.Read(ref exportRequests),
-    ["ServiceName"] = host.Services.GetRequiredService<TracerProvider>() is not null ? "built" : "unbuilt",
+    ["ExportRequests"] = exportsAfterNormalHost,
+    ["BuildTimeExportRequests"] = Volatile.Read(ref exportRequests) - exportsAfterNormalHost,
 };
 Console.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
 return 0;
@@ -224,8 +259,17 @@ def main() -> None:
             "exporter and one of each processor"
         )
 
+    build_time_exports = int(report["BuildTimeExportRequests"])
+    if build_time_exports != 0:
+        fail(
+            f"the build-time document host sent {build_time_exports} OTLP export requests; a host "
+            "that only builds the OpenAPI document must reach no collector, whatever "
+            "OTEL_EXPORTER_OTLP_ENDPOINT says"
+        )
+
     print(f"  - AddQyl returned in {elapsed} ms with no collector listening")
     print(f"  - two AddQyl calls, one span, {exports} OTLP export request")
+    print(f"  - GetDocument.Insider exported {build_time_exports} times with the endpoint set")
     print("addqyl-behavior-ok")
 
 

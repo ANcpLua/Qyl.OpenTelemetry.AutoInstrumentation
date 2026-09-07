@@ -36,6 +36,20 @@ public static class QylSdkHostApplicationBuilderExtensions
 {
     private const string OtlpEndpointVariable = "OTEL_EXPORTER_OTLP_ENDPOINT";
 
+    // Hosts that run the application's startup path to inspect it rather than to serve traffic.
+    // GetDocument.Insider is the build-time OpenAPI document generator: it loads the application,
+    // builds its host, reads the document and exits — inside the developer's or CI's environment,
+    // OTEL_EXPORTER_OTLP_ENDPOINT included. Without this gate every build ships build-time spans and
+    // log records to the real collector. HostApplicationBuilder takes ApplicationName from the entry
+    // assembly, and under this host the entry assembly is the tool, so the name identifies it
+    // without reflection.
+    //
+    // Not covered, deliberately: `dotnet ef` and WebApplicationFactory run the application as its
+    // own entry assembly, so nothing in the environment distinguishes them from the real host. A
+    // design-time host that must not export sets QylSdkOptions.RequireConfiguredEndpoint and leaves
+    // the endpoint unset.
+    private static readonly string[] BuildTimeHostApplicationNames = ["GetDocument.Insider"];
+
     // Four 100 ms connect attempts plus a DNS lookup; the probe runs while the host wires itself, so
     // this bound is only reached when the SDK builds its pipeline immediately after AddQyl.
     private static readonly TimeSpan DiscoveryTimeout = TimeSpan.FromMilliseconds(600);
@@ -71,12 +85,15 @@ public static class QylSdkHostApplicationBuilderExtensions
         QylAutoInstrumentationBootstrap.Boot();
         builder.Services.AddQylAspNetCoreInstrumentation();
 
+        // A build-time host exports nothing, whatever the environment says: no exporter, no probe.
+        var buildTimeHost = Array.IndexOf(BuildTimeHostApplicationNames, builder.Environment.ApplicationName) >= 0;
+
         // The exporter honors the standard OTLP environment variables on its own; discovery only
         // fills the gap when neither the app nor the environment configured an endpoint.
         var endpointFromEnvironment =
             !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OtlpEndpointVariable));
         var endpoint = options.CollectorEndpoint;
-        var probe = endpoint is null && options.EnableCollectorDiscovery && !endpointFromEnvironment
+        var probe = !buildTimeHost && endpoint is null && options.EnableCollectorDiscovery && !endpointFromEnvironment
             ? CollectorDiscovery.Start()
             : null;
 
@@ -91,7 +108,8 @@ public static class QylSdkHostApplicationBuilderExtensions
         // environment variables, and failing that falls back to its own localhost default. Only a
         // caller that is itself a telemetry destination cares about the difference, and for it that
         // fallback points at its own ingest port — so it opts out of exporting entirely.
-        var exportEnabled = !options.RequireConfiguredEndpoint || endpoint is not null || endpointFromEnvironment;
+        var exportEnabled = !buildTimeHost
+                            && (!options.RequireConfiguredEndpoint || endpoint is not null || endpointFromEnvironment);
         var resolvedEndpoint = endpoint;
         Uri? ResolveEndpoint()
             => resolvedEndpoint ??= probe is null ? null : CollectorDiscovery.WaitForEndpoint(probe, DiscoveryTimeout);

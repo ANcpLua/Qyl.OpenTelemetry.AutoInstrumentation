@@ -641,6 +641,8 @@ contract_items:
     - server.port
     - qyl.instrumentation.domain
     recommended_attributes:
+    - error.type
+    - db.response.status_code
     - network.peer.address
     - network.peer.port
     - db.connection_id

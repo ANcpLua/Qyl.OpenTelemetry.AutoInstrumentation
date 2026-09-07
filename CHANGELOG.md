@@ -108,6 +108,20 @@ release is output changes, so every one of them is named below as old source and
   builds the pipeline; `AddQyl` itself touches no socket. `RequireConfiguredEndpoint` keeps its
   meaning — no endpoint means do not export — and is the one caller that still resolves the probe
   eagerly, because for it the exporter is either registered or it is not.
+- **A build-time host exports nothing.** `GetDocument.Insider` runs the application's startup path
+  at build time to read its OpenAPI document, inside the developer's or CI's environment —
+  `OTEL_EXPORTER_OTLP_ENDPOINT` included — so every build shipped build-time spans and log records
+  to the real collector. **The mechanism is one gate, checked before any provider is registered**:
+  `HostApplicationBuilder` takes `ApplicationName` from the entry assembly, and under that host the
+  entry assembly is the tool, so the name identifies it without reflection. When it matches, no
+  exporter is registered on any of the three signals and no discovery probe is started, whatever the
+  environment or the caller's `CollectorEndpoint` says. Everything else — endpoint resolution for a
+  normal host — happens in the `AddOtlpExporter` configure delegates the SDK invokes at provider
+  build, and the logging provider is gated by the same flag. `dotnet ef` and `WebApplicationFactory`
+  are **not** covered and this is deliberate: they run the application as its own entry assembly, so
+  nothing distinguishes them from the real host. A design-time host that must not export sets
+  `QylSdkOptions.RequireConfiguredEndpoint` and leaves the endpoint unset. The qyl SDK's own
+  `QylBuildTimeDocumentHost` workaround is redundant once it pins `15.0.0`.
 - **`AddQyl()` deduplicates `AdditionalSources` and `AdditionalMeters`** against what it already
   subscribed, so a consumer naming `System.Net.Http` again does not double-subscribe.
 - **`session.id` is a span tag and never baggage.** The README and the `AddQyl` summary said it was

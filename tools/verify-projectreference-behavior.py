@@ -17,11 +17,17 @@ TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 
+# The ADO.NET DbCommand lane is what stays an interceptor after 15.0.0: System.Data.Common declares
+# no ActivitySource, so a generated call-site interceptor is the only producer there is. The probe
+# implements the abstract command itself, so the consumer needs no database and no provider package
+# — what is under test is that a ProjectReference consumer gets the generated interceptor at all.
 PROGRAM = r'''
+using System.Collections;
+using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Net;
-using System.Net.Http;
 
 var captured = new List<Activity>();
 using var activityListener = new ActivityListener
@@ -33,13 +39,10 @@ using var activityListener = new ActivityListener
 
 ActivitySource.AddActivityListener(activityListener);
 
-var handler = new CountingHandler();
-using var client = new HttpClient(handler);
-using (await client.GetAsync("http://qyl.invalid/projectreference?token=secret"))
-{
-}
+using var command = new ProbeCommand();
+_ = command.ExecuteScalar();
 
-Console.WriteLine("client.calls=" + handler.Calls.ToString(CultureInfo.InvariantCulture));
+Console.WriteLine("command.calls=" + command.Calls.ToString(CultureInfo.InvariantCulture));
 Console.WriteLine("activity.count=" + captured.Count.ToString(CultureInfo.InvariantCulture));
 
 if (captured.Count == 1)
@@ -50,38 +53,118 @@ if (captured.Count == 1)
         static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
         StringComparer.Ordinal);
     tags.TryGetValue("qyl.instrumentation.domain", out var domain);
-    tags.TryGetValue("http.response.status_code", out var statusCode);
-    tags.TryGetValue("url.full", out var urlFull);
+    tags.TryGetValue("db.system.name", out var system);
+    tags.TryGetValue("db.operation.name", out var operation);
+    tags.TryGetValue("db.query.summary", out var summary);
+    tags.TryGetValue("db.query.text", out var queryText);
 
     Console.WriteLine("activity.name=" + activity.DisplayName);
     Console.WriteLine("activity.kind=" + activity.Kind);
     Console.WriteLine("qyl.instrumentation.domain=" + domain);
-    Console.WriteLine("http.response.status_code=" + statusCode);
-    Console.WriteLine("url.full=" + urlFull);
+    Console.WriteLine("db.system.name=" + system);
+    Console.WriteLine("db.operation.name=" + operation);
+    Console.WriteLine("db.query.summary=" + summary);
+    Console.WriteLine("db.query.text=" + (queryText ?? "<absent>"));
 }
 
 return 0;
 
-internal sealed class CountingHandler : HttpMessageHandler
+internal sealed class ProbeCommand : DbCommand
 {
     public int Calls { get; private set; }
 
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    [AllowNull]
+    public override string CommandText { get; set; } = "SELECT 1";
+
+    public override int CommandTimeout { get; set; }
+
+    public override CommandType CommandType { get; set; } = CommandType.Text;
+
+    public override bool DesignTimeVisible { get; set; }
+
+    public override UpdateRowSource UpdatedRowSource { get; set; }
+
+    protected override DbConnection? DbConnection { get; set; }
+
+    protected override DbParameterCollection DbParameterCollection { get; } = new ProbeParameterCollection();
+
+    protected override DbTransaction? DbTransaction { get; set; }
+
+    public override void Cancel()
+    {
+    }
+
+    public override int ExecuteNonQuery() => 0;
+
+    public override object? ExecuteScalar()
     {
         Calls++;
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent));
+        return null;
     }
+
+    public override void Prepare()
+    {
+    }
+
+    protected override DbParameter CreateDbParameter() => throw new NotSupportedException();
+
+    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw new NotSupportedException();
+}
+
+internal sealed class ProbeParameterCollection : DbParameterCollection
+{
+    private readonly List<DbParameter> _parameters = [];
+
+    public override int Count => _parameters.Count;
+
+    public override object SyncRoot { get; } = new();
+
+    public override int Add(object value) => throw new NotSupportedException();
+
+    public override void AddRange(Array values) => throw new NotSupportedException();
+
+    public override void Clear() => _parameters.Clear();
+
+    public override bool Contains(object value) => false;
+
+    public override bool Contains(string value) => false;
+
+    public override void CopyTo(Array array, int index) => throw new NotSupportedException();
+
+    public override IEnumerator GetEnumerator() => _parameters.GetEnumerator();
+
+    public override int IndexOf(object value) => -1;
+
+    public override int IndexOf(string parameterName) => -1;
+
+    public override void Insert(int index, object value) => throw new NotSupportedException();
+
+    public override void Remove(object value) => throw new NotSupportedException();
+
+    public override void RemoveAt(int index) => _parameters.RemoveAt(index);
+
+    public override void RemoveAt(string parameterName) => throw new NotSupportedException();
+
+    protected override DbParameter GetParameter(int index) => _parameters[index];
+
+    protected override DbParameter GetParameter(string parameterName) => throw new NotSupportedException();
+
+    protected override void SetParameter(int index, DbParameter value) => _parameters[index] = value;
+
+    protected override void SetParameter(string parameterName, DbParameter value) => throw new NotSupportedException();
 }
 '''
 
 
-EXPECTED_VERIFIED = """client.calls=1
+EXPECTED_VERIFIED = """command.calls=1
 activity.count=1
-activity.name=GET
+activity.name=SELECT
 activity.kind=Client
-qyl.instrumentation.domain=http.client
-http.response.status_code=204
-url.full=http://qyl.invalid/projectreference?token=Redacted
+qyl.instrumentation.domain=db.client
+db.system.name=other_sql
+db.operation.name=SELECT
+db.query.summary=SELECT
+db.query.text=<absent>
 """
 
 
@@ -158,7 +241,8 @@ def verify_generated_interceptor_source(directory: Path) -> None:
         "#nullable enable",
         "Qyl.Telemetry.AutoInstrumentation.Generated",
         "file sealed class InterceptsLocationAttribute",
-        "global::System.Net.Http.HttpClient",
+        "global::ProbeCommand receiver",
+        "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(",
     ]:
         if token not in text:
             fail(f"generated interceptor source missing token: {token}")
