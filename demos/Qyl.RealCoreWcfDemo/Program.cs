@@ -32,8 +32,9 @@ builder.AddQyl(options =>
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-// Disposed, not just stopped: shutting the host down is what flushes the OTLP exporter, and
-// the live-check gate reads what this demo exports.
+// Stopped and disposed after an explicit, bounded flush: the live-check gate reads what this
+// demo exports, and host disposal alone shuts the batch processor down with Timeout.Infinite —
+// against a listener that has gone away this demo would wait on it rather than report.
 await using var app = builder.Build();
 app.MapHealthChecks("/healthz");
 app.UseServiceModel(services =>
@@ -73,6 +74,7 @@ try
 }
 finally
 {
+    app.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
     await app.StopAsync();
 }
 

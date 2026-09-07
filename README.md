@@ -242,6 +242,20 @@ python3 tools/verify-aot-autoinstrumentation-goal.py
 That gate builds the package and demo solutions, validates generated artifacts and
 public API baselines, and executes managed/NativeAOT consumer evidence.
 
+### Live check
+
+`tools/verify-live-check.py` runs `weaver registry live-check` as an OTLP listener and points
+the native-source demo lanes at it, so every span this package's processor stamps is judged
+against the pinned semantic-convention registry rather than against an assertion written here.
+`--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is
+closed by changing what the instrumentation writes or by declaring the key in the registry —
+never by waving it through.
+
+One gap is recorded rather than hidden: **`RabbitMQ.Client.Subscriber` has no consuming demo.**
+`Qyl.Telemetry.Hosting` subscribes to both RabbitMQ source names, but the RabbitMQ lane only
+publishes, so the subscriber source emits nothing and the `deliver` and `fetch` spans the
+14.0.0 line added are unjudged by this gate.
+
 ## License
 
 Apache-2.0

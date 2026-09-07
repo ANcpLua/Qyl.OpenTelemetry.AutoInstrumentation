@@ -30,9 +30,20 @@ ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_VARIABLE = "QYL_SEMCONV_REGISTRY"
 OTLP_GRPC_PORT = 4317
 ADMIN_PORT = 4320
-INACTIVITY_TIMEOUT_SECONDS = 60
 LISTENER_TIMEOUT_SECONDS = 60
 SHUTDOWN_TIMEOUT_SECONDS = 120
+
+# Bounds one demo lane end to end: the container pull, the managed build, the NativeAOT publish
+# and the two runs. A lane that exceeds it is hung, and the gate says so instead of waiting.
+LANE_TIMEOUT_SECONDS = 1200
+
+# weaver's inactivity timer resets on every span it receives, so the longest silence it has to
+# survive is one whole cold lane — nothing reaches the listener while MassTransit pulls RabbitMQ
+# and NativeAOT-publishes. Derived from the lane bound, and larger than it, so LANE_TIMEOUT_SECONDS
+# is always the enforcer and weaver never self-terminates mid-run. At 60s it did: locally the
+# listener stopped after 184s, the lanes that followed exported into a closed port, and the gate
+# still reported success because nothing checked whether the listener was alive.
+INACTIVITY_TIMEOUT_SECONDS = LANE_TIMEOUT_SECONDS + 120
 
 # One lane per row of the native-source table. RabbitMQ carries two source names, publisher and
 # subscriber, on the one lane; Elastic.Transport and Elasticsearch share one source and have a
@@ -88,6 +99,26 @@ def wait_for_listener(process: subprocess.Popen[str]) -> None:
         time.sleep(0.5)
 
     fail(f"weaver did not open port {OTLP_GRPC_PORT} within {LISTENER_TIMEOUT_SECONDS}s")
+
+
+def ensure_listener_alive(listener: subprocess.Popen[str], where: str) -> None:
+    """Stop the gate the moment weaver is gone, with weaver's own exit code.
+
+    A listener that has exited leaves port 4317 closed, and a demo that exports into a closed
+    port still passes its own in-memory assertions — so without this check the lanes after the
+    exit are judged by nobody while the gate still ends green. An inactivity timeout exits 0,
+    which would be the worst of the two, so a zero exit code is reported as failure here.
+    """
+    exit_code = listener.poll()
+    if exit_code is None:
+        return
+
+    print(
+        f"weaver stopped listening {where}: exit={exit_code}. "
+        f"Every span after that point was exported into a closed port and judged by nobody.",
+        file=sys.stderr,
+    )
+    raise SystemExit(exit_code or 1)
 
 
 def stop_listener() -> None:
@@ -157,14 +188,21 @@ def main() -> None:
                 continue
 
             print(f"== {lane} demo lane ==")
-            completed = subprocess.run(
-                [sys.executable, f"tools/verify-real-{lane}-demo.py"],
-                cwd=ROOT,
-                env=env,
-                check=False,
-            )
+            ensure_listener_alive(listener, f"before the {lane} demo lane")
+            try:
+                completed = subprocess.run(
+                    [sys.executable, f"tools/verify-real-{lane}-demo.py"],
+                    cwd=ROOT,
+                    env=env,
+                    check=False,
+                    timeout=LANE_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                fail(f"{lane} demo lane did not finish within {LANE_TIMEOUT_SECONDS}s")
+
             if completed.returncode != 0:
                 fail(f"{lane} demo lane failed with exit code {completed.returncode}")
+            ensure_listener_alive(listener, f"during the {lane} demo lane")
     finally:
         if listener.poll() is None:
             stop_listener()
