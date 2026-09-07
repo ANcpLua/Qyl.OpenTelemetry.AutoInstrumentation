@@ -111,23 +111,6 @@
         },
         {
           "kind": "span",
-          "name": "mysqldata.command",
-          "required_attributes": [
-            "db.system",
-            "db.name",
-            "db.user",
-            "db.statement",
-            "qyl.instrumentation.domain"
-          ],
-          "recommended_attributes": [
-            "otel.status_code",
-            "thread.id",
-            "thread.name"
-          ],
-          "opt_in_attributes": []
-        },
-        {
-          "kind": "span",
           "name": "npgsql.command",
           "required_attributes": [
             "db.system.name",

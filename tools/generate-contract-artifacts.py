@@ -38,7 +38,6 @@ CONFORMANCE_PROFILES = [
             "adonet.command",
             "efcore.sqlite",
             "mysqlconnector.command",
-            "mysqldata.command",
             "npgsql.command",
             "oraclemda.command",
             "sqlite.command",
@@ -275,6 +274,7 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
 MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
     "signals.traces.KAFKA",
     "signals.traces.MONGODB",
+    "signals.traces.MYSQLDATA",
     "signals.traces.NSERVICEBUS",
     "signals.traces.QUARTZ",
     "signals.traces.WCFCLIENT",

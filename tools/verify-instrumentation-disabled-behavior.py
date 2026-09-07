@@ -30,10 +30,11 @@ TARGET_FRAMEWORK = "net10.0"
 NUGET_ORG = "https://api.nuget.org/v3/index.json"
 
 PROGRAM = r'''
+using System.Collections;
+using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using Qyl.Telemetry.AutoInstrumentation;
 
 var captured = new List<Activity>();
@@ -45,71 +46,107 @@ using var listener = new ActivityListener
 };
 ActivitySource.AddActivityListener(listener);
 
-await using var server = LoopbackHttpServer.Start();
-using var http = new HttpClient();
-using (await http.GetAsync(server.Uri + "probe"))
-{
-}
-await server.RequestCompleted;
+// The ADO.NET DbCommand lane is the interceptor the toggles gate after 15.0.0: System.Data.Common
+// declares no ActivitySource, so the qyl span is the only span, and its absence is the kill switch
+// working rather than a library falling silent. The probe implements the abstract command itself,
+// so no database and no provider package is involved.
+using var command = new ProbeCommand();
+_ = command.ExecuteScalar();
 
-var httpClientSpans = captured.Count(static activity =>
+var databaseSpans = captured.Count(static activity =>
     activity.TagObjects.Any(static tag =>
         tag.Key == "qyl.instrumentation.domain" &&
         string.Equals(
             Convert.ToString(tag.Value, System.Globalization.CultureInfo.InvariantCulture),
-            "http.client",
+            "db.client",
             StringComparison.Ordinal)));
 
-Console.WriteLine("httpclient.spans=" + httpClientSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
+Console.WriteLine("adonet.spans=" + databaseSpans.ToString(System.Globalization.CultureInfo.InvariantCulture));
 return 0;
 
-internal sealed class LoopbackHttpServer : IAsyncDisposable
+internal sealed class ProbeCommand : DbCommand
 {
-    private readonly TcpListener _listener;
+    public int Calls { get; private set; }
 
-    private LoopbackHttpServer(TcpListener listener)
+    [AllowNull]
+    public override string CommandText { get; set; } = "SELECT 1";
+
+    public override int CommandTimeout { get; set; }
+
+    public override CommandType CommandType { get; set; } = CommandType.Text;
+
+    public override bool DesignTimeVisible { get; set; }
+
+    public override UpdateRowSource UpdatedRowSource { get; set; }
+
+    protected override DbConnection? DbConnection { get; set; }
+
+    protected override DbParameterCollection DbParameterCollection { get; } = new ProbeParameterCollection();
+
+    protected override DbTransaction? DbTransaction { get; set; }
+
+    public override void Cancel()
     {
-        _listener = listener;
-        Uri = new Uri($"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/", UriKind.Absolute);
-        RequestCompleted = ServeOnceAsync(listener);
     }
 
-    public Uri Uri { get; }
+    public override int ExecuteNonQuery() => 0;
 
-    public Task RequestCompleted { get; }
-
-    public static LoopbackHttpServer Start()
+    public override object? ExecuteScalar()
     {
-        var listener = new TcpListener(IPAddress.Loopback, 0);
-        listener.Start(1);
-        return new LoopbackHttpServer(listener);
+        Calls++;
+        return null;
     }
 
-    public ValueTask DisposeAsync()
+    public override void Prepare()
     {
-        _listener.Stop();
-        return ValueTask.CompletedTask;
     }
 
-    private static async Task ServeOnceAsync(TcpListener listener)
-    {
-        using var client = await listener.AcceptTcpClientAsync();
-        await using var stream = client.GetStream();
-        var buffer = new byte[4096];
-        var received = new List<byte>();
-        while (true)
-        {
-            var count = await stream.ReadAsync(buffer);
-            if (count == 0)
-                throw new InvalidOperationException("Loopback client closed before sending HTTP headers.");
-            received.AddRange(buffer.AsSpan(0, count).ToArray());
-            if (received.Count >= 4 && received.ToArray().AsSpan().IndexOf("\r\n\r\n"u8) >= 0)
-                break;
-        }
+    protected override DbParameter CreateDbParameter() => throw new NotSupportedException();
 
-        var response = Encoding.ASCII.GetBytes("HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
-        await stream.WriteAsync(response);
-    }
+    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw new NotSupportedException();
+}
+
+internal sealed class ProbeParameterCollection : DbParameterCollection
+{
+    private readonly List<DbParameter> _parameters = [];
+
+    public override int Count => _parameters.Count;
+
+    public override object SyncRoot { get; } = new();
+
+    public override int Add(object value) => throw new NotSupportedException();
+
+    public override void AddRange(Array values) => throw new NotSupportedException();
+
+    public override void Clear() => _parameters.Clear();
+
+    public override bool Contains(object value) => false;
+
+    public override bool Contains(string value) => false;
+
+    public override void CopyTo(Array array, int index) => throw new NotSupportedException();
+
+    public override IEnumerator GetEnumerator() => _parameters.GetEnumerator();
+
+    public override int IndexOf(object value) => -1;
+
+    public override int IndexOf(string parameterName) => -1;
+
+    public override void Insert(int index, object value) => throw new NotSupportedException();
+
+    public override void Remove(object value) => throw new NotSupportedException();
+
+    public override void RemoveAt(int index) => _parameters.RemoveAt(index);
+
+    public override void RemoveAt(string parameterName) => throw new NotSupportedException();
+
+    protected override DbParameter GetParameter(int index) => _parameters[index];
+
+    protected override DbParameter GetParameter(string parameterName) => throw new NotSupportedException();
+
+    protected override void SetParameter(int index, DbParameter value) => _parameters[index] = value;
+
+    protected override void SetParameter(string parameterName, DbParameter value) => throw new NotSupportedException();
 }
 '''
 
@@ -196,13 +233,13 @@ def main() -> None:
         assembly = project.parent / "bin" / "Release" / TARGET_FRAMEWORK / "Consumer.dll"
 
         def expect(spans: int) -> str:
-            return f"httpclient.spans={spans}"
+            return f"adonet.spans={spans}"
 
         assert_spans("enabled (control)", run_scenario(assembly, env, {}), expect(1))
         # Per-integration trace kill switch.
         assert_spans(
-            "http trace instrumentation disabled",
-            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_HTTPCLIENT_INSTRUMENTATION_ENABLED": "false"}),
+            "adonet trace instrumentation disabled",
+            run_scenario(assembly, env, {"OTEL_DOTNET_AUTO_TRACES_ADONET_INSTRUMENTATION_ENABLED": "false"}),
             expect(0),
         )
         # Signal-level kill switch.

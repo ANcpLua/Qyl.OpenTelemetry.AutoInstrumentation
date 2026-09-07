@@ -50,6 +50,7 @@
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.300" />
+    <PackageVersion Include="Oracle.ManagedDataAccess.OpenTelemetry" Version="23.26.300" />
     <PackageVersion Include="Quartz" Version="4.0.0" />
     <PackageVersion Include="Qyl.Telemetry.SemanticConventions" Version="9.3.0" />
     <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Incubating" Version="9.3.0" />

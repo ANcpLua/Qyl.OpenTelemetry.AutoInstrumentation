@@ -175,6 +175,7 @@ UNDECLARED_IMPLEMENTED_SIGNAL_KEYS = {
 MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
     "signals.traces.KAFKA",
     "signals.traces.MONGODB",
+    "signals.traces.MYSQLDATA",
     "signals.traces.NSERVICEBUS",
     "signals.traces.QUARTZ",
     "signals.traces.WCFCLIENT",

@@ -673,7 +673,7 @@ contract_items:
   qyl_status: implemented
   call_site_visibility: user_code
   payload_access: typed_public
-  evidence_level: verified_nativeaot
+  evidence_level: verified_managed
   primary_owner: MySql.Data's own connector-net ActivitySource enabled by Qyl.Telemetry.Hosting, with the qyl domain stamped
     by QylNativeSpanProcessor
   evidence:
@@ -681,20 +681,6 @@ contract_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-mysqldata-demo.py
-  conformance_signals:
-  - kind: span
-    name: mysqldata.command
-    required_attributes:
-    - db.system
-    - db.name
-    - db.user
-    - db.statement
-    - qyl.instrumentation.domain
-    recommended_attributes:
-    - otel.status_code
-    - thread.id
-    - thread.name
-    opt_in_attributes: []
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.NPGSQL
   signal: traces
