@@ -73,9 +73,25 @@ public static class QylSdkHostApplicationBuilderExtensions
         // session processor, a second native processor and a second OTLP exporter — every span,
         // metric and log exported twice, silently. That is not a hypothetical: an application that
         // follows the README's builder.AddQyl() and also calls AddQylApi, which calls AddQyl itself,
-        // does exactly this. The first call wins, including its options.
+        // does exactly this.
+        //
+        // A repeated call without options is that composition and is simply ignored. A repeated call
+        // WITH options is a different thing: 15.0.0 discarded those options silently, so an
+        // application configuring a service name or an endpoint on its second call ran with neither
+        // and had no way to notice. Since the registration order is the application's own, only the
+        // application can resolve it, and it needs to be told.
         if (builder.Services.Any(static service => service.ServiceType == typeof(QylSdkRegistration)))
+        {
+            if (configure is not null)
+            {
+                throw new InvalidOperationException(
+                    "AddQyl was already called on this builder, so these options would be discarded. " +
+                    "Configure qyl once — AddQylApi calls AddQyl itself, so pass the options there, " +
+                    "or call AddQyl with options before it.");
+            }
+
             return builder;
+        }
 
         builder.Services.AddSingleton<QylSdkRegistration>();
 

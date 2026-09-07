@@ -105,7 +105,26 @@ builder.AddQyl(o =>
     // 3. A source qyl already subscribes, named again by the consumer.
     o.AdditionalSources.Add("System.Net.Http");
 });
-builder.AddQyl(o => o.ServiceName = "second-call-must-be-ignored");
+// A repeated call WITHOUT options is the AddQylApi composition: ignored, nothing duplicated.
+builder.AddQyl();
+
+// A repeated call WITH options is the 16.0.0 contract: those options cannot be honoured, and
+// discarding them silently is what 15.0.0 did. It has to say so.
+var rejected = false;
+try
+{
+    builder.AddQyl(o => o.ServiceName = "second-call-with-options-must-throw");
+}
+catch (InvalidOperationException)
+{
+    rejected = true;
+}
+
+if (!rejected)
+{
+    Console.WriteLine("second AddQyl with options was accepted");
+    return 1;
+}
 
 using var host = builder.Build();
 await host.StartAsync();

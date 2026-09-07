@@ -71,7 +71,7 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.Comma
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.Call(string! method, System.Uri? endpointUri) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V15 = 15 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V16 = 16 -> int
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.DbCommand = "DbCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!

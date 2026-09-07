@@ -5,6 +5,30 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [16.0.0] - 2026-09-07
+
+### Changed
+
+- **Breaking.** `AddQyl` now throws `InvalidOperationException` when it is called a second time on
+  the same builder *with* options. 15.0.0 made the call idempotent, and a repeat call's options were
+  discarded in silence — an application that set a service name or a collector endpoint on its second
+  call ran with neither and had no way to notice, because nothing failed and nothing was logged.
+  A repeat call without options is still ignored: that is the `AddQylApi` composition and it is
+  correct. Configure qyl once, either through `AddQylApi` or by calling `AddQyl` with options before
+  it.
+- `QylGeneratedCodeAbi.V15` is renamed to `V16`. The constant is the generated-code ABI anchor and
+  moves on every breaking change, so code generated against 15.0.0 is rejected at compile time
+  rather than silently mixed with a 16.0.0 runtime.
+
+### Internal
+
+- The publish gate's floor runs as four shards per operating system rather than one job carrying all
+  nineteen stages, and no longer repeats the NativeAOT publish gate that `qyl-aot-publish-gate`
+  already runs on its own matrix.
+- The `release` job takes an explicit `RELEASE_TOKEN`. `github.token` returned HTTP 403 on
+  `gh release create` for this repository even with `contents: write` declared and the repository
+  default set to write, so v15.0.0's release was created by hand.
+
 ## [15.0.0] - 2026-09-07
 
 The mapping rule 14.1.0 applied to ASP.NET Core, applied to everything else: **a library with its
