@@ -24,7 +24,7 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 61
+  index: 64
   contract_item_id: QYL_NATIVE_CONTRACT_001
   upstream_sources:
   - label: Microsoft.Extensions.AI 10.9.0
@@ -58,7 +58,7 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 62
+  index: 65
   contract_item_id: QYL_NATIVE_CONTRACT_002
   upstream_sources:
   - label: Microsoft.Extensions.AI 10.9.0
@@ -92,7 +92,7 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 63
+  index: 66
   contract_item_id: QYL_NATIVE_CONTRACT_003
   upstream_sources:
   - label: Microsoft.Agents.AI 1.20.0
@@ -126,7 +126,7 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 64
+  index: 67
   contract_item_id: QYL_NATIVE_CONTRACT_004
   upstream_sources:
   - label: Microsoft.Agents.AI 1.20.0
@@ -161,7 +161,7 @@ contract_items:
   - Qyl.Telemetry.Hosting registers Microsoft.Agents.AI.Workflows; the application explicitly calls WithOpenTelemetry.
   - The promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 65
+  index: 68
   contract_item_id: QYL_NATIVE_CONTRACT_005
   upstream_sources:
   - label: Microsoft.Agents.AI.Workflows 1.20.0
@@ -196,7 +196,7 @@ contract_items:
   - Qyl.Telemetry.Hosting registers Experimental.ModelContextProtocol; the official SDK emits the client/server spans automatically.
   - MCP metrics are deliberately outside this contract because the official instruments attach dynamic tool and resource names as dimensions, violating qyl's bounded-cardinality policy.
   - This exact path and version is verified in managed and NativeAOT execution; it is not a protocol-wide claim.
-  index: 66
+  index: 69
   contract_item_id: QYL_NATIVE_CONTRACT_006
   upstream_sources:
   - label: ModelContextProtocol 2.2.0

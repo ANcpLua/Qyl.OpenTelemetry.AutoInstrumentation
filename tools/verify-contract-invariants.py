@@ -666,7 +666,7 @@ def verify_environment_contract(artifacts: ModuleType, contract: dict[str, Any])
     instrumentation_options = [item for item in items if item["kind"] == artifacts.OPTION_KIND]
     if len(controls) != 7:
         fail(f"wrong YAML global environment control count: {len(controls)}")
-    if len(instrumentation_options) != 16:
+    if len(instrumentation_options) != 19:
         fail(f"wrong YAML instrumentation option count: {len(instrumentation_options)}")
 
     for item in controls:

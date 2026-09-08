@@ -21,6 +21,14 @@ SCHEMA_PATH = ROOT / "docs" / "generated" / "qyl-aot-contract.schema.json"
 COVERAGE_MATRIX_PATH = ROOT / "docs" / "coverage-matrix.md"
 CONFORMANCE_PLAN_PATH = ROOT / "docs" / "qyl-aot-autoinstrumentation.conformance-plan.json"
 
+# The upstream row count is bookkeeping of what open-telemetry/opentelemetry-dotnet-instrumentation
+# publishes, not a qyl invariant: when upstream adds a row the contract grows and these follow it.
+# Frozen literals here would have made an honest upstream refresh impossible without editing the
+# contract to fit the tool. 2026-09-08: upstream grew from 60 to 63 (three instrumentation options).
+UPSTREAM_CONTRACT_ITEM_COUNT = 63
+QYL_NATIVE_CONTRACT_ITEM_COUNT = 6
+TOTAL_CONTRACT_ITEM_COUNT = UPSTREAM_CONTRACT_ITEM_COUNT + QYL_NATIVE_CONTRACT_ITEM_COUNT
+
 CONFORMANCE_PROFILES = [
     {
         "service_name": "qyl-webapi-aot-demo",
@@ -463,23 +471,35 @@ def verify_source_contract_sequences(
     upstream_items: list[Any],
     qyl_native_items: list[Any],
 ) -> None:
-    if len(upstream_items) != 60:
-        fail(f"upstream contract must remain exactly 60 items: {len(upstream_items)}")
+    upstream_last = UPSTREAM_CONTRACT_ITEM_COUNT
+    if len(upstream_items) != upstream_last:
+        fail(f"upstream contract must remain exactly {upstream_last} items: {len(upstream_items)}")
     upstream_indexes = [int(item["index"]) for item in upstream_items]
-    if upstream_indexes != list(range(1, 61)):
-        fail(f"upstream contract indexes must remain contiguous 1..60: {upstream_indexes}")
+    if upstream_indexes != list(range(1, upstream_last + 1)):
+        fail(f"upstream contract indexes must remain contiguous 1..{upstream_last}: {upstream_indexes}")
     upstream_ids = [str(item["contract_item_id"]) for item in upstream_items]
-    expected_upstream_ids = [f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, 61)]
+    expected_upstream_ids = [
+        f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, upstream_last + 1)
+    ]
     if upstream_ids != expected_upstream_ids:
         fail("upstream contract_item_id sequence mismatch")
 
-    if len(qyl_native_items) != 6:
-        fail(f"qyl-native 8.0 contract must contain exactly 6 scoped signal items: {len(qyl_native_items)}")
+    if len(qyl_native_items) != QYL_NATIVE_CONTRACT_ITEM_COUNT:
+        fail(
+            f"qyl-native 8.0 contract must contain exactly {QYL_NATIVE_CONTRACT_ITEM_COUNT} scoped "
+            f"signal items: {len(qyl_native_items)}"
+        )
     qyl_native_indexes = [int(item["index"]) for item in qyl_native_items]
-    if qyl_native_indexes != list(range(61, 67)):
-        fail(f"qyl-native contract indexes must be contiguous 61..66: {qyl_native_indexes}")
+    expected_native_range = list(range(upstream_last + 1, TOTAL_CONTRACT_ITEM_COUNT + 1))
+    if qyl_native_indexes != expected_native_range:
+        fail(
+            f"qyl-native contract indexes must be contiguous "
+            f"{expected_native_range[0]}..{expected_native_range[-1]}: {qyl_native_indexes}"
+        )
     qyl_native_ids = [str(item["contract_item_id"]) for item in qyl_native_items]
-    expected_qyl_native_ids = [f"QYL_NATIVE_CONTRACT_{index:03d}" for index in range(1, 7)]
+    expected_qyl_native_ids = [
+        f"QYL_NATIVE_CONTRACT_{index:03d}" for index in range(1, QYL_NATIVE_CONTRACT_ITEM_COUNT + 1)
+    ]
     if qyl_native_ids != expected_qyl_native_ids:
         fail("qyl-native contract_item_id sequence mismatch")
     actual_qyl_native_contract = [
@@ -563,28 +583,34 @@ def contract_counts(contract: dict[str, Any]) -> dict[str, int]:
 
 def verify_contract_model(contract: dict[str, Any]) -> None:
     items = contract_items(contract)
-    if len(items) != 66:
+    if len(items) != TOTAL_CONTRACT_ITEM_COUNT:
         fail(f"wrong contract item count: {len(items)}")
 
     indexes = [int(item["index"]) for item in items]
-    if indexes != list(range(1, 67)):
-        fail(f"resolved contract indexes must be contiguous 1..66: {indexes}")
+    if indexes != list(range(1, TOTAL_CONTRACT_ITEM_COUNT + 1)):
+        fail(
+            f"resolved contract indexes must be contiguous 1..{TOTAL_CONTRACT_ITEM_COUNT}: {indexes}"
+        )
 
     ids = [str(item["contract_item_id"]) for item in items]
-    expected_ids = [f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}" for index in range(1, 61)] + [
-        f"QYL_NATIVE_CONTRACT_{index:03d}" for index in range(1, 7)
+    expected_ids = [
+        f"OTEL_DOTNET_AUTO_CONTRACT_{index:03d}"
+        for index in range(1, UPSTREAM_CONTRACT_ITEM_COUNT + 1)
+    ] + [
+        f"QYL_NATIVE_CONTRACT_{index:03d}"
+        for index in range(1, QYL_NATIVE_CONTRACT_ITEM_COUNT + 1)
     ]
     if ids != expected_ids:
         fail("contract_item_id sequence mismatch")
 
     counts = contract_counts(contract)
     expected_counts = {
-        "upstream_contract_items": 60,
-        "qyl_native_contract_items": 6,
+        "upstream_contract_items": UPSTREAM_CONTRACT_ITEM_COUNT,
+        "qyl_native_contract_items": QYL_NATIVE_CONTRACT_ITEM_COUNT,
         "signal_specific_instrumentation_promises": 43,
         "global_environment_controls": 7,
-        "instrumentation_options": 16,
-        "total_contract_items": 66,
+        "instrumentation_options": 19,
+        "total_contract_items": TOTAL_CONTRACT_ITEM_COUNT,
         "traces_signal_specific_promises": 30,
         "metrics_signal_specific_promises": 10,
         "logs_signal_specific_promises": 3,
@@ -956,8 +982,8 @@ def render_schema() -> str:
             },
             "contract_items": {
                 "type": "array",
-                "minItems": 66,
-                "maxItems": 66,
+                "minItems": TOTAL_CONTRACT_ITEM_COUNT,
+                "maxItems": TOTAL_CONTRACT_ITEM_COUNT,
                 "items": {"$ref": "#/$defs/contract_item"},
             },
         },
@@ -1011,7 +1037,7 @@ def common_schema_properties() -> dict[str, Any]:
         "key": {"type": "string"},
         "contract_origin": {"enum": ["upstream_otel_dotnet_auto_60", "qyl_native"]},
         "status": {"type": "string"},
-        "index": {"type": "integer", "minimum": 1, "maximum": 66},
+        "index": {"type": "integer", "minimum": 1, "maximum": TOTAL_CONTRACT_ITEM_COUNT},
         "contract_item_id": {
             "type": "string",
             "pattern": "^(?:OTEL_DOTNET_AUTO_CONTRACT|QYL_NATIVE_CONTRACT)_[0-9]{3}$",
@@ -1108,7 +1134,7 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
         "<!-- Regenerate with `python3 tools/generate-contract-artifacts.py --write`. -->",
         "",
         "This matrix is generated from `docs/generated/qyl-aot-contract.resolved.yaml`.",
-        "The exact 60-row upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.yaml`; qyl-native promises live in `docs/contracts/qyl-native-instrumentations.yaml`; qyl ownership and evidence for upstream rows live in `docs/contracts/qyl-aot-ownership.yaml`.",
+        f"The exact {UPSTREAM_CONTRACT_ITEM_COUNT}-row upstream contract lives in `docs/contracts/otel-dotnet-auto-60.upstream.yaml`; qyl-native promises live in `docs/contracts/qyl-native-instrumentations.yaml`; qyl ownership and evidence for upstream rows live in `docs/contracts/qyl-aot-ownership.yaml`.",
         "Every row identifies its contract origin and carries a clickable authoritative source.",
         "",
         "## Counts",
@@ -1146,7 +1172,7 @@ def render_coverage_matrix(contract: dict[str, Any]) -> str:
     )
     for item in contract_items(contract):
         origin = (
-            "upstream 60"
+            f"upstream {UPSTREAM_CONTRACT_ITEM_COUNT}"
             if item["contract_origin"] == "upstream_otel_dotnet_auto_60"
             else "qyl native"
         )

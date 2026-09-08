@@ -5,6 +5,64 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [19.0.0] - 2026-09-08
+
+The upstream contract had been pinned to two commits from June, and both had moved. Pulling the
+pins forward showed the frozen row count for what it was: `generate-contract-artifacts.py` refused
+to load any upstream contract that was not exactly 60 rows, so an upstream that grew could not be
+recorded without first editing the tool. Upstream grew by three rows.
+
+### Changed
+
+- **The upstream contract is pinned to today's sources.**
+  `docs/contracts/otel-dotnet-auto-60.upstream.yaml` now pins
+  `open-telemetry/opentelemetry-dotnet-instrumentation` `docs/config.md` at
+  `b9909b7505a9b857b1b3eee1d01f5022abf3010c` (2026-09-02, "Npgsql trace context propagation")
+  instead of `611b815a62a66b5ece634337328757444fb9c2e9`, and
+  `open-telemetry/opentelemetry.io` `content/en/docs/zero-code/dotnet/instrumentations.md` at
+  `69edfe0c981cb3559854006de46065bde48b07dc` (2026-07-09, "Update docs after OTel .NET Auto 1.16.0
+  release") instead of `db8337edbbac824aebbb330acea18a7042b38806`. Every per-row line anchor was
+  remapped by locating the pinned line's text in the new file, not by guessing an offset.
+
+- **`signals.traces.NPGSQL` and `signals.traces.SQLCLIENT` are no longer source-only.** Upstream
+  now documents both as `source & bytecode`, where the bytecode half exists solely for trace-context
+  propagation into the server -- `OTEL_DOTNET_AUTO_NPGSQL_CONTEXT_PROPAGATION` writes the traceparent
+  through PostgreSQL's `application_name`, and
+  `OTEL_DOTNET_EXPERIMENTAL_SQLCLIENT_ENABLE_TRACE_CONTEXT_PROPAGATION` does the .NET Framework
+  equivalent for SQL Server. Both rows carry the new operator and the reason.
+
+- **The contrib documentation pins moved with upstream's 1.18.\* bump.** `Instrumentation.AspNet`,
+  `AspNetCore`, `Http`, `Process`, `Runtime` and the `SqlClient` release tag are now the versions
+  upstream's config actually links, not the 1.15.\* ones from June.
+
+### Added
+
+- **Three upstream instrumentation options that did not exist at the old pin.**
+  `OTEL_DOTNET_AUTO_NPGSQL_CONTEXT_PROPAGATION` (`false`),
+  `OTEL_DOTNET_AUTO_ORACLEMDA_DATABASE_OPENTELEMETRY_TRACING` (`true`) and
+  `OTEL_DOTNET_EXPERIMENTAL_SQLCLIENT_ENABLE_TRACE_CONTEXT_PROPAGATION` (`false`) are contract items
+  061-063. The ownership overlay records what qyl actually does with them, which is nothing: the
+  first two are `not_implemented` / `research_required` because the mechanism upstream uses is a
+  rewrite of connector internals qyl never sees -- it consumes Npgsql's and ODP.NET's own
+  `ActivitySource`s through `QylNativeSpanProcessor` and has no handle on the command lifecycle. The
+  third is `unsupported_nativeaot`: upstream scopes it to .NET Framework and implements it by
+  bytecode rewriting, and this package family has neither.
+
+### Fixed
+
+- **The contract's size was frozen in the tool instead of read from the contract.**
+  `verify_source_contract_sequences` hard-failed on any upstream contract that was not exactly 60
+  items with indexes 1..60, `verify_contract_model` on any resolved contract that was not exactly 66,
+  and the emitted JSON schema pinned `minItems`/`maxItems`/`index` to 66. Those numbers were
+  bookkeeping of what upstream published in June, not a qyl invariant, and freezing them made the
+  only honest response to an upstream refresh -- growing the contract -- impossible. They now derive
+  from `UPSTREAM_CONTRACT_ITEM_COUNT` and `QYL_NATIVE_CONTRACT_ITEM_COUNT`, so contiguity, the
+  `contract_item_id` sequence and the qyl-native scope are still enforced exactly as before, against
+  a size the contract sets. The resolved contract is 69 items (63 upstream + 6 qyl-native); the
+  qyl-native rows moved from indexes 61-66 to 64-69.
+
+- **`docs/.DS_Store` was tracked.** Deleted.
+
 ## [18.0.0] - 2026-09-08
 
 One vocabulary rule guarded `src/` and nothing else, and the two things that fell outside it were

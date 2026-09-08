@@ -283,7 +283,7 @@ qyl's own spans and instruments carry the registry-owned scope names
 `Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
 Mirror them in `AddSource(...)`, `AddMeter(...)` or
 `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V18` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V19` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 

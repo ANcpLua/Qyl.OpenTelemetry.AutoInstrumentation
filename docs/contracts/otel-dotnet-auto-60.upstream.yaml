@@ -1,18 +1,18 @@
 schema_id: otel-dotnet-auto-instrumentation-contract-items
 schema_version: 1.0.0
-generated_at: '2026-06-13'
+generated_at: '2026-09-08'
 source:
   title: Available instrumentations
   source_kind: official_github_markdown
   content_basis: OpenTelemetry .NET Automatic Instrumentation supported libraries
   primary_repository: open-telemetry/opentelemetry-dotnet-instrumentation
-  primary_commit: 611b815a62a66b5ece634337328757444fb9c2e9
+  primary_commit: b9909b7505a9b857b1b3eee1d01f5022abf3010c
   primary_path: docs/config.md
-  primary_url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md
+  primary_url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md
   legacy_60_item_repository: open-telemetry/opentelemetry.io
-  legacy_60_item_commit: db8337edbbac824aebbb330acea18a7042b38806
+  legacy_60_item_commit: 69edfe0c981cb3559854006de46065bde48b07dc
   legacy_60_item_path: content/en/docs/zero-code/dotnet/instrumentations.md
-  legacy_60_item_url: https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md
+  legacy_60_item_url: https://github.com/open-telemetry/opentelemetry.io/blob/69edfe0c981cb3559854006de46065bde48b07dc/content/en/docs/zero-code/dotnet/instrumentations.md
 contract_items:
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ADONET
@@ -37,7 +37,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_001
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L144-L180
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L144-L180
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ASPNET
   signal: traces
@@ -61,7 +61,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_002
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L145-L184
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L145-L184
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ASPNETCORE
   signal: traces
@@ -81,7 +81,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_003
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L146
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L146
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.AZURE
   signal: traces
@@ -100,7 +100,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_004
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L147-L186
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L147-L186
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ELASTICSEARCH
   signal: traces
@@ -121,7 +121,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_005
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L148-L189
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L148-L189
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ELASTICTRANSPORT
   signal: traces
@@ -140,7 +140,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_006
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L149
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L149
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ENTITYFRAMEWORKCORE
   signal: traces
@@ -161,7 +161,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_007
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L150-L195
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L150-L195
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.GRAPHQL
   signal: traces
@@ -182,7 +182,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_008
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L151
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L151
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.GRPCNETCLIENT
   signal: traces
@@ -201,7 +201,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_009
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L152
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L152
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.HTTPCLIENT
   signal: traces
@@ -224,7 +224,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_010
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L153
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L153
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.KAFKA
   signal: traces
@@ -245,7 +245,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_011
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L154-L198
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L154-L198
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MASSTRANSIT
   signal: traces
@@ -266,7 +266,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L155
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L155
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MONGODB
   signal: traces
@@ -292,7 +292,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_013
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L156-L201
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L156-L201
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MYSQLCONNECTOR
   signal: traces
@@ -311,7 +311,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L157
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L157
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MYSQLDATA
   signal: traces
@@ -332,7 +332,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_015
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L158
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L158
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.NPGSQL
   signal: traces
@@ -345,13 +345,16 @@ contract_items:
   supported_versions: '>=6.0.0'
   instrumentation_types:
   - source
-  instrumentation_type_operator: single
+  - bytecode
+  instrumentation_type_operator: and
   status: experimental
+  notes:
+  - Bytecode instrumentation is used only for context propagation, configurable by OTEL_DOTNET_AUTO_NPGSQL_CONTEXT_PROPAGATION.
   index: 16
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L159-L195
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L159-L204
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.NSERVICEBUS
   signal: traces
@@ -371,7 +374,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_017
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L160
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L160
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ORACLEMDA
   signal: traces
@@ -396,7 +399,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L161
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L161
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.RABBITMQ
   signal: traces
@@ -418,7 +421,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_019
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L162-L204
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L162-L207
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.QUARTZ
   signal: traces
@@ -439,7 +442,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L163
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L163
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.SQLCLIENT
   signal: traces
@@ -459,17 +462,19 @@ contract_items:
   supported_versions: '*'
   instrumentation_types:
   - source
-  instrumentation_type_operator: single
+  - bytecode
+  instrumentation_type_operator: and
   status: experimental
   notes:
   - System.Data.SqlClient is deprecated.
   - Microsoft.Data.SqlClient v3.* is not supported on .NET Framework due to an OpenTelemetry .NET issue.
   - System.Data.SqlClient is supported from version 4.8.5.
+  - Bytecode instrumentation is used only for context propagation, configurable by OTEL_DOTNET_EXPERIMENTAL_SQLCLIENT_ENABLE_TRACE_CONTEXT_PROPAGATION.
   index: 21
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L164-L210
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L164-L216
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.SQLITE
   signal: traces
@@ -488,7 +493,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_022
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L165
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L165
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.STACKEXCHANGEREDIS
   signal: traces
@@ -508,7 +513,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_023
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L166-L213
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L166-L219
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.WCFCLIENT
   signal: traces
@@ -527,7 +532,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_024
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L167
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L167
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.WCFCORE
   signal: traces
@@ -548,7 +553,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_025
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L168
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L168
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.WCFSERVICE
   signal: traces
@@ -569,7 +574,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L169
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L169
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.ASPNET
   signal: metrics
@@ -586,7 +591,7 @@ contract_items:
   status: experimental
   documentation:
     name: ASP.NET metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNet-1.15.2/src/OpenTelemetry.Instrumentation.AspNet/README.md#list-of-metrics-produced
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNet-1.18.0/src/OpenTelemetry.Instrumentation.AspNet/README.md#list-of-metrics-produced
   not_supported_on:
   - .NET
   notes:
@@ -595,7 +600,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_027
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L223
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L229
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.ASPNETCORE
   signal: metrics
@@ -611,14 +616,14 @@ contract_items:
   status: experimental
   documentation:
     name: ASP.NET Core metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNetCore-1.15.2/src/OpenTelemetry.Instrumentation.AspNetCore/README.md#list-of-metrics-produced
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.AspNetCore-1.18.0/src/OpenTelemetry.Instrumentation.AspNetCore/README.md#list-of-metrics-produced
   not_supported_on:
   - .NET Framework
   index: 28
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_028
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L224
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L230
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.HTTPCLIENT
   signal: metrics
@@ -639,12 +644,12 @@ contract_items:
   status: experimental
   documentation:
     name: HttpClient metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Http-1.15.1/src/OpenTelemetry.Instrumentation.Http/README.md#list-of-metrics-produced
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Http-1.18.0/src/OpenTelemetry.Instrumentation.Http/README.md#list-of-metrics-produced
   index: 29
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_029
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L225
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L231
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NETRUNTIME
   signal: metrics
@@ -661,12 +666,12 @@ contract_items:
   status: experimental
   documentation:
     name: Runtime metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.17.0/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Runtime-1.18.0/src/OpenTelemetry.Instrumentation.Runtime/README.md#metrics
   index: 30
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_030
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L226
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L232
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NPGSQL
   signal: metrics
@@ -690,7 +695,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_031
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L227
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L233
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.NSERVICEBUS
   signal: metrics
@@ -713,7 +718,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L228
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L234
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.PROCESS
   signal: metrics
@@ -730,12 +735,12 @@ contract_items:
   status: experimental
   documentation:
     name: Process metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Process-1.15.1-beta.1/src/OpenTelemetry.Instrumentation.Process/README.md#metrics
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/Instrumentation.Process-1.18.0-rc.1/src/OpenTelemetry.Instrumentation.Process/README.md#metrics
   index: 33
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_033
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L229
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L235
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.SQLCLIENT
   signal: metrics
@@ -759,7 +764,7 @@ contract_items:
   status: experimental
   documentation:
     name: SqlClient metrics
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/releases/tag/Instrumentation.SqlClient-1.15.2
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/releases/tag/Instrumentation.SqlClient-1.18.0
   notes:
   - System.Data.SqlClient is deprecated.
   - Microsoft.Data.SqlClient v3.* is not supported on .NET Framework due to an OpenTelemetry .NET issue.
@@ -768,7 +773,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_034
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L230-L236
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L236-L242
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.ILOGGER
   signal: logs
@@ -793,7 +798,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_035
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L244-L251
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L250-L257
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.LOG4NET
   signal: logs
@@ -814,7 +819,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_036
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L245-L254
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L251-L260
 - kind: signal_specific_instrumentation_promise
   key: signals.logs.NLOG
   signal: logs
@@ -835,7 +840,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_037
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L246-L257
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L252-L263
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED
@@ -847,7 +852,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_038
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L128
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L128
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
@@ -863,7 +868,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_039
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L129
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L129
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
@@ -884,7 +889,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_040
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L130
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L120-L130
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
@@ -900,7 +905,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_041
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L131
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L131
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
@@ -921,7 +926,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_042
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L132
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L120-L132
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
@@ -937,7 +942,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_043
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L133
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L133
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
@@ -958,7 +963,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L120-L134
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L120-L134
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
   environment_variable: OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
@@ -979,9 +984,9 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_045
   upstream_sources:
   - label: 60-item source row
-    url: https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L156
+    url: https://github.com/open-telemetry/opentelemetry.io/blob/69edfe0c981cb3559854006de46065bde48b07dc/content/en/docs/zero-code/dotnet/instrumentations.md#L163
   - label: current removal note
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L414-L418
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/CHANGELOG.md#L508-L512
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
   environment_variable: OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
@@ -1000,7 +1005,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L263
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L269
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
   environment_variable: OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT
@@ -1019,7 +1024,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_047
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L264
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L272
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
   environment_variable: OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT
@@ -1042,9 +1047,9 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_048
   upstream_sources:
   - label: 60-item source row
-    url: https://github.com/open-telemetry/opentelemetry.io/blob/db8337edbbac824aebbb330acea18a7042b38806/content/en/docs/zero-code/dotnet/instrumentations.md#L159
+    url: https://github.com/open-telemetry/opentelemetry.io/blob/69edfe0c981cb3559854006de46065bde48b07dc/content/en/docs/zero-code/dotnet/instrumentations.md#L167
   - label: current removal note
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/CHANGELOG.md#L416-L418
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/CHANGELOG.md#L510-L512
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -1061,7 +1066,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L265
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L273
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1080,7 +1085,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_050
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L266
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L274
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -1097,7 +1102,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_051
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L267
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L275
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1114,7 +1119,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_052
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L268
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L276
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
   environment_variable: OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
@@ -1131,7 +1136,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L269
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L277
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
   environment_variable: OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
@@ -1148,7 +1153,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_054
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L270
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L278
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -1165,7 +1170,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_055
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L271
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L279
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -1182,7 +1187,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_056
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L272
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L280
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
   environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
@@ -1198,7 +1203,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_057
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L273
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L281
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
   environment_variable: OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
@@ -1214,7 +1219,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_058
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L274
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L283
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
   environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
@@ -1230,7 +1235,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_059
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L275
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L282
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_SQLCLIENT_NETFX_ILREWRITE_ENABLED
@@ -1253,4 +1258,67 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_060
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/611b815a62a66b5ece634337328757444fb9c2e9/docs/config.md#L276-L284
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L285-L295
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_NPGSQL_CONTEXT_PROPAGATION
+  environment_variable: OTEL_DOTNET_AUTO_NPGSQL_CONTEXT_PROPAGATION
+  description: Whether the Npgsql instrumentation propagates the W3C traceparent to PostgreSQL through application_name for
+    non-multiplexed commands and Npgsql 10 COPY operations.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: NPGSQL
+  notes:
+  - Propagation adds one SET application_name round trip before each traced operation and one RESET application_name cleanup
+    round trip after it.
+  - RESET does not restore a value assigned later with SET, so enabling this option can overwrite an application_name set by
+    application code at runtime.
+  - Multiplexing is not supported; the instrumentation skips propagation and logs one warning when it detects a multiplexed
+    connector.
+  index: 61
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_061
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L270-L333
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_AUTO_ORACLEMDA_DATABASE_OPENTELEMETRY_TRACING
+  environment_variable: OTEL_DOTNET_AUTO_ORACLEMDA_DATABASE_OPENTELEMETRY_TRACING
+  description: Whether the Oracle Client instrumentation can enable database OpenTelemetry tracing and propagate context to
+    the server.
+  value_type: boolean
+  default_value: 'true'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: ORACLEMDA
+  notes:
+  - Supported only by Oracle.ManagedDataAccess packages 23.26.200 and newer.
+  - Requires an Oracle AI Database 26ai server.
+  index: 62
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_062
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L271-L288
+  - label: 60-item source row
+    url: https://github.com/open-telemetry/opentelemetry.io/blob/69edfe0c981cb3559854006de46065bde48b07dc/content/en/docs/zero-code/dotnet/instrumentations.md#L165
+- kind: instrumentation_option
+  key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_SQLCLIENT_ENABLE_TRACE_CONTEXT_PROPAGATION
+  environment_variable: OTEL_DOTNET_EXPERIMENTAL_SQLCLIENT_ENABLE_TRACE_CONTEXT_PROPAGATION
+  description: Whether the SQLCLIENT instrumentation turns on context propagation to the SQL Server.
+  value_type: boolean
+  default_value: 'false'
+  status: experimental
+  target_signal: traces
+  target_instrumentation_id: SQLCLIENT
+  not_supported_on:
+  - .NET
+  notes:
+  - .NET Framework only; the 60-item source row states the restriction explicitly.
+  - Selects the bytecode half of the SQLCLIENT traces promise, which upstream uses only for context propagation.
+  index: 63
+  contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_063
+  upstream_sources:
+  - label: current config
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/b9909b7505a9b857b1b3eee1d01f5022abf3010c/docs/config.md#L284
+  - label: 60-item source row
+    url: https://github.com/open-telemetry/opentelemetry.io/blob/69edfe0c981cb3559854006de46065bde48b07dc/content/en/docs/zero-code/dotnet/instrumentations.md#L179

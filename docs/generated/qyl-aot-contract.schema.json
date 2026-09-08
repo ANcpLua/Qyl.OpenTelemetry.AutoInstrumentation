@@ -60,8 +60,8 @@
     },
     "contract_items": {
       "type": "array",
-      "minItems": 66,
-      "maxItems": 66,
+      "minItems": 69,
+      "maxItems": 69,
       "items": {
         "$ref": "#/$defs/contract_item"
       }
@@ -104,7 +104,7 @@
       "index": {
         "type": "integer",
         "minimum": 1,
-        "maximum": 66
+        "maximum": 69
       },
       "contract_item_id": {
         "type": "string",
@@ -261,7 +261,7 @@
         "index": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 66
+          "maximum": 69
         },
         "instrumentation_id": {
           "type": "string"
@@ -499,7 +499,7 @@
         "index": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 66
+          "maximum": 69
         },
         "is_pattern": {
           "type": "boolean"
@@ -733,7 +733,7 @@
         "index": {
           "type": "integer",
           "minimum": 1,
-          "maximum": 66
+          "maximum": 69
         },
         "key": {
           "type": "string"
