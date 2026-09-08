@@ -22,10 +22,23 @@ COVERAGE_MATRIX_PATH = ROOT / "docs" / "coverage-matrix.md"
 CONFORMANCE_PLAN_PATH = ROOT / "docs" / "qyl-aot-autoinstrumentation.conformance-plan.json"
 
 # The upstream row count is bookkeeping of what open-telemetry/opentelemetry-dotnet-instrumentation
-# publishes, not a qyl invariant: when upstream adds a row the contract grows and these follow it.
-# Frozen literals here would have made an honest upstream refresh impossible without editing the
-# contract to fit the tool. 2026-09-08: upstream grew from 60 to 63 (three instrumentation options).
-UPSTREAM_CONTRACT_ITEM_COUNT = 63
+# publishes, not a qyl invariant: when upstream adds a row the contract grows. It is therefore read
+# from the contract rather than written here. A literal froze it at 60 until 2026-09-08, and the
+# refresh that grew it to 63 could not run until the literal went -- the tool was demanding that the
+# contract match it. What is still enforced is what a count never proved anyway: the indexes run
+# contiguously from 1, and the contract_item_id sequence matches them exactly.
+def _upstream_contract_item_count() -> int:
+    document = yaml.safe_load(UPSTREAM_CONTRACT_PATH.read_text(encoding="utf-8"))
+    items = document.get("contract_items") if isinstance(document, dict) else None
+    if not isinstance(items, list) or not items:
+        raise SystemExit(f"contract: {UPSTREAM_CONTRACT_PATH.name} carries no contract_items")
+    return len(items)
+
+
+UPSTREAM_CONTRACT_ITEM_COUNT = _upstream_contract_item_count()
+
+# This one stays a literal on purpose: the six qyl-native promises are qyl's own scope, decided
+# here, not a count of what somebody else published.
 QYL_NATIVE_CONTRACT_ITEM_COUNT = 6
 TOTAL_CONTRACT_ITEM_COUNT = UPSTREAM_CONTRACT_ITEM_COUNT + QYL_NATIVE_CONTRACT_ITEM_COUNT
 
