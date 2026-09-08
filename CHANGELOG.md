@@ -5,6 +5,47 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [18.0.0] - 2026-09-08
+
+One vocabulary rule guarded `src/` and nothing else, and the two things that fell outside it were
+both wrong in opposite directions: a demo wrote `session.id` as a literal and nobody noticed, while
+widening the same rule to the whole repository would have outlawed the assertions that make the
+demos worth running. A demo that checks what qyl emitted has to name the key literally — taking the
+constant would compare it against itself and prove nothing. So the rule now distinguishes writing a
+key from reading one, instead of distinguishing `src/` from everything else.
+
+### Fixed
+
+- **`demos/Qyl.RealAspNetCoreDemo` wrote `session.id` as a string literal.** The stand-in for
+  `Qyl.Api`'s session-baggage filter stamped the key with `activity.SetTag("session.id", ...)`, and
+  the assertion side held its own copy in a `private const string`. Both now come from
+  `SessionAttributes.Id` — the same generated constant `QylSessionSpanProcessor` writes — as does
+  the `session.id=` baggage-member prefix the filter matches on. The file already reached for
+  `HttpAttributes` seven times; the one place that actually wrote a key was the place that did not.
+  A registry rename now reaches the demo, and the demo's assertion cannot pass against a key the
+  runtime no longer writes.
+
+- **The vocabulary gate falsely flagged a gRPC service name.** `"qyl.LiveProbe"` in
+  `demos/Qyl.RealGrpcClientDemo` is a wire identifier, not a telemetry attribute key, and a prefix
+  match on `"qyl.` cannot tell the two apart. The pattern now requires attribute-key form —
+  lowercase, dot-separated segments — so `LiveProbeClient.cs`, which contains that service name and
+  no attribute key at all, is no longer a candidate for the rule in the first place.
+
+### Changed
+
+- **`verify_qyl_vocabulary_literals` splits into two strengths instead of one scope.** Under `src/`
+  the key literal stays forbidden outright: an emitting source reads its own vocabulary through the
+  constants too. Outside `src/` only a WRITE fails — `SetTag`/`AddTag`/`SetBaggage`/`AddBaggage`
+  with the literal as first argument, and a `const string` whose value is a bare key, since a named
+  constant is the same write one indirection out. Reads stay legal: `TryGetValue`, `HasTag`,
+  `StartsWith`, comparisons and expectation lists. The rule was falsified in six directions before
+  it was trusted — a literal write and a literal const of each key in a demo turn it red, a literal
+  READ in `src/` turns it red, and the gRPC service name in `src/` does not.
+
+- `QylGeneratedCodeAbi.V17` is renamed to `V18`. The constant is the generated-code ABI anchor and
+  moves with the package major, so code generated against 17.0.0 is rejected at compile time rather
+  than silently mixed with an 18.0.0 runtime.
+
 ## [17.0.0] - 2026-09-07
 
 The repository had a verifier for every foreign technology it instruments and none for its own.

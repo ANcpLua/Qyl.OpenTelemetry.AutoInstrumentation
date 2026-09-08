@@ -145,6 +145,18 @@ FORBIDDEN_ATTRIBUTE_EMISSION_LITERAL_PATTERNS = [
     re.compile(r'\.AddTag\(\s*"[^"]+"'),
     re.compile(r'new\s+(?:global::System\.Collections\.Generic\.)?KeyValuePair<string,\s*object\?>\(\s*"[^"]+"'),
 ]
+# Registry-owned attribute keys, in attribute-key form: lowercase, dot-separated segments. The
+# shape is load-bearing. A prefix match on '"qyl.' also hits the gRPC service name "qyl.LiveProbe"
+# in demos/Qyl.RealGrpcClientDemo, which is a wire identifier and not a telemetry key at all.
+QYL_VOCABULARY_KEY_LITERAL = r'"qyl(?:\.[a-z0-9_]+)+"'
+SESSION_ID_KEY_LITERAL = r'"session\.id"'
+# Writing a key: the four Activity tag/baggage setters with the literal as their first argument,
+# and a const whose value is a bare key (a named constant is still the write, one indirection out).
+QYL_VOCABULARY_WRITER_PATTERNS = (
+    r"(?<![A-Za-z0-9_])(?:Set|Add)(?:Tag|Baggage)\(\s*{key}",
+    r"(?<![A-Za-z0-9_])const\s+string\s+[A-Za-z0-9_]+\s*=\s*{key}\s*;",
+)
+
 # Philosophy guard: the generator delegates behavior to the runtime assembly and
 # never inlines telemetry into generated code.
 FORBIDDEN_GENERATOR_INLINE_TELEMETRY_TOKENS = [
@@ -738,20 +750,36 @@ def verify_semconv_attribute_contract() -> None:
 def verify_qyl_vocabulary_literals() -> None:
     """Registry keys are generated constants, never literals — the qyl namespace and the
     registry-owned keys the instrumentation writes outside a semantics helper. A rename in the
-    registry has to reach the code that writes the key, and only a constant carries it there."""
-    for literal, message in [
-        ('"qyl.', "qyl.* vocabulary must come from the generated semconv constants, not literals"),
-        ('"session.id"', "session.id must come from SessionAttributes.Id, not a literal"),
+    registry has to reach the code that writes the key, and only a constant carries it there.
+
+    Two scopes, two strengths. Under src/ the key literal is forbidden outright: an emitting
+    source reads its own vocabulary through the constants as well. Outside src/ — the demos and
+    the AOT consumer under tools/ — only a WRITE is forbidden. A demo that asserts on what qyl
+    emitted has to name the key literally; taking the constant would compare it against itself
+    and prove nothing, so TryGetValue/HasTag/StartsWith and expectation lists stay legal.
+    """
+    for key_literal, message in [
+        (QYL_VOCABULARY_KEY_LITERAL, "qyl.* vocabulary must come from the generated semconv constants, not literals"),
+        (SESSION_ID_KEY_LITERAL, "session.id must come from SessionAttributes.Id, not a literal"),
     ]:
-        hits = [
-            path.relative_to(ROOT).as_posix()
-            for path in (ROOT / "src").rglob("*.cs")
-            if not path.name.endswith(".g.cs")
-            and not any(part in ("obj", "bin", "artifacts") for part in path.parts)
-            and literal in path.read_text()
-        ]
-        if hits:
-            fail(f"{message}: {sorted(hits)}")
+        anywhere = re.compile(key_literal)
+        writers = [re.compile(pattern.format(key=key_literal)) for pattern in QYL_VOCABULARY_WRITER_PATTERNS]
+        source_hits: list[str] = []
+        writer_hits: list[str] = []
+        for path in ROOT.rglob("*.cs"):
+            if path.name.endswith(".g.cs") or any(part in ("obj", "bin", "artifacts") for part in path.parts):
+                continue
+            relative = path.relative_to(ROOT).as_posix()
+            text = strip_csharp_comments(path.read_text())
+            if relative.startswith("src/"):
+                if anywhere.search(text):
+                    source_hits.append(relative)
+            elif any(writer.search(text) for writer in writers):
+                writer_hits.append(relative)
+        if source_hits:
+            fail(f"{message}: {sorted(source_hits)}")
+        if writer_hits:
+            fail(f"{message}, and these write it: {sorted(writer_hits)}")
 
 
 def verify_system_value_contract() -> None:

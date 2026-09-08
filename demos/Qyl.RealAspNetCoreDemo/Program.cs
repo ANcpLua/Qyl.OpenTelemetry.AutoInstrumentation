@@ -12,6 +12,7 @@ using Qyl;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 // The real registration path: AddQyl subscribes ASP.NET Core's own Microsoft.AspNetCore source and
@@ -114,7 +115,7 @@ internal static class DemoWork
 /// </summary>
 internal sealed class SessionStartupFilter : IStartupFilter
 {
-    private const string Member = "session.id=";
+    private const string Member = SessionAttributes.Id + "=";
 
     /// <inheritdoc />
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
@@ -124,7 +125,7 @@ internal sealed class SessionStartupFilter : IStartupFilter
             {
                 var header = context.Request.Headers["baggage"].ToString();
                 if (Activity.Current is { } activity && header.StartsWith(Member, StringComparison.Ordinal))
-                    activity.SetTag("session.id", header[Member.Length..]);
+                    activity.SetTag(SessionAttributes.Id, header[Member.Length..]);
 
                 return nextMiddleware(context);
             });
@@ -168,7 +169,7 @@ internal sealed record AspNetCoreReport(
 
     private const string RequestHeader = HttpAttributes.RequestHeader + ".x-demo-req";
     private const string ResponseHeader = HttpAttributes.ResponseHeader + ".x-demo-res";
-    private const string SessionIdTag = "session.id";
+    private const string SessionIdTag = SessionAttributes.Id;
     private const string AspNetCoreSource = "Microsoft.AspNetCore";
 
     public static AspNetCoreReport Create(string runtimeMode, CapturedActivity[] activities)
