@@ -23,9 +23,9 @@ sources:
       demos
     release: 14.0.1
 generated_from:
-  upstream_contract: docs/contracts/otel-dotnet-auto-60.upstream.yaml
-  qyl_native_contract: docs/contracts/qyl-native-instrumentations.yaml
-  qyl_ownership: docs/contracts/qyl-aot-ownership.yaml
+  upstream_contract: contracts/otel-dotnet-auto.upstream.yaml
+  qyl_native_contract: contracts/qyl-native-instrumentations.yaml
+  qyl_ownership: contracts/qyl-aot-ownership.yaml
 contract_items:
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.ADONET

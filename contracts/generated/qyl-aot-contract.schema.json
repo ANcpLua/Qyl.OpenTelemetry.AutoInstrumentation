@@ -48,13 +48,13 @@
       ],
       "properties": {
         "upstream_contract": {
-          "const": "docs/contracts/otel-dotnet-auto-60.upstream.yaml"
+          "const": "contracts/otel-dotnet-auto.upstream.yaml"
         },
         "qyl_native_contract": {
-          "const": "docs/contracts/qyl-native-instrumentations.yaml"
+          "const": "contracts/qyl-native-instrumentations.yaml"
         },
         "qyl_ownership": {
-          "const": "docs/contracts/qyl-aot-ownership.yaml"
+          "const": "contracts/qyl-aot-ownership.yaml"
         }
       }
     },

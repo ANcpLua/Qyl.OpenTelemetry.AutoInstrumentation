@@ -247,7 +247,7 @@ qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql
 
 The full 66-row contract, with every environment control and instrumentation option, its evidence
 level and its authoritative source, is the generated
-[coverage matrix](docs/coverage-matrix.md).
+[coverage matrix](contracts/coverage-matrix.md).
 
 ## The qyl attributes
 

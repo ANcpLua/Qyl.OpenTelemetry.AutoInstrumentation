@@ -5,7 +5,7 @@ The server span is ASP.NET Core's own `Microsoft.AspNetCore.Hosting.HttpRequestI
 This gate asserts what the contract row `signals.traces.ASPNETCORE` declares — exactly one
 SERVER span per request, from the framework's source, named after its route and carrying every
 attribute of the `aspnetcore.server` conformance signal. The attribute list is read from
-`docs/contracts/qyl-aot-ownership.yaml` rather than retyped here, so adding one to the contract
+`contracts/qyl-aot-ownership.yaml` rather than retyped here, so adding one to the contract
 without emitting it fails this gate.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealAspNetCoreDemo" / "Qyl.RealAspNetCoreDemo.csproj"
-OWNERSHIP_PATH = ROOT / "docs" / "contracts" / "qyl-aot-ownership.yaml"
+OWNERSHIP_PATH = ROOT / "contracts" / "qyl-aot-ownership.yaml"
 CONTRACT_KEY = "signals.traces.ASPNETCORE"
 CONFORMANCE_SIGNAL = "aspnetcore.server"
 ASPNETCORE_SOURCE = "Microsoft.AspNetCore"

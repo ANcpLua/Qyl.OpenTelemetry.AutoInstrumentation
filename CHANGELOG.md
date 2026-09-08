@@ -5,6 +5,27 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## Unreleased
+
+### Changed
+
+- **`docs/` is gone.** It held no documentation: three contract inputs, three generated
+  artifacts and a coverage matrix, all read or written by `tools/`. They now live under
+  `contracts/`, where an input belongs. Every path constant, the schema's `const` values,
+  the matrix header and the README link follow. Nothing was deleted -- `--check` is green
+  and the regeneration is idempotent.
+- **`otel-dotnet-auto-60.upstream.yaml` is now `otel-dotnet-auto.upstream.yaml`.** The
+  contract has held 63 rows since 19.0.0; a filename asserting 60 is the same rot as a
+  frozen constant, one directory further out.
+- **Five empty directories removed**, four of them tracked by nothing and invisible to
+  `git ls-files` because git does not carry empty directories: `docs/rfc`, `docs/schema`
+  and `docs/upstream` (all dated 2026-07-13), the shells `demos/Qyl.LiveInstrumentationDemo`
+  and `demos/Qyl.RealTcgPublishingDemo` referenced by no solution, workflow or tool, and
+  `.agents/skills/qyl-selfhosted-ci`. Searching for files rather than for directories had
+  reported them absent.
+
+No package content changes, so no version bump: seven gates green, both solutions build.
+
 ## [19.0.0] - 2026-09-08
 
 The upstream contract had been pinned to two commits from June, and both had moved. Pulling the
