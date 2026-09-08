@@ -24,6 +24,7 @@ from __future__ import annotations
 import functools
 import importlib.util
 import re
+import subprocess
 from pathlib import Path
 from types import ModuleType
 from typing import Any, NoReturn
@@ -747,6 +748,32 @@ def verify_semconv_attribute_contract() -> None:
                 fail(f"runtime telemetry attribute emission must not use literal keys: {path.relative_to(ROOT)}")
 
 
+def owned_csharp_files() -> list[str]:
+    """The C# this repository is answerable for -- what git tracks, nothing else.
+
+    A directory walk answers "what is on disk", which in CI is a different question: the
+    workflow clones the semantic-conventions registry into .semconv/ at the repository root
+    as QYL_SEMCONV_REGISTRY, and 18.0.0 widened this check from src/ to the whole tree. The
+    walk then read that registry's own analyzer test cases and reported them as qyl writing
+    key literals -- a rule about our code failing on somebody else's. It cannot reproduce
+    locally, where .semconv/ does not exist, so both 18.0.0 and 19.0.0 were tagged before it
+    showed. An exclusion list would have to grow with every future checkout; tracked-ness
+    already means exactly "ours".
+    """
+    listing = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "-z", "--", "*.cs"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if listing.returncode != 0:
+        fail(f"git ls-files failed: {listing.stderr.strip()}")
+    files = [entry for entry in listing.stdout.split("\0") if entry]
+    if not files:
+        fail("git ls-files returned no C# files; the invariant would pass without checking anything")
+    return files
+
+
 def verify_qyl_vocabulary_literals() -> None:
     """Registry keys are generated constants, never literals — the qyl namespace and the
     registry-owned keys the instrumentation writes outside a semantics helper. A rename in the
@@ -766,10 +793,10 @@ def verify_qyl_vocabulary_literals() -> None:
         writers = [re.compile(pattern.format(key=key_literal)) for pattern in QYL_VOCABULARY_WRITER_PATTERNS]
         source_hits: list[str] = []
         writer_hits: list[str] = []
-        for path in ROOT.rglob("*.cs"):
-            if path.name.endswith(".g.cs") or any(part in ("obj", "bin", "artifacts") for part in path.parts):
+        for relative in owned_csharp_files():
+            path = ROOT / relative
+            if path.name.endswith(".g.cs"):
                 continue
-            relative = path.relative_to(ROOT).as_posix()
             text = strip_csharp_comments(path.read_text())
             if relative.startswith("src/"):
                 if anywhere.search(text):

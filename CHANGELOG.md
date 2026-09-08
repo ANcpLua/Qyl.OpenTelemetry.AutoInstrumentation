@@ -5,6 +5,27 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [20.0.0] - 2026-09-08
+
+### Fixed
+
+- **The vocabulary check read a repository it does not own, and 18.0.0 and 19.0.0 never
+  published because of it.** 18.0.0 widened the check from `src/` to the whole tree so it
+  could see writes in demos. CI clones the semantic-conventions registry into `.semconv/`
+  at the repository root as `QYL_SEMCONV_REGISTRY`, so the walk read that registry's own
+  analyzer test cases and reported them as qyl writing key literals. Both tags were cut
+  before it showed, because `.semconv/` does not exist on a developer machine — the failure
+  needed CI to exist at all.
+
+  The check now asks git which C# files this repository tracks, which is what "ours" means.
+  An exclusion list would have needed a new entry for every future checkout. Proven both
+  ways: the same `SetTag` with a key literal is ignored in an untracked `.semconv/` file and
+  still fails the check in a tracked one, and an empty file list is itself a failure so the
+  invariant cannot pass by checking nothing.
+
+  17.0.0 remains the published version; 18.0.0 and 19.0.0 exist as tags with no packages.
+  Their content is in this release.
+
 ## Unreleased
 
 ### Changed
