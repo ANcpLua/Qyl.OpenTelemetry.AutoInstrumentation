@@ -235,13 +235,18 @@ jobs:
       contents: read
       id-token: write
     steps:
+      # global.json is the only place that names the SDK version, so this job checks out to read
+      # it. Checkout must precede download-artifact: it cleans the workspace.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: packages
           path: artifacts/release
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
-          dotnet-version: "10.0.x"
+          global-json-file: global.json
       - id: nuget-login
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         with:
