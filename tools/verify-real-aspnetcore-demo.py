@@ -28,8 +28,9 @@ CONFORMANCE_SIGNAL = "aspnetcore.server"
 ASPNETCORE_SOURCE = "Microsoft.AspNetCore"
 METHOD_KEY = "http.request.method"
 ROUTE_KEY = "http.route"
-# The demo drives one 204 request, one 500 request and one 404 that resolves no endpoint.
-EXPECTED_SERVER_SPANS = 3
+# The demo drives one 204 request, one 500 request, one 404 that resolves no endpoint and one
+# request whose client disconnects before anything is sent (499).
+EXPECTED_SERVER_SPANS = 4
 TARGET_FRAMEWORK = "net10.0"
 
 

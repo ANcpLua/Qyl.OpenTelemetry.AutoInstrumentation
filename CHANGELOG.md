@@ -5,6 +5,48 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [21.0.0] - 2026-09-09
+
+### Fixed
+
+- **A client that disconnects no longer exports a 500 that was never sent.** When the handler is
+  still waiting on `RequestAborted` and the client goes away, the cancellation unwinds through the
+  pipeline and the server span reported `http.response.status_code=500`,
+  `error.type=System.Threading.Tasks.TaskCanceledException` and status `Error`. Kestrel's own
+  rule for that case is the opposite: an `OperationCanceledException` or `IOException` while the
+  connection is aborted is not an application error, nothing is sent, the request is logged as
+  499 and no unhandled-exception event fires. Measured on .NET 10: at the moment qyl's middleware
+  sees the exception the response still reads 200, and Kestrel writes its 499 only after the
+  pipeline has unwound, so the middleware was deciding before the framework had. The span now
+  follows the same rule at the same point — 499, no `error.type`, status unset — which is what
+  `OpenTelemetry.Instrumentation.AspNetCore` exports for the identical request. Datadog and New
+  Relic hard-code the 500; Sentry and Elastic leave the default 200; Dynatrace leaves the code empty
+  and documents an empty code as a client abort. None of them exports what the server did.
+
+  The real ASP.NET Core demo drives the disconnect as its fourth request and the gate asserts the
+  499 span, the absence of `error.type` and the unset status. Proven red without the fix, for that
+  reason and no other, and green with it.
+
+  Found by the 14.1.0 code review and left open through six majors; the other four findings of that
+  review were closed within the hour.
+
+### Changed
+
+- **`docs/` is gone.** It held no documentation: three contract inputs, three generated
+  artifacts and a coverage matrix, all read or written by `tools/`. They now live under
+  `contracts/`, where an input belongs. Every path constant, the schema's `const` values,
+  the matrix header and the README link follow. Nothing was deleted -- `--check` is green
+  and the regeneration is idempotent.
+- **`otel-dotnet-auto-60.upstream.yaml` is now `otel-dotnet-auto.upstream.yaml`.** The
+  contract has held 63 rows since 19.0.0; a filename asserting 60 is the same rot as a
+  frozen constant, one directory further out.
+- **Five empty directories removed**, four of them tracked by nothing and invisible to
+  `git ls-files` because git does not carry empty directories: `docs/rfc`, `docs/schema`
+  and `docs/upstream` (all dated 2026-07-13), the shells `demos/Qyl.LiveInstrumentationDemo`
+  and `demos/Qyl.RealTcgPublishingDemo` referenced by no solution, workflow or tool, and
+  `.agents/skills/qyl-selfhosted-ci`. Searching for files rather than for directories had
+  reported them absent.
+
 ## [20.0.0] - 2026-09-08
 
 ### Fixed
@@ -25,27 +67,6 @@ NativeAOT consumers, and only then creates the GitHub release.
 
   17.0.0 remains the published version; 18.0.0 and 19.0.0 exist as tags with no packages.
   Their content is in this release.
-
-## Unreleased
-
-### Changed
-
-- **`docs/` is gone.** It held no documentation: three contract inputs, three generated
-  artifacts and a coverage matrix, all read or written by `tools/`. They now live under
-  `contracts/`, where an input belongs. Every path constant, the schema's `const` values,
-  the matrix header and the README link follow. Nothing was deleted -- `--check` is green
-  and the regeneration is idempotent.
-- **`otel-dotnet-auto-60.upstream.yaml` is now `otel-dotnet-auto.upstream.yaml`.** The
-  contract has held 63 rows since 19.0.0; a filename asserting 60 is the same rot as a
-  frozen constant, one directory further out.
-- **Five empty directories removed**, four of them tracked by nothing and invisible to
-  `git ls-files` because git does not carry empty directories: `docs/rfc`, `docs/schema`
-  and `docs/upstream` (all dated 2026-07-13), the shells `demos/Qyl.LiveInstrumentationDemo`
-  and `demos/Qyl.RealTcgPublishingDemo` referenced by no solution, workflow or tool, and
-  `.agents/skills/qyl-selfhosted-ci`. Searching for files rather than for directories had
-  reported them absent.
-
-No package content changes, so no version bump: seven gates green, both solutions build.
 
 ## [19.0.0] - 2026-09-08
 

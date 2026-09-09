@@ -221,7 +221,8 @@ activity, from the `HttpContext`: `qyl.instrumentation.domain`, `http.request.me
 `url.path`, `url.query` under the redaction control, `http.route` and the `{method} {route}` span
 name after routing, `http.response.status_code`, `error.type` on failure, and the configured request
 and response headers. Each write fills only what is absent, so a runtime that starts setting these
-itself takes them over without a change here.
+itself takes them over without a change here. A client that disconnects before anything was sent is
+Kestrel's 499, not a failure: the span carries that code, no `error.type`, and its status stays unset.
 
 Two integrations use a framework's public `DiagnosticListener` hook instead of either mechanism:
 EF Core through `.EntityFrameworkCore` and `Microsoft.Data.SqlClient` through `.SqlClient`. Neither
@@ -283,7 +284,7 @@ qyl's own spans and instruments carry the registry-owned scope names
 `Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
 Mirror them in `AddSource(...)`, `AddMeter(...)` or
 `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V20` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V21` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 

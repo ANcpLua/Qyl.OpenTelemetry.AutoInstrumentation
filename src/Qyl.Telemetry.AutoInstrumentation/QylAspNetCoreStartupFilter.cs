@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -114,8 +115,24 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
     // An exception that unwinds past this middleware has not reached the server yet, so the response
     // still carries whatever status the pipeline left on it. 500 is what Kestrel sends for it, and
     // what the span reports, unless the response had already started with a status of its own.
+    //
+    // The exception is Kestrel's own: a cancellation or I/O failure while the connection is already
+    // aborted is a client that went away, not an application error. Kestrel sends nothing, logs the
+    // request as 499 and raises no unhandled-exception event, so the span follows it — 499, no
+    // error.type, status left unset. Measured on .NET 10: at the time this middleware sees the
+    // exception the response still reads 200, and Kestrel writes its 499 only after the pipeline
+    // has unwound, so the status is decided here from the same rule rather than read back later.
     private static void RecordFailure(Activity activity, HttpContext context, Exception exception)
     {
+        if (context.RequestAborted.IsCancellationRequested && exception is OperationCanceledException or IOException)
+        {
+            RecordResponse(
+                activity,
+                context,
+                context.Response.HasStarted ? context.Response.StatusCode : StatusCodes.Status499ClientClosedRequest);
+            return;
+        }
+
         // The exception type is the better error.type, so it is written first and the status-code
         // rule below finds the tag already set rather than replacing it with the bare "500".
         QylActivityStatus.RecordException(activity, exception);

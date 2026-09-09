@@ -59,6 +59,12 @@ app.MapGet("/items/{id:int}", (HttpContext context) =>
     return Task.CompletedTask;
 });
 app.MapGet("/fail/{id:int}", (HttpContext _) => throw new InvalidOperationException("expected route failure"));
+// A request whose client goes away: the handler waits on RequestAborted and the cancellation
+// unwinds through the pipeline. Nothing is sent, and the span must not claim a 500 for it.
+app.MapGet("/hang/{id:int}", async (HttpContext context) =>
+{
+    await Task.Delay(Timeout.Infinite, context.RequestAborted);
+});
 
 await app.StartAsync();
 
@@ -80,6 +86,34 @@ try
     // to be named after its method alone rather than the framework's raw operation name.
     using (await httpClient.GetAsync($"{address}/nope?sample=1"))
     {
+    }
+
+    // The client disconnects while the handler is still waiting. Kestrel classifies that as 499 and
+    // not as an application error; the span is awaited here because its end is on the server's clock,
+    // not the client's.
+    var disconnected = false;
+    using (var disconnect = new CancellationTokenSource(TimeSpan.FromMilliseconds(500)))
+    {
+        try
+        {
+            using (await httpClient.GetAsync($"{address}/hang/7?sample=1", disconnect.Token))
+            {
+            }
+        }
+        catch (OperationCanceledException) when (disconnect.IsCancellationRequested)
+        {
+            disconnected = true;
+        }
+    }
+
+    if (!disconnected)
+        throw new InvalidOperationException("the /hang request completed instead of being cancelled");
+
+    for (var attempt = 0; attempt < 200 && !exported.Any(static activity =>
+             activity.Kind is ActivityKind.Server &&
+             activity.GetTagItem(HttpAttributes.ResponseStatusCode) is int status && status is 499); attempt++)
+    {
+        await Task.Delay(50);
     }
 }
 finally
@@ -180,8 +214,8 @@ internal sealed record AspNetCoreReport(
         // a middleware or a DiagnosticListener adapter — would show up here as an extra span, or as
         // one whose source is not the framework's.
         var serverSpans = activities.Where(static activity => activity.Kind is "Server").ToArray();
-        if (serverSpans.Length != 3)
-            failures.Add($"expected exactly one server span for each of the 3 requests, got {serverSpans.Length}");
+        if (serverSpans.Length != 4)
+            failures.Add($"expected exactly one server span for each of the 4 requests, got {serverSpans.Length}");
 
         foreach (var span in serverSpans)
         {
@@ -207,10 +241,20 @@ internal sealed record AspNetCoreReport(
         var routelessSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
             StringComparer.Ordinal.Equals(statusCode, "404"));
+        var disconnectSpan = httpServerSpans.FirstOrDefault(static activity =>
+            activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
+            StringComparer.Ordinal.Equals(statusCode, "499"));
 
         Require(successSpan, "204 route span", failures);
         Require(failureSpan, "500 route span", failures);
         Require(routelessSpan, "404 routeless span", failures);
+        Require(disconnectSpan, "499 client-disconnect span", failures);
+        // The client went away before anything was sent. That is Kestrel's 499, not a failure of the
+        // application: no error.type, and the span status stays unset.
+        if (disconnectSpan is not null && disconnectSpan.Tags.TryGetValue(ErrorAttributes.Type, out var disconnectError))
+            failures.Add($"client-disconnect span carries {ErrorAttributes.Type}={disconnectError}");
+        RequireTag(disconnectSpan, HttpAttributes.Route, "/hang/{id:int}", failures);
+        RequireStatus(disconnectSpan, "Unset", failures);
         // http.route is conditionally required: the request resolved no endpoint, so there is no
         // template to record. The span name below is what has to survive that.
         if (routelessSpan is not null && routelessSpan.Tags.TryGetValue(HttpAttributes.Route, out var absentRoute))

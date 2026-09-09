@@ -9,6 +9,6 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylGeneratedCodeAbi
 {
-    /// <summary>The 20.x generated-code ABI anchor.</summary>
-    public const int V20 = 20;
+    /// <summary>The 21.x generated-code ABI anchor.</summary>
+    public const int V21 = 21;
 }
