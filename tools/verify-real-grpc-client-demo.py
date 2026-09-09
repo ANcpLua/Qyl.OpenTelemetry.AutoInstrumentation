@@ -141,7 +141,6 @@ def main() -> None:
     # DiagnosticSource owner. Metadata is opt-in in both cases.
     client_env = dict(env)
     client_env["QYL_GRPC_DEMO_MODE"] = "client"
-    client_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
     verify_report("managed gRPC client demo (client lane)", run_managed(client_env), "dynamic-code-supported")
     verify_report("NativeAOT gRPC client demo (client lane)", run_nativeaot(client_env), "nativeaot")
 

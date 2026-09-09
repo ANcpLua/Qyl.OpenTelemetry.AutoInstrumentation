@@ -237,10 +237,13 @@ Every row above, native or intercepted, is gated per signal by its instrumentati
 `OTEL_DOTNET_AUTO_{TRACES|METRICS|LOGS}_INSTRUMENTATION_ENABLED` and the global
 `OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED` taking precedence. `AddQyl()` reads the same options, so
 a disabled id contributes neither an `AddSource` call nor a processor row. Query-text capture is
-opt-in per provider — `OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT`,
-`OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT`,
-`OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT`, `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` — and
-so is header capture on the ASP.NET Core, HTTP and gRPC-client lanes.
+opt-in per provider — `OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT` and
+`OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT`, both still read by qyl's own
+instrumentation — and so is header capture on the ASP.NET Core, HTTP and gRPC-client lanes.
+The GraphQL and ODP.NET equivalents are no longer qyl's: the document is owned by GraphQL.NET's
+`UseTelemetry(o => o.RecordDocument)` and the statement text by ODP.NET's own `SetDbStatementForText`
+add-on option, so `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` and
+`OTEL_DOTNET_AUTO_ORACLEMDA_SET_DBSTATEMENT_FOR_TEXT` have no reader here.
 
 qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql`'s or
 `NServiceBus.Core`'s native instruments exported registers them through

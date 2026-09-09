@@ -204,7 +204,6 @@ def main() -> None:
     optin_env["OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS"] = "X-Demo-Req"
     optin_env["OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS"] = "X-Demo-Res"
     optin_env["OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION"] = "true"
-    optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
 
     managed_assembly = build_managed(env)
     managed = run_managed(managed_assembly, env)

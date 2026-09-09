@@ -30,9 +30,11 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
 
-    // Runtime packages are excluded so QylIntercepted* forwarding helpers cannot self-intercept
-    // (for example, QylInterceptedHttpClient.SendAsync calls client.SendAsync). Keep this set aligned
-    // with runtime packages under /src; consumers, demos, and test fixtures remain instrumented.
+    // Runtime packages are excluded so QylIntercepted* helpers cannot self-intercept: an interceptor
+    // is handed the receiver it reports on (QylInterceptedDbCommand.Execute takes the DbCommand whose
+    // ExecuteReader is intercepted), so a call back onto that receiver from inside a runtime package
+    // would re-enter the interceptor. Keep this set aligned with runtime packages under /src;
+    // consumers, demos, and test fixtures remain instrumented.
     private static readonly HashSet<string> s_qylRuntimeAssemblies = new(StringComparer.Ordinal)
     {
         RuntimeAssemblyName,
