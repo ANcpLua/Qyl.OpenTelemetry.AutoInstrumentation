@@ -5,6 +5,34 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [21.0.1] - 2026-09-09
+
+21.0.0 is a tag without packages: its publish run went red in the NativeAOT gate before the
+publish job, so nothing reached the feed. The content of 21.0.0 ships here, with the gate defect
+that stopped it.
+
+### Fixed
+
+- **The NativeAOT publish gate wrote the .NET runtime version down as a literal, and .NET moved.**
+  Each tolerated third-party diagnostic is pinned by id, assembly, package and resolved version.
+  For five of them the package is a runtime pack -- `microsoft.aspnetcore.app.runtime.{rid}` and
+  `microsoft.netcore.app.runtime.nativeaot.{rid}` -- whose version ships with the SDK, moves with
+  every servicing release and is recorded nowhere in this repository. The table said `10.0.11`.
+  On 2026-09-09 the Linux runners resolved `10.0.12` and the gate reported `package drift` on a
+  tree nobody had touched, failing `Qyl.RealAspNetCoreMetricsDemo` and `Qyl.RealWcfClientDemo`.
+  A literal could not have been right for both: this machine still has `10.0.11`.
+
+  Those five entries now carry a placeholder filled from the runtime the machine actually has,
+  measured with `dotnet --list-runtimes` and restricted to the major band `global.json` targets.
+  The pin stays exact -- a publish that resolves a runtime pack other than the runtime it runs on
+  is still drift and still fails -- it just is no longer frozen. Every other version in the table
+  is a real dependency pinned in `Directory.Packages.props` and stays a literal, because a change
+  there is a deliberate act.
+
+  Proven both ways on macOS: green for both demos with the measurement, and red for
+  `Qyl.RealAspNetCoreMetricsDemo` with `package drift ... @10.0.11 != ...@10.0.99` when the
+  measurement is forced to a wrong value, then restored byte-identically.
+
 ## [21.0.0] - 2026-09-09
 
 ### Fixed

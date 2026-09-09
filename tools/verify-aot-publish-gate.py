@@ -43,6 +43,54 @@ CLEAN_DEMOS: list[str] = [
 
 Approval = tuple[str, str, str, str, str, int]
 
+# The runtime packs ship with the SDK, so their version is .NET's and moves with every servicing
+# release; this repository records it nowhere. Writing it here as a literal made the gate fail on
+# the day .NET shipped 10.0.12 while the table still said 10.0.11 -- a frozen constant reporting
+# itself as package drift, on a tree nobody had touched. These two placeholders are filled from the
+# runtime this machine actually has, so the pin stays exact without being frozen. Every other
+# version below is a real dependency, pinned in Directory.Packages.props, and stays a literal.
+ASPNETCORE_RUNTIME = "{aspnetcore_runtime}"
+NETCORE_RUNTIME = "{netcore_runtime}"
+
+RUNTIME_FAMILIES = {"Microsoft.AspNetCore.App": "aspnetcore_runtime",
+                    "Microsoft.NETCore.App": "netcore_runtime"}
+_runtime_pack_versions: dict[str, str] = {}
+
+
+def runtime_pack_versions() -> dict[str, str]:
+    """The installed runtime version per family, in the band global.json's SDK targets.
+
+    Measured, never read from a file: a publish resolves the runtime pack that matches the
+    runtime it runs on, so a mismatch between the two is the real drift this gate looks for.
+    """
+    if _runtime_pack_versions:
+        return _runtime_pack_versions
+
+    major = json.loads((ROOT / "global.json").read_text(encoding="utf-8"))["sdk"]["version"].split(".")[0]
+    proc = subprocess.run(["dotnet", "--list-runtimes"], capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        raise SystemExit(f"dotnet --list-runtimes failed ({proc.returncode}); cannot measure the runtime pack version")
+
+    for line in proc.stdout.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        key = RUNTIME_FAMILIES.get(parts[0])
+        if key is None or not parts[1].startswith(f"{major}."):
+            continue
+        current = _runtime_pack_versions.get(key)
+        if current is None or _version_sort_key(parts[1]) > _version_sort_key(current):
+            _runtime_pack_versions[key] = parts[1]
+
+    missing = sorted(set(RUNTIME_FAMILIES.values()) - set(_runtime_pack_versions))
+    if missing:
+        raise SystemExit(f"no {major}.x runtime installed for {missing}; the AOT gate cannot pin the runtime packs")
+    return _runtime_pack_versions
+
+
+def _version_sort_key(version: str) -> tuple[int, ...]:
+    return tuple(int(part) if part.isdigit() else -1 for part in version.split("-", 1)[0].split("."))
+
 
 def approved(diagnostic: str, assembly: str, package: str, version: str,
              count: int = 1, marker: str | None = None) -> Approval:
@@ -51,9 +99,9 @@ def approved(diagnostic: str, assembly: str, package: str, version: str,
 
 VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
     "Qyl.RealAspNetCoreMetricsDemo": (
-        approved("IL3053", "Microsoft.AspNetCore.Components.Endpoints", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.11"),
-        approved("IL2104", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.11"),
-        approved("IL3053", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", "10.0.11"),
+        approved("IL3053", "Microsoft.AspNetCore.Components.Endpoints", "microsoft.aspnetcore.app.runtime.{rid}", ASPNETCORE_RUNTIME),
+        approved("IL2104", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", ASPNETCORE_RUNTIME),
+        approved("IL3053", "Microsoft.AspNetCore.Components", "microsoft.aspnetcore.app.runtime.{rid}", ASPNETCORE_RUNTIME),
     ),
     "Qyl.RealEfCoreDemo": (
         approved("IL2104", "Microsoft.EntityFrameworkCore", "Microsoft.EntityFrameworkCore", "10.0.11"),
@@ -99,8 +147,8 @@ VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
     "Qyl.RealWcfClientDemo": (
         approved("IL2104", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
         approved("IL3053", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
-        approved("IL3053", "System.Reflection.DispatchProxy", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.11"),
-        approved("IL3053", "System.Private.DataContractSerialization", "microsoft.netcore.app.runtime.nativeaot.{rid}", "10.0.11"),
+        approved("IL3053", "System.Reflection.DispatchProxy", "microsoft.netcore.app.runtime.nativeaot.{rid}", NETCORE_RUNTIME),
+        approved("IL3053", "System.Private.DataContractSerialization", "microsoft.netcore.app.runtime.nativeaot.{rid}", NETCORE_RUNTIME),
     ),
 }
 
@@ -208,9 +256,10 @@ def validate_warning_policy(name: str, project: Path, diagnostics: list[str], ri
     if policy is None:
         return False, f"no vendor-warning policy for {name}"
 
+    runtime = runtime_pack_versions()
     expected: Counter[tuple[str, str, str, str]] = Counter()
     for diagnostic, assembly, package, version, _, count in policy:
-        expected[(diagnostic, assembly, package.format(rid=rid), version)] += count
+        expected[(diagnostic, assembly, package.format(rid=rid), version.format(**runtime))] += count
 
     actual: Counter[tuple[str, str, str, str]] = Counter()
     resolved = resolved_packages(project, diagnostics)
@@ -224,6 +273,7 @@ def validate_warning_policy(name: str, project: Path, diagnostics: list[str], ri
             return False, f"unapproved or ambiguous diagnostic: {line}"
         _, assembly, package, version, _, _ = matches[0]
         package = package.format(rid=rid)
+        version = version.format(**runtime)
         path_match = PACKAGE_PATH.search(line.replace("\\", "/"))
         if path_match and (path_match.group(1).lower(), path_match.group(2)) != (package, version):
             return False, (f"package drift for {diagnostic}/{assembly}: "
