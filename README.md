@@ -30,7 +30,7 @@ Add the package that owns the integration you need; the supported zero-configura
 is a `PackageReference`, and build and analyzer assets flow through NuGet.
 
 ```bash
-dotnet add package Qyl.Telemetry.Hosting --version 15.0.0
+dotnet add package Qyl.Telemetry.Hosting --version 21.0.1
 ```
 
 ```csharp
