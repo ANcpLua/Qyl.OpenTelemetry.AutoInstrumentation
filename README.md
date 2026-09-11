@@ -5,7 +5,7 @@ works through compiler-generated Roslyn interceptors, `ActivitySource` subscript
 `DiagnosticListener` hooks, build assets and module-initializer bootstrap. There is no CLR
 profiler, no startup hook, no ReJIT, no runtime IL rewriting and no dynamic plugin loading.
 
-Roslyn interceptors are supported by this repository's .NET SDK 10.0.400. See the official
+Roslyn interceptors are supported by this repository's .NET SDK 10.0.401. See the official
 [`interceptors.md`](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md)
 contract.
 

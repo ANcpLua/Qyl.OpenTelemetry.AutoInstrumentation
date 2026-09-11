@@ -5,6 +5,18 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [21.0.2] - 2026-09-11
+
+### Changed
+
+- **Each package ships its own README.** Every `Qyl.Telemetry.*` package carried the whole
+  repository README, 450 lines of registry, interception, demo and release detail, as its
+  nuget.org readme. Each of the six packable projects now has a consumer README beside its
+  csproj: what the package is, how to add it, the one call or the controls that matter, and
+  absolute links into the repository for the rest. `Directory.Build.props` packs
+  `$(MSBuildProjectDirectory)/README.md`; the repository README stays in the repository. No
+  code change.
+
 ## [21.0.1] - 2026-09-09
 
 21.0.0 is a tag without packages: its publish run went red in the NativeAOT gate before the
