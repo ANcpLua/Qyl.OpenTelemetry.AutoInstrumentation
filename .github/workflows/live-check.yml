@@ -27,7 +27,7 @@ concurrency:
 env:
   # The registry tag that produced the Qyl.Telemetry.SemanticConventions packages this repository
   # pins. It moves in the same commit as Directory.Packages.props.
-  SEMCONV_REF: v9.3.0
+  SEMCONV_REF: v9.4.0
 
 permissions:
   contents: read

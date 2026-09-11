@@ -5,6 +5,18 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [21.1.0] - 2026-09-11
+
+### Changed
+
+- **`Qyl.Telemetry.SemanticConventions` 9.4.0.** The dependency line moves from 9.3.0; the
+  registry's schema URL is now versioned with the package and resolves at
+  `https://qyl.at/schemas/9.4.0`, so the `QylSchemaUrl` constant this instrumentation carries
+  through `AttributeMapping` names a real document. No attribute, metric, span or event changed
+  upstream. The live-check and publish workflows check out the matching `v9.4.0` registry.
+- The README names no version of this package or of its dependency line; `Directory.Packages.props`
+  is the one place that pins, and nuget.org is the one place that publishes.
+
 ## [21.0.2] - 2026-09-11
 
 ### Changed

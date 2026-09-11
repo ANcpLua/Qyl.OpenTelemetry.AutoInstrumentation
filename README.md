@@ -10,7 +10,8 @@ Roslyn interceptors are supported by this repository's .NET SDK 10.0.401. See th
 contract.
 
 Every attribute key, attribute value and telemetry scope name this package writes is a generated
-constant from `Qyl.Telemetry.SemanticConventions` 9.3.0. The instrumentation writes those constants
+constant from `Qyl.Telemetry.SemanticConventions`, at the line `Directory.Packages.props` pins. The
+instrumentation writes those constants
 and nothing else: it never renames, drops or coerces what a library emitted. Deprecated keys and
 vendor keys travel as the library wrote them and the qyl collector rewrites them; the live check
 below is what proves it.
@@ -30,7 +31,7 @@ Add the package that owns the integration you need; the supported zero-configura
 is a `PackageReference`, and build and analyzer assets flow through NuGet.
 
 ```bash
-dotnet add package Qyl.Telemetry.Hosting --version 21.0.1
+dotnet add package Qyl.Telemetry.Hosting
 ```
 
 ```csharp
@@ -304,7 +305,7 @@ Skipping in silence would hide the loss of instrumentation, and emitting an inte
 mismatched signature would break the consumer's build; the diagnostic is the third option.
 
 `Qyl.Telemetry.AutoInstrumentation` also consumes
-`Qyl.Telemetry.SemanticConventions.Analyzers` 9.3.0 with `PrivateAssets="all"`, so the `QYL0xxx`
+`Qyl.Telemetry.SemanticConventions.Analyzers` (same pinned line) with `PrivateAssets="all"`, so the `QYL0xxx`
 rules run over this repository's own sources and ship to no consumer. `Directory.Build.props` sets
 `OtelSemConvInstrumentationLibrary=true`: this is an instrumentation library that version-locks with
 the incubating tier on purpose, so `QYL0008` ("copy incubating constants locally") does not apply.
