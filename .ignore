@@ -1,0 +1,11 @@
+# Keep markdown out of agent search, glob and file-suggestion results.
+#
+# A partial read of these is worse than no read: it yields confident, wrong
+# conclusions about why the code is shaped the way it is. Open them deliberately,
+# by name, when the owner points at one.
+#
+# `.ignore` is always respected, independently of `.gitignore` and of the
+# `respectGitignore` setting. It governs search and discovery only; it does not
+# block reading a known path. That needs `permissions.deny` rules.
+
+*.md
