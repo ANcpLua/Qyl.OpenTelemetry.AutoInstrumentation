@@ -1,0 +1,5 @@
+# The toolchain this repository builds with. CI installs it with jdx/mise-action;
+# locally `mise install` does the same. dotnet also keeps global.json, which dotnet itself reads.
+[tools]
+"dotnet" = "10.0.401"
+"ubi:open-telemetry/weaver" = "0.26.1"
