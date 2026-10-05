@@ -2,7 +2,7 @@
 # locally `mise install` does the same. dotnet also keeps global.json, which dotnet itself reads.
 [tools]
 "dotnet" = "10.0.401"
-"github:open-telemetry/weaver" = "0.26.1"
+"github:open-telemetry/weaver" = "0.27.0"
 
 [tasks.check]
 description = "The gate: the release build and the goal verifier CI runs"
