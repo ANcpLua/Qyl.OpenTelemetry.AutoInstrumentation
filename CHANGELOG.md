@@ -32,7 +32,11 @@ NativeAOT consumers, and only then creates the GitHub release.
   a silent miss.
 - Microsoft.Extensions.* 10.0.12 and EntityFrameworkCore 10.0.12, the floor Microsoft.Extensions.AI
   10.10.0 declares. A major version because the dependency line of every package moves and the
-  instrumented GenAI stack is a different release; no public API of this package changed.
+  instrumented GenAI stack is a different release. The generated-code ABI anchor moves with the
+  major, as it always does: `QylGeneratedCodeAbi.V22` replaces `V21`, so an interceptor generated
+  by a 21.x generator fails to compile against this runtime instead of binding to it. The AOT
+  publish gate's approved EF Core trim warnings name 10.0.12 now, because an approval pins the
+  exact package the warning came from.
 
 ## [21.1.0] - 2026-09-11
 
