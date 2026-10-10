@@ -5,6 +5,35 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [22.0.0] - 2026-10-10
+
+### Changed
+
+- **`Qyl.Telemetry.SemanticConventions` 9.6.0, Microsoft.Agents.AI and .Workflows 1.24.0,
+  Microsoft.Extensions.AI 10.10.0, OpenTelemetry 1.19.1.** The registry's genai pin moved to
+  upstream's 2026-10-09 head, where `gen_ai.client.token.usage` and `gen_ai.token.type` no longer
+  exist and the inference signals live under `gen_ai.client.inference.*`. The libraries this
+  package instruments have not followed: Agent Framework 1.24.0 still delegates every span and
+  instrument to Microsoft.Extensions.AI's `OpenTelemetryChatClient`, which records that histogram
+  with that dimension, and the GenAI demo's fourteen measurements are byte-for-byte what 1.20.0
+  and 10.9.0 produced. 9.6.0 therefore carries three vendor models read at exactly these
+  versions, `registry/vendor/microsoft-extensions-ai.yaml`, `microsoft-agents-ai.yaml` and
+  `microsoft-agents-ai-workflows.yaml`, so the constants this demo compiles against
+  (`GenAiAttributes.TokenType`, `TokenTypeValues.Input`, `.Output`) are vendor rows now, the
+  collector passes the keys through instead of dropping them, and the sixteen `workflow.*`,
+  `executor.*`, `message.*` and `edge_group.*` keys the workflow runtime writes reach the
+  collector for the first time. The live-check and publish workflows check out the matching
+  `v9.6.0` registry.
+- **The three GenAI source names are generated constants.** `QylTelemetrySources` spelled
+  `Experimental.Microsoft.Extensions.AI`, `Experimental.Microsoft.Agents.AI` and
+  `Microsoft.Agents.AI.Workflows` as literals because the registry did not know them; they are
+  `QylTelemetryNames.VendorActivitySources` members now, as every other subscribed source already
+  was, so QYL0200 accepts them and a renamed source upstream is a compile error here rather than
+  a silent miss.
+- Microsoft.Extensions.* 10.0.12 and EntityFrameworkCore 10.0.12, the floor Microsoft.Extensions.AI
+  10.10.0 declares. A major version because the dependency line of every package moves and the
+  instrumented GenAI stack is a different release; no public API of this package changed.
+
 ## [21.1.0] - 2026-09-11
 
 ### Changed

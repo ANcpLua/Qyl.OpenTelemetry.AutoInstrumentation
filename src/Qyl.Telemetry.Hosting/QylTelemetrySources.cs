@@ -6,9 +6,9 @@ namespace Qyl;
 
 internal static class QylTelemetrySources
 {
-    internal const string MicrosoftExtensionsAi = "Experimental.Microsoft.Extensions.AI";
-    internal const string MicrosoftAgentsAi = "Experimental.Microsoft.Agents.AI";
-    internal const string MicrosoftAgentsAiWorkflows = "Microsoft.Agents.AI.Workflows";
+    internal const string MicrosoftExtensionsAi = QylTelemetryNames.VendorActivitySources.ExperimentalMicrosoftExtensionsAI;
+    internal const string MicrosoftAgentsAi = QylTelemetryNames.VendorActivitySources.ExperimentalMicrosoftAgentsAI;
+    internal const string MicrosoftAgentsAiWorkflows = QylTelemetryNames.VendorActivitySources.MicrosoftAgentsAIWorkflows;
     internal const string ModelContextProtocol = "Experimental.ModelContextProtocol";
     internal const string CoreWcf = QylTelemetryNames.VendorActivitySources.CoreWCFPrimitives;
     internal const string Azure = QylTelemetryNames.VendorActivitySources.Azure;

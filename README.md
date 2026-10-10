@@ -160,9 +160,9 @@ already writes the semantic conventions and qyl adds nothing: `System.Net.Http`,
 `Experimental.Microsoft.Extensions.AI`, `Experimental.Microsoft.Agents.AI`,
 `Microsoft.Agents.AI.Workflows` and `Experimental.ModelContextProtocol`. Three of the AI paths need
 the consumer's own opt-in —
-`chatClient.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Extensions.AI` 10.9.0,
-`agent.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Agents.AI` 1.20.0, and
-`WorkflowBuilder.WithOpenTelemetry()` for `Microsoft.Agents.AI.Workflows` 1.20.0. `ModelContextProtocol`
+`chatClient.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Extensions.AI` 10.10.0,
+`agent.AsBuilder().UseOpenTelemetry().Build()` for `Microsoft.Agents.AI` 1.24.0, and
+`WorkflowBuilder.WithOpenTelemetry()` for `Microsoft.Agents.AI.Workflows` 1.24.0. `ModelContextProtocol`
 2.2.0 and CoreWCF emit without one. MCP *metrics* are deliberately not registered: the official
 instruments carry dynamic tool and resource names as dimensions, which conflicts with qyl's
 bounded-cardinality policy.
