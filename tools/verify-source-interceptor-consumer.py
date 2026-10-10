@@ -133,7 +133,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation" Version="{version}" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>

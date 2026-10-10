@@ -103,10 +103,10 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.Hosting" Version="{version}" />
-    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.19.1" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" Version="{version}" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
         <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
         <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
   </ItemGroup>

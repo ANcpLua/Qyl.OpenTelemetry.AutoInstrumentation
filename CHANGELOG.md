@@ -36,7 +36,9 @@ NativeAOT consumers, and only then creates the GitHub release.
   major, as it always does: `QylGeneratedCodeAbi.V22` replaces `V21`, so an interceptor generated
   by a 21.x generator fails to compile against this runtime instead of binding to it. The AOT
   publish gate's approved EF Core trim warnings name 10.0.12 now, because an approval pins the
-  exact package the warning came from.
+  exact package the warning came from, and the consumer projects the verifiers under `tools/`
+  generate pin the same EF Core, Sqlite, Hosting and OpenTelemetry versions as
+  `Directory.Packages.props`.
 
 ## [21.1.0] - 2026-09-11
 

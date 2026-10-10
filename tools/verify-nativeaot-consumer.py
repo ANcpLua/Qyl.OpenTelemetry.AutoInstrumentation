@@ -161,7 +161,7 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.AutoInstrumentation.Hosting" Version="{version}" />
     <PackageReference Include="Qyl.Telemetry.Hosting" Version="{version}" />
-    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.18.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.19.1" />
   </ItemGroup>
 </Project>
 ''',

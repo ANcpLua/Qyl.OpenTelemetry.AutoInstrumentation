@@ -379,7 +379,7 @@ write_package_consumer() {
 
   <ItemGroup>
     <PackageReference Include="Qyl.Telemetry.Hosting" Version="$VERSION" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="$INMEMORY_EXPORTER_VERSION" />
     <Compile Remove="Generated/**/*.cs" />
   </ItemGroup>
