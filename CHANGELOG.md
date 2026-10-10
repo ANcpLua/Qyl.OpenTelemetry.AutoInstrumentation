@@ -5,6 +5,30 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [23.0.0] - 2026-10-10
+
+### Changed
+
+- **Every library pin moves to the newest stable release, and the registry describes those
+  releases.** Microsoft.Data.SqlClient 7.1.1, MongoDB.Driver 3.12.0, Quartz 4.4.0,
+  StackExchange.Redis 3.4.0, Confluent.Kafka 2.16.0, Grpc.Net.Client and Grpc.Core.Api 2.84.0,
+  Elastic.Clients.Elasticsearch 9.5.3 with Elastic.Transport 1.1.0 (the transport the client
+  declares; 8.0.1 is a different line), Azure.Storage.Blobs 12.30.1 with Azure.Core pinned
+  directly at 1.63.0, Oracle.ManagedDataAccess.Core 23.26.301, MassTransit.RabbitMQ at an 8.5.11
+  floor, Roslynator 5.0.1 and ANcpLua.Roslyn.Utilities.Sources 2.2.47. `Qyl.Telemetry.SemanticConventions`
+  9.7.0 re-read the vendor models for every one of these at the new tags, Quartz 4.4.0 among them
+  with three new keys, so the constants this instrumentation compiles against and the keys the
+  collector passes through name the releases actually running. The live-check and publish
+  workflows check out the matching `v9.7.0` registry. MassTransit stays on the Apache-2.0 8.x
+  line by the maintainer's 2026-09-04 decision; it is the one pin not at its newest major.
+- **The AOT publish gate's approvals follow the pins.** The approved trim warnings name
+  Microsoft.Data.SqlClient 7.1.1 with the System.Configuration.ConfigurationManager 9.0.18 it now
+  resolves, Oracle.ManagedDataAccess.Core 23.26.301 and MassTransit 8.5.11; the WebApi AOT demo's
+  generated consumer pins SqlClient 7.1.1. Measured locally: 16 demos warning-clean, 8 at exactly
+  their approved diagnostics, no promotion.
+- The generated-code ABI anchor is `QylGeneratedCodeAbi.V23`. A major version because every
+  instrumented library's line moves at once; no public API of this package changed.
+
 ## [22.0.0] - 2026-10-10
 
 ### Changed

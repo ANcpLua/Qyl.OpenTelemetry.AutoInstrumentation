@@ -118,11 +118,11 @@ VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
         approved("IL3053", "GraphQL", "GraphQL", "8.8.5"),
     ),
     "Qyl.RealMassTransitDemo": (
-        approved("IL2104", "MassTransit", "MassTransit", "8.5.10"),
-        approved("IL3053", "MassTransit", "MassTransit", "8.5.10"),
-        approved("IL2104", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10"),
-        approved("IL3053", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10"),
-        approved("IL3000", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.10", marker="MassTransit.Metadata.BusHostInfo."),
+        approved("IL2104", "MassTransit", "MassTransit", "8.5.11"),
+        approved("IL3053", "MassTransit", "MassTransit", "8.5.11"),
+        approved("IL2104", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.11"),
+        approved("IL3053", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.11"),
+        approved("IL3000", "MassTransit.Abstractions", "MassTransit.Abstractions", "8.5.11", marker="MassTransit.Metadata.BusHostInfo."),
     ),
     "Qyl.RealMySqlDataDemo": (
         approved("IL2104", "MySql.Data", "MySql.Data", "26.7.0"),
@@ -134,15 +134,15 @@ VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
         approved("IL3000", "NServiceBus.Core", "NServiceBus", "10.2.9", 2, "NServiceBus.FileVersionRetriever."),
     ),
     "Qyl.RealOracleMdaDemo": (
-        approved("IL2104", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.300"),
-        approved("IL3053", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.300"),
-        approved("IL3000", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.300", 5, "Oracle"),
+        approved("IL2104", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.301"),
+        approved("IL3053", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.301"),
+        approved("IL3000", "Oracle.ManagedDataAccess", "Oracle.ManagedDataAccess.Core", "23.26.301", 5, "Oracle"),
     ),
     "Qyl.RealSqlClientDemo": (
-        approved("IL2104", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.2"),
-        approved("IL3053", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.2"),
-        approved("IL2104", "Microsoft.Data.SqlClient.Internal.Logging", "Microsoft.Data.SqlClient.Internal.Logging", "7.0.2"),
-        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "9.0.13"),
+        approved("IL2104", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.1.1"),
+        approved("IL3053", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.1.1"),
+        approved("IL2104", "Microsoft.Data.SqlClient.Internal.Logging", "Microsoft.Data.SqlClient.Internal.Logging", "7.1.1"),
+        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "9.0.18"),
     ),
     "Qyl.RealWcfClientDemo": (
         approved("IL2104", "System.ServiceModel.Primitives", "System.ServiceModel.Primitives", "10.0.652802"),
@@ -154,10 +154,10 @@ VENDOR_WARNED_DEMOS: dict[str, tuple[Approval, ...]] = {
 
 EXTERNAL_WARNED_PROJECTS = {
     "WebApiAotDemo": VENDOR_WARNED_DEMOS["Qyl.RealEfCoreDemo"] + (
-        approved("IL2104", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.2"),
-        approved("IL3053", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.0.2"),
-        approved("IL2104", "Microsoft.Data.SqlClient.Internal.Logging", "Microsoft.Data.SqlClient.Internal.Logging", "7.0.2"),
-        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "9.0.13"),
+        approved("IL2104", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.1.1"),
+        approved("IL3053", "Microsoft.Data.SqlClient", "Microsoft.Data.SqlClient", "7.1.1"),
+        approved("IL2104", "Microsoft.Data.SqlClient.Internal.Logging", "Microsoft.Data.SqlClient.Internal.Logging", "7.1.1"),
+        approved("IL2104", "System.Configuration.ConfigurationManager", "System.Configuration.ConfigurationManager", "9.0.18"),
     ),
 }
 
