@@ -22,7 +22,10 @@ is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript loc
   goal-verifier floor, smoke, OTLP receiver evidence, web API AOT demo, AOT publish gate) once
   before a release; `make all` (adds the Docker real-library demos and the live check) only when
   the change touches those integrations. `make deps` once per machine installs the Python
-  verifier requirements. `make help` lists every lane as its own target.
+  verifier requirements (PyYAML included; the registry's `fetch-core.sh` needs it too), and
+  `make live-check` additionally needs Weaver on PATH at the version
+  Qyl.Telemetry.SemanticConventions pins in its `Version.props`. `make help` lists every lane
+  as its own target.
 - Key: `vitals keys` entry "qyl-dev manual publish and release (NuGet)", file
   `~/.config/vitals/nuget-qyl-manual-publish-key`. The script reads it; never print, paste,
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
