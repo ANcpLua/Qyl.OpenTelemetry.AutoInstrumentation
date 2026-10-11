@@ -21,11 +21,11 @@ is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript loc
   goal verifier) before every push; `make verify` (the former CI lanes without Docker: build,
   goal-verifier floor, smoke, OTLP receiver evidence, web API AOT demo, AOT publish gate) once
   before a release; `make all` (adds the Docker real-library demos and the live check) only when
-  the change touches those integrations. `make deps` once per machine installs the Python
-  verifier requirements (PyYAML included; the registry's `fetch-core.sh` needs it too), and
-  `make live-check` additionally needs Weaver on PATH at the version
-  Qyl.Telemetry.SemanticConventions pins in its `Version.props`. `make help` lists every lane
-  as its own target.
+  the change touches those integrations. `mise install` provides dotnet and Weaver 0.27.0
+  (both pinned in `mise.toml`), `make deps` once per machine installs the Python verifier
+  requirements (PyYAML included; the registry's `fetch-core.sh` needs it too), and the lanes
+  run through mise so Weaver is on PATH: `mise exec -- make verify`, `mise exec -- make live-check`.
+  `make help` lists every lane as its own target.
 - Key: `vitals keys` entry "qyl-dev manual publish and release (NuGet)", file
   `~/.config/vitals/nuget-qyl-manual-publish-key`. The script reads it; never print, paste,
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
