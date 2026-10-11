@@ -29,9 +29,9 @@ import socket
 import subprocess
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
-from verify_helpers import artifacts_bin_assembly, clean_env, fail, find_free_port, parse_report, run_checked
+from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealSessionPropagationDemo" / "Qyl.RealSessionPropagationDemo.csproj"
@@ -65,6 +65,17 @@ PORT_POLL_SECONDS = 0.05
 UPSTREAM_TIMEOUT_SECONDS = 120.0
 DOWNSTREAM_EXIT_TIMEOUT_SECONDS = 60.0
 TERMINATE_TIMEOUT_SECONDS = 10.0
+
+
+def fail(message: str) -> NoReturn:
+    raise SystemExit(message)
+
+
+def reserve_port() -> int:
+    """One free loopback port, handed to the downstream role on its command line."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
 
 
 def wait_for_port(port: int, process: subprocess.Popen[str]) -> None:
@@ -105,6 +116,21 @@ def start(assembly: Path, role: str, port: int, env: dict[str, str]) -> subproce
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
+
+
+def parse_report(name: str, stdout: str) -> dict[str, Any]:
+    start_index = stdout.find("{\n")
+    if start_index < 0:
+        fail(f"{name} did not emit JSON report\nstdout={stdout}")
+
+    try:
+        report = json.loads(stdout[start_index:])
+    except json.JSONDecodeError as exc:
+        fail(f"{name} emitted invalid JSON report: {exc}\nstdout={stdout}")
+
+    if not isinstance(report, dict):
+        fail(f"{name} report must be a JSON object: {report!r}")
+    return report
 
 
 def verify_process(
@@ -243,7 +269,7 @@ def main() -> None:
     env = clean_env()
     run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
     assembly = artifacts_bin_assembly(PROJECT)
-    port = find_free_port()
+    port = reserve_port()
 
     downstream_process: subprocess.Popen[str] | None = None
     upstream_process: subprocess.Popen[str] | None = None
