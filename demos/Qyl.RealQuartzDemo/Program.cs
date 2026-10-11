@@ -39,7 +39,11 @@ builder.AddQyl(options =>
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities))
     // AddQyl alone owns the meter subscription; adding one here would hide a registration gap.
-    .WithMetrics(metrics => metrics.AddInMemoryExporter(exportedMetrics));
+    .WithMetrics(metrics => metrics
+        // This fixture verifies Quartz. Keep unrelated runtime/HTTP metrics out of its exports.
+        .AddView(instrument => instrument.Meter.Name == QuartzInstrumentation.MeterName
+            ? null : MetricStreamConfiguration.Drop)
+        .AddInMemoryExporter(exportedMetrics));
 
 using var host = builder.Build();
 await host.StartAsync();

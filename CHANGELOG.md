@@ -20,8 +20,8 @@ NativeAOT consumers, and only then creates the GitHub release.
 
 - Refresh the upstream comparison contract to .NET AutoInstrumentation `v1.17.0` (released
   2026-09-22), adding its Quartz metrics promise and current Quartz/Redis version boundaries.
-  qyl remains an independent implementation. The OpenTelemetry SDK stays at `1.19.1` and
-  SemanticConventions at `9.7.0`, already the newest stable versions used by this repo.
+  qyl remains an independent implementation. The OpenTelemetry SDK stays at `1.19.1`;
+  SemanticConventions moves to `9.8.0`, which defines all 11 native Quartz metrics.
 - Refresh the qyl-native contract's verified Microsoft.Extensions.AI `10.10.0` and
   Microsoft.Agents.AI/Workflows `1.24.0` paths to match the existing package pins.
 
