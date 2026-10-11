@@ -39,7 +39,7 @@ builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
 
 ## Options
 
-`AddQyl(o => ...)` takes a `QylSdkOptions`. Every option has a zero-config default.
+`AddQyl(o => ...)` takes a `QylTelemetryOptions`. Every option has a zero-config default.
 
 | Option | Default | Effect |
 |---|---|---|
@@ -52,7 +52,7 @@ builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
 | `RequireConfiguredEndpoint` | `false` | Export only when an endpoint is set or discovered, instead of falling back to the exporter's `localhost` default. A process that is itself a telemetry destination, such as a collector, sets it to `true`. |
 | `EnableLogExport` | `true` | Export application logs over OTLP. |
 | `EnableMetricsExport` | `true` | Register and export the qyl meter inventory and the GenAI meters. |
-| `EnableSessionPropagation` | `true` | Copy `session.id` from the nearest in-process ancestor span onto spans that lack it. |
+| `EnableSessionTagInheritance` | `true` | Copy `session.id` from the nearest in-process ancestor span onto spans that lack it. It sets a span tag only; nothing goes on the wire to the next process. |
 | `AdditionalSources` | empty | More `ActivitySource` names to subscribe. |
 | `AdditionalMeters` | empty | More `Meter` names to subscribe. |
 

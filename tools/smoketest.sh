@@ -112,7 +112,7 @@ qylBuilder.AddQyl(options =>
     options.EnableCollectorDiscovery = false;
     options.EnableMetricsExport = true;
     options.EnableLogExport = false;
-    options.EnableSessionPropagation = false;
+    options.EnableSessionTagInheritance = false;
 });
 if (!qylBuilder.Services.Any(static descriptor => descriptor.ServiceType == typeof(IStartupFilter)))
     throw new InvalidOperationException("Qyl.Telemetry.Hosting AddQyl() did not register the ASP.NET Core startup filter.");

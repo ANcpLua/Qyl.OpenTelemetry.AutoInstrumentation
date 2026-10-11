@@ -101,7 +101,7 @@ builder.AddQyl(o =>
     o.EnableCollectorDiscovery = false;
     o.EnableLogExport = false;
     o.EnableMetricsExport = false;
-    o.EnableSessionPropagation = false;
+    o.EnableSessionTagInheritance = false;
     // 3. A source qyl already subscribes, named again by the consumer.
     o.AdditionalSources.Add("System.Net.Http");
 });

@@ -3,10 +3,10 @@ using OpenTelemetry.Trace;
 namespace Qyl;
 
 /// <summary>
-/// Options for <see cref="QylSdkHostApplicationBuilderExtensions.AddQyl"/>. Every property has a
+/// Options for <see cref="QylHostApplicationBuilderExtensions.AddQyl"/>. Every property has a
 /// zero-config default; the options exist for the cases where the conventions don't fit.
 /// </summary>
-public sealed class QylSdkOptions
+public sealed class QylTelemetryOptions
 {
     /// <summary>
     /// Logical service name stamped on the OpenTelemetry resource. Defaults to
@@ -75,9 +75,10 @@ public sealed class QylSdkOptions
     /// <summary>
     /// Copy a <c>session.id</c> tag from the nearest in-process ancestor span onto spans that lack
     /// one, so stamping a single request-level span groups its whole trace into a qyl session.
-    /// Defaults to true.
+    /// It sets a span tag and nothing else: no baggage, no header, nothing crosses a process
+    /// boundary. Defaults to true.
     /// </summary>
-    public bool EnableSessionPropagation { get; set; } = true;
+    public bool EnableSessionTagInheritance { get; set; } = true;
 
     /// <summary>
     /// Additional <see cref="System.Diagnostics.ActivitySource"/> names to subscribe beyond the

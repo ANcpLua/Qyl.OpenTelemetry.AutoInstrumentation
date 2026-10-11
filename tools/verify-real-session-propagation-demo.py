@@ -151,8 +151,8 @@ def verify_process(
         fail(f"{name} reported role {report.get('Role')!r}, expected {role!r}")
     if report.get("RuntimeMode") != "dynamic-code-supported":
         fail(f"{name} runtime mode mismatch: {report.get('RuntimeMode')!r}")
-    if report.get("SessionPropagationEnabled") is not True:
-        fail(f"{name} ran with session propagation off — the gate would prove nothing:\n{report!r}")
+    if report.get("SessionTagInheritanceEnabled") is not True:
+        fail(f"{name} ran with session-tag inheritance off — the gate would prove nothing:\n{report!r}")
     if report.get("Pass") is not True:
         fail(f"{name} report did not pass:\n{json.dumps(report, indent=2, sort_keys=True)}")
     # The report has to belong to the operating-system process this script started. A shared

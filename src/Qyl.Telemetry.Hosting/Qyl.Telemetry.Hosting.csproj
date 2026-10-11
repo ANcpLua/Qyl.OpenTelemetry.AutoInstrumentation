@@ -8,7 +8,7 @@
     <RootNamespace>Qyl</RootNamespace>
     <AssemblyName>Qyl.Telemetry.Hosting</AssemblyName>
     <PackageId>Qyl.Telemetry.Hosting</PackageId>
-    <Description>One-line qyl onboarding for .NET applications: builder.AddQyl() wires the OpenTelemetry SDK, qyl listeners, version-pinned GenAI, Azure SDK, MCP and CoreWCF sources, OTLP export with local collector discovery, and session propagation.</Description>
+    <Description>One-line qyl onboarding for .NET applications: builder.AddQyl() wires the OpenTelemetry SDK, qyl listeners, version-pinned GenAI, Azure SDK, MCP and CoreWCF sources, OTLP export with local collector discovery, and session-tag inheritance.</Description>
   </PropertyGroup>
 
   <ItemGroup>

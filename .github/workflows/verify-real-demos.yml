@@ -1,7 +1,7 @@
 name: qyl-verify-real-demos
 
 # The 30 real-demo verifiers (Kafka, Mongo, Redis, RabbitMQ, Postgres, MySQL, Oracle,
-# Elasticsearch, gRPC, Azure, WCF, and qyl's own session propagation). They execute real
+# Elasticsearch, gRPC, Azure, WCF, and qyl's own session-tag inheritance). They execute real
 # consumers and assert emitted telemetry end-to-end; the applicable lanes also NativeAOT-publish,
 # use testcontainers, or start two processes of one demo.
 # Linux-only because the integration subset needs Docker. Heavy, so it runs post-merge on

@@ -67,7 +67,7 @@ static async Task<int> RunUpstreamAsync(int port)
         options.EnableLogExport = false;
         options.EnableMetricsExport = false;
         // The processor under test. Every other demo turns it off; this one is about it.
-        options.EnableSessionPropagation = true;
+        options.EnableSessionTagInheritance = true;
         options.AdditionalSources.Add(SessionDemo.SourceName);
     });
     builder.Services.AddOpenTelemetry()
@@ -109,7 +109,7 @@ static async Task<int> RunUpstreamAsync(int port)
 }
 
 /// <summary>
-/// The process that receives the request. Its own session propagation is ON, and it proves that in
+/// The process that receives the request. Its own session-tag inheritance is ON, and it proves that in
 /// the same run with a locally rooted control pair, so the absence of <c>session.id</c> on the
 /// remote-parented server span cannot be explained by a missing processor.
 /// </summary>
@@ -128,7 +128,7 @@ static async Task<int> RunDownstreamAsync(int port)
         options.EnableCollectorDiscovery = false;
         options.EnableLogExport = false;
         options.EnableMetricsExport = false;
-        options.EnableSessionPropagation = true;
+        options.EnableSessionTagInheritance = true;
         options.AdditionalSources.Add(SessionDemo.SourceName);
     });
     builder.Services.AddOpenTelemetry()
@@ -266,7 +266,7 @@ internal sealed record SessionPropagationReport(
     bool Pass,
     string[] Failures,
     int ProcessId,
-    bool SessionPropagationEnabled,
+    bool SessionTagInheritanceEnabled,
     string[] ExpectedSpans,
     string[] ActualSpans,
     CapturedActivity[] Activities)
@@ -317,7 +317,7 @@ internal sealed record SessionPropagationReport(
             failures.Count is 0,
             failures.ToArray(),
             Environment.ProcessId,
-            SessionPropagationEnabled: true,
+            SessionTagInheritanceEnabled: true,
             expected.Order(StringComparer.Ordinal).ToArray(),
             actual,
             activities);
@@ -375,7 +375,7 @@ internal sealed record SessionPropagationReport(
             failures.Count is 0,
             failures.ToArray(),
             Environment.ProcessId,
-            SessionPropagationEnabled: true,
+            SessionTagInheritanceEnabled: true,
             expected.Order(StringComparer.Ordinal).ToArray(),
             actual,
             activities);
