@@ -200,7 +200,7 @@ MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
     "signals.traces.MICROSOFTAGENTSAIWORKFLOWS",
 }
 # External contract: well-known meter names published by .NET / providers that
-# Qyl.Sdk registers explicitly. Values, not C# constant names — declarations
+# Qyl.Telemetry.Hosting registers explicitly. Values, not C# constant names — declarations
 # are free to rename.
 REQUIRED_REGISTERED_METER_NAME_VALUES = {
     "Microsoft.AspNetCore.Hosting",

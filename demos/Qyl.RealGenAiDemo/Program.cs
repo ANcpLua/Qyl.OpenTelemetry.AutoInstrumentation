@@ -383,7 +383,7 @@ internal sealed record GenAiReport(
             WorkflowsSourceName);
         Require(
             activitySources.Order(StringComparer.Ordinal).SequenceEqual(expectedSources.Order(StringComparer.Ordinal), StringComparer.Ordinal),
-            $"Qyl.Sdk activity registration mismatch: expected={string.Join('|', expectedSources)} actual={string.Join('|', activitySources)}",
+            $"Qyl.Telemetry.Hosting activity registration mismatch: expected={string.Join('|', expectedSources)} actual={string.Join('|', activitySources)}",
             failures);
 
         RequireRegistration(
@@ -398,7 +398,7 @@ internal sealed record GenAiReport(
             failures);
         Require(
             meterNames.All(static name => !name.Contains("Agents.AI.Workflows", StringComparison.Ordinal)),
-            "Qyl.Sdk exported an unexpected Workflow meter",
+            "Qyl.Telemetry.Hosting exported an unexpected Workflow meter",
             failures);
     }
 
@@ -417,7 +417,7 @@ internal sealed record GenAiReport(
         var registered = names.Contains(telemetryName, StringComparer.Ordinal);
         Require(
             registered == IsEnabled(variable),
-            $"Qyl.Sdk meter registration mismatch for {telemetryName}: registered={registered}",
+            $"Qyl.Telemetry.Hosting meter registration mismatch for {telemetryName}: registered={registered}",
             failures);
     }
 
