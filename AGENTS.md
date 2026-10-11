@@ -61,4 +61,6 @@ Release acts. The version source changes in the PR; the act runs after it merges
 | qyl.mcp | `server/package.json` `version`, plus a `server/README.md` release-notes entry | `gh release create vX.Y.Z --target <sha> --title X.Y.Z --notes …` | the workflow smokes the published package with `npx` |
 | qyl.at | none | merging to `main` deploys `qyl.at` | — |
 
+Release branches. A hotfix for a published line is cut from its tag onto `release/X.y`, released from there, and then ported to `main` in its own PR. The publish environments admit `release/*` next to `main` and `v*` tags, and the publish workflows' ancestry guards accept a commit reachable from `main` or from any `release/*` branch. Everything else is unchanged: the version source changes on the release branch, the tag names the commit whose version source carries that exact version, and the ripple above applies to the hotfix release like to any other.
+
 Merging to `main` also deploys: qyl → `qyl-collector` (`api.qyl.at`, Railway), qyl.mcp → `qyl-mcp` (`mcp.qyl.at`, Railway), qyl.at → the `qyl-at` Worker (`qyl.at`, Cloudflare).

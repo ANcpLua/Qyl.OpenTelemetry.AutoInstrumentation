@@ -7,10 +7,11 @@ name: nuget-publish
 # Directory.Build.props version at that commit — runs the full gate set and, only
 # if every gate passes, publishes and then creates the release.
 #
-# Main ancestry: the nuget environment admits main and v* tags, but a v* tag can
-# name a commit that never reached main. The version job, which every other job
-# needs, fails unless the tagged commit is reachable from origin main, so nothing
-# is packed or pushed for an off-main tag. There is no workflow_dispatch: a manual
+# Branch ancestry: the nuget environment admits main, release/* and v* tags, but a
+# v* tag can name a commit that never reached any of those branches. The version
+# job, which every other job needs, fails unless the tagged commit is reachable from
+# origin main or from an origin release/* branch (a hotfix line, ported to main
+# afterwards; AGENTS.md, Release ripple), so nothing is packed or pushed for a stray tag. There is no workflow_dispatch: a manual
 # run could publish the main version under no tag; the tag push is the only release act.
 #
 # The green-CI condition is enforced inside this workflow, not inferred from a
@@ -38,18 +39,24 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0 # full history, so the main-ancestry gate can walk main
-      # The main-ancestry gate (see header). refs/heads/main is spelled out because a bare
-      # "main" would resolve a tag named main ahead of the branch.
-      - name: Require the tagged commit to be on main
+          fetch-depth: 0 # full history, so the ancestry gate can walk main and release/*
+      # The branch-ancestry gate (see header).
+      - name: Require the tagged commit to be on main or a release branch
         run: |
           set -euo pipefail
-          git fetch --no-tags origin refs/heads/main
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD; then
-            echo "::error::$GITHUB_SHA is not reachable from origin main ($(git rev-parse FETCH_HEAD)); only commits main already contains are published."
-            exit 1
-          fi
-          echo "$GITHUB_SHA is on origin main ($(git rev-parse FETCH_HEAD))."
+          # main, then every release/* branch: a hotfix is released from release/X.y and ported to main
+          # afterwards (AGENTS.md, Release ripple). The refs are named in full so a tag called main or
+          # release/… cannot shadow a branch, and land under refs/remotes/publish/ so nothing the
+          # checkout already fetched is reused by accident.
+          git fetch --no-tags origin 'refs/heads/main:refs/remotes/publish/main' 'refs/heads/release/*:refs/remotes/publish/release/*'
+          for ref in $(git for-each-ref --format='%(refname)' refs/remotes/publish/); do
+            if git merge-base --is-ancestor "$GITHUB_SHA" "$ref"; then
+              echo "$GITHUB_SHA is reachable from origin ${ref#refs/remotes/publish/} ($(git rev-parse "$ref"))."
+              exit 0
+            fi
+          done
+          echo "::error::$GITHUB_SHA is not reachable from origin main or from any origin release/* branch; only commits those branches already contain are published."
+          exit 1
       - id: version
         run: |
           set -euo pipefail
