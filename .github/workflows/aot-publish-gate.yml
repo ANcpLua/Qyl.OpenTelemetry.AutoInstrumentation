@@ -9,7 +9,10 @@ name: qyl-aot-publish-gate
 # Heavy (24 NativeAOT publishes x 2 OS), so — like verify-real-demos.yml — it runs post-merge on
 # main, nightly, and on demand, NOT on every PR. The gate prebuilds the source generator into the
 # standard artifacts/ layout (the PublishAot demos consume it as a prebuilt Analyzer DLL from there)
-# and publishes with --disable-build-servers; this workflow declares no concurrency group, so a run is never cancelled by a later push. Run locally: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion --shard ${{ matrix.shard }}/4
+# and publishes with --disable-build-servers. A running gate is never cancelled; a push that lands
+# while one waits replaces the waiting run, so a burst of merges is gated once, on its newest commit,
+# instead of stacking 4 macOS jobs per commit in the account's 5-job macOS queue ahead of every PR.
+# Run locally: python3 tools/verify-aot-publish-gate.py --set all --strict-promotion --shard ${{ matrix.shard }}/4
 
 on:
   push:
@@ -18,6 +21,10 @@ on:
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+
+concurrency:
+  group: qyl-aot-publish-gate-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
