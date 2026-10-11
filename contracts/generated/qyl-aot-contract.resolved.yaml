@@ -1484,7 +1484,7 @@ contract_items:
   contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_034
   upstream_sources:
   - label: current config
-    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L241-L248
+    url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L242-L248
   contract_origin: upstream_otel_dotnet_auto_60
   lane: source_interceptor
   qyl_status: implemented
