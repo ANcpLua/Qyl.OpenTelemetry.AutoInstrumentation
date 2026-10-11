@@ -1,5 +1,7 @@
 # Qyl.Telemetry.AutoInstrumentation
 
+Release, re-pin and agent hand-offs: follow [`SKILL.md`](SKILL.md) at this repo root (canonical clone `/Users/alexandernachtmann/RiderProjects/Qyl.Telemetry.AutoInstrumentation/SKILL.md`); the one command is `./release.sh`. Published versions: `/Users/alexandernachtmann/Downloads/qyl-codex-claude/qyl-published-versions.yaml`.
+
 ## Ownership and upstream versions
 
 qyl owns the instrumentation implementation: Roslyn interceptors, public runtime hooks, native ActivitySource/Meter subscriptions, bootstrap and export orchestration. `contracts/otel-dotnet-auto.upstream.yaml` is a comparison baseline for coverage, not an upstream agent dependency or a version to install into qyl. Read the ownership and generated coverage contracts before claiming support or a gap.
