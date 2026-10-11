@@ -959,9 +959,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         return "default";
     }
 
-    private static bool IsTaskOf(ITypeSymbol? symbol, string resultFullyQualifiedName)
-        => TryGetTaskResult(symbol, out var result) && IsType(result, resultFullyQualifiedName);
-
     private static bool IsConstructedGeneric(ITypeSymbol? symbol, string namespaceName, string metadataName)
         => symbol is INamedTypeSymbol named &&
            string.Equals(named.ConstructedFrom.MetadataName, metadataName, StringComparison.Ordinal) &&
@@ -972,9 +969,6 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static bool IsTask(ITypeSymbol? symbol)
         => IsType(symbol, "global::System.Threading.Tasks.Task");
-
-    private static bool IsValueTask(ITypeSymbol? symbol)
-        => IsType(symbol, "global::System.Threading.Tasks.ValueTask");
 
     private static bool TryGetTaskResult(ITypeSymbol? symbol, out ITypeSymbol result)
     {
