@@ -7,3 +7,5 @@ obj/
 # local agent scratch (internal infra docs) — never public
 .agents/
 .claude/worktrees/
+
+__pycache__/
