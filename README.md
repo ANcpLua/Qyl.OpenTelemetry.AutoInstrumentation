@@ -5,6 +5,11 @@ works through compiler-generated Roslyn interceptors, `ActivitySource` subscript
 `DiagnosticListener` hooks, build assets and module-initializer bootstrap. There is no CLR
 profiler, no startup hook, no ReJIT, no runtime IL rewriting and no dynamic plugin loading.
 
+qyl owns this instrumentation implementation and releases it independently. The upstream .NET
+automatic-instrumentation contract is a coverage comparison, not a package dependency.
+`Qyl.Telemetry.Hosting` uses the OpenTelemetry SDK and OTLP exporter to process and transport
+the resulting telemetry; convention bindings come from qyl's own generated registry packages.
+
 Roslyn interceptors are supported by this repository's .NET SDK 10.0.401. See the official
 [`interceptors.md`](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md)
 contract.
@@ -145,9 +150,13 @@ other row is an ordinal exact match.
 | Npgsql | `10.0.3` | `Npgsql` | `NPGSQL` | `db.client` |
 | NServiceBus | `10.2.9` | `NServiceBus.Core` | `NSERVICEBUS` | `messaging.nservicebus` |
 | Oracle.ManagedDataAccess.Core | `23.26.300` | `Oracle.ManagedDataAccess.Core` | `ORACLEMDA` | `db.client` |
-| Quartz.NET | `4.0.0` | `Quartz` | `QUARTZ` | `job.quartz` |
+| Quartz.NET | `4.4.0` | `Quartz` | `QUARTZ` | `job.quartz` |
 | RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Publisher` | `RABBITMQ` | `messaging.rabbitmq` |
 | RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Subscriber` | `RABBITMQ` | `messaging.rabbitmq` |
+
+Quartz 4 also publishes native metrics on its `Quartz` meter. `AddQyl` subscribes by default;
+`OTEL_DOTNET_AUTO_METRICS_QUARTZ_INSTRUMENTATION_ENABLED` controls that subscription independently
+of Quartz traces, with the usual global metrics setting as its default.
 
 The Elasticsearch client owns no `ActivitySource`; it enriches Elastic.Transport's, so the two
 integrations share one row and one domain. CoreWCF's row carries no domain: those spans are the WCF

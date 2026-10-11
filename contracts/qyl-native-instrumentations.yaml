@@ -1,11 +1,11 @@
 schema_id: qyl-native-instrumentation-contract-items
 schema_version: 1.0.0
-generated_at: '2026-07-19'
+generated_at: '2026-10-11'
 source:
   title: qyl-native version-pinned instrumentation promises
   source_kind: qyl_owned_contract_with_official_library_sources
-  content_basis: First-class telemetry hooks registered by Qyl.Telemetry.Hosting 14.0.1 and exercised by owned real-library demos
-  release: 14.0.1
+  content_basis: First-class telemetry hooks registered by Qyl.Telemetry.Hosting 23.1.0 and exercised by owned real-library demos
+  release: 23.1.0
 contract_items:
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MICROSOFTEXTENSIONSAI
@@ -15,8 +15,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Extensions.AI
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
-  supported_versions: Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.10.0
+  supported_versions: Microsoft.Extensions.AI ==10.10.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -24,11 +24,11 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 64
+  index: 65
   contract_item_id: QYL_NATIVE_CONTRACT_001
   upstream_sources:
-  - label: Microsoft.Extensions.AI 10.9.0
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
+  - label: Microsoft.Extensions.AI 10.10.0
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.10.0
   - label: official UseOpenTelemetry documentation
     url: https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai
   lane: official_library_hook
@@ -49,8 +49,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Extensions.AI
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
-  supported_versions: Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.10.0
+  supported_versions: Microsoft.Extensions.AI ==10.10.0; ChatClientBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -58,11 +58,11 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Extensions.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 65
+  index: 66
   contract_item_id: QYL_NATIVE_CONTRACT_002
   upstream_sources:
-  - label: Microsoft.Extensions.AI 10.9.0
-    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.9.0
+  - label: Microsoft.Extensions.AI 10.10.0
+    url: https://www.nuget.org/packages/Microsoft.Extensions.AI/10.10.0
   - label: official UseOpenTelemetry documentation
     url: https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai
   lane: official_library_hook
@@ -83,8 +83,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
-  supported_versions: Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.24.0
+  supported_versions: Microsoft.Agents.AI ==1.24.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -92,11 +92,11 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 66
+  index: 67
   contract_item_id: QYL_NATIVE_CONTRACT_003
   upstream_sources:
-  - label: Microsoft.Agents.AI 1.20.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
+  - label: Microsoft.Agents.AI 1.24.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.24.0
   - label: official UseOpenTelemetry API
     url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
   lane: official_library_hook
@@ -117,8 +117,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
-  supported_versions: Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.24.0
+  supported_versions: Microsoft.Agents.AI ==1.24.0; AIAgentBuilder.UseOpenTelemetry() wrapper only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -126,11 +126,11 @@ contract_items:
   notes:
   - Qyl.Telemetry.Hosting registers Experimental.Microsoft.Agents.AI; the application explicitly installs the official UseOpenTelemetry wrapper.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 67
+  index: 68
   contract_item_id: QYL_NATIVE_CONTRACT_004
   upstream_sources:
-  - label: Microsoft.Agents.AI 1.20.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.20.0
+  - label: Microsoft.Agents.AI 1.24.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI/1.24.0
   - label: official UseOpenTelemetry API
     url: https://learn.microsoft.com/dotnet/api/microsoft.agents.ai.opentelemetryagentbuilderextensions.useopentelemetry
   lane: official_library_hook
@@ -151,8 +151,8 @@ contract_items:
   environment_toggle_origin: qyl_native_signal_specific_pattern
   libraries:
   - name: Microsoft.Agents.AI.Workflows
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.20.0
-  supported_versions: Microsoft.Agents.AI.Workflows ==1.20.0; WorkflowBuilder.WithOpenTelemetry() path only
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.24.0
+  supported_versions: Microsoft.Agents.AI.Workflows ==1.24.0; WorkflowBuilder.WithOpenTelemetry() path only
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -161,11 +161,11 @@ contract_items:
   - Qyl.Telemetry.Hosting registers Microsoft.Agents.AI.Workflows; the application explicitly calls WithOpenTelemetry.
   - The promise is traces only because this exact workflow hook exposes an ActivitySource, not a corresponding meter.
   - This is an exact managed path/version claim, not a provider-wide or NativeAOT claim.
-  index: 68
+  index: 69
   contract_item_id: QYL_NATIVE_CONTRACT_005
   upstream_sources:
-  - label: Microsoft.Agents.AI.Workflows 1.20.0
-    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.20.0
+  - label: Microsoft.Agents.AI.Workflows 1.24.0
+    url: https://www.nuget.org/packages/Microsoft.Agents.AI.Workflows/1.24.0
   - label: official Agent Framework repository
     url: https://github.com/microsoft/agent-framework
   lane: official_library_hook
@@ -196,7 +196,7 @@ contract_items:
   - Qyl.Telemetry.Hosting registers Experimental.ModelContextProtocol; the official SDK emits the client/server spans automatically.
   - MCP metrics are deliberately outside this contract because the official instruments attach dynamic tool and resource names as dimensions, violating qyl's bounded-cardinality policy.
   - This exact path and version is verified in managed and NativeAOT execution; it is not a protocol-wide claim.
-  index: 69
+  index: 70
   contract_item_id: QYL_NATIVE_CONTRACT_006
   upstream_sources:
   - label: ModelContextProtocol 2.2.0

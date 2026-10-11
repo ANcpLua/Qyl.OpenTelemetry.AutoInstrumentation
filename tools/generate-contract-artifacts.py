@@ -239,19 +239,19 @@ QYL_NATIVE_8_SIGNAL_CONTRACT = [
 ]
 QYL_NATIVE_8_SUPPORTED_PATHS = {
     "signals.traces.MICROSOFTEXTENSIONSAI": (
-        "Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
+        "Microsoft.Extensions.AI ==10.10.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.metrics.MICROSOFTEXTENSIONSAI": (
-        "Microsoft.Extensions.AI ==10.9.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
+        "Microsoft.Extensions.AI ==10.10.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.traces.MICROSOFTAGENTSAI": (
-        "Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+        "Microsoft.Agents.AI ==1.24.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.metrics.MICROSOFTAGENTSAI": (
-        "Microsoft.Agents.AI ==1.20.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+        "Microsoft.Agents.AI ==1.24.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.traces.MICROSOFTAGENTSAIWORKFLOWS": (
-        "Microsoft.Agents.AI.Workflows ==1.20.0; WorkflowBuilder.WithOpenTelemetry() path only"
+        "Microsoft.Agents.AI.Workflows ==1.24.0; WorkflowBuilder.WithOpenTelemetry() path only"
     ),
     "signals.traces.MCP": (
         "ModelContextProtocol ==2.2.0; automatic official client/server ActivitySource path only"
@@ -285,8 +285,11 @@ QYL_SUPPORTED_VERSION_OVERRIDES = {
         'MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"'
     ),
     "signals.traces.QUARTZ": (
-        'Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" '
+        'Quartz >=4.0.0; verified against 4.4.0; native ActivitySource "Quartz" '
         "(3.x used DiagnosticListener and has none)"
+    ),
+    "signals.metrics.QUARTZ": (
+        'Quartz >=4.0.0 on .NET 10+; verified against 4.4.0; native Meter "Quartz"'
     ),
     "signals.traces.WCFCORE": (
         "CoreWCF.Primitives ==1.9.1; CoreWCF.Http ==1.9.1; server ActivitySource path only"
@@ -298,6 +301,7 @@ MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
     "signals.traces.MYSQLDATA",
     "signals.traces.NSERVICEBUS",
     "signals.traces.QUARTZ",
+    "signals.metrics.QUARTZ",
     "signals.traces.WCFCLIENT",
     "signals.traces.WCFCORE",
     "signals.traces.MICROSOFTEXTENSIONSAI",
@@ -620,12 +624,12 @@ def verify_contract_model(contract: dict[str, Any]) -> None:
     expected_counts = {
         "upstream_contract_items": UPSTREAM_CONTRACT_ITEM_COUNT,
         "qyl_native_contract_items": QYL_NATIVE_CONTRACT_ITEM_COUNT,
-        "signal_specific_instrumentation_promises": 43,
+        "signal_specific_instrumentation_promises": 44,
         "global_environment_controls": 7,
         "instrumentation_options": 19,
         "total_contract_items": TOTAL_CONTRACT_ITEM_COUNT,
         "traces_signal_specific_promises": 30,
-        "metrics_signal_specific_promises": 10,
+        "metrics_signal_specific_promises": 11,
         "logs_signal_specific_promises": 3,
         "unique_instrumentation_ids": 35,
     }

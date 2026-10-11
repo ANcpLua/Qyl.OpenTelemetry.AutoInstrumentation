@@ -191,6 +191,7 @@ MANAGED_EVIDENCE_NATIVEAOT_BOUNDARY_KEYS = {
     "signals.traces.MYSQLDATA",
     "signals.traces.NSERVICEBUS",
     "signals.traces.QUARTZ",
+    "signals.metrics.QUARTZ",
     "signals.traces.WCFCLIENT",
     "signals.traces.WCFCORE",
     "signals.traces.MICROSOFTEXTENSIONSAI",
@@ -218,6 +219,7 @@ REQUIRED_REGISTERED_METER_NAME_VALUES = {
     "System.Net.Http",
     "System.Net.NameResolution",
     "System.Runtime",
+    "Quartz",
     "Qyl.Telemetry.AutoInstrumentation.Database",
 }
 FORBIDDEN_REGISTERED_METER_NAME_VALUES = {
