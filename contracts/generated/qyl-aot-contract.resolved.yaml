@@ -108,7 +108,7 @@ contract_items:
   evidence_level: none
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
-  - docs/coverage-matrix.md
+  - contracts/coverage-matrix.md
   unsupported_reason: 'Classic ASP.NET (System.Web MVC/WebApi) executes only on .NET Framework 4.x inside IIS; System.Web
     does not exist on .NET 10, so no in-process mechanism is available to this managed substrate. Devil''s-advocate check
     (2026-07-18): Microsoft.AspNetCore.SystemWebAdapters covers apps mid-migration to ASP.NET Core, not the literal promise;
@@ -210,7 +210,7 @@ contract_items:
   libraries:
   - name: Elastic.Clients.Elasticsearch
     url: https://www.nuget.org/packages/Elastic.Clients.Elasticsearch
-  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the Elastic.Transport
+  supported_versions: Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.3; spans come from the Elastic.Transport
     ActivitySource the client enriches
   instrumentation_types:
   - source
@@ -256,7 +256,7 @@ contract_items:
   libraries:
   - name: Elastic.Transport
     url: https://www.nuget.org/packages/Elastic.Transport
-  supported_versions: Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"
+  supported_versions: Elastic.Transport >=1.0.0; verified against 1.1.0; native ActivitySource "Elastic.Transport"
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -528,7 +528,7 @@ contract_items:
   libraries:
   - name: MassTransit
     url: https://www.nuget.org/packages/MassTransit
-  supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"
+  supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.11; native ActivitySource "MassTransit"
   instrumentation_types:
   - source
   instrumentation_type_operator: single
@@ -577,7 +577,7 @@ contract_items:
   - name:
       name: MongoDB.Driver
       url: https://www.nuget.org/packages/MongoDB.Driver
-  supported_versions: MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver"
+  supported_versions: MongoDB.Driver >=3.7.0; verified against 3.12.0; native ActivitySource "MongoDB.Driver"
   instrumentation_types:
   - source
   - bytecode
@@ -1148,7 +1148,7 @@ contract_items:
   evidence_level: none
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
-  - docs/coverage-matrix.md
+  - contracts/coverage-matrix.md
   unsupported_reason: System.ServiceModel server-side hosting (ServiceHost/ChannelDispatcher) does not exist on modern .NET;
     the promise as written is dead on .NET 10. The successor surface is CoreWCF (see signals.traces.WCFCORE).
 - kind: signal_specific_instrumentation_promise
@@ -1185,7 +1185,7 @@ contract_items:
   evidence_level: none
   primary_owner: unsupported by qyl NativeAOT substrate
   evidence:
-  - docs/coverage-matrix.md
+  - contracts/coverage-matrix.md
   unsupported_reason: Upstream emits these metrics from the System.Web TelemetryHttpModule pipeline (.NET Framework-only)
     and gates them on the AspNet trace instrumentation, which is itself impossible here (see signals.traces.ASPNET).
 - kind: signal_specific_instrumentation_promise

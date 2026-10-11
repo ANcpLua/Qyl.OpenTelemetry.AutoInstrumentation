@@ -137,19 +137,19 @@ other row is an ordinal exact match.
 
 | Library | Pinned | `ActivitySource` | Instrumentation id | Domain |
 | --- | --- | --- | --- | --- |
-| Azure SDK | `Azure.Storage.Blobs` `12.29.2` | `Azure.*` | `AZURE` | `azure.sdk` |
+| Azure SDK | `Azure.Storage.Blobs` `12.30.1` | `Azure.*` | `AZURE` | `azure.sdk` |
 | CoreWCF | `CoreWCF.Http` `1.9.1` | `CoreWCF.Primitives` | `WCFCORE` | none — see below |
 | HttpClient | `System.Net.Http` (BCL) | `System.Net.Http` | `HTTPCLIENT` | `http.client` |
 | MySql.Data | `26.7.0` | `connector-net` | `MYSQLDATA` | `db.client` |
-| Elastic.Transport, Elastic.Clients.Elasticsearch | `1.0.0`, `9.5.1` | `Elastic.Transport` | `ELASTICTRANSPORT` | `elastic.transport` |
+| Elastic.Transport, Elastic.Clients.Elasticsearch | `1.1.0`, `9.5.3` | `Elastic.Transport` | `ELASTICTRANSPORT` | `elastic.transport` |
 | GraphQL.NET | `8.8.5` | `GraphQL` | `GRAPHQL` | `graphql` |
-| Grpc.Net.Client | `2.83.0` | `Grpc.Net.Client` | `GRPCNETCLIENT` | `rpc.grpc` |
-| MassTransit | `[8.5.10,9.0.0)` | `MassTransit` | `MASSTRANSIT` | `messaging.masstransit` |
-| MongoDB.Driver | `3.11.1` | `MongoDB.Driver` | `MONGODB` | `db.mongodb` |
+| Grpc.Net.Client | `2.84.0` | `Grpc.Net.Client` | `GRPCNETCLIENT` | `rpc.grpc` |
+| MassTransit | `[8.5.11,9.0.0)` | `MassTransit` | `MASSTRANSIT` | `messaging.masstransit` |
+| MongoDB.Driver | `3.12.0` | `MongoDB.Driver` | `MONGODB` | `db.mongodb` |
 | MySqlConnector | `2.6.2` | `MySqlConnector` | `MYSQLCONNECTOR` | `db.client` |
 | Npgsql | `10.0.3` | `Npgsql` | `NPGSQL` | `db.client` |
 | NServiceBus | `10.2.9` | `NServiceBus.Core` | `NSERVICEBUS` | `messaging.nservicebus` |
-| Oracle.ManagedDataAccess.Core | `23.26.300` | `Oracle.ManagedDataAccess.Core` | `ORACLEMDA` | `db.client` |
+| Oracle.ManagedDataAccess.Core | `23.26.301` | `Oracle.ManagedDataAccess.Core` | `ORACLEMDA` | `db.client` |
 | Quartz.NET | `4.4.0` | `Quartz` | `QUARTZ` | `job.quartz` |
 | RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Publisher` | `RABBITMQ` | `messaging.rabbitmq` |
 | RabbitMQ.Client | `7.2.2` | `RabbitMQ.Client.Subscriber` | `RABBITMQ` | `messaging.rabbitmq` |
@@ -187,8 +187,8 @@ One row per `[QylIntercept]` declaration in `src/Qyl.Telemetry.AutoInstrumentati
 | StackExchange.Redis | `3.4.0` | `StackExchange.Redis.IDatabaseAsync` | `STACKEXCHANGEREDIS` | `db.redis` |
 | WCF client | `System.ServiceModel.Primitives` `10.0.652802` | `System.ServiceModel.ClientBase<TChannel>` | `WCFCLIENT` | `rpc.wcf.client` |
 
-`System.Data.Common`, `Microsoft.Data.SqlClient` 7.0.2, `Microsoft.Data.Sqlite` 10.0.11,
-`Confluent.Kafka` 2.15.0, `StackExchange.Redis` 3.1.31 and `System.ServiceModel.*` declare no
+`System.Data.Common`, `Microsoft.Data.SqlClient` 7.1.1, `Microsoft.Data.Sqlite` 10.0.12,
+`Confluent.Kafka` 2.16.0, `StackExchange.Redis` 3.4.0 and `System.ServiceModel.*` declare no
 `ActivitySource` at the pinned version, so the rule puts them here. There is no longer an
 integration in this table whose library owns a native source: the four database providers that did
 — Npgsql, MySqlConnector, MySql.Data and Oracle ODP.NET — moved to the table above in 15.0.0, and
@@ -259,7 +259,7 @@ qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql
 `NServiceBus.Core`'s native instruments exported registers them through
 `OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` or `QylSdkOptions.AdditionalMeters`.
 
-The full 66-row contract, with every environment control and instrumentation option, its evidence
+The full 70-row contract, with every environment control and instrumentation option, its evidence
 level and its authoritative source, is the generated
 [coverage matrix](contracts/coverage-matrix.md).
 
@@ -377,7 +377,7 @@ it receives: the library's keys, the vendor keys it passes through and the
 
 `--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is closed by
 changing what the instrumentation writes or by declaring the key in the registry, never by waving it
-through. Against the `v9.3.0` registry the lanes report zero violations.
+through. Against the `v9.8.0` registry the lanes report zero violations.
 
 How a finding is *levelled* is the registry's decision, and it takes two flags that must travel
 together:
@@ -426,7 +426,7 @@ and only then creates the GitHub release. A push to `main` builds and verifies t
 workflows and never publishes.
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
-ahead of the rest of qyl: a `15.x` package pairs with `QylGeneratedCodeAbi.V15` and nothing else.
+ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.
 
 Two files name the semantic-convention release and they must agree: the
 `Qyl.Telemetry.SemanticConventions` `PackageVersion` in `Directory.Packages.props`, whose generated
@@ -452,7 +452,7 @@ a green gate.
 - Generator snapshots prove emitted source shape; protocol interoperability requires a real OTLP
   receiver and structural decoding of the official protobuf messages.
 - MassTransit 9 is commercially licensed and is neither referenced nor redistributed here; the demo
-  pin is the Apache-2.0 range `[8.5.10,9.0.0)`.
+  pin is the Apache-2.0 range `[8.5.11,9.0.0)`.
 
 ## License
 
