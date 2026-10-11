@@ -16,9 +16,13 @@ is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript loc
   the `## [x.y.z]` entry in `CHANGELOG.md`; the tag names that commit. The CHANGELOG entry
   becomes the GitHub release notes.
 - Release command: `./release.sh <x.y.z> --dry-run`, then `./release.sh <x.y.z>` (`dotnet pack`
-  per project, push, tag, GitHub release, wait for indexing). The NativeAOT consumer gates
-  (`python3 tools/verify-aot-publish-gate.py`, requirements in `tools/requirements.txt`) are
-  not part of the command; run them before a release that touches AOT-relevant code.
+  per project, push, tag, GitHub release, wait for indexing).
+- Gates in three tiers, so day-to-day work stays fast: `mise run check` (release build plus the
+  goal verifier) before every push; `make verify` (the former CI lanes without Docker: build,
+  goal-verifier floor, smoke, OTLP receiver evidence, web API AOT demo, AOT publish gate) once
+  before a release; `make all` (adds the Docker real-library demos and the live check) only when
+  the change touches those integrations. `make deps` once per machine installs the Python
+  verifier requirements. `make help` lists every lane as its own target.
 - Key: `vitals keys` entry "qyl-dev manual publish and release (NuGet)", file
   `~/.config/vitals/nuget-qyl-manual-publish-key`. The script reads it; never print, paste,
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
