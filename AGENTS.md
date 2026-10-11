@@ -55,7 +55,7 @@ Release acts. The version source changes in the PR; the act runs after it merges
 | Repo | Version source | Release act | Index wait |
 |---|---|---|---|
 | qyl-api-schema | the tag only | `gh release create vX.Y.Z --target <sha> --title vX.Y.Z --notes …` | the workflow waits for npm and NuGet |
-| SemanticConventions | `Directory.Build.props` `VersionPrefix` and a `CHANGELOG.md` entry | `git tag vX.Y.Z <sha> && git push origin vX.Y.Z` | none: poll `https://api.nuget.org/v3-flatcontainer/qyl.telemetry.semanticconventions/index.json` yourself |
+| SemanticConventions | `Directory.Build.props` `VersionPrefix`, `registry/manifest.yaml` `schema_url` and a `CHANGELOG.md` entry; then run `scripts/generate.sh`, which rejects a `schema_url` that differs from `VersionPrefix` | `git tag vX.Y.Z <sha> && git push origin vX.Y.Z` | the workflow requires `qyl.at/schemas/<version>` to be served, then verifies the published packages against nuget.org |
 | AutoInstrumentation | `Directory.Build.props` `Version` | push tag `v<Version>` | the workflow waits for NuGet |
 | qyl | `Version.props` `QylVersion`; bump it before the first package-affecting commit after a release | push tag `v<QylVersion>`; the workflow creates the GitHub release | the workflow waits for NuGet |
 | qyl.mcp | `server/package.json` `version`, plus a `server/README.md` release-notes entry | `gh release create vX.Y.Z --target <sha> --title X.Y.Z --notes …` | the workflow smokes the published package with `npx` |
