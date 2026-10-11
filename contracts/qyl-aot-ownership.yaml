@@ -1,6 +1,6 @@
 schema_id: qyl-aot-ownership
 schema_version: 1.0.0
-source_contract: docs/contracts/otel-dotnet-auto-60.upstream.yaml
+source_contract: contracts/otel-dotnet-auto.upstream.yaml
 ownership_items:
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_001
   key: signals.traces.ADONET
@@ -456,7 +456,7 @@ ownership_items:
     opt_in_attributes: []
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_020
   key: signals.traces.QUARTZ
-  supported_versions: Quartz >=4.0.0; verified against 4.0.0; native ActivitySource "Quartz" (3.x used DiagnosticListener and has none)
+  supported_versions: Quartz >=4.0.0; verified against 4.4.0; native ActivitySource "Quartz" (3.x used DiagnosticListener and has none)
   lane: native_source
   qyl_status: implemented
   call_site_visibility: library_internal
@@ -1083,3 +1083,21 @@ ownership_items:
     SqlClient to emit the trace context to SQL Server. This package family targets .NET and excludes
     runtime IL rewriting by definition, so neither half of the option has a substrate-legal mechanism.'
   evidence: []
+- contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_064
+  key: signals.metrics.QUARTZ
+  supported_versions: Quartz >=4.0.0 on .NET 10+; verified against 4.4.0; native Meter "Quartz"
+  lane: runtime_public_telemetry
+  qyl_status: implemented
+  call_site_visibility: library_internal
+  payload_access: typed_public
+  evidence_level: verified_managed
+  primary_owner: Quartz's own Quartz Meter subscribed by QylMetricMeters through Qyl.Telemetry.Hosting
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/QylNativeSignals.cs
+  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - demos/Qyl.RealQuartzDemo
+  - tools/verify-real-quartz-demo.py
+  notes:
+  - Native Quartz metrics are forwarded without recreating instruments or rewriting their dimensions. NativeAOT remains outside
+    the verified boundary.

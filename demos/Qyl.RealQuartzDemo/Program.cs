@@ -6,7 +6,9 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
 using Quartz;
+using Quartz.Diagnostics;
 using Qyl;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using QuartzAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Quartz.QuartzAttributes;
@@ -16,6 +18,7 @@ using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNa
 // The real registration path: AddQyl subscribes to Quartz's own ActivitySource and installs the one
 // native-span processor.
 var exportedActivities = new List<Activity>();
+var exportedMetrics = new List<Metric>();
 var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 {
     ApplicationName = "Qyl.RealQuartzDemo",
@@ -30,11 +33,13 @@ builder.AddQyl(options =>
         new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
     options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
-    options.EnableMetricsExport = false;
+    options.EnableMetricsExport = true;
     options.EnableSessionPropagation = false;
 });
 builder.Services.AddOpenTelemetry()
-    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
+    .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities))
+    // AddQyl alone owns the meter subscription; adding one here would hide a registration gap.
+    .WithMetrics(metrics => metrics.AddInMemoryExporter(exportedMetrics));
 
 using var host = builder.Build();
 await host.StartAsync();
@@ -59,11 +64,19 @@ await scheduler.Shutdown(waitForJobsToComplete: true);
 Console.WriteLine("scheduler-fired=true");
 
 host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+host.Services.GetRequiredService<MeterProvider>().ForceFlush(5_000);
+var jobMetrics = exportedMetrics
+    .Where(static metric => metric.MeterName == QuartzInstrumentation.MeterName &&
+        metric.Name == QuartzInstrumentation.Instruments.JobExecutionDuration)
+    .SelectMany(CapturedJobMetric.From)
+    .ToArray();
 await host.StopAsync();
 
 var report = QuartzReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    exportedActivities.Select(CapturedActivity.From).ToArray());
+    exportedActivities.Select(CapturedActivity.From).ToArray(),
+    !args.Contains("--expect-no-quartz-metrics", StringComparer.Ordinal),
+    jobMetrics);
 
 var json = JsonSerializer.Serialize(report, RealQuartzJsonContext.Default.QuartzReport);
 Console.WriteLine(json);
@@ -117,11 +130,29 @@ internal sealed record CapturedActivity(
                 StringComparer.Ordinal));
 }
 
+internal sealed record CapturedJobMetric(string Unit, long Count, double Sum, IReadOnlyDictionary<string, string> Tags)
+{
+    public static IEnumerable<CapturedJobMetric> From(Metric metric)
+    {
+        var captured = new List<CapturedJobMetric>();
+        foreach (ref readonly var point in metric.GetMetricPoints())
+        {
+            var tags = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var tag in point.Tags)
+                tags.Add(tag.Key, Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty);
+            captured.Add(new CapturedJobMetric(metric.Unit, point.GetHistogramCount(), point.GetHistogramSum(), tags));
+        }
+        return captured;
+    }
+}
+
 internal sealed record QuartzReport(
     string RuntimeMode,
     bool Pass,
     string[] Failures,
-    CapturedActivity[] Activities)
+    CapturedActivity[] Activities,
+    bool ExpectedMetricsEnabled,
+    CapturedJobMetric[] JobMetrics)
 {
     internal const string ProbeJobName = "qyl-probe";
     internal const string FailingJobName = "qyl-failing";
@@ -129,7 +160,7 @@ internal sealed record QuartzReport(
     // Quartz's own name for the span covering one firing, Quartz.Diagnostics.OperationName.Job.Execute.
     private const string ExecuteSpanName = "Quartz.Job.Execute";
 
-    public static QuartzReport Create(string runtimeMode, CapturedActivity[] activities)
+    public static QuartzReport Create(string runtimeMode, CapturedActivity[] activities, bool metricsEnabled, CapturedJobMetric[] jobMetrics)
     {
         var failures = new List<string>();
 
@@ -180,7 +211,34 @@ internal sealed record QuartzReport(
         else
             RequireTag(failingSpan, ErrorAttributes.Type, typeof(InvalidOperationException).FullName!, failures);
 
-        return new QuartzReport(runtimeMode, failures.Count is 0, failures.ToArray(), executeSpans);
+        if (metricsEnabled)
+        {
+            foreach (var jobName in new[] { ProbeJobName, FailingJobName })
+            {
+                var matching = jobMetrics.Where(metric =>
+                    metric.Tags.TryGetValue(QuartzAttributes.JobName, out var name) && name == jobName).ToArray();
+                if (matching.Length != 1 || matching[0].Count != 1 || matching[0].Unit != "s" || matching[0].Sum < 0)
+                    failures.Add($"expected one duration measurement in seconds for '{jobName}'");
+                else
+                {
+                    var metric = matching[0];
+                    if (!metric.Tags.ContainsKey(QuartzAttributes.JobGroup) || !metric.Tags.ContainsKey(QuartzAttributes.SchedulerName))
+                        failures.Add($"missing native dimensions for '{jobName}'");
+                    var expectedResult = jobName == FailingJobName ? "failed" : "succeeded";
+                    if (!metric.Tags.TryGetValue(QuartzAttributes.JobResult, out var result) || result != expectedResult)
+                        failures.Add($"expected result '{expectedResult}' for '{jobName}'");
+                    if (jobName == FailingJobName && (!metric.Tags.TryGetValue(ErrorAttributes.Type, out var error) ||
+                        error != typeof(InvalidOperationException).FullName))
+                        failures.Add("missing failed job metric's error.type");
+                }
+            }
+            if (jobMetrics.Length != 2)
+                failures.Add("expected exactly two job duration series");
+        }
+        else if (jobMetrics.Length is not 0)
+            failures.Add("Quartz metrics were exported while disabled");
+
+        return new QuartzReport(runtimeMode, failures.Count is 0, failures.ToArray(), executeSpans, metricsEnabled, jobMetrics);
     }
 
     private static void RequireTag(CapturedActivity span, string key, string expected, ICollection<string> failures)

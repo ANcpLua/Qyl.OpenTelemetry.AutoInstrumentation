@@ -32,7 +32,7 @@ def parse_report(stdout: str) -> dict[str, Any]:
     return report
 
 
-def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str) -> None:
+def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str, metrics_enabled: bool) -> None:
     if completed.returncode != 0:
         fail(
             f"{name} failed\n"
@@ -58,13 +58,18 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     # the same source; the demo reports only the firings.
     if not isinstance(activities, list) or len(activities) != 2:
         fail(f"{name} expected exactly 2 Quartz job-execute activities, got {activities!r}")
+    if report.get("ExpectedMetricsEnabled") is not metrics_enabled:
+        fail(f"{name} metrics expectation mismatch: {report.get('ExpectedMetricsEnabled')!r}")
+    job_metrics = report.get("JobMetrics")
+    expected_series = 2 if metrics_enabled else 0
+    if not isinstance(job_metrics, list) or len(job_metrics) != expected_series:
+        fail(f"{name} expected {expected_series} job duration series, got {job_metrics!r}")
 
 
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
+def run_managed(env: dict[str, str], metrics_enabled: bool) -> subprocess.CompletedProcess[str]:
     assembly = artifacts_bin_assembly(PROJECT)
     return subprocess.run(
-        ["dotnet", str(assembly)],
+        ["dotnet", str(assembly)] + ([] if metrics_enabled else ["--expect-no-quartz-metrics"]),
         cwd=PROJECT.parent,
         env=env,
         text=True,
@@ -76,8 +81,19 @@ def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
-    verify_report("managed Quartz demo", managed, "dynamic-code-supported")
+    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
+    cases = [
+        ("default", {}, True),
+        ("Quartz metrics disabled", {"OTEL_DOTNET_AUTO_METRICS_QUARTZ_INSTRUMENTATION_ENABLED": "false"}, False),
+        ("all metrics disabled", {"OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED": "false"}, False),
+        ("Quartz metrics override", {
+            "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED": "false",
+            "OTEL_DOTNET_AUTO_METRICS_QUARTZ_INSTRUMENTATION_ENABLED": "true",
+        }, True),
+    ]
+    for name, overrides, metrics_enabled in cases:
+        verify_report(name, run_managed(env | overrides, metrics_enabled), "dynamic-code-supported", metrics_enabled)
+        print(f"  - {name}: traces=2 job-duration-series={2 if metrics_enabled else 0}")
     print("real-quartz-demo-ok")
 
 

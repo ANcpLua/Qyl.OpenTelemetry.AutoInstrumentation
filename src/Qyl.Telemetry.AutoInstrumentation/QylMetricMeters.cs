@@ -28,6 +28,8 @@ internal static class QylMetricMeters
     internal const string NServiceBusNativeIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
     /// <summary>The runtime's built-in meter (GC, JIT, thread pool, exceptions, process CPU and memory). qyl subscribes to it and produces nothing on it.</summary>
     internal const string RuntimeMeterName = QylTelemetryNames.Scopes.SystemRuntime;
+    /// <summary>Quartz 4's library-native meter, published as QuartzInstrumentation.MeterName.</summary>
+    internal const string QuartzNativeMeterName = "Quartz";
 
     /// <summary>
     /// The meter names each instrumentation id contributes, in registration order. Two ids may name
@@ -57,6 +59,7 @@ internal static class QylMetricMeters
         (QylAutoInstrumentationIds.SqlClient, [DatabaseMeterName]),
         (QylAutoInstrumentationIds.NetRuntime, [RuntimeMeterName]),
         (QylAutoInstrumentationIds.Process, [RuntimeMeterName]),
+        (QylAutoInstrumentationIds.Quartz, [QuartzNativeMeterName]),
     ];
 
     internal static string[] GetEnabledMeterNames()

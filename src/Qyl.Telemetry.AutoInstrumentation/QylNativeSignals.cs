@@ -48,6 +48,7 @@ internal sealed class QylSignalAttribute : Attribute
 [QylSignal(QylAutoInstrumentationIds.OracleMda, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.Process, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.Quartz, QylAutoInstrumentationSignal.Traces)]
+[QylSignal(QylAutoInstrumentationIds.Quartz, QylAutoInstrumentationSignal.Metrics)]
 [QylSignal(QylAutoInstrumentationIds.RabbitMq, QylAutoInstrumentationSignal.Traces)]
 [QylSignal(QylAutoInstrumentationIds.WcfCore, QylAutoInstrumentationSignal.Traces)]
 internal static class QylNativeSignals;

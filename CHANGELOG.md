@@ -5,6 +5,26 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
+## [23.1.0] - 2026-10-11
+
+### Added
+
+- Subscribe to Quartz 4's native `Quartz` meter by default. The existing metrics configuration
+  now binds `QUARTZ`, including per-instrumentation overrides. Quartz owns the instruments and
+  dimensions; qyl forwards them. The real Quartz demo verifies successful and failed scheduler
+  executions, duration histogram counts in seconds, native result/error dimensions, disabling
+  metrics globally or for Quartz, and explicitly re-enabling Quartz over a global disable.
+  Quartz's NativeAOT evidence remains managed-only.
+
+### Changed
+
+- Refresh the upstream comparison contract to .NET AutoInstrumentation `v1.17.0` (released
+  2026-09-22), adding its Quartz metrics promise and current Quartz/Redis version boundaries.
+  qyl remains an independent implementation. The OpenTelemetry SDK stays at `1.19.1` and
+  SemanticConventions at `9.7.0`, already the newest stable versions used by this repo.
+- Refresh the qyl-native contract's verified Microsoft.Extensions.AI `10.10.0` and
+  Microsoft.Agents.AI/Workflows `1.24.0` paths to match the existing package pins.
+
 ## [23.0.0] - 2026-10-10
 
 ### Changed
