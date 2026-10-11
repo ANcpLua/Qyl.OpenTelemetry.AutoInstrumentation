@@ -9,7 +9,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, fail, read_version, run_checked, run_executable, runtime_identifier
+from verify_helpers import clean_env, fail, read_version, run_checked, run_nativeaot, runtime_identifier
 
 try:
     import fcntl
@@ -162,7 +162,7 @@ def main() -> None:
         pack_runtime(feed, env)
         project = write_project(root / "consumer", feed, packages, version)
         executable = publish_nativeaot(project, publish, env)
-        completed = run_executable(executable, env)
+        completed = run_nativeaot(executable, env)
 
     if completed.returncode != 0:
         fail(

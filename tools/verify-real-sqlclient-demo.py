@@ -19,7 +19,7 @@ from verify_helpers import (
     find_free_port,
     parse_report,
     run_checked,
-    run_executable,
+    run_nativeaot,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -191,8 +191,8 @@ def main() -> None:
         source_managed = run_managed(source_managed_assembly, source_env)
         source_managed_optin = run_managed(source_managed_assembly, source_optin_env)
         source_native_executable = publish_nativeaot(source_env, source_interceptors=True)
-        source_native = run_executable(source_native_executable, source_env)
-        source_native_optin = run_executable(source_native_executable, source_optin_env)
+        source_native = run_nativeaot(source_native_executable, source_env)
+        source_native_optin = run_nativeaot(source_native_executable, source_optin_env)
 
         specialist_env = dict(env)
         specialist_env["QYL_SQLCLIENT_EXPECTED_TRACE_OWNER"] = "specialist_listener"
@@ -202,8 +202,8 @@ def main() -> None:
         specialist_managed = run_managed(specialist_managed_assembly, specialist_env)
         specialist_managed_optin = run_managed(specialist_managed_assembly, specialist_optin_env)
         specialist_native_executable = publish_nativeaot(specialist_env, source_interceptors=False)
-        specialist_native = run_executable(specialist_native_executable, specialist_env)
-        specialist_native_optin = run_executable(specialist_native_executable, specialist_optin_env)
+        specialist_native = run_nativeaot(specialist_native_executable, specialist_env)
+        specialist_native_optin = run_nativeaot(specialist_native_executable, specialist_optin_env)
 
     source_runs = [
         ("managed SqlClient source-interceptor demo", source_managed, "dynamic-code-supported"),

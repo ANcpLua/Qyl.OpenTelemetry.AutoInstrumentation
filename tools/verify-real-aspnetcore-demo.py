@@ -25,7 +25,7 @@ from verify_helpers import (
     fail,
     parse_report,
     run_checked,
-    run_executable,
+    run_nativeaot,
     runtime_identifier,
 )
 
@@ -174,8 +174,8 @@ def main() -> None:
     managed = run_managed(managed_assembly, env)
     managed_optin = run_managed(managed_assembly, optin_env)
     nativeaot_executable = publish_nativeaot(env)
-    nativeaot = run_executable(nativeaot_executable, env)
-    nativeaot_optin = run_executable(nativeaot_executable, optin_env)
+    nativeaot = run_nativeaot(nativeaot_executable, env)
+    nativeaot_optin = run_nativeaot(nativeaot_executable, optin_env)
 
     verify_report("managed ASP.NET Core demo", managed, "dynamic-code-supported")
     verify_report("managed ASP.NET Core demo (capture opt-in)", managed_optin, "dynamic-code-supported")

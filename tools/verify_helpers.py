@@ -125,7 +125,7 @@ def run_managed(project: Path, env: dict[str, str]) -> subprocess.CompletedProce
     )
 
 
-def run_executable(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+def run_nativeaot(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [str(executable)],
         cwd=executable.parent,

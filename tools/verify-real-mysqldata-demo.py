@@ -17,7 +17,7 @@ from verify_helpers import (
     fail,
     parse_report,
     run_checked,
-    run_executable,
+    run_nativeaot,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -270,7 +270,7 @@ def main() -> None:
         optin_env["OTEL_SEMCONV_STABILITY_OPT_IN"] = "database"
         optin = run_managed(optin_env)
 
-        nativeaot = run_executable(executable, env)
+        nativeaot = run_nativeaot(executable, env)
 
     managed_report = verify_report("managed MySql.Data demo", managed, "dynamic-code-supported")
     optin_report = verify_report("managed MySql.Data demo (stability opt-in)", optin, "dynamic-code-supported")

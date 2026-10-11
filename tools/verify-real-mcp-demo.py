@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, fail, run_checked, run_executable
+from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, fail, run_checked, run_nativeaot
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -237,9 +237,9 @@ def main() -> None:
     )
 
     executable = publish_nativeaot(env)
-    nativeaot = run_executable(executable, env)
+    nativeaot = run_nativeaot(executable, env)
     verify_report("NativeAOT MCP demo", nativeaot, "nativeaot", registration_enabled=True)
-    nativeaot_disabled = run_executable(executable, disabled_env)
+    nativeaot_disabled = run_nativeaot(executable, disabled_env)
     verify_report(
         "NativeAOT MCP demo (registration disabled)",
         nativeaot_disabled,
