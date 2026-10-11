@@ -6,32 +6,12 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, NoReturn
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import artifacts_publish_dir, clean_env, fail, parse_report, run_checked, run_managed
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealEfCoreDemo" / "Qyl.RealEfCoreDemo.csproj"
 TARGET_FRAMEWORK = "net10.0"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def parse_report(stdout: str) -> dict[str, Any]:
-    start = stdout.find("{\n")
-    if start < 0:
-        fail(f"EFCore demo did not emit JSON report\nstdout={stdout}")
-
-    try:
-        report = json.loads(stdout[start:])
-    except json.JSONDecodeError as exc:
-        fail(f"EFCore demo emitted invalid JSON report: {exc}\nstdout={stdout}")
-
-    if not isinstance(report, dict):
-        fail(f"EFCore demo report must be a JSON object: {report!r}")
-    return report
 
 
 def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str) -> None:
@@ -46,7 +26,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if "expected-failure=SqliteException" not in completed.stdout:
         fail(f"{name} missing expected EFCore failure token\nstdout={completed.stdout}")
 
-    report = parse_report(completed.stdout)
+    report = parse_report("EFCore demo", completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("Pass") is not True:
@@ -55,20 +35,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     activities = report.get("Activities")
     if not isinstance(activities, list) or len(activities) != 3:
         fail(f"{name} expected exactly 3 EFCore activities, got {activities!r}")
-
-
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = artifacts_bin_assembly(PROJECT)
-    return subprocess.run(
-        ["dotnet", str(assembly)],
-        cwd=PROJECT.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
 
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -94,7 +60,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
+    managed = run_managed(PROJECT, env)
     nativeaot = run_nativeaot(env)
     verify_report("managed EFCore demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT EFCore demo", nativeaot, "nativeaot")
@@ -106,7 +72,7 @@ def main() -> None:
     optin_env = dict(env)
     optin_env["OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT"] = "true"
     optin_env["AOT_PUBLISH_GATE_SET"] = env.get("AOT_PUBLISH_GATE_SET", "warned")
-    verify_report("managed EFCore demo (statement opt-in)", run_managed(optin_env), "dynamic-code-supported")
+    verify_report("managed EFCore demo (statement opt-in)", run_managed(PROJECT, optin_env), "dynamic-code-supported")
     verify_report("NativeAOT EFCore demo (statement opt-in)", run_nativeaot(optin_env), "nativeaot")
     print("real-efcore-demo-ok")
 

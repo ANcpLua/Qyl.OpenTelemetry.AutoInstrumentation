@@ -5,8 +5,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from verify_helpers import clean_env, read_version, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, read_version, run_checked
 
 try:
     import fcntl
@@ -47,10 +46,6 @@ FORBIDDEN_CONTENT_TOKENS = [
     "Activator.CreateInstance",
     "dynamic ",
 ]
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> Path:

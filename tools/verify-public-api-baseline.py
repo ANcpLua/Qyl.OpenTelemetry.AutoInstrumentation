@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import NoReturn
+
+from verify_helpers import fail
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,10 +28,6 @@ EXCLUDED_PROJECTS = [
     "Qyl.RealSessionPropagationDemo",
     "Qyl.RealSqlClientDemo",
 ]
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def verify_props() -> None:

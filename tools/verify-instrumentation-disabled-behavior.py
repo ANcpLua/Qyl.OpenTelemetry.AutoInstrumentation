@@ -20,8 +20,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, read_version, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, read_version, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation" / "Qyl.Telemetry.AutoInstrumentation.csproj"
@@ -150,10 +149,6 @@ internal sealed class ProbeParameterCollection : DbParameterCollection
     protected override void SetParameter(string parameterName, DbParameter value) => throw new NotSupportedException();
 }
 '''
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:

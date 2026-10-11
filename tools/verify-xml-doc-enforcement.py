@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import NoReturn
+
+from verify_helpers import fail
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,10 +16,6 @@ REQUIRED_TOKENS = [
     "<GenerateDocumentationFile>true</GenerateDocumentationFile>",
     "<WarningsAsErrors>$(WarningsAsErrors);CS1591</WarningsAsErrors>",
 ]
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def verify_project_contract(project: Path, label: str) -> None:

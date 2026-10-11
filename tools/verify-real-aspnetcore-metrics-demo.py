@@ -6,32 +6,12 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, NoReturn
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import artifacts_publish_dir, clean_env, fail, parse_report, run_checked, run_managed
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealAspNetCoreMetricsDemo" / "Qyl.RealAspNetCoreMetricsDemo.csproj"
 TARGET_FRAMEWORK = "net10.0"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def parse_report(stdout: str) -> dict[str, Any]:
-    start = stdout.find("{\n")
-    if start < 0:
-        fail(f"ASP.NET Core metrics demo did not emit JSON report\nstdout={stdout}")
-
-    try:
-        report = json.loads(stdout[start:])
-    except json.JSONDecodeError as exc:
-        fail(f"ASP.NET Core metrics demo emitted invalid JSON report: {exc}\nstdout={stdout}")
-
-    if not isinstance(report, dict):
-        fail(f"ASP.NET Core metrics demo report must be a JSON object: {report!r}")
-    return report
 
 
 def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str) -> None:
@@ -43,7 +23,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stderr:
         fail(f"{name} wrote stderr:\n{completed.stderr}")
 
-    report = parse_report(completed.stdout)
+    report = parse_report("ASP.NET Core metrics demo", completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("Pass") is not True:
@@ -52,20 +32,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     metrics = report.get("Metrics")
     if not isinstance(metrics, list) or len(metrics) < 3:
         fail(f"{name} expected at least 3 ASP.NET Core component metrics, got {metrics!r}")
-
-
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = artifacts_bin_assembly(PROJECT)
-    return subprocess.run(
-        ["dotnet", str(assembly)],
-        cwd=PROJECT.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
 
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -91,7 +57,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
+    managed = run_managed(PROJECT, env)
     nativeaot = run_nativeaot(env)
     verify_report("managed ASP.NET Core metrics demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT ASP.NET Core metrics demo", nativeaot, "nativeaot")

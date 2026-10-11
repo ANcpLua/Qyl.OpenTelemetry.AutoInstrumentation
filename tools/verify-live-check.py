@@ -32,8 +32,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from verify_helpers import LIVE_CHECK_ENDPOINT_VARIABLE, clean_env
-from typing import NoReturn
+from verify_helpers import LIVE_CHECK_ENDPOINT_VARIABLE, clean_env, fail
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_PROPS = ROOT / "Directory.Packages.props"
@@ -72,10 +71,6 @@ LANES = [
     "quartz",
     "rabbitmq",
 ]
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def read_property(path: Path, pattern: str, what: str) -> str:

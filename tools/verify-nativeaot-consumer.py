@@ -2,12 +2,10 @@
 from __future__ import annotations
 
 import platform
-import subprocess
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, read_version, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, read_version, run_checked, run_nativeaot, runtime_identifier
 
 try:
     import fcntl
@@ -109,23 +107,6 @@ url.full=http://127.0.0.1:1/nativeaot/client?*
 """
 
 
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT gate platform: {platform.system()} {platform.machine()}")
-
-
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:
     feed.mkdir(parents=True)
     with PACK_LOCK_PATH.open("w", encoding="utf-8") as lock:
@@ -180,7 +161,7 @@ def publish_nativeaot(project: Path, output: Path, env: dict[str, str]) -> Path:
             "-c",
             "Release",
             "-r",
-            runtime_identifier(),
+            runtime_identifier("NativeAOT gate"),
             "-p:PublishAot=true",
             "--self-contained",
             "true",
@@ -199,18 +180,6 @@ def publish_nativeaot(project: Path, output: Path, env: dict[str, str]) -> Path:
     return executable
 
 
-def run_executable(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [str(executable)],
-        cwd=executable.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-
-
 def main() -> None:
     env = clean_env()
     version = read_version()
@@ -222,7 +191,7 @@ def main() -> None:
         pack_runtime(feed, env)
         project = write_project(root / "consumer", feed, packages, version)
         executable = publish_nativeaot(project, publish, env)
-        completed = run_executable(executable, env)
+        completed = run_nativeaot(executable, env)
 
     if completed.returncode != 0:
         fail(

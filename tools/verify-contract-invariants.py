@@ -22,22 +22,21 @@ public API surface is owned by tools/verify-public-api-baseline.py.
 from __future__ import annotations
 
 import functools
-import importlib.util
 import re
 import subprocess
 from pathlib import Path
 from types import ModuleType
-from typing import Any, NoReturn
+from typing import Any
 
 from generator_manifest_coverage import (
     ManifestCoverageError,
     parse_generated_interceptor_source,
     parse_verified_manifest_artifact,
 )
+from verify_helpers import fail, load_artifacts
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
 GENERATOR_PATH = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs"
 RUNTIME_SOURCE_ROOT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation"
 DECLARATIONS_PATH = RUNTIME_SOURCE_ROOT / "QylDeclarations.cs"
@@ -307,19 +306,6 @@ RECORDED_SYSTEM_VALUE_GAPS = {
     ("dotnet_wcf", "src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedWcfClient.cs"),
 }
 RECORDED_SYSTEM_VALUE_GAP_COMMENT = "rpc.system.name enumerates only connectrpc, dubbo, grpc and jsonrpc"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def load_artifacts() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("qyl_contract_artifacts", ARTIFACTS_PATH)
-    if spec is None or spec.loader is None:
-        fail(f"cannot load contract artifact generator: {ARTIFACTS_PATH}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def generator_partial_paths():

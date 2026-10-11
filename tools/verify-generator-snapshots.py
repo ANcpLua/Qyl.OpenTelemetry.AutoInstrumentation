@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from generator_manifest_coverage import ManifestCoverageError, collect_live_manifest_artifact
-from typing import NoReturn
+from verify_helpers import fail
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,10 +48,6 @@ FORBIDDEN_INTERCEPTOR_TOKENS = [
     "QylActivitySource",
     ".SetTag(",
 ]
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def run_build() -> str:

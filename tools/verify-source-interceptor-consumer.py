@@ -6,8 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, read_version, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, read_version, run_checked, runtime_identifier
 
 try:
     import fcntl
@@ -99,10 +98,6 @@ activity.statuses=error|ok|ok|ok
 """
 
 
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:
     feed.mkdir(parents=True)
     with PACK_LOCK_PATH.open("w", encoding="utf-8") as lock:
@@ -145,18 +140,6 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
     return project
 
 
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-    fail(f"unsupported NativeAOT platform: {platform.system()} {platform.machine()}")
-
-
 def verify_generated_source(directory: Path) -> None:
     generated = sorted((directory / "Generated").rglob("QylAutoInstrumentation.Interceptors.g.cs"))
     if len(generated) != 1:
@@ -179,7 +162,7 @@ def run_consumer(project: Path, env: dict[str, str], *, nativeaot: bool) -> subp
         output = project.parent / "publish"
         run_checked(
             [
-                "dotnet", "publish", str(project), "-c", "Release", "-r", runtime_identifier(),
+                "dotnet", "publish", str(project), "-c", "Release", "-r", runtime_identifier("NativeAOT"),
                 "-p:PublishAot=true", "--self-contained", "true", "-o", str(output), "-v", "quiet",
             ],
             project.parent,
