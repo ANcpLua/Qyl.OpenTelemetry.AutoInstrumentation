@@ -45,7 +45,7 @@ done < <(find src -mindepth 2 -maxdepth 2 -name '*.csproj' | sort)
 (( ${#projects[@]} > 0 )) || die "no packable project under src/"
 for p in "${projects[@]}"; do
   id=$(basename "$p" .csproj)
-  indexed "$id" "$version" && die "$id $version is already on NuGet"
+  if indexed "$id" "$version"; then (( dry )) || die "$id $version is already on NuGet"; echo "warning: $id $version is already on NuGet; the real run refuses"; fi
 done
 echo "packages: ${#projects[@]}"
 
