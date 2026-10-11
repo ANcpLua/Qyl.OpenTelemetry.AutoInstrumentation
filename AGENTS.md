@@ -1,4 +1,4 @@
-# Qyl.OpenTelemetry.AutoInstrumentation
+# Qyl.Telemetry.AutoInstrumentation
 
 ## Ownership and upstream versions
 

@@ -360,7 +360,7 @@ python3 tools/verify-aot-autoinstrumentation-goal.py --skip "real mongodb demo,l
 — while `verify-live-check.py` names its demo lanes, one per row of the native-source table:
 
 ```bash
-QYL_SEMCONV_REGISTRY=../Qyl.OpenTelemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
+QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
 ```
 
 ## Live check
@@ -393,13 +393,13 @@ Passing only the second changes nothing for those three advisors, and an unreada
 silently, so the gate checks for both halves and refuses to run without them.
 
 The registry is a checkout of
-[Qyl.OpenTelemetry.SemanticConventions](https://github.com/ANcpLua/Qyl.OpenTelemetry.SemanticConventions),
+[Qyl.Telemetry.SemanticConventions](https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions),
 named by `QYL_SEMCONV_REGISTRY`, with `scripts/fetch-core.sh` already run so `registry/manifest.yaml`
 can resolve its filtered core dependency. The published NuGet packages carry the generated C#, not
 the registry itself, which is why the gate needs the source repository:
 
 ```bash
-QYL_SEMCONV_REGISTRY=../Qyl.OpenTelemetry.SemanticConventions python3 tools/verify-live-check.py
+QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py
 ```
 
 `--skip LANE[,LANE...]` skips a lane whose container this machine cannot run, and the skip is named
@@ -409,7 +409,7 @@ OrbStack's VM runs a 7.x kernel, and MongoDB 8 refuses to start on Linux 6.19 or
 listens, so the demo cannot connect. Run the other eight locally and let CI cover MongoDB:
 
 ```bash
-QYL_SEMCONV_REGISTRY=../Qyl.OpenTelemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
+QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
 ```
 
 One gap in coverage is recorded rather than hidden: **`RabbitMQ.Client.Subscriber` has no consuming

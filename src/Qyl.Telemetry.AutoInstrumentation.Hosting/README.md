@@ -34,6 +34,6 @@ Publishing with `-p:PublishAot=true` produces no trim, AOT or analyzer warning f
 ## More
 
 - The instrumented libraries and the qyl attributes:
-  [repository README](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation#readme)
+  [repository README](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation#readme)
 - Changes per version:
-  [CHANGELOG](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/blob/main/CHANGELOG.md)
+  [CHANGELOG](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation/blob/main/CHANGELOG.md)

@@ -25,6 +25,6 @@ the instrumentation never renames or drops what EF Core emitted.
 ## More
 
 - The full control contract with evidence:
-  [coverage matrix](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/blob/main/contracts/coverage-matrix.md)
+  [coverage matrix](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation/blob/main/contracts/coverage-matrix.md)
 - Changes per version:
-  [CHANGELOG](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/blob/main/CHANGELOG.md)
+  [CHANGELOG](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation/blob/main/CHANGELOG.md)

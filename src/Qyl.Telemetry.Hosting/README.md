@@ -68,9 +68,9 @@ Publishing with `-p:PublishAot=true` produces no trim, AOT or analyzer warning f
 ## More
 
 - Which libraries are instrumented, the toggles, and the qyl attributes:
-  [repository README](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation#readme)
+  [repository README](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation#readme)
 - Every environment control with its evidence:
-  [coverage matrix](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/blob/main/contracts/coverage-matrix.md)
+  [coverage matrix](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation/blob/main/contracts/coverage-matrix.md)
 - Changes per version:
-  [CHANGELOG](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/blob/main/CHANGELOG.md)
+  [CHANGELOG](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation/blob/main/CHANGELOG.md)
 - The product around it: [qyl.at](https://qyl.at/)

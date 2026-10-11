@@ -21,6 +21,6 @@ Every attribute the helpers write is a generated constant from
 ## More
 
 - How a library gets instrumented:
-  [repository README](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation#how-a-library-gets-instrumented)
+  [repository README](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation#how-a-library-gets-instrumented)
 - Changes per version:
-  [CHANGELOG](https://github.com/ANcpLua/Qyl.OpenTelemetry.AutoInstrumentation/blob/main/CHANGELOG.md)
+  [CHANGELOG](https://github.com/ANcpLua/Qyl.Telemetry.AutoInstrumentation/blob/main/CHANGELOG.md)
