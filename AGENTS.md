@@ -10,7 +10,7 @@ qyl owns the instrumentation implementation: Roslyn interceptors, public runtime
 
 ## Publishing across the qyl-dev repos
 
-Push to `main` directly; no pull request, review or CI wait is required. CI runs on the push and reports; nothing gates on it.
+Push to `main` directly; no pull request, review, approval or CI exists. The only gate is the repo's local command named in SKILL.md, run before the push.
 
 A release is done from the developer's machine with the registry API keys registered in Vitals (`vitals keys`): bump the version source, pack, push the packages to the registry, then tag `v<version>` on the released commit and create the GitHub release. No workflow publishes.
 
