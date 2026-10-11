@@ -51,7 +51,8 @@ is `mise run check`; packages are .NET only (`dotnet restore Qyl.Telemetry.AutoI
 ## Releasing
 
 1. Land the bump commit on `main`: `Directory.Build.props` `<Version>` and the CHANGELOG entry.
-2. `./release.sh <x.y.z> --dry-run`; fix whatever it refuses.
+2. `./release.sh <x.y.z> --dry-run` only when a step is new or unsure; otherwise go straight to
+   the release, the script refuses before it publishes when anything is off.
 3. `./release.sh <x.y.z>`.
 4. Watch indexing: the script polls the flat-container index of all six ids. If it ends with
    "not all indexed yet", keep polling every 30 s. Until all six are indexed, do nothing else
