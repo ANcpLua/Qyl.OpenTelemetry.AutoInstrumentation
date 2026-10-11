@@ -5,46 +5,21 @@ import json
 import platform
 import subprocess
 from pathlib import Path
-from typing import Any, NoReturn
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import (
+    artifacts_publish_dir,
+    clean_env,
+    fail,
+    parse_report,
+    run_checked,
+    run_managed,
+    runtime_identifier,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealElasticsearchDemo" / "Qyl.RealElasticsearchDemo.csproj"
 GENERATOR_PROJECT = ROOT / "src" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj"
 TARGET_FRAMEWORK = "net10.0"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT Elasticsearch gate platform: {platform.system()} {platform.machine()}")
-
-
-def parse_report(stdout: str) -> dict[str, Any]:
-    start = stdout.find("{\n")
-    if start < 0:
-        fail(f"Elasticsearch demo did not emit JSON report\nstdout={stdout}")
-
-    try:
-        report = json.loads(stdout[start:])
-    except json.JSONDecodeError as exc:
-        fail(f"Elasticsearch demo emitted invalid JSON report: {exc}\nstdout={stdout}")
-
-    if not isinstance(report, dict):
-        fail(f"Elasticsearch demo report must be a JSON object: {report!r}")
-    return report
 
 
 def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str) -> None:
@@ -59,7 +34,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if completed.stdout.count("expected-elasticsearch-error=TransportException") != 2:
         fail(f"{name} expected exactly 2 Elasticsearch error tokens\nstdout={completed.stdout}")
 
-    report = parse_report(completed.stdout)
+    report = parse_report("Elasticsearch demo", completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("Pass") is not True:
@@ -68,20 +43,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     activities = report.get("Activities")
     if not isinstance(activities, list) or len(activities) != 2:
         fail(f"{name} expected exactly 2 Elasticsearch activities, got {activities!r}")
-
-
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = artifacts_bin_assembly(PROJECT)
-    return subprocess.run(
-        ["dotnet", str(assembly)],
-        cwd=PROJECT.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
 
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -95,7 +56,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
             "-c",
             "Release",
             "-r",
-            runtime_identifier(),
+            runtime_identifier("NativeAOT Elasticsearch gate"),
             "-p:PublishAot=true",
             "--self-contained",
             "true",
@@ -124,7 +85,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
+    managed = run_managed(PROJECT, env)
     verify_report("managed Elasticsearch demo", managed, "dynamic-code-supported")
     nativeaot = run_nativeaot(env)
     verify_report("NativeAOT Elasticsearch demo", nativeaot, "nativeaot")

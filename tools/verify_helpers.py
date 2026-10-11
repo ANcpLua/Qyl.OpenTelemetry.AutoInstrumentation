@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import importlib.util
+import json
 import os
+import platform
 import shutil
+import socket
 import subprocess
 from pathlib import Path
+from types import ModuleType
+from typing import Any, NoReturn
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROPS_PATH = ROOT / "Directory.Build.props"
+ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
+
+
+def fail(message: str) -> NoReturn:
+    raise SystemExit(message)
 
 
 def remove_publish_outputs() -> str:
@@ -98,3 +109,72 @@ def run_checked(command: list[str], cwd: Path, env: dict[str, str]) -> subproces
         )
 
     return completed
+
+
+def run_managed(project: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    run_checked(["dotnet", "build", str(project), "-c", "Release", "-v", "quiet"], ROOT, env)
+    assembly = artifacts_bin_assembly(project)
+    return subprocess.run(
+        ["dotnet", str(assembly)],
+        cwd=project.parent,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def run_executable(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [str(executable)],
+        cwd=executable.parent,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+
+
+def runtime_identifier(gate: str) -> str:
+    system = platform.system().lower()
+    machine = platform.machine().lower()
+    if system == "darwin":
+        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
+    if system == "linux":
+        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
+    if system == "windows":
+        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
+
+    fail(f"unsupported {gate} platform: {platform.system()} {platform.machine()}")
+
+
+def parse_report(name: str, stdout: str) -> dict[str, Any]:
+    start = stdout.find("{\n")
+    if start < 0:
+        fail(f"{name} did not emit JSON report\nstdout={stdout}")
+
+    try:
+        report = json.loads(stdout[start:])
+    except json.JSONDecodeError as exc:
+        fail(f"{name} emitted invalid JSON report: {exc}\nstdout={stdout}")
+
+    if not isinstance(report, dict):
+        fail(f"{name} report must be a JSON object: {report!r}")
+    return report
+
+
+def find_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+
+
+def load_artifacts() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("qyl_contract_artifacts", ARTIFACTS_PATH)
+    if spec is None or spec.loader is None:
+        fail(f"cannot load contract artifact generator: {ARTIFACTS_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module

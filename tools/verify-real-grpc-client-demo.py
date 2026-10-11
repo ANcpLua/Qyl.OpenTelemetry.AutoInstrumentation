@@ -5,45 +5,20 @@ import json
 import platform
 import subprocess
 from pathlib import Path
-from typing import Any, NoReturn
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import (
+    artifacts_publish_dir,
+    clean_env,
+    fail,
+    parse_report,
+    run_checked,
+    run_managed,
+    runtime_identifier,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealGrpcClientDemo" / "Qyl.RealGrpcClientDemo.csproj"
 TARGET_FRAMEWORK = "net10.0"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT gRPC client gate platform: {platform.system()} {platform.machine()}")
-
-
-def parse_report(stdout: str) -> dict[str, Any]:
-    start = stdout.find("{\n")
-    if start < 0:
-        fail(f"gRPC client demo did not emit JSON report\nstdout={stdout}")
-
-    try:
-        report = json.loads(stdout[start:])
-    except json.JSONDecodeError as exc:
-        fail(f"gRPC client demo emitted invalid JSON report: {exc}\nstdout={stdout}")
-
-    if not isinstance(report, dict):
-        fail(f"gRPC client demo report must be a JSON object: {report!r}")
-    return report
 
 
 def verify_report(name: str, completed: subprocess.CompletedProcess[str], expected_runtime_mode: str) -> None:
@@ -58,7 +33,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     if "expected-failure=Unavailable" not in completed.stdout:
         fail(f"{name} missing expected gRPC failure token\nstdout={completed.stdout}")
 
-    report = parse_report(completed.stdout)
+    report = parse_report("gRPC client demo", completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("Pass") is not True:
@@ -79,20 +54,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         fail(f"{name} expected exactly 2 gRPC client activities, got {grpc_activities!r}")
 
 
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = artifacts_bin_assembly(PROJECT)
-    return subprocess.run(
-        ["dotnet", str(assembly)],
-        cwd=PROJECT.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-
-
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
     output = artifacts_publish_dir(PROJECT, "nativeaot")
     run_checked(
@@ -103,7 +64,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
             "-c",
             "Release",
             "-r",
-            runtime_identifier(),
+            runtime_identifier("NativeAOT gRPC client gate"),
             "-p:PublishAot=true",
             "--self-contained",
             "true",
@@ -132,7 +93,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
+    managed = run_managed(PROJECT, env)
     nativeaot = run_nativeaot(env)
     verify_report("managed gRPC client demo", managed, "dynamic-code-supported")
     verify_report("NativeAOT gRPC client demo", nativeaot, "nativeaot")
@@ -141,13 +102,13 @@ def main() -> None:
     # DiagnosticSource owner. Metadata is opt-in in both cases.
     client_env = dict(env)
     client_env["QYL_GRPC_DEMO_MODE"] = "client"
-    verify_report("managed gRPC client demo (client lane)", run_managed(client_env), "dynamic-code-supported")
+    verify_report("managed gRPC client demo (client lane)", run_managed(PROJECT, client_env), "dynamic-code-supported")
     verify_report("NativeAOT gRPC client demo (client lane)", run_nativeaot(client_env), "nativeaot")
 
     optin_env = dict(client_env)
     optin_env["OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA"] = "X-Demo-Md"
     optin_env["OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA"] = "X-Demo-Res-Md"
-    verify_report("managed gRPC client demo (metadata opt-in)", run_managed(optin_env), "dynamic-code-supported")
+    verify_report("managed gRPC client demo (metadata opt-in)", run_managed(PROJECT, optin_env), "dynamic-code-supported")
     verify_report("NativeAOT gRPC client demo (metadata opt-in)", run_nativeaot(optin_env), "nativeaot")
     print("real-grpc-client-demo-ok")
 

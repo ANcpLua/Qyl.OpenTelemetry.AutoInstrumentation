@@ -5,13 +5,11 @@ import argparse
 import difflib
 import json
 import platform
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, read_version, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, read_version, run_checked, run_executable, runtime_identifier
 
 try:
     import fcntl
@@ -44,23 +42,6 @@ EFCORE_COMPILED_MODEL_SOURCES = [
 ]
 
 PROGRAM_TEMPLATE_PATH = ROOT / "tools" / "Qyl.Telemetry.AutoInstrumentation.WebApiAotDemo" / "Program.cs"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT web API gate platform: {platform.system()} {platform.machine()}")
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:
@@ -126,25 +107,13 @@ def write_project(directory: Path, feed: Path, packages: Path, version: str) -> 
 def publish_nativeaot(project: Path, output: Path, env: dict[str, str]) -> Path:
     run_checked(
         [sys.executable, "tools/verify-aot-publish-gate.py", "--project", str(project),
-         "--policy", "WebApiAotDemo", "--output", str(output), "--rid", runtime_identifier(),
+         "--policy", "WebApiAotDemo", "--output", str(output), "--rid", runtime_identifier("NativeAOT web API gate"),
          "--strict-promotion"], ROOT, env)
     executable = output / ("WebApiAotDemo.exe" if platform.system().lower() == "windows" else "WebApiAotDemo")
     if not executable.exists():
         fail(f"NativeAOT web API executable missing: {executable}")
 
     return executable
-
-
-def run_executable(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [str(executable)],
-        cwd=executable.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
 
 
 def verify_or_update_verified(stdout: str, update: bool) -> None:

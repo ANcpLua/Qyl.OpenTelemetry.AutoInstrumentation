@@ -5,15 +5,22 @@ import json
 import importlib.util
 import os
 import platform
-import socket
 import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
-from typing import Any, NoReturn
 
 from verify_container_helpers import run_published_container
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import (
+    artifacts_bin_assembly,
+    artifacts_publish_dir,
+    clean_env,
+    fail,
+    find_free_port,
+    parse_report,
+    run_checked,
+    run_executable,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealSqlClientDemo" / "Qyl.RealSqlClientDemo.csproj"
@@ -21,31 +28,6 @@ AOT_PUBLISH_GATE = ROOT / "tools" / "verify-aot-publish-gate.py"
 TARGET_FRAMEWORK = "net10.0"
 SQLSERVER_IMAGE = os.environ.get("QYL_SQLSERVER_IMAGE", "mcr.microsoft.com/mssql/server:2022-latest")
 SQL_PASSWORD = os.environ.get("QYL_SQL_PASSWORD", "Qyl_strong_Password_2026!")
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def find_free_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        probe.bind(("127.0.0.1", 0))
-        return int(probe.getsockname()[1])
-
-
-def parse_report(stdout: str) -> dict[str, Any]:
-    start = stdout.find("{\n")
-    if start < 0:
-        fail(f"SqlClient demo did not emit JSON report\nstdout={stdout}")
-
-    try:
-        report = json.loads(stdout[start:])
-    except json.JSONDecodeError as exc:
-        fail(f"SqlClient demo emitted invalid JSON report: {exc}\nstdout={stdout}")
-
-    if not isinstance(report, dict):
-        fail(f"SqlClient demo report must be a JSON object: {report!r}")
-    return report
 
 
 def verify_report(
@@ -67,7 +49,7 @@ def verify_report(
     if "expected-sql-error=208" not in completed.stdout:
         fail(f"{name} missing expected SqlClient error token\nstdout={completed.stdout}")
 
-    report = parse_report(completed.stdout)
+    report = parse_report("SqlClient demo", completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("TraceOwner") != expected_trace_owner:
@@ -178,18 +160,6 @@ def runtime_identifier() -> str:
     fail(f"unsupported NativeAOT SqlClient platform: {system}/{machine}")
 
 
-def run_nativeaot(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [str(executable)],
-        cwd=executable.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-
-
 def main() -> None:
     env = clean_env()
     host_port = find_free_port()
@@ -221,8 +191,8 @@ def main() -> None:
         source_managed = run_managed(source_managed_assembly, source_env)
         source_managed_optin = run_managed(source_managed_assembly, source_optin_env)
         source_native_executable = publish_nativeaot(source_env, source_interceptors=True)
-        source_native = run_nativeaot(source_native_executable, source_env)
-        source_native_optin = run_nativeaot(source_native_executable, source_optin_env)
+        source_native = run_executable(source_native_executable, source_env)
+        source_native_optin = run_executable(source_native_executable, source_optin_env)
 
         specialist_env = dict(env)
         specialist_env["QYL_SQLCLIENT_EXPECTED_TRACE_OWNER"] = "specialist_listener"
@@ -232,8 +202,8 @@ def main() -> None:
         specialist_managed = run_managed(specialist_managed_assembly, specialist_env)
         specialist_managed_optin = run_managed(specialist_managed_assembly, specialist_optin_env)
         specialist_native_executable = publish_nativeaot(specialist_env, source_interceptors=False)
-        specialist_native = run_nativeaot(specialist_native_executable, specialist_env)
-        specialist_native_optin = run_nativeaot(specialist_native_executable, specialist_optin_env)
+        specialist_native = run_executable(specialist_native_executable, specialist_env)
+        specialist_native_optin = run_executable(specialist_native_executable, specialist_optin_env)
 
     source_runs = [
         ("managed SqlClient source-interceptor demo", source_managed, "dynamic-code-supported"),

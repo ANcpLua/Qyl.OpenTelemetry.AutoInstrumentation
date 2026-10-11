@@ -2,28 +2,12 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 from pathlib import Path
 from types import ModuleType
-from typing import Any, NoReturn
+from typing import Any
 
-
-ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS_PATH = ROOT / "tools" / "generate-contract-artifacts.py"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def load_artifacts() -> ModuleType:
-    spec = importlib.util.spec_from_file_location("qyl_contract_artifacts", ARTIFACTS_PATH)
-    if spec is None or spec.loader is None:
-        fail(f"cannot load contract artifact generator: {ARTIFACTS_PATH}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+from verify_helpers import load_artifacts
 
 
 def build_report(artifacts: ModuleType, contract: dict[str, Any]) -> dict[str, Any]:

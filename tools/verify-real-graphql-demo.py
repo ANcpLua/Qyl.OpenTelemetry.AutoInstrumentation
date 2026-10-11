@@ -6,9 +6,9 @@ import platform
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import artifacts_publish_dir, clean_env, fail, parse_report, run_checked, run_managed
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealGraphQlDemo" / "Qyl.RealGraphQlDemo.csproj"
@@ -25,25 +25,6 @@ EXPECTED_SPAN_SETS = {
     "query-with-telemetry": ["GraphQL/Internal"],
     "query-without-telemetry": [],
 }
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def parse_report(stdout: str) -> dict[str, Any]:
-    start = stdout.find("{\n")
-    if start < 0:
-        fail(f"GraphQL demo did not emit JSON report\nstdout={stdout}")
-
-    try:
-        report = json.loads(stdout[start:])
-    except json.JSONDecodeError as exc:
-        fail(f"GraphQL demo emitted invalid JSON report: {exc}\nstdout={stdout}")
-
-    if not isinstance(report, dict):
-        fail(f"GraphQL demo report must be a JSON object: {report!r}")
-    return report
 
 
 def verify_span_sets(name: str, report: dict[str, Any]) -> None:
@@ -85,7 +66,7 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
         if token not in completed.stdout:
             fail(f"{name} missing output token {token!r}\nstdout={completed.stdout}")
 
-    report = parse_report(completed.stdout)
+    report = parse_report("GraphQL demo", completed.stdout)
     if report.get("RuntimeMode") != expected_runtime_mode:
         fail(f"{name} runtime mode mismatch: expected={expected_runtime_mode} actual={report.get('RuntimeMode')}")
     if report.get("Pass") is not True:
@@ -96,20 +77,6 @@ def verify_report(name: str, completed: subprocess.CompletedProcess[str], expect
     activities = report.get("Activities")
     if not isinstance(activities, list) or len(activities) != 1:
         fail(f"{name} expected exactly 1 GraphQL activity, got {activities!r}")
-
-
-def run_managed(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    run_checked(["dotnet", "build", str(PROJECT), "-c", "Release", "-v", "quiet"], ROOT, env)
-    assembly = artifacts_bin_assembly(PROJECT)
-    return subprocess.run(
-        ["dotnet", str(assembly)],
-        cwd=PROJECT.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
 
 
 def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
@@ -135,7 +102,7 @@ def run_nativeaot(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def main() -> None:
     env = clean_env()
-    managed = run_managed(env)
+    managed = run_managed(PROJECT, env)
     verify_report("managed GraphQL demo", managed, "dynamic-code-supported")
     nativeaot = run_nativeaot(env)
     verify_report("NativeAOT GraphQL demo", nativeaot, "nativeaot")

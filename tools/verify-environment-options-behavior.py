@@ -5,8 +5,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, read_version, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, read_version, run_checked
 
 try:
     import fcntl
@@ -240,10 +239,6 @@ RUNTIME_UNREDACTED_EXPECTED = """http.status=204
 activity.count=1
 url.full=http://127.0.0.1:PORT/probe?user=alice&token=hunter2
 """
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def pack_runtime(feed: Path, env: dict[str, str]) -> None:

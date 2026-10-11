@@ -26,9 +26,9 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any
 
-from verify_helpers import clean_env, run_checked
+from verify_helpers import clean_env, fail, run_checked
 
 ROOT = Path(__file__).resolve().parents[1]
 HOSTING_PROJECT = ROOT / "src" / "Qyl.Telemetry.Hosting" / "Qyl.Telemetry.Hosting.csproj"
@@ -206,10 +206,6 @@ PROJECT = """<Project Sdk="Microsoft.NET.Sdk">
   </ItemGroup>
 </Project>
 """
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def parse_report(stdout: str) -> dict[str, Any]:

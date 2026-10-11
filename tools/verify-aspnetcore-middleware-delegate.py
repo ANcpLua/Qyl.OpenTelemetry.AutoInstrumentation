@@ -17,8 +17,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, run_checked
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,10 +57,6 @@ internal sealed class PassThroughMiddleware(RequestDelegate next)
     public System.Threading.Tasks.Task InvokeAsync(HttpContext context) => next(context);
 }
 """
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def write_project(directory: Path) -> Path:

@@ -4,17 +4,13 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any
 
-from verify_helpers import artifacts_bin_assembly, clean_env, run_checked
+from verify_helpers import artifacts_bin_assembly, clean_env, fail, run_checked
 
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "demos" / "Qyl.RealCoreWcfDemo" / "Qyl.RealCoreWcfDemo.csproj"
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def parse_report(stdout: str) -> dict[str, Any]:

@@ -5,8 +5,7 @@ import platform
 import tempfile
 from pathlib import Path
 
-from verify_helpers import clean_env, run_checked
-from typing import NoReturn
+from verify_helpers import clean_env, fail, run_checked, runtime_identifier
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -169,23 +168,6 @@ db.query.text=<absent>
 """
 
 
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
-
-
-def runtime_identifier() -> str:
-    system = platform.system().lower()
-    machine = platform.machine().lower()
-    if system == "darwin":
-        return "osx-arm64" if machine in {"arm64", "aarch64"} else "osx-x64"
-    if system == "linux":
-        return "linux-arm64" if machine in {"arm64", "aarch64"} else "linux-x64"
-    if system == "windows":
-        return "win-arm64" if machine in {"arm64", "aarch64"} else "win-x64"
-
-    fail(f"unsupported NativeAOT gate platform: {platform.system()} {platform.machine()}")
-
-
 def native_executable_name() -> str:
     return "Consumer.exe" if platform.system().lower() == "windows" else "Consumer"
 
@@ -259,7 +241,7 @@ def verify_managed(project: Path, directory: Path, env: dict[str, str]) -> None:
 
 
 def verify_nativeaot(project: Path, directory: Path, env: dict[str, str]) -> None:
-    rid = runtime_identifier()
+    rid = runtime_identifier("NativeAOT gate")
     run_checked(
         [
             "dotnet",

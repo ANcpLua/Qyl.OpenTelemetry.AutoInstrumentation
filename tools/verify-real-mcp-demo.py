@@ -6,9 +6,9 @@ import json
 import platform
 import subprocess
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any
 
-from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, run_checked
+from verify_helpers import artifacts_bin_assembly, artifacts_publish_dir, clean_env, fail, run_checked, run_executable
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,10 +23,6 @@ EXPECTED_OPERATIONS = {
     "tools/list": "tools/list",
     "tools/call qyl_sensitive_probe": "tools/call",
 }
-
-
-def fail(message: str) -> NoReturn:
-    raise SystemExit(message)
 
 
 def runtime_identifier() -> str:
@@ -194,18 +190,6 @@ def publish_nativeaot(env: dict[str, str]) -> Path:
     return executable
 
 
-def run_nativeaot(executable: Path, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        [str(executable)],
-        cwd=executable.parent,
-        env=env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
-    )
-
-
 def main() -> None:
     env = clean_env()
     run_checked(
@@ -253,9 +237,9 @@ def main() -> None:
     )
 
     executable = publish_nativeaot(env)
-    nativeaot = run_nativeaot(executable, env)
+    nativeaot = run_executable(executable, env)
     verify_report("NativeAOT MCP demo", nativeaot, "nativeaot", registration_enabled=True)
-    nativeaot_disabled = run_nativeaot(executable, disabled_env)
+    nativeaot_disabled = run_executable(executable, disabled_env)
     verify_report(
         "NativeAOT MCP demo (registration disabled)",
         nativeaot_disabled,
