@@ -73,9 +73,10 @@ COMMANDS: list[tuple[str, list[str]]] = [
 
 
 # Seconds a verifier takes on a CI runner, so --shard can balance slices by cost instead of by
-# position. The floor entries are the ubuntu-24.04-arm verify legs of 2026-10-11; the publish gate
-# is its four aot-publish-gate.yml shards added up. A name missing here weighs REAL_DEMO_COST when
-# it is a container-backed demo and DEFAULT_COST otherwise.
+# position. The floor entries are the ubuntu-24.04-arm verify legs of 2026-10-11, the real demos
+# the ubuntu-latest verify-real-demos legs of the same day, and the publish gate its four
+# aot-publish-gate.yml shards added up. A name missing here weighs REAL_DEMO_COST when it is a
+# container-backed demo and DEFAULT_COST otherwise.
 SHARD_COSTS: dict[str, float] = {
     AOT_GATE_NAME: 1200,
     "generator snapshots": 217,
@@ -88,8 +89,38 @@ SHARD_COSTS: dict[str, float] = {
     "consumer behavior": 12,
     "instrumentation disabled behavior": 10,
     "package layout": 10,
+    "real grpc client demo": 146,
+    "real sqlclient demo": 142,
+    "real oraclemda demo": 118,
+    "real mysqldata demo": 82,
+    "real masstransit demo": 76,
+    "real mcp demo": 73,
+    "real efcore demo": 66,
+    "real graphql demo": 61,
+    "real aspnetcore demo": 57,
+    "real azure demo": 53,
+    "real aspnetcore metrics demo": 49,
+    "real mysqlconnector demo": 47,
+    "real npgsql demo": 46,
+    "real elasticsearch demo": 45,
+    "real rabbitmq demo": 39,
+    "real ilogger demo": 33,
+    "real elastictransport demo": 32,
+    "real adonet demo": 31,
+    "real http client demo": 28,
+    "real redis demo": 26,
+    "real corewcf demo": 25,
+    "real kafka demo": 20,
+    "real genai demo": 17,
+    "real sqlite demo": 15,
+    "real mongodb demo": 14,
+    "real netruntime metrics demo": 11,
+    "real nservicebus demo": 8,
+    "real session propagation demo": 6,
+    "real quartz demo": 6,
+    "real wcf client demo": 3,
 }
-REAL_DEMO_COST = 40.0
+REAL_DEMO_COST = 45.0
 DEFAULT_COST = 5.0
 
 
