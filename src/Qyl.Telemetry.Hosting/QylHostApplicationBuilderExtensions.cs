@@ -46,7 +46,7 @@ public static class QylHostApplicationBuilderExtensions
     //
     // Not covered, deliberately: `dotnet ef` and WebApplicationFactory run the application as its
     // own entry assembly, so nothing in the environment distinguishes them from the real host. A
-    // design-time host that must not export sets QylOptions.RequireConfiguredEndpoint and leaves
+    // design-time host that must not export sets QylTelemetryOptions.RequireConfiguredEndpoint and leaves
     // the endpoint unset.
     private static readonly string[] BuildTimeHostApplicationNames = ["GetDocument.Insider"];
 
@@ -64,7 +64,7 @@ public static class QylHostApplicationBuilderExtensions
     /// </remarks>
     public static IHostApplicationBuilder AddQyl(
         this IHostApplicationBuilder builder,
-        Action<QylOptions>? configure = null)
+        Action<QylTelemetryOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -95,7 +95,7 @@ public static class QylHostApplicationBuilderExtensions
 
         builder.Services.AddSingleton<QylRegistration>();
 
-        var options = new QylOptions();
+        var options = new QylTelemetryOptions();
         configure?.Invoke(options);
 
         QylAutoInstrumentationBootstrap.Boot();

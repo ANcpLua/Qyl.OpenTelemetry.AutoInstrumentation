@@ -39,7 +39,7 @@ builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
 
 ## Options
 
-`AddQyl(o => ...)` takes a `QylOptions`. Every option has a zero-config default.
+`AddQyl(o => ...)` takes a `QylTelemetryOptions`. Every option has a zero-config default.
 
 | Option | Default | Effect |
 |---|---|---|

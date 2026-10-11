@@ -12,11 +12,11 @@ none of the old names remains as an alias.
 
 ### Changed (breaking)
 
-- **`QylSdkOptions` is `QylOptions`.** The package has not been called `Qyl.Sdk` since 9.0.0; the
+- **`QylSdkOptions` is `QylTelemetryOptions`.** The package has not been called `Qyl.Sdk` since 9.0.0; the
   options type kept the retired name. Every property keeps its name, type and default, apart from
   the one below.
 - **`QylSdkHostApplicationBuilderExtensions` is `QylHostApplicationBuilderExtensions`.** The method
-  is still `AddQyl(this IHostApplicationBuilder, Action<QylOptions>?)`. A call written as
+  is still `AddQyl(this IHostApplicationBuilder, Action<QylTelemetryOptions>?)`. A call written as
   `builder.AddQyl(...)` compiles unchanged. Only code that names the class, such as a static call
   `QylSdkHostApplicationBuilderExtensions.AddQyl(builder)` or a `cref`, has to change.
 - **`EnableSessionPropagation` is `EnableSessionTagInheritance`.** The option copies the
@@ -26,10 +26,10 @@ none of the old names remains as an alias.
   its behaviour are unchanged.
 - The generated-code ABI anchor is `QylGeneratedCodeAbi.V24`, because the major version moved.
 
-Migration: replace `QylSdkOptions` with `QylOptions`, `QylSdkHostApplicationBuilderExtensions`
+Migration: replace `QylSdkOptions` with `QylTelemetryOptions`, `QylSdkHostApplicationBuilderExtensions`
 with `QylHostApplicationBuilderExtensions`, and `.EnableSessionPropagation` with
-`.EnableSessionTagInheritance`. A type of your own named `QylOptions` in a namespace under `Qyl`
-is now shadowed by `Qyl.QylOptions` in code that imports it with a `using` directive. Rename it,
+`.EnableSessionTagInheritance`. A type of your own named `QylTelemetryOptions` in a namespace under `Qyl`
+is now shadowed by `Qyl.QylTelemetryOptions` in code that imports it with a `using` directive. Rename it,
 or qualify it. Telemetry does not change. Attribute names, metric names and units, event names,
 scope names and the `AddQyl()` method name are the same as in 23.1.0.
 

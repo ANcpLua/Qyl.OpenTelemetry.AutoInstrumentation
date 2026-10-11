@@ -6,7 +6,7 @@ namespace Qyl;
 /// Options for <see cref="QylHostApplicationBuilderExtensions.AddQyl"/>. Every property has a
 /// zero-config default; the options exist for the cases where the conventions don't fit.
 /// </summary>
-public sealed class QylOptions
+public sealed class QylTelemetryOptions
 {
     /// <summary>
     /// Logical service name stamped on the OpenTelemetry resource. Defaults to

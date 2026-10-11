@@ -257,7 +257,7 @@ add-on option, so `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` and
 
 qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql`'s or
 `NServiceBus.Core`'s native instruments exported registers them through
-`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` or `QylOptions.AdditionalMeters`.
+`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` or `QylTelemetryOptions.AdditionalMeters`.
 
 The full 70-row contract, with every environment control and instrumentation option, its evidence
 level and its authoritative source, is the generated
