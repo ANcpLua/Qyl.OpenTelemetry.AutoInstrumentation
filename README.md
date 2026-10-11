@@ -377,7 +377,7 @@ it receives: the library's keys, the vendor keys it passes through and the
 
 `--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is closed by
 changing what the instrumentation writes or by declaring the key in the registry, never by waving it
-through. Against the `v9.8.0` registry the lanes report zero violations.
+through. The lanes must report zero violations against the pinned `v9.9.0` registry.
 
 How a finding is *levelled* is the registry's decision, and it takes two flags that must travel
 together:
@@ -421,8 +421,9 @@ the subscriber source emits nothing and its `deliver` and `fetch` spans are unju
 The version lives in `Directory.Build.props` `<Version>`, and the `Qyl.Telemetry.*` family ships as
 one line at one version. Bump it, pack the six packages and push them to nuget.org from your machine
 with the NuGet API key registered in Vitals, then tag the commit `v<version>` and create the GitHub
-release. Nothing runs on a push to `main`: `mise run check` runs before every push, `make verify`
-before a release, and `./release.sh <version>` publishes (see `SKILL.md`).
+release. Nothing runs on a push to `main`: the full `mise run check` runs before every push
+and release, and `./release.sh <version>` publishes (see `SKILL.md`). The full gate includes
+the focused `make verify` lanes, so an unchanged passing lane does not need to run twice.
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
 ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.

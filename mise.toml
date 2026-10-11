@@ -1,12 +1,11 @@
-# The toolchain this repository builds with. CI installs it with jdx/mise-action;
-# locally `mise install` does the same. dotnet also keeps global.json, which dotnet itself reads.
+# The local build and release toolchain. `mise install` installs these pinned versions;
+# dotnet also keeps global.json, which dotnet itself reads.
 [tools]
 "dotnet" = "10.0.401"
 "github:open-telemetry/weaver" = "0.27.0"
 
 [tasks.check]
-description = "The gate: the release build and the goal verifier CI runs"
+description = "The full local gate: build, contracts, consumers, NativeAOT, Docker demos and live registry"
 run = [
-  "dotnet build Qyl.Telemetry.AutoInstrumentation.slnx --configuration Release",
   "python3 tools/verify-aot-autoinstrumentation-goal.py",
 ]

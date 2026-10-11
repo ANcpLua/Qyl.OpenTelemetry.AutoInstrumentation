@@ -28,7 +28,12 @@ say "checks"
 [[ $(git branch --show-current) == main ]] || die "not on main"
 [[ -z $(git status --porcelain --untracked-files=no) ]] || die "working tree not clean"
 git fetch -q origin main
-[[ $(git rev-parse HEAD) == $(git rev-parse origin/main) ]] || die "main differs from origin/main"
+release_commit=$(git rev-parse HEAD)
+[[ $release_commit == $(git rev-parse origin/main) ]] || die "main differs from origin/main"
+assert_packed_commit() {
+  [[ $(git rev-parse HEAD) == "$release_commit" ]] || die "HEAD changed while packing; nothing published"
+  [[ -z $(git status --porcelain --untracked-files=no) ]] || die "tracked files changed while packing; nothing published"
+}
 if [[ -n $(git ls-remote --tags origin "refs/tags/v$version") ]] || git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
   (( dry )) || die "tag v$version already exists"; echo "warning: tag v$version already exists; the real run refuses"
 fi
@@ -57,6 +62,7 @@ for p in "${projects[@]}"; do
 done
 count=$(find "$OUT" -maxdepth 1 -name '*.nupkg' | wc -l | tr -d ' ')
 [[ $count == "${#projects[@]}" ]] || die "packed $count packages, expected ${#projects[@]}"
+assert_packed_commit
 
 say "NuGet push"
 probe_dir=$(mktemp -d); notes=$(mktemp); trap 'rm -rf "$probe_dir" "$notes"' EXIT
@@ -76,7 +82,7 @@ done
 
 say "tag and GitHub release (notes from CHANGELOG.md)"
 awk -v v="$version" 'index($0, "## [" v "]") == 1 {on=1; next} on && /^## \[/ {exit} on' CHANGELOG.md >"$notes"
-git tag -a "v$version" -m "v$version"
+git tag -a "v$version" "$release_commit" -m "v$version"
 git push -q origin "v$version"
 gh release create "v$version" --title "v$version" --notes-file "$notes" "$OUT"/*.nupkg
 

@@ -4,7 +4,7 @@ Who reads this: the one agent working on this repository's `main`. Agent, user a
 the same word. There is one agent per repository, six in all (qyl, qyl.mcp, qyl-api-schema,
 Qyl.Telemetry.AutoInstrumentation, Qyl.Telemetry.SemanticConventions, qyl.at), each on its own
 `main`. Commit and push to `main` directly: no pull requests, no CI, no branch rules. The gate
-is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript lockfile).
+is `mise run check`; packages are .NET only (`dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx`, no JavaScript lockfile).
 
 ## This repository
 
@@ -16,16 +16,20 @@ is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript loc
   the `## [x.y.z]` entry in `CHANGELOG.md`; the tag names that commit. The CHANGELOG entry
   becomes the GitHub release notes.
 - Release command: `./release.sh <x.y.z> --dry-run`, then `./release.sh <x.y.z>` (`dotnet pack`
-  per project, push, tag, GitHub release, wait for indexing).
-- Gates in three tiers, so day-to-day work stays fast: `mise run check` (release build plus the
-  goal verifier) before every push; `make verify` (the former CI lanes without Docker: build,
-  goal-verifier floor, smoke, OTLP receiver evidence, web API AOT demo, AOT publish gate) once
-  before a release; `make all` (adds the Docker real-library demos and the live check) only when
-  the change touches those integrations. `mise install` provides dotnet and Weaver 0.27.0
-  (both pinned in `mise.toml`), `make deps` once per machine installs the Python verifier
-  requirements (PyYAML included; the registry's `fetch-core.sh` needs it too), and the lanes
-  run through mise so Weaver is on PATH: `mise exec -- make verify`, `mise exec -- make live-check`.
-  `make help` lists every lane as its own target.
+  per project, push, tag, GitHub release, wait for indexing). The script snapshots the packed
+  commit, refuses tracked edits or a changed HEAD after packing, and tags that exact commit.
+- `mise run check` is the complete local gate: it builds the solution and demos, checks contracts,
+  package and API behavior, runs managed and NativeAOT consumers, the strict NativeAOT publish
+  matrix, real-library Docker demos, live registry validation, smoke and OTLP checks. Run it
+  before every push and release. Set `QYL_SEMCONV_REGISTRY` to the canonical SemanticConventions
+  checkout at the pinned version after running its `scripts/fetch-core.sh`; Docker or OrbStack
+  must be running. The goal verifier performs the build, so the task does not build twice.
+  `mise install` provides dotnet and Weaver 0.27.0 (pinned in `mise.toml`); `make deps` installs
+  the Python verifier requirements (including PyYAML). Run through mise so Weaver is on PATH.
+- `mise exec -- make verify` runs the focused no-Docker subset for development, and `make all`
+  adds the Docker demos and a fresh clone of the pinned live-check registry. Every lane in
+  these targets is already included in a successful full `mise run check`; do not repeat the
+  same coverage just to release. `make help` lists the individual lanes for focused reruns.
 - Key: `vitals keys` entry "qyl-dev manual publish and release (NuGet)", file
   `~/.config/vitals/nuget-qyl-manual-publish-key`. The script reads it; never print, paste,
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
@@ -38,7 +42,7 @@ is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript loc
 ## Before any work: the stale-version guard
 
 1. `git pull --ff-only origin main`.
-2. `mise install`, then `dotnet restore`.
+2. `mise install`, then `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx`.
 3. Compare the pinned `Qyl.Telemetry.SemanticConventions` version with the last entry of
    `curl -fsSL https://api.nuget.org/v3-flatcontainer/qyl.telemetry.semanticconventions/index.json`.
    If a newer version is indexed, re-pin first (section "When a release lands"), then start
@@ -78,7 +82,7 @@ Act at once, before continuing your own work, so both agents keep moving:
 
 1. Set the new `Qyl.Telemetry.SemanticConventions*` version in `Directory.Packages.props` and
    `SEMCONV_REF` in `tools/live-check.env`.
-2. `dotnet restore` (`dotnet restore --force-evaluate` where a `packages.lock.json` exists).
+2. `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx` (add `--force-evaluate` where a `packages.lock.json` exists).
 3. `mise run check`.
 4. Commit `chore: pin Qyl.Telemetry.SemanticConventions <version>` and push `main` immediately.
 5. If the pin changes what this repo ships, bump `<Version>`, add the CHANGELOG entry and
