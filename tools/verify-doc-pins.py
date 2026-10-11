@@ -7,7 +7,7 @@ compares each copy against its source:
 
 - a package id followed by a version, and each "Pinned" table row, against Directory.Packages.props;
 - a backticked NuGet range, against the MassTransit.RabbitMQ range;
-- the live-check registry tag, against SEMCONV_REF in live-check.yml;
+- the live-check registry tag, against SEMCONV_REF in tools/live-check.env;
 - the N-row contract count, against the total in contracts/coverage-matrix.md;
 - a QylGeneratedCodeAbi.V<N> anchor, against the Directory.Build.props major;
 - a nuget.org/packages/<id>/<version> link in a contract YAML, against Directory.Packages.props.
@@ -26,7 +26,7 @@ from typing import NoReturn
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGES_PROPS = ROOT / "Directory.Packages.props"
 BUILD_PROPS = ROOT / "Directory.Build.props"
-LIVE_CHECK = ROOT / ".github" / "workflows" / "live-check.yml"
+LIVE_CHECK = ROOT / "tools" / "live-check.env"
 COVERAGE_MATRIX = ROOT / "contracts" / "coverage-matrix.md"
 CONTRACT_YAMLS = [
     ROOT / "contracts" / "qyl-native-instrumentations.yaml",
@@ -105,7 +105,7 @@ def check_ranges(path: Path, text: str, pins: dict[str, str], errors: list[str])
 
 
 def check_registry_tag(path: Path, text: str, errors: list[str]) -> None:
-    ref = re.search(r"^\s*SEMCONV_REF:\s*(\S+)\s*$", LIVE_CHECK.read_text(encoding="utf-8"), re.MULTILINE)
+    ref = re.search(r"^\s*SEMCONV_REF\s*=\s*(\S+)\s*$", LIVE_CHECK.read_text(encoding="utf-8"), re.MULTILINE)
     if ref is None:
         fail(f"{LIVE_CHECK.relative_to(ROOT)} sets no SEMCONV_REF")
     for match in re.finditer(r"`(v" + VERSION + r")` registry", text):

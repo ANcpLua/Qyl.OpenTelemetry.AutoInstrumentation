@@ -38,8 +38,11 @@ aot-publish-gate: ## NativeAOT publish gate, every set, strict promotion (all fo
 demos: ## Real-library demos (Docker or OrbStack must be running; the former six shards)
 	python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only
 
-live-check: ## Live check against the pinned SemanticConventions registry (network)
-	python3 tools/verify-live-check.py
+live-check: ## Live check against the registry tag in tools/live-check.env (network; clones into .semconv)
+	set -euo pipefail; set -a; . tools/live-check.env; set +a; \
+	rm -rf .semconv; git clone -q --depth 1 --branch "$$SEMCONV_REF" https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions.git .semconv; \
+	(cd .semconv && ./scripts/fetch-core.sh); \
+	QYL_SEMCONV_REGISTRY="$$PWD/.semconv" python3 tools/verify-live-check.py
 
 check: ## The former CI gate (release build plus the goal verifier)
 	mise run check

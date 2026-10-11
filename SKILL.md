@@ -28,7 +28,7 @@ is `mise run check`; packages are .NET only (`dotnet restore`, no JavaScript loc
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
   the owner.
 - Upstream pins this repo must keep fresh: `Qyl.Telemetry.SemanticConventions*` in
-  `Directory.Packages.props`, and every `SEMCONV_REF` occurrence, which moves with it.
+  `Directory.Packages.props`, and `SEMCONV_REF` in `tools/live-check.env`, which moves with it.
 - Consumers to notify after all six packages are indexed: qyl (`Version.props`
   `QylTelemetryVersion`) and qyl.at (`src/data/site.ts`).
 
@@ -74,7 +74,7 @@ then: regenerate the lockfile, run the gate, commit, push main
 Act at once, before continuing your own work, so both agents keep moving:
 
 1. Set the new `Qyl.Telemetry.SemanticConventions*` version in `Directory.Packages.props` and
-   every `SEMCONV_REF`.
+   `SEMCONV_REF` in `tools/live-check.env`.
 2. `dotnet restore` (`dotnet restore --force-evaluate` where a `packages.lock.json` exists).
 3. `mise run check`.
 4. Commit `chore: pin Qyl.Telemetry.SemanticConventions <version>` and push `main` immediately.

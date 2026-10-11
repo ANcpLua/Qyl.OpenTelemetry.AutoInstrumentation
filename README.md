@@ -337,7 +337,7 @@ and `rabbitmq` use `QYL_RABBITMQ_IMAGE` (`rabbitmq:4.1-alpine`), `kafka` uses `Q
 `mysqlconnector` and `mysqldata` use `QYL_MYSQL_IMAGE` (`mysql:9`), `oraclemda` uses
 `QYL_ORACLE_IMAGE` (`gvenzl/oracle-free:23-slim-faststart`), and `sqlclient` uses
 `QYL_SQLSERVER_IMAGE` (`mcr.microsoft.com/mssql/server:2022-latest`, which ships no arm64 image, so
-that lane runs on x64 in CI). The four database verifiers gained their containers in 15.0.0: a
+that lane needs an x64 Docker host). The four database verifiers gained their containers in 15.0.0: a
 native source only emits against a real server, where the old interceptor demos proved themselves
 against a connectionless exception.
 
@@ -406,7 +406,7 @@ QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-l
 in the output as `live-check-partial-ok`. On macOS under OrbStack the MongoDB lane is that lane:
 OrbStack's VM runs a 7.x kernel, and MongoDB 8 refuses to start on Linux 6.19 or newer
 ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)) — the container exits before it
-listens, so the demo cannot connect. Run the other eight locally and let CI cover MongoDB:
+listens, so the demo cannot connect. Run the other eight locally; the MongoDB demo needs a Linux host with a kernel older than 6.19:
 
 ```bash
 QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
@@ -421,14 +421,15 @@ the subscriber source emits nothing and its `deliver` and `fetch` spans are unju
 The version lives in `Directory.Build.props` `<Version>`, and the `Qyl.Telemetry.*` family ships as
 one line at one version. Bump it, pack the six packages and push them to nuget.org from your machine
 with the NuGet API key registered in Vitals, then tag the commit `v<version>` and create the GitHub
-release. A push to `main` builds and verifies through the workflows and never publishes.
+release. Nothing runs on a push to `main`: `mise run check` runs before every push, `make verify`
+before a release, and `./release.sh <version>` publishes (see `SKILL.md`).
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
 ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.
 
 Two files name the semantic-convention release and they must agree: the
 `Qyl.Telemetry.SemanticConventions` `PackageVersion` in `Directory.Packages.props`, whose generated
-constants the code compiles against, and `SEMCONV_REF` in `.github/workflows/live-check.yml`, the
+constants the code compiles against, and `SEMCONV_REF` in `tools/live-check.env`, the
 registry tag the live check judges against. `verify-live-check.py` compares the pin against the
 checkout's `VersionPrefix` and fails when they are different releases — judging spans against a
 registry other than the one that produced the constants is the drift that would otherwise look like

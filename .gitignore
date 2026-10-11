@@ -9,3 +9,6 @@ obj/
 .claude/worktrees/
 
 __pycache__/
+
+# Registry checkout made by `make live-check`.
+.semconv/
