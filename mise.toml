@@ -5,7 +5,13 @@
 "github:open-telemetry/weaver" = "0.27.0"
 
 [tasks.check]
-description = "The full local gate: build, contracts, consumers, NativeAOT, Docker demos and live registry"
+description = "The gate before a push or a release: the goal verifier without demos, NativeAOT publish matrix, smoke, OTLP receiver, web API AOT demo and live check (it builds the solution itself)"
+run = [
+  "python3 tools/verify-aot-autoinstrumentation-goal.py --no-demos --skip \"smoketest,webapi aot demo,otlp receiver evidence,live check,nativeaot publish gate\"",
+]
+
+[tasks.check-full]
+description = "Everything, on demand: contracts, consumers, NativeAOT publish matrix, real-library Docker demos and live registry validation"
 run = [
   "python3 tools/verify-aot-autoinstrumentation-goal.py",
 ]

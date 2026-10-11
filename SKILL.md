@@ -18,18 +18,18 @@ is `mise run check`; packages are .NET only (`dotnet restore Qyl.Telemetry.AutoI
 - Release command: `./release.sh <x.y.z> --dry-run`, then `./release.sh <x.y.z>` (`dotnet pack`
   per project, push, tag, GitHub release, wait for indexing). The script snapshots the packed
   commit, refuses tracked edits or a changed HEAD after packing, and tags that exact commit.
-- `mise run check` is the complete local gate: it builds the solution and demos, checks contracts,
-  package and API behavior, runs managed and NativeAOT consumers, the strict NativeAOT publish
-  matrix, real-library Docker demos, live registry validation, smoke and OTLP checks. Run it
-  before every push and release. Set `QYL_SEMCONV_REGISTRY` to the canonical SemanticConventions
-  checkout at the pinned version after running its `scripts/fetch-core.sh`; Docker or OrbStack
-  must be running. The goal verifier performs the build, so the task does not build twice.
-  `mise install` provides dotnet and Weaver 0.27.0 (pinned in `mise.toml`); `make deps` installs
-  the Python verifier requirements (including PyYAML). Run through mise so Weaver is on PATH.
-- `mise exec -- make verify` runs the focused no-Docker subset for development, and `make all`
-  adds the Docker demos and a fresh clone of the pinned live-check registry. Every lane in
-  these targets is already included in a successful full `mise run check`; do not repeat the
-  same coverage just to release. `make help` lists the individual lanes for focused reruns.
+- `mise run check` is the gate before every push and every release: the goal verifier without
+  demos, without the NativeAOT publish matrix, smoke, OTLP receiver, web API AOT demo and live
+  check; it builds the solution itself, so nothing builds twice. That is all a release needs.
+- `mise run check-full` runs everything (contracts, consumers, the strict NativeAOT publish
+  matrix, real-library Docker demos with Docker or OrbStack running, live registry validation
+  with `QYL_SEMCONV_REGISTRY` pointing at the pinned SemanticConventions checkout after its
+  `scripts/fetch-core.sh`, smoke and OTLP checks) on demand: when a change touches AOT
+  publishing, a real-library integration or the registry pin, never as a release precondition.
+  `make help` lists the single lanes (`make verify`, `make all`, `make demos`, `make live-check`)
+  for focused reruns. `mise install` provides dotnet and Weaver 0.27.0 (pinned in `mise.toml`);
+  `make deps` installs the Python verifier requirements (PyYAML included); run through mise so
+  Weaver is on PATH.
 - Key: `vitals keys` entry "qyl-dev manual publish and release (NuGet)", file
   `~/.config/vitals/nuget-qyl-manual-publish-key`. The script reads it; never print, paste,
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
