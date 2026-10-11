@@ -420,7 +420,8 @@ the subscriber source emits nothing and its `deliver` and `fetch` spans are unju
 
 The version lives in `Directory.Build.props` `<Version>`, and the `Qyl.Telemetry.*` family ships as
 one line at one version. Pushing the tag `v<version>`, which must equal that version at that commit,
-is the act that publishes: `nuget-publish.yml` runs the full gate set, packs, publishes through NuGet
+is the act that publishes, and the commit must already be on `main`: `nuget-publish.yml` stops before
+it packs anything for a tag off `main`, then runs the full gate set, packs, publishes through NuGet
 trusted publishing, proves the indexed packages restore into clean managed and NativeAOT consumers,
 and only then creates the GitHub release. A push to `main` builds and verifies through the sibling
 workflows and never publishes.

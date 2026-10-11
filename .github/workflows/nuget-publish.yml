@@ -1,4 +1,4 @@
-# CANONICAL-DEPARTURE: multi-stage release pipeline with package, NativeAOT, indexing, and published-consumer gates
+# CANONICAL-DEPARTURE: multi-stage release pipeline with main-ancestry, package, NativeAOT, indexing, and published-consumer gates
 name: nuget-publish
 
 # Publishing requires a human act (qyl architecture §5): the publish lane triggers
@@ -6,6 +6,12 @@ name: nuget-publish
 # workflows, never publishes. Pushing the tag v<version> — which must equal the
 # Directory.Build.props version at that commit — runs the full gate set and, only
 # if every gate passes, publishes and then creates the release.
+#
+# Main ancestry: the nuget environment admits main and v* tags, but a v* tag can
+# name a commit that never reached main. The version job, which every other job
+# needs, fails unless the tagged commit is reachable from origin main, so nothing
+# is packed or pushed for an off-main tag. There is no workflow_dispatch: a manual
+# run could publish the main version under no tag; the tag push is the only release act.
 #
 # The green-CI condition is enforced inside this workflow, not inferred from a
 # sibling one: `publish` needs both `verify` (full managed, real-integration and
@@ -15,11 +21,6 @@ name: nuget-publish
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Optional safety check; must equal Directory.Build.props"
-        required: false
 
 concurrency:
   group: nuget-publish
@@ -36,9 +37,20 @@ jobs:
       should_publish: ${{ steps.published.outputs.should_publish }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0 # full history, so the main-ancestry gate can walk main
+      # The main-ancestry gate (see header). refs/heads/main is spelled out because a bare
+      # "main" would resolve a tag named main ahead of the branch.
+      - name: Require the tagged commit to be on main
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin refs/heads/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD; then
+            echo "::error::$GITHUB_SHA is not reachable from origin main ($(git rev-parse FETCH_HEAD)); only commits main already contains are published."
+            exit 1
+          fi
+          echo "$GITHUB_SHA is on origin main ($(git rev-parse FETCH_HEAD))."
       - id: version
-        env:
-          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           VERSION=$(python3 - <<'PY'
@@ -53,33 +65,22 @@ jobs:
             echo "invalid repository-owned version: $VERSION" >&2
             exit 1
           fi
-          if [[ -n "$REQUESTED_VERSION" && "$REQUESTED_VERSION" != "$VERSION" ]]; then
-            echo "requested version $REQUESTED_VERSION does not equal Directory.Build.props $VERSION" >&2
-            exit 1
-          fi
           # A version tag is the human act that authorizes publishing; it must
           # name the committed version exactly.
-          if [[ "${GITHUB_REF}" == refs/tags/* && "${GITHUB_REF_NAME}" != "v$VERSION" ]]; then
+          if [[ "${GITHUB_REF_NAME}" != "v$VERSION" ]]; then
             echo "tag ${GITHUB_REF_NAME} does not equal Directory.Build.props v$VERSION" >&2
             exit 1
           fi
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       # Idempotence gate. NuGet artifacts are immutable, so a version already on
-      # the index must never be rebuilt and re-pushed. A manual dispatch always
-      # proceeds, which keeps the workflow usable to re-drive a run that died
-      # after verify but before publish.
+      # the index must never be rebuilt and re-pushed. A run that died after verify
+      # but before publish is re-driven by re-running its failed jobs.
       - id: published
         env:
           VERSION: ${{ steps.version.outputs.value }}
-          EVENT: ${{ github.event_name }}
         run: |
           set -euo pipefail
-          if [[ "$EVENT" == "workflow_dispatch" ]]; then
-            echo "manual dispatch: proceeding with $VERSION regardless of index state"
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           index="https://api.nuget.org/v3-flatcontainer/qyl.telemetry.autoinstrumentation/index.json"
           body="$RUNNER_TEMP/qyl-telemetry-autoinstrumentation-index.json"
           http_status="$(
