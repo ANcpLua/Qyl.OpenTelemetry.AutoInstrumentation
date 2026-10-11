@@ -16,6 +16,7 @@ AOT_GATE_NAME = "nativeaot publish gate"
 
 COMMANDS: list[tuple[str, list[str]]] = [
     ("contract invariants", [sys.executable, "tools/verify-contract-invariants.py"]),
+    ("doc pins", [sys.executable, "tools/verify-doc-pins.py"]),
     ("contract coverage report", [sys.executable, "tools/verify-contract-coverage-report.py"]),
     ("release build", ["dotnet", "build", "Qyl.Telemetry.AutoInstrumentation.slnx", "-c", "Release"]),
     ("demos release build", ["dotnet", "build", "Qyl.Telemetry.AutoInstrumentation.Demos.slnx", "-c", "Release"]),

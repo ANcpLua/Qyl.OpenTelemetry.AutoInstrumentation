@@ -37,6 +37,25 @@ dotnet add package OpenTelemetry.Exporter.Console
 builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
 ```
 
+## Options
+
+`AddQyl(o => ...)` takes a `QylSdkOptions`. Every option has a zero-config default.
+
+| Option | Default | Effect |
+|---|---|---|
+| `ServiceName` | `OTEL_SERVICE_NAME`, else the host application name | The `service.name` resource attribute. |
+| `ServiceVersion` | unset | The `service.version` resource attribute; leave it unset to omit the attribute. |
+| `ResourceAttributes` | empty | Extra attributes merged onto the resource, for facts about the process rather than one span. |
+| `ConfigureTracing` | unset | A hook for tracing setup the typed options do not cover. It runs after the qyl sources and processors and before the OTLP exporter. |
+| `CollectorEndpoint` | unset | An explicit collector endpoint, ahead of the order above. |
+| `EnableCollectorDiscovery` | `true` | Probe `localhost` and the host `qyl` for a collector when no endpoint is set. |
+| `RequireConfiguredEndpoint` | `false` | Export only when an endpoint is set or discovered, instead of falling back to the exporter's `localhost` default. A process that is itself a telemetry destination, such as a collector, sets it to `true`. |
+| `EnableLogExport` | `true` | Export application logs over OTLP. |
+| `EnableMetricsExport` | `true` | Register and export the qyl meter inventory and the GenAI meters. |
+| `EnableSessionPropagation` | `true` | Copy `session.id` from the nearest in-process ancestor span onto spans that lack it. |
+| `AdditionalSources` | empty | More `ActivitySource` names to subscribe. |
+| `AdditionalMeters` | empty | More `Meter` names to subscribe. |
+
 ## What it pulls in
 
 This package depends on `Qyl.Telemetry.AutoInstrumentation` (the instrumentation runtime) and

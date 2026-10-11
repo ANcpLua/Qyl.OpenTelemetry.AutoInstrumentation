@@ -3,9 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <!-- The consumer contract is the namespace and the one-liner: namespace Qyl,
-         builder.AddQyl(). The package-family rename changes PackageId and AssemblyName only
-         (architecture §6.2, ABI-free slice); the retired Qyl.Sdk id stays frozen on
-         nuget.org until unlisted at launch. -->
+         builder.AddQyl(). The package-family rename changed PackageId and AssemblyName only.
+         Qyl.Sdk is retired; deprecated on nuget.org with alternate Qyl.Telemetry.Hosting. -->
     <RootNamespace>Qyl</RootNamespace>
     <AssemblyName>Qyl.Telemetry.Hosting</AssemblyName>
     <PackageId>Qyl.Telemetry.Hosting</PackageId>

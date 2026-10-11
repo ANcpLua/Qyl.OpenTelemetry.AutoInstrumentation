@@ -37,6 +37,32 @@ def _upstream_contract_item_count() -> int:
 
 UPSTREAM_CONTRACT_ITEM_COUNT = _upstream_contract_item_count()
 
+PACKAGES_PROPS_PATH = ROOT / "Directory.Packages.props"
+
+
+# Every exact version a contract string names is the Directory.Packages.props pin, read here rather
+# than typed, so a pin bump cannot leave a stale "verified against" behind. A range pin such as
+# MassTransit's "[8.5.11,9.0.0)" resolves to its lower bound, which is what NuGet restores.
+def _package_pins() -> dict[str, str]:
+    import xml.etree.ElementTree as ElementTree
+
+    pins: dict[str, str] = {}
+    for element in ElementTree.parse(PACKAGES_PROPS_PATH).getroot().iter("PackageVersion"):
+        version = element.get("Version", "")
+        if version.startswith("["):
+            version = version[1:].split(",", 1)[0]
+        pins[element.get("Include", "")] = version
+    return pins
+
+
+PACKAGE_PINS = _package_pins()
+
+
+def pin(package_id: str) -> str:
+    if package_id not in PACKAGE_PINS:
+        raise SystemExit(f"contract: {PACKAGES_PROPS_PATH.name} pins no {package_id}")
+    return PACKAGE_PINS[package_id]
+
 # This one stays a literal on purpose: the six qyl-native promises are qyl's own scope, decided
 # here, not a count of what somebody else published.
 QYL_NATIVE_CONTRACT_ITEM_COUNT = 6
@@ -239,60 +265,60 @@ QYL_NATIVE_8_SIGNAL_CONTRACT = [
 ]
 QYL_NATIVE_8_SUPPORTED_PATHS = {
     "signals.traces.MICROSOFTEXTENSIONSAI": (
-        "Microsoft.Extensions.AI ==10.10.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
+        f"Microsoft.Extensions.AI =={pin('Microsoft.Extensions.AI')}; ChatClientBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.metrics.MICROSOFTEXTENSIONSAI": (
-        "Microsoft.Extensions.AI ==10.10.0; ChatClientBuilder.UseOpenTelemetry() wrapper only"
+        f"Microsoft.Extensions.AI =={pin('Microsoft.Extensions.AI')}; ChatClientBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.traces.MICROSOFTAGENTSAI": (
-        "Microsoft.Agents.AI ==1.24.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+        f"Microsoft.Agents.AI =={pin('Microsoft.Agents.AI')}; AIAgentBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.metrics.MICROSOFTAGENTSAI": (
-        "Microsoft.Agents.AI ==1.24.0; AIAgentBuilder.UseOpenTelemetry() wrapper only"
+        f"Microsoft.Agents.AI =={pin('Microsoft.Agents.AI')}; AIAgentBuilder.UseOpenTelemetry() wrapper only"
     ),
     "signals.traces.MICROSOFTAGENTSAIWORKFLOWS": (
-        "Microsoft.Agents.AI.Workflows ==1.24.0; WorkflowBuilder.WithOpenTelemetry() path only"
+        f"Microsoft.Agents.AI.Workflows =={pin('Microsoft.Agents.AI.Workflows')}; WorkflowBuilder.WithOpenTelemetry() path only"
     ),
     "signals.traces.MCP": (
-        "ModelContextProtocol ==2.2.0; automatic official client/server ActivitySource path only"
+        f"ModelContextProtocol =={pin('ModelContextProtocol')}; automatic official client/server ActivitySource path only"
     ),
 }
 QYL_SUPPORTED_VERSION_OVERRIDES = {
     "signals.traces.ELASTICSEARCH": (
-        "Elastic.Clients.Elasticsearch >=8.0.0; verified against 9.5.1; spans come from the "
+        f"Elastic.Clients.Elasticsearch >=8.0.0; verified against {pin('Elastic.Clients.Elasticsearch')}; spans come from the "
         "Elastic.Transport ActivitySource the client enriches"
     ),
     "signals.traces.ELASTICTRANSPORT": (
-        'Elastic.Transport >=1.0.0; verified against 1.0.0; native ActivitySource "Elastic.Transport"'
+        f'Elastic.Transport >=1.0.0; verified against {pin("Elastic.Transport")}; native ActivitySource "Elastic.Transport"'
     ),
     "signals.metrics.NSERVICEBUS": (
-        "NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core and "
+        f"NServiceBus >=8.0.0; verified against {pin('NServiceBus')}; the native meters NServiceBus.Core and "
         "NServiceBus.Core.Pipeline.Incoming, registered by the consumer through "
         "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES"
     ),
     "signals.traces.NSERVICEBUS": (
-        'NServiceBus >=8.0.0; verified against 10.2.9; native ActivitySource "NServiceBus.Core" '
+        f'NServiceBus >=8.0.0; verified against {pin("NServiceBus")}; native ActivitySource "NServiceBus.Core" '
         "(enabled by default from v10)"
     ),
     "signals.traces.MONGODB": (
-        'MongoDB.Driver >=3.7.0; verified against 3.11.1; native ActivitySource "MongoDB.Driver"'
+        f'MongoDB.Driver >=3.7.0; verified against {pin("MongoDB.Driver")}; native ActivitySource "MongoDB.Driver"'
     ),
     "signals.traces.RABBITMQ": (
-        'RabbitMQ.Client >=7.0.0; verified against 7.2.2; native ActivitySources '
+        f'RabbitMQ.Client >=7.0.0; verified against {pin("RabbitMQ.Client")}; native ActivitySources '
         '"RabbitMQ.Client.Publisher" and "RabbitMQ.Client.Subscriber"'
     ),
     "signals.traces.MASSTRANSIT": (
-        'MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.10; native ActivitySource "MassTransit"'
+        f'MassTransit >=8.0.0 (Apache-2.0); verified against {pin("MassTransit.RabbitMQ")}; native ActivitySource "MassTransit"'
     ),
     "signals.traces.QUARTZ": (
-        'Quartz >=4.0.0; verified against 4.4.0; native ActivitySource "Quartz" '
+        f'Quartz >=4.0.0; verified against {pin("Quartz")}; native ActivitySource "Quartz" '
         "(3.x used DiagnosticListener and has none)"
     ),
     "signals.metrics.QUARTZ": (
-        'Quartz >=4.0.0 on .NET 10+; verified against 4.4.0; native Meter "Quartz"'
+        f'Quartz >=4.0.0 on .NET 10+; verified against {pin("Quartz")}; native Meter "Quartz"'
     ),
     "signals.traces.WCFCORE": (
-        "CoreWCF.Primitives ==1.9.1; CoreWCF.Http ==1.9.1; server ActivitySource path only"
+        f"CoreWCF.Primitives =={pin('CoreWCF.Http')}; CoreWCF.Http =={pin('CoreWCF.Http')}; server ActivitySource path only"
     ),
 }
 MANAGED_NATIVEAOT_BOUNDARY_SIGNAL_KEYS = {
