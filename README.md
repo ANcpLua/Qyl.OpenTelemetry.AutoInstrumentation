@@ -419,12 +419,9 @@ the subscriber source emits nothing and its `deliver` and `fetch` spans are unju
 ## Release
 
 The version lives in `Directory.Build.props` `<Version>`, and the `Qyl.Telemetry.*` family ships as
-one line at one version. Pushing the tag `v<version>`, which must equal that version at that commit,
-is the act that publishes, and the commit must already be on `main`: `nuget-publish.yml` stops before
-it packs anything for a tag off `main`, then runs the full gate set, packs, publishes through NuGet
-trusted publishing, proves the indexed packages restore into clean managed and NativeAOT consumers,
-and only then creates the GitHub release. A push to `main` builds and verifies through the sibling
-workflows and never publishes.
+one line at one version. Bump it, pack the six packages and push them to nuget.org from your machine
+with the NuGet API key registered in Vitals, then tag the commit `v<version>` and create the GitHub
+release. A push to `main` builds and verifies through the workflows and never publishes.
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
 ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.

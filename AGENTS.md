@@ -6,61 +6,21 @@ qyl owns the instrumentation implementation: Roslyn interceptors, public runtime
 
 `Qyl.Telemetry.SemanticConventions` supplies qyl's directly generated convention bindings. The OpenTelemetry SDK, hosting integration and OTLP exporter remain implementation dependencies of `Qyl.Telemetry.Hosting`; they do not make qyl an installation of the upstream .NET automatic-instrumentation agent. Distinguish qyl's instrumentation and convention versions from the SDK/exporter versions in every upgrade report. Do not remove SDK/exporter dependencies on the assumption that replacing the upstream agent replaces its separate SDK.
 
-## Release ripple across the qyl-dev repos
+## Publishing across the qyl-dev repos
 
-This section is identical in the `AGENTS.md` of all six qyl-dev repos (qyl-api-schema, Qyl.OpenTelemetry.SemanticConventions, Qyl.OpenTelemetry.AutoInstrumentation, qyl, qyl.mcp, qyl.at). Change it in all six in one sweep.
+Push to `main` directly; no pull request, review or CI wait is required. CI runs on the push and reports; nothing gates on it.
 
-A merge or a release here is done only when the ripple is done: every downstream repo pins the new version on `main`, every downstream repo that had to re-release is published and indexed, and qyl.at lists only indexed versions.
+A release is done from the developer's machine with the registry API keys registered in Vitals (`vitals keys`): bump the version source, pack, push the packages to the registry, then tag `v<version>` on the released commit and create the GitHub release. No workflow publishes.
 
-```mermaid
-flowchart TD
-    A[Change merged to main here] --> B{Does it change what this repo publishes?}
-    B -- no --> Z[Done]
-    B -- yes --> C[Bump this repo's version source in the same PR]
-    C --> D[Run this repo's release act]
-    D --> E[Wait until the registry index shows the version]
-    E --> F[Open a PR in each downstream repo that re-pins it]
-    F --> G{Is this a qyl-api-schema release?}
-    G -- no --> J
-    G -- yes --> R{Does the contract revision change?}
-    R -- yes --> H[Merge qyl first; wait for the qyl-collector deployment to reach SUCCESS and api.qyl.at to serve the new revision; then merge qyl.mcp]
-    R -- no --> I[Merge qyl first, then qyl.mcp: its pin check reads qyl main]
-    H --> J
-    I --> J
-    J{Does a downstream bump change what that repo publishes?}
-    J -- yes --> C2[Run this diagram again in that repo]
-    J -- no --> K[qyl.at last: site.ts and docs list only indexed versions]
-    C2 --> K
-    K --> Z
-```
+| Repo | Version source | Publishes |
+|---|---|---|
+| qyl-api-schema | `package.json` via `npm version` (one version for npm and NuGet) | `@ancplua/qyl-api-schema` (npm), `Qyl.Api.Contracts` (NuGet) |
+| SemanticConventions | `Directory.Build.props` `VersionPrefix`, `registry/manifest.yaml` `schema_url` and a `CHANGELOG.md` entry; `scripts/generate.sh` must agree; `qyl.at/schemas/<version>` is served first | the three `Qyl.Telemetry.SemanticConventions*` packages (NuGet) |
+| AutoInstrumentation | `Directory.Build.props` `Version` | the six `Qyl.Telemetry.*` packages (NuGet) |
+| qyl | `Version.props` `QylVersion` | `qyl`, `qyl.<rid>` ×6, `Qyl.Api.Sdk` (NuGet) |
+| qyl.mcp | `server/package.json` `version` plus a `server/README.md` release-notes entry | `qyl-mcp-server` (npm) |
+| qyl.at | none | pushing `main` deploys `qyl.at` |
 
-When two producers feed one consumer (SemanticConventions and AutoInstrumentation both feed qyl), wait until both are indexed and re-pin them in one qyl PR.
+Downstream pins move in the change that consumes the publish: qyl-api-schema → qyl (`Version.props` `QylApiContractsVersion`, `services/qyl.dashboard/package.json`, `bun.lock`, the README table) → qyl.mcp (`server`, `workbench` and `dashboard` `package.json`, `bun.lock`); SemanticConventions → AutoInstrumentation (`Directory.Packages.props`, `SEMCONV_REF`) and qyl (`QylSemanticConventionsVersion`), with qyl.at serving `public/schemas/<version>`; AutoInstrumentation → qyl (`QylTelemetryVersion`); every producer → qyl.at `src/data/site.ts`. One production rule stays: when the contract revision changes, push the Collector (qyl `main`) first, wait until `api.qyl.at/health` serves the new revision, then push qyl.mcp; `mcp.qyl.at` refuses a Collector on another revision.
 
-Downstream edges: when a producer is indexed, the consumer re-pins it at these files in one PR.
-
-| Producer (registry) | Consumer: files to re-pin |
-|---|---|
-| qyl-api-schema: `Qyl.Api.Contracts` (NuGet) and `@ancplua/qyl-api-schema` (npm) | qyl: `Version.props` `QylApiContractsVersion`, `services/qyl.dashboard/package.json`, `services/qyl.dashboard/bun.lock`, the `README.md` table. The collector compiles against this package and advertises its contract revision. |
-| | qyl.mcp, after qyl's `main` carries it: `server/package.json`, `workbench/package.json`, `dashboard/package.json`, `bun.lock` |
-| SemanticConventions: `Qyl.Telemetry.SemanticConventions`, `.Incubating`, `.Analyzers` (NuGet) | AutoInstrumentation: `Directory.Packages.props`, `SEMCONV_REF` in `live-check.yml`, `ref:` in `nuget-publish.yml` |
-| | qyl: `Version.props` `QylSemanticConventionsVersion` |
-| | qyl.at: `public/schemas/<version>` (served before the SemanticConventions tag is pushed) |
-| AutoInstrumentation: `Qyl.Telemetry.Hosting`, `Qyl.Telemetry.AutoInstrumentation*` (NuGet) | qyl: `Version.props` `QylTelemetryVersion` |
-| qyl: `qyl`, `qyl.<rid>` ×6, `Qyl.Api.Sdk` (NuGet); collector at `api.qyl.at` | qyl.mcp: its CI builds the collector from qyl `main`, and `mcp.qyl.at` refuses a collector with another contract revision |
-| qyl.mcp: `qyl-mcp-server` (npm); server at `mcp.qyl.at` | qyl: the `qyl-mcp-server` row in `README.md`, which isn't rendered |
-| every producer above | qyl.at: `src/data/site.ts` (the `release` list and the `headline` footer, one wave date), `src/content/docs/api-sdk.mdx`, `src/content/docs/getting-started.mdx` |
-
-Release acts. The version source changes in the PR; the act runs after it merges.
-
-| Repo | Version source | Release act | Index wait |
-|---|---|---|---|
-| qyl-api-schema | the tag only | `gh release create vX.Y.Z --target <sha> --title vX.Y.Z --notes …` | the workflow waits for npm and NuGet |
-| SemanticConventions | `Directory.Build.props` `VersionPrefix`, `registry/manifest.yaml` `schema_url` and a `CHANGELOG.md` entry; then run `scripts/generate.sh`, which rejects a `schema_url` that differs from `VersionPrefix` | `git tag vX.Y.Z <sha> && git push origin vX.Y.Z` | the workflow requires `qyl.at/schemas/<version>` to be served, then verifies the published packages against nuget.org |
-| AutoInstrumentation | `Directory.Build.props` `Version` | push tag `v<Version>` | the workflow waits for NuGet |
-| qyl | `Version.props` `QylVersion`; bump it before the first package-affecting commit after a release | push tag `v<QylVersion>`; the workflow creates the GitHub release | the workflow waits for NuGet |
-| qyl.mcp | `server/package.json` `version`, plus a `server/README.md` release-notes entry | `gh release create vX.Y.Z --target <sha> --title X.Y.Z --notes …` | the workflow smokes the published package with `npx` |
-| qyl.at | none | merging to `main` deploys `qyl.at` | — |
-
-Release branches. A hotfix for a published line is cut from its tag onto `release/X.y`, released from there, and then ported to `main` in its own PR. The publish environments admit `release/*` next to `main` and `v*` tags, and the publish workflows' ancestry guards accept a commit reachable from `main` or from any `release/*` branch. Everything else is unchanged: the version source changes on the release branch, the tag names the commit whose version source carries that exact version, and the ripple above applies to the hotfix release like to any other.
-
-Merging to `main` also deploys: qyl → `qyl-collector` (`api.qyl.at`, Railway), qyl.mcp → `qyl-mcp` (`mcp.qyl.at`, Railway), qyl.at → the `qyl-at` Worker (`qyl.at`, Cloudflare).
+Pushing `main` also deploys: qyl → `qyl-collector` (`api.qyl.at`, Railway), qyl.mcp → `qyl-mcp` (`mcp.qyl.at`, Railway), qyl.at → the `qyl-at` Worker (`qyl.at`, Cloudflare).
