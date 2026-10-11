@@ -5,8 +5,7 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 publishes through NuGet trusted publishing, proves the indexed packages in clean managed and
 NativeAOT consumers, and only then creates the GitHub release.
 
-## [Unreleased]
-
+## [24.0.0] - 2026-10-11
 24.0.0, unreleased. A breaking release: three public names in `Qyl.Telemetry.Hosting` change, and
 none of the old names remains as an alias.
 
