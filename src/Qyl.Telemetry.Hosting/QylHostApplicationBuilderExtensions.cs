@@ -32,7 +32,7 @@ namespace Qyl;
 /// win.
 /// </para>
 /// </summary>
-public static class QylSdkHostApplicationBuilderExtensions
+public static class QylHostApplicationBuilderExtensions
 {
     private const string OtlpEndpointVariable = "OTEL_EXPORTER_OTLP_ENDPOINT";
 
@@ -46,7 +46,7 @@ public static class QylSdkHostApplicationBuilderExtensions
     //
     // Not covered, deliberately: `dotnet ef` and WebApplicationFactory run the application as its
     // own entry assembly, so nothing in the environment distinguishes them from the real host. A
-    // design-time host that must not export sets QylSdkOptions.RequireConfiguredEndpoint and leaves
+    // design-time host that must not export sets QylOptions.RequireConfiguredEndpoint and leaves
     // the endpoint unset.
     private static readonly string[] BuildTimeHostApplicationNames = ["GetDocument.Insider"];
 
@@ -54,7 +54,7 @@ public static class QylSdkHostApplicationBuilderExtensions
     // this bound is only reached when the SDK builds its pipeline immediately after AddQyl.
     private static readonly TimeSpan DiscoveryTimeout = TimeSpan.FromMilliseconds(600);
 
-    /// <summary>Activate qyl instrumentation, session propagation, and OTLP export.</summary>
+    /// <summary>Activate qyl instrumentation, session-tag inheritance, and OTLP export.</summary>
     /// <remarks>
     /// Wrapper-based GenAI telemetry additionally requires opting the library itself in:
     /// <c>agent.AsBuilder().UseOpenTelemetry().Build()</c> for Microsoft.Agents.AI, or
@@ -64,7 +64,7 @@ public static class QylSdkHostApplicationBuilderExtensions
     /// </remarks>
     public static IHostApplicationBuilder AddQyl(
         this IHostApplicationBuilder builder,
-        Action<QylSdkOptions>? configure = null)
+        Action<QylOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -80,7 +80,7 @@ public static class QylSdkHostApplicationBuilderExtensions
         // application configuring a service name or an endpoint on its second call ran with neither
         // and had no way to notice. Since the registration order is the application's own, only the
         // application can resolve it, and it needs to be told.
-        if (builder.Services.Any(static service => service.ServiceType == typeof(QylSdkRegistration)))
+        if (builder.Services.Any(static service => service.ServiceType == typeof(QylRegistration)))
         {
             if (configure is not null)
             {
@@ -93,9 +93,9 @@ public static class QylSdkHostApplicationBuilderExtensions
             return builder;
         }
 
-        builder.Services.AddSingleton<QylSdkRegistration>();
+        builder.Services.AddSingleton<QylRegistration>();
 
-        var options = new QylSdkOptions();
+        var options = new QylOptions();
         configure?.Invoke(options);
 
         QylAutoInstrumentationBootstrap.Boot();
@@ -161,7 +161,7 @@ public static class QylSdkHostApplicationBuilderExtensions
                 if (nativeSourceRows.Length > 0)
                     tracing.AddProcessor(new QylNativeSpanProcessor(nativeSourceRows));
 
-                if (options.EnableSessionPropagation)
+                if (options.EnableSessionTagInheritance)
                     tracing.AddProcessor(new QylSessionSpanProcessor());
 
                 options.ConfigureTracing?.Invoke(tracing);
@@ -213,7 +213,7 @@ public static class QylSdkHostApplicationBuilderExtensions
     }
 
     /// <summary>Marks the container as already carrying a qyl registration.</summary>
-    private sealed class QylSdkRegistration;
+    private sealed class QylRegistration;
 
     private static void ConfigureExporter(OtlpExporterOptions exporter, Uri? endpoint, string signalPath)
     {

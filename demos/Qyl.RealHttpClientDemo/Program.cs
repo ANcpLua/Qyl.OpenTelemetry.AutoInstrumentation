@@ -37,7 +37,7 @@ builder.AddQyl(options =>
     options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
-    options.EnableSessionPropagation = false;
+    options.EnableSessionTagInheritance = false;
 
     // A consumer naming a source qyl already subscribes -- "System.Net.Http" is the one they reach
     // for. AddQyl deduplicates AdditionalSources against the sources it registered itself, so the

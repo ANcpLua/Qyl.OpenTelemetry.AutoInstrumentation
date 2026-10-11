@@ -50,7 +50,7 @@ builder.AddQyl(options =>
     options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
-    options.EnableSessionPropagation = false;
+    options.EnableSessionTagInheritance = false;
 });
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));

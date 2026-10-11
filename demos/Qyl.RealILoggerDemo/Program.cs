@@ -38,7 +38,7 @@ builder.AddQyl(options =>
     options.EnableCollectorDiscovery = false;
     options.RequireConfiguredEndpoint = true;
     options.EnableMetricsExport = false;
-    options.EnableSessionPropagation = false;
+    options.EnableSessionTagInheritance = false;
 });
 
 // Configure only: registering the OpenTelemetry logging provider is AddQyl's job, so an

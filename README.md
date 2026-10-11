@@ -257,7 +257,7 @@ add-on option, so `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` and
 
 qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql`'s or
 `NServiceBus.Core`'s native instruments exported registers them through
-`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` or `QylSdkOptions.AdditionalMeters`.
+`OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES` or `QylOptions.AdditionalMeters`.
 
 The full 70-row contract, with every environment control and instrumentation option, its evidence
 level and its authoritative source, is the generated
@@ -297,7 +297,7 @@ qyl's own spans and instruments carry the registry-owned scope names
 `Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
 Mirror them in `AddSource(...)`, `AddMeter(...)` or
 `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V23` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V24` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 

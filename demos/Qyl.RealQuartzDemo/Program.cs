@@ -34,7 +34,7 @@ builder.AddQyl(options =>
     options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = true;
-    options.EnableSessionPropagation = false;
+    options.EnableSessionTagInheritance = false;
 });
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities))

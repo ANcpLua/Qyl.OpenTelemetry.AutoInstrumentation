@@ -190,7 +190,7 @@ contract_items:
   - demos/Qyl.RealAzureDemo
   - src/Qyl.Telemetry.AutoInstrumentation/QylInstrumentation.cs
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-azure-demo.py
   conformance_signals:
@@ -234,7 +234,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealElasticsearchDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-elasticsearch-demo.py
   conformance_signals:
@@ -277,7 +277,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealElasticTransportDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-elastictransport-demo.py
   conformance_signals:
@@ -551,7 +551,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealMassTransitDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-masstransit-demo.py
   conformance_signals:
@@ -601,7 +601,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealMongoDbDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-mongodb-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -769,7 +769,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealNServiceBusDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-nservicebus-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -855,7 +855,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealRabbitMqDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-rabbitmq-demo.py
   conformance_signals:
@@ -905,7 +905,7 @@ contract_items:
   evidence:
   - demos/Qyl.RealQuartzDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - tools/verify-real-quartz-demo.py
 - kind: signal_specific_instrumentation_promise
@@ -1539,7 +1539,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: OpenTelemetry ILogger provider registered by Qyl.Telemetry.Hosting AddQyl()
   evidence:
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealILoggerDemo
   - tools/verify-real-ilogger-demo.py
   conformance_signals:
@@ -1772,7 +1772,7 @@ contract_items:
   primary_owner: QylAutoInstrumentationOptions, gating the Qyl.Telemetry.Hosting ILogger provider registration
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - tools/verify-contract-invariants.py
   - tools/verify-real-ilogger-demo.py
 - kind: global_environment_control
@@ -2398,7 +2398,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - src/Qyl.Telemetry.AutoInstrumentation/QylNativeSignals.cs
-  - src/Qyl.Telemetry.Hosting/QylSdkHostApplicationBuilderExtensions.cs
+  - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealQuartzDemo
   - tools/verify-real-quartz-demo.py
 - kind: signal_specific_instrumentation_promise

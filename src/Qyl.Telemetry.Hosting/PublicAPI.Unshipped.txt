@@ -1,1 +1,51 @@
 #nullable enable
+Qyl.QylHostApplicationBuilderExtensions
+Qyl.QylOptions
+Qyl.QylOptions.AdditionalMeters.get -> System.Collections.Generic.IList<string!>!
+Qyl.QylOptions.AdditionalSources.get -> System.Collections.Generic.IList<string!>!
+Qyl.QylOptions.CollectorEndpoint.get -> System.Uri?
+Qyl.QylOptions.CollectorEndpoint.set -> void
+Qyl.QylOptions.ConfigureTracing.get -> System.Action<OpenTelemetry.Trace.TracerProviderBuilder!>?
+Qyl.QylOptions.ConfigureTracing.set -> void
+Qyl.QylOptions.EnableCollectorDiscovery.get -> bool
+Qyl.QylOptions.EnableCollectorDiscovery.set -> void
+Qyl.QylOptions.EnableLogExport.get -> bool
+Qyl.QylOptions.EnableLogExport.set -> void
+Qyl.QylOptions.EnableMetricsExport.get -> bool
+Qyl.QylOptions.EnableMetricsExport.set -> void
+Qyl.QylOptions.EnableSessionTagInheritance.get -> bool
+Qyl.QylOptions.EnableSessionTagInheritance.set -> void
+Qyl.QylOptions.QylOptions() -> void
+Qyl.QylOptions.RequireConfiguredEndpoint.get -> bool
+Qyl.QylOptions.RequireConfiguredEndpoint.set -> void
+Qyl.QylOptions.ResourceAttributes.get -> System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string!, object!>>!
+Qyl.QylOptions.ServiceName.get -> string?
+Qyl.QylOptions.ServiceName.set -> void
+Qyl.QylOptions.ServiceVersion.get -> string?
+Qyl.QylOptions.ServiceVersion.set -> void
+static Qyl.QylHostApplicationBuilderExtensions.AddQyl(this Microsoft.Extensions.Hosting.IHostApplicationBuilder! builder, System.Action<Qyl.QylOptions!>? configure = null) -> Microsoft.Extensions.Hosting.IHostApplicationBuilder!
+*REMOVED*Qyl.QylSdkHostApplicationBuilderExtensions
+*REMOVED*Qyl.QylSdkOptions
+*REMOVED*Qyl.QylSdkOptions.AdditionalMeters.get -> System.Collections.Generic.IList<string!>!
+*REMOVED*Qyl.QylSdkOptions.AdditionalSources.get -> System.Collections.Generic.IList<string!>!
+*REMOVED*Qyl.QylSdkOptions.CollectorEndpoint.get -> System.Uri?
+*REMOVED*Qyl.QylSdkOptions.CollectorEndpoint.set -> void
+*REMOVED*Qyl.QylSdkOptions.ConfigureTracing.get -> System.Action<OpenTelemetry.Trace.TracerProviderBuilder!>?
+*REMOVED*Qyl.QylSdkOptions.ConfigureTracing.set -> void
+*REMOVED*Qyl.QylSdkOptions.EnableCollectorDiscovery.get -> bool
+*REMOVED*Qyl.QylSdkOptions.EnableCollectorDiscovery.set -> void
+*REMOVED*Qyl.QylSdkOptions.EnableLogExport.get -> bool
+*REMOVED*Qyl.QylSdkOptions.EnableLogExport.set -> void
+*REMOVED*Qyl.QylSdkOptions.EnableMetricsExport.get -> bool
+*REMOVED*Qyl.QylSdkOptions.EnableMetricsExport.set -> void
+*REMOVED*Qyl.QylSdkOptions.EnableSessionPropagation.get -> bool
+*REMOVED*Qyl.QylSdkOptions.EnableSessionPropagation.set -> void
+*REMOVED*Qyl.QylSdkOptions.QylSdkOptions() -> void
+*REMOVED*Qyl.QylSdkOptions.RequireConfiguredEndpoint.get -> bool
+*REMOVED*Qyl.QylSdkOptions.RequireConfiguredEndpoint.set -> void
+*REMOVED*Qyl.QylSdkOptions.ResourceAttributes.get -> System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string!, object!>>!
+*REMOVED*Qyl.QylSdkOptions.ServiceName.get -> string?
+*REMOVED*Qyl.QylSdkOptions.ServiceName.set -> void
+*REMOVED*Qyl.QylSdkOptions.ServiceVersion.get -> string?
+*REMOVED*Qyl.QylSdkOptions.ServiceVersion.set -> void
+*REMOVED*static Qyl.QylSdkHostApplicationBuilderExtensions.AddQyl(this Microsoft.Extensions.Hosting.IHostApplicationBuilder! builder, System.Action<Qyl.QylSdkOptions!>? configure = null) -> Microsoft.Extensions.Hosting.IHostApplicationBuilder!
