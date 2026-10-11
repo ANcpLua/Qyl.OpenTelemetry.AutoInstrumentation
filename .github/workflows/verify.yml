@@ -5,6 +5,10 @@ name: qyl-verify
 # xml-doc, options/disabled behavior, and the source + NativeAOT consumers. Run via the handoff
 # orchestrator, minus the container-backed real demos (--no-demos -> verify-real-demos.yml) and
 # the gates that have their own workflow.
+#
+# Two cost-balanced shards per OS (--shard weighs each verifier by its recorded runtime): the
+# generator snapshot build alone is ~3.6 min, everything else together ~3.2 min, so a third or
+# fourth shard only adds another queued runner — the macOS pool is 5 jobs for the whole account.
 
 on:
   push:
@@ -24,13 +28,13 @@ permissions:
 
 jobs:
   verify:
-    name: verify ${{ matrix.shard }}/4 (${{ matrix.os }})
+    name: verify ${{ matrix.shard }}/2 (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2]
         os:
           - ubuntu-24.04-arm
           - macos-latest
@@ -56,4 +60,4 @@ jobs:
           python3 tools/verify-aot-autoinstrumentation-goal.py
           --no-demos
           --skip "smoketest,webapi aot demo,otlp receiver evidence,live check,nativeaot publish gate"
-          --shard ${{ matrix.shard }}/4
+          --shard ${{ matrix.shard }}/2

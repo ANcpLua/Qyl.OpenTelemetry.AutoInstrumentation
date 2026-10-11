@@ -72,6 +72,46 @@ COMMANDS: list[tuple[str, list[str]]] = [
 ]
 
 
+# Seconds a verifier takes on a CI runner, so --shard can balance slices by cost instead of by
+# position. The floor entries are the ubuntu-24.04-arm verify legs of 2026-10-11; the publish gate
+# is its four aot-publish-gate.yml shards added up. A name missing here weighs REAL_DEMO_COST when
+# it is a container-backed demo and DEFAULT_COST otherwise.
+SHARD_COSTS: dict[str, float] = {
+    AOT_GATE_NAME: 1200,
+    "generator snapshots": 217,
+    "demos release build": 42,
+    "nativeaot consumer verified": 34,
+    "projectreference behavior": 25,
+    "release build": 15,
+    "environment options behavior": 15,
+    "source interceptor consumer": 14,
+    "consumer behavior": 12,
+    "instrumentation disabled behavior": 10,
+    "package layout": 10,
+}
+REAL_DEMO_COST = 40.0
+DEFAULT_COST = 5.0
+
+
+def shard_cost(name: str) -> float:
+    return SHARD_COSTS.get(name, REAL_DEMO_COST if name.startswith("real ") else DEFAULT_COST)
+
+
+def shard_slice(commands: list[tuple[str, list[str]]], index: int, count: int) -> list[tuple[str, list[str]]]:
+    """Longest-first greedy split: each command, heaviest first, joins the lightest slice so far.
+
+    Equal costs fall back to round-robin, and every slice keeps the gate's own order, so COUNT
+    slices together still run each selected command exactly once.
+    """
+    loads = [0.0] * count
+    owner: dict[int, int] = {}
+    for position in sorted(range(len(commands)), key=lambda i: -shard_cost(commands[i][0])):
+        target = min(range(count), key=lambda slot: (loads[slot], slot))
+        owner[position] = target
+        loads[target] += shard_cost(commands[position][0])
+    return [command for position, command in enumerate(commands) if owner[position] == index - 1]
+
+
 def parse_names(raw_names: list[str] | None) -> set[str]:
     if not raw_names:
         return set()
@@ -143,10 +183,11 @@ def main() -> None:
         "--shard",
         metavar="INDEX/COUNT",
         help=(
-            "Run only the INDEX-th of COUNT equal slices of the selected verifiers, 1-based. "
-            "The slice is cut after --only/--skip/--no-demos/--demos-only have chosen the set, "
-            "and it preserves order, so COUNT runners together run exactly the same commands "
-            "the unsharded gate would run, in the same sequence."
+            "Run only the INDEX-th of COUNT cost-balanced slices of the selected verifiers, "
+            "1-based. The slice is cut after --only/--skip/--no-demos/--demos-only have chosen "
+            "the set, by the recorded cost of each verifier (SHARD_COSTS), and it keeps the "
+            "gate's order, so COUNT runners together run exactly the same commands the unsharded "
+            "gate would run, each in the same relative sequence."
         ),
     )
     parser.add_argument(
@@ -175,7 +216,7 @@ def main() -> None:
         index, _, count = args.shard.partition("/")
         if not index.isdigit() or not count.isdigit() or not 1 <= int(index) <= int(count):
             raise SystemExit(f"--shard expects INDEX/COUNT with 1 <= INDEX <= COUNT, got {args.shard!r}")
-        commands = commands[int(index) - 1 :: int(count)]
+        commands = shard_slice(commands, int(index), int(count))
         if not commands:
             print(f"shard {args.shard} selected no verifiers")
             return
