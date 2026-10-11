@@ -1,5 +1,11 @@
 # Qyl.OpenTelemetry.AutoInstrumentation
 
+## Ownership and upstream versions
+
+qyl owns the instrumentation implementation: Roslyn interceptors, public runtime hooks, native ActivitySource/Meter subscriptions, bootstrap and export orchestration. `contracts/otel-dotnet-auto.upstream.yaml` is a comparison baseline for coverage, not an upstream agent dependency or a version to install into qyl. Read the ownership and generated coverage contracts before claiming support or a gap.
+
+`Qyl.Telemetry.SemanticConventions` supplies qyl's directly generated convention bindings. The OpenTelemetry SDK, hosting integration and OTLP exporter remain implementation dependencies of `Qyl.Telemetry.Hosting`; they do not make qyl an installation of the upstream .NET automatic-instrumentation agent. Distinguish qyl's instrumentation and convention versions from the SDK/exporter versions in every upgrade report. Do not remove SDK/exporter dependencies on the assumption that replacing the upstream agent replaces its separate SDK.
+
 ## Release ripple across the qyl-dev repos
 
 This section is identical in the `AGENTS.md` of all six qyl-dev repos (qyl-api-schema, Qyl.OpenTelemetry.SemanticConventions, Qyl.OpenTelemetry.AutoInstrumentation, qyl, qyl.mcp, qyl.at). Change it in all six in one sweep.

@@ -5,6 +5,11 @@ works through compiler-generated Roslyn interceptors, `ActivitySource` subscript
 `DiagnosticListener` hooks, build assets and module-initializer bootstrap. There is no CLR
 profiler, no startup hook, no ReJIT, no runtime IL rewriting and no dynamic plugin loading.
 
+qyl owns this instrumentation implementation and releases it independently. The upstream .NET
+automatic-instrumentation contract is a coverage comparison, not a package dependency.
+`Qyl.Telemetry.Hosting` uses the OpenTelemetry SDK and OTLP exporter to process and transport
+the resulting telemetry; convention bindings come from qyl's own generated registry packages.
+
 Roslyn interceptors are supported by this repository's .NET SDK 10.0.401. See the official
 [`interceptors.md`](https://github.com/dotnet/roslyn/blob/main/docs/features/interceptors.md)
 contract.
