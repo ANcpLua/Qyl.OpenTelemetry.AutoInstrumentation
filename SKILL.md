@@ -59,8 +59,7 @@ is `./eng/build.sh Check`; packages are .NET only (`dotnet restore Qyl.Telemetry
    "not all indexed yet", keep polling every 30 s. Until all six are indexed, do nothing else
    about this release.
 5. The moment all six are indexed: stop watching and notify the consumers (section "Notify").
-6. Record the published version in
-   `/Users/alexandernachtmann/Downloads/qyl-codex-claude/qyl-handoff-for-codex.md` and run
+6. Run
    `/Users/alexandernachtmann/Downloads/qyl-codex-claude/refresh-published-versions.sh`, which rewrites
    `qyl-published-versions.yaml` beside it from the registries (the snapshot every agent reads first).
 
