@@ -21,6 +21,16 @@ if (string.IsNullOrWhiteSpace(connectionString))
     return 2;
 }
 
+// The testbed database outlives a run, so the probe collection is emptied before the host exists. No
+// ActivitySource listener is subscribed yet, so the reset produces no span, and the three commands
+// below stay the only ones naming the collection.
+using (var resetClient = new MongoClient(connectionString))
+{
+    await resetClient.GetDatabase(MongoDbReport.DatabaseName)
+        .GetCollection<BsonDocument>(MongoDbReport.CollectionName)
+        .DeleteManyAsync(Builders<BsonDocument>.Filter.Empty);
+}
+
 // The real registration path: AddQyl subscribes to MongoDB.Driver's own ActivitySource and installs
 // the one native-span processor.
 var exportedActivities = new List<Activity>();
@@ -32,11 +42,6 @@ var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-mongodb-demo";
-    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-    // closed port and asserts on its in-memory exporter alone.
-    options.CollectorEndpoint =
-        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
     options.EnableSessionTagInheritance = false;
@@ -50,7 +55,7 @@ await host.StartAsync();
 var client = new MongoClient(connectionString);
 await WaitForMongoDbAsync(client);
 
-// The container is fresh for every run, so the collection is never dropped first: a drop would be a
+// The collection is emptied above, before tracing starts, rather than dropped here: a drop would be a
 // fourth command naming the collection, and the assertion is one span per command.
 var database = client.GetDatabase(MongoDbReport.DatabaseName);
 var collection = database.GetCollection<BsonDocument>(MongoDbReport.CollectionName);
@@ -107,6 +112,8 @@ static async Task WaitForMongoDbAsync(MongoClient client)
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Source,
     string Name,
     string Kind,
@@ -115,6 +122,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),

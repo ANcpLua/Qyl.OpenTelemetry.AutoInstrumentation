@@ -35,8 +35,6 @@ builder.Logging.ClearProviders();
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-genai-demo";
-    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
 });
 builder.Services.AddOpenTelemetry()
@@ -256,6 +254,7 @@ internal sealed record CapturedActivity(
     string Name,
     string Kind,
     string Status,
+    string TraceId,
     string SpanId,
     string ParentSpanId,
     Dictionary<string, string> Tags,
@@ -277,6 +276,7 @@ internal sealed record CapturedActivity(
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
+            activity.TraceId.ToHexString(),
             activity.SpanId.ToHexString(),
             activity.ParentSpanId.ToHexString(),
             tags,

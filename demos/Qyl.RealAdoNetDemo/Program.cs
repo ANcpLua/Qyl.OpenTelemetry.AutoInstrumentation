@@ -24,6 +24,9 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+// The same spans over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-adonet-demo", "Qyl.Telemetry.AutoInstrumentation");
+
 using DbConnection connection = new SqliteConnection("Data Source=:memory:");
 connection.Open();
 var databaseNamespace = connection.Database;
@@ -41,6 +44,8 @@ catch (SqliteException exception)
 {
     Console.WriteLine("expected-adonet-error=" + exception.GetType().Name);
 }
+
+QylDemoOtlp.Flush(tracerProvider);
 
 var report = AdoNetReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
@@ -67,6 +72,8 @@ static object? ExecuteScalar(DbConnection connection, string sql)
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -74,6 +81,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),

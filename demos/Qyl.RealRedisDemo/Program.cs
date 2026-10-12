@@ -31,6 +31,9 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+// The same spans over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-redis-demo", "Qyl.Telemetry.AutoInstrumentation");
+
 var probes = new List<CommandProbe>();
 await using (var connection = await WaitForRedisAsync(configuration))
 {
@@ -144,6 +147,8 @@ await using (var connection = await WaitForRedisAsync(configuration))
     probes.Add(await Probe("KeyDelete", d => d.KeyDeleteAsync(str2)));
 }
 
+QylDemoOtlp.Flush(tracerProvider);
+
 var report = RedisReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
     probes.ToArray());
@@ -175,6 +180,8 @@ static async Task<ConnectionMultiplexer> WaitForRedisAsync(string configuration)
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -182,6 +189,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -197,7 +206,10 @@ internal sealed record CommandProbe(
     CapturedActivity[] Spans,
     string? ServerError);
 
+/// <summary>One probe and the one span it produced, named by its trace and span id.</summary>
 internal sealed record ProbeResult(
+    string TraceId,
+    string SpanId,
     string Label,
     string WireCommand,
     string SpanOperation,
@@ -277,7 +289,7 @@ internal sealed record RedisReport(
                     out var operation))
             {
                 failures.Add($"{probe.Label}: span is missing db.operation.name (wire sent {wire})");
-                results.Add(new ProbeResult(probe.Label, wire, string.Empty, span.Status));
+                results.Add(new ProbeResult(span.TraceId, span.SpanId, probe.Label, wire, string.Empty, span.Status));
                 continue;
             }
 
@@ -316,7 +328,7 @@ internal sealed record RedisReport(
                     failures);
             }
 
-            results.Add(new ProbeResult(probe.Label, wire, operation, span.Status));
+            results.Add(new ProbeResult(span.TraceId, span.SpanId, probe.Label, wire, operation, span.Status));
         }
 
         if (probes.Length != results.Count)

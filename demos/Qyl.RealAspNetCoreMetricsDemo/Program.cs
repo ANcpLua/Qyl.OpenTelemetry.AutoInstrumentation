@@ -26,6 +26,9 @@ using var meterProvider = Sdk
     .AddInMemoryExporter(exportedMetrics)
     .Build();
 
+// The same meters over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var otlpMeterProvider = QylDemoOtlp.CreateMeterProvider("qyl-real-aspnetcore-metrics-demo", DemoMetricNames.AspNetCore);
+
 var services = new ServiceCollection();
 services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
 services.AddSingleton<IWebHostEnvironment>(new TestWebHostEnvironment());
@@ -49,6 +52,7 @@ for (var attempt = 0; attempt < 20 && exportedMetrics.Count is 0; attempt++)
 }
 
 meterProvider.ForceFlush();
+QylDemoOtlp.Flush(otlpMeterProvider);
 
 var report = AspNetCoreMetricsReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",

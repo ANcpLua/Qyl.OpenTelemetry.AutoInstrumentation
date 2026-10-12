@@ -19,7 +19,7 @@ using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attribute
 // wire and the next process receives nothing from qyl.
 //
 // One executable, two roles. The two roles run as two real operating-system processes, and the
-// PROCESSES ARE STARTED BY tools/verify-real-session-propagation-demo.py ALONE — this program never
+// PROCESSES ARE STARTED BY eng/build/Demos/Lanes/SessionPropagationLane.cs ALONE — this program never
 // starts itself, and never starts any other process. Two hosts inside one process would leave
 // Activity.Parent linked across the "boundary" and the third property below would pass while being
 // false; that is the measurement error this demo exists to avoid.
@@ -59,11 +59,6 @@ static async Task<int> RunUpstreamAsync(int port)
     builder.AddQyl(options =>
     {
         options.ServiceName = "qyl-real-session-propagation-demo-upstream";
-        // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-        // closed port and asserts on its in-memory exporter alone.
-        options.CollectorEndpoint =
-            new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-        options.EnableCollectorDiscovery = false;
         options.EnableLogExport = false;
         options.EnableMetricsExport = false;
         // The processor under test. Every other demo turns it off; this one is about it.
@@ -123,9 +118,6 @@ static async Task<int> RunDownstreamAsync(int port)
     builder.AddQyl(options =>
     {
         options.ServiceName = "qyl-real-session-propagation-demo-downstream";
-        options.CollectorEndpoint =
-            new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-        options.EnableCollectorDiscovery = false;
         options.EnableLogExport = false;
         options.EnableMetricsExport = false;
         options.EnableSessionTagInheritance = true;

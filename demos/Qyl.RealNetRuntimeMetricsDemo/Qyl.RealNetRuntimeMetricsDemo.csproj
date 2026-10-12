@@ -17,4 +17,10 @@
     <ProjectReference Include="..\..\src\Qyl.Telemetry.AutoInstrumentation\Qyl.Telemetry.AutoInstrumentation.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The OTLP pipeline the Demos lane asserts through the collector; QYL_ENDPOINT names it. -->
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <Compile Include="..\Shared\QylDemoOtlp.cs" Link="QylDemoOtlp.cs" />
+  </ItemGroup>
+
 </Project>

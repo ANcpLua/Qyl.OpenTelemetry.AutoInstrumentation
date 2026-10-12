@@ -39,8 +39,6 @@ builder.Services.AddHealthChecks();
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-grpc-client-demo";
-    options.CollectorEndpoint = new Uri("http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
 });
@@ -110,6 +108,8 @@ try
 }
 finally
 {
+    // The OTLP exporter batches; the app is never disposed, so its spans leave only on this flush.
+    app.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
     await app.StopAsync();
 }
 
@@ -124,6 +124,8 @@ Console.WriteLine(json);
 return report.Pass ? 0 : 1;
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -131,6 +133,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),

@@ -13,6 +13,9 @@ using var meterProvider = Sdk
     .AddInMemoryExporter(exportedMetrics)
     .Build();
 
+// The same meter over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads it back from.
+using var otlpMeterProvider = QylDemoOtlp.CreateMeterProvider("qyl-real-netruntime-metrics-demo", DemoMetricNames.Runtime);
+
 _ = Enumerable.Range(0, 1024)
     .Select(static index => new byte[index % 64])
     .ToArray();
@@ -31,6 +34,7 @@ for (var attempt = 0; attempt < 40 && exportedMetrics.Count is 0; attempt++)
 }
 
 meterProvider.ForceFlush();
+QylDemoOtlp.Flush(otlpMeterProvider);
 
 var report = NetRuntimeMetricsReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",

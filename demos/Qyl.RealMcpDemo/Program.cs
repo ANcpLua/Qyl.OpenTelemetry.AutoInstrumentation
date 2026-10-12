@@ -35,7 +35,6 @@ builder.Logging.ClearProviders();
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-mcp-demo";
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
     options.AdditionalSources.Add(rootSourceName);

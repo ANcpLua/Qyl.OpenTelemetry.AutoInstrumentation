@@ -21,19 +21,15 @@ builder.Services.AddHealthChecks();
 builder.Services.AddServiceModelServices();
 builder.AddQyl(options =>
 {
-    options.EnableCollectorDiscovery = false;
-    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-    // closed port and asserts on its in-memory exporter alone.
-    options.CollectorEndpoint =
-        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
+    options.ServiceName = "qyl-real-corewcf-demo";
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
 });
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
 
-// Stopped and disposed after an explicit, bounded flush: the live-check gate reads what this
-// demo exports, and host disposal alone shuts the batch processor down with Timeout.Infinite —
+// Stopped and disposed after an explicit, bounded flush: the Demos and LiveCheck targets read
+// what this demo exports, and host disposal alone shuts the batch processor down with Timeout.Infinite —
 // against a listener that has gone away this demo would wait on it rather than report.
 await using var app = builder.Build();
 app.MapHealthChecks("/healthz");
@@ -107,6 +103,8 @@ public sealed class ProbeService : IProbeService
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Source,
     string Name,
     string Kind,
@@ -115,6 +113,8 @@ internal sealed record CapturedActivity(
 {
     internal static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),

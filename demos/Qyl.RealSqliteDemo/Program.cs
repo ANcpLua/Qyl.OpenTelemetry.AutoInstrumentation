@@ -23,6 +23,9 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+// The same spans over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-sqlite-demo", "Qyl.Telemetry.AutoInstrumentation");
+
 await using var connection = new SqliteConnection("Data Source=:memory:");
 await connection.OpenAsync();
 
@@ -39,6 +42,8 @@ catch (SqliteException exception)
 {
     Console.WriteLine("expected-sqlite-error=" + exception.SqliteErrorCode.ToString(CultureInfo.InvariantCulture));
 }
+
+QylDemoOtlp.Flush(tracerProvider);
 
 var report = SqliteReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
@@ -64,6 +69,8 @@ static object? ExecuteScalar(SqliteConnection connection, string sql)
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -71,6 +78,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),

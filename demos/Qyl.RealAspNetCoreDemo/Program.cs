@@ -26,11 +26,6 @@ builder.Services.AddHealthChecks();
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-aspnetcore-demo";
-    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-    // closed port and asserts on its in-memory exporter alone.
-    options.CollectorEndpoint =
-        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
     options.AdditionalSources.Add(DemoWork.SourceName);
@@ -169,6 +164,8 @@ internal sealed class SessionStartupFilter : IStartupFilter
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Source,
     string Name,
     string Kind,
@@ -177,6 +174,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.Source.Name,
             activity.DisplayName,
             activity.Kind.ToString(),

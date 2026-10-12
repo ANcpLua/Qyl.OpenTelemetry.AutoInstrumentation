@@ -17,6 +17,9 @@ using var activityListener = new ActivityListener
 };
 ActivitySource.AddActivityListener(activityListener);
 
+// The same spans over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-wcf-client-demo", "Qyl.Telemetry.AutoInstrumentation");
+
 var client = new ProbeClient(
     new BasicHttpBinding
     {
@@ -42,6 +45,8 @@ catch (CommunicationException exception)
 {
     Console.WriteLine("expected-wcf-error=" + exception.GetType().Name);
 }
+
+QylDemoOtlp.Flush(tracerProvider);
 
 var report = WcfClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
@@ -75,6 +80,8 @@ public sealed class ProbeClient : ClientBase<IProbeService>, IProbeService
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -82,6 +89,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),

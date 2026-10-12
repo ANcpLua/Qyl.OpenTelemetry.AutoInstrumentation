@@ -36,11 +36,6 @@ var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-mysqldata-demo";
-    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-    // closed port and asserts on its in-memory exporter alone.
-    options.CollectorEndpoint =
-        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
     options.EnableSessionTagInheritance = false;
@@ -168,7 +163,9 @@ internal sealed record CapturedActivity(
     string? StatusDescription,
     IReadOnlyDictionary<string, CapturedTag> Tags,
     CapturedEvent[] Events,
-    string Id)
+    string Id,
+    string TraceId,
+    string SpanId)
 {
     public string Tuple => Source + "/" + Kind;
 
@@ -192,7 +189,9 @@ internal sealed record CapturedActivity(
                     static tag => tag.Key,
                     static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
                     StringComparer.Ordinal)))],
-            activity.Id ?? string.Empty);
+            activity.Id ?? string.Empty,
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString());
 }
 
 /// <summary>The exact sorted multiset of (source, kind) tuples one database operation must produce.</summary>

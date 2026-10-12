@@ -28,6 +28,9 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+// The same spans over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-efcore-demo", "Qyl.Telemetry.AutoInstrumentation");
+
 await using var connection = new SqliteConnection("Data Source=:memory:");
 await connection.OpenAsync();
 await CreateSchemaAsync(connection);
@@ -46,6 +49,8 @@ await using (var db = new ProbeContext(connection))
         Console.WriteLine($"expected-failure={exception.GetType().Name}");
     }
 }
+
+QylDemoOtlp.Flush(tracerProvider);
 
 var report = EfCoreReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
@@ -69,6 +74,8 @@ static async Task CreateSchemaAsync(SqliteConnection connection)
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -76,6 +83,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),

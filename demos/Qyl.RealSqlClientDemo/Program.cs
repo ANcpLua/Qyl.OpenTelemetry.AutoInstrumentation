@@ -50,6 +50,11 @@ meterListener.SetMeasurementEventCallback<double>((instrument, measurement, tags
 });
 meterListener.Start();
 
+// The same spans and duration metric over OTLP to the collector QYL_ENDPOINT names, which the Demos
+// lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-sqlclient-demo", "Qyl.Telemetry.AutoInstrumentation");
+using var meterProvider = QylDemoOtlp.CreateMeterProvider("qyl-real-sqlclient-demo", DemoMetricNames.Database);
+
 await WaitForSqlServerAsync(connectionString);
 
 await using (var connection = new SqlConnection(connectionString))
@@ -70,9 +75,15 @@ await using (var connection = new SqlConnection(connectionString))
     }
 }
 
+QylDemoOtlp.Flush(tracerProvider);
+QylDemoOtlp.Flush(meterProvider);
+
+// The server the connection string names, which the specialist listener reports as server.address
+// and server.port: the lane passes both, because the testbed server is not on loopback.
 var report = SqlClientReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
     Environment.GetEnvironmentVariable("QYL_SQLCLIENT_EXPECTED_TRACE_OWNER") ?? "source_interceptor",
+    Environment.GetEnvironmentVariable("QYL_SQLCLIENT_EXPECTED_ADDRESS") ?? "127.0.0.1",
     Environment.GetEnvironmentVariable("QYL_SQLCLIENT_EXPECTED_PORT") ?? "11433",
     captured.ToArray(),
     capturedMetrics.ToArray());
@@ -127,6 +138,8 @@ static async Task<object?> ExecuteScalarAsync(SqlConnection connection, string s
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -135,6 +148,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
@@ -171,6 +186,7 @@ internal sealed record SqlClientReport(
     public static SqlClientReport Create(
         string runtimeMode,
         string traceOwner,
+        string expectedServerAddress,
         string expectedServerPort,
         CapturedActivity[] activities,
         CapturedMetric[] metrics)
@@ -213,7 +229,7 @@ internal sealed record SqlClientReport(
         RequireTag(successSelect, DbAttributes.QuerySummary, "SELECT", failures);
         if (!sourceInterceptorExpected)
         {
-            RequireTag(successSelect, ServerAttributes.Address, "127.0.0.1", failures);
+            RequireTag(successSelect, ServerAttributes.Address, expectedServerAddress, failures);
             RequireTag(successSelect, ServerAttributes.Port, expectedServerPort, failures);
         }
         if (string.Equals(

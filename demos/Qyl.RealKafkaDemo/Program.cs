@@ -33,13 +33,16 @@ using var listener = new ActivityListener
 
 ActivitySource.AddActivityListener(listener);
 
+// The same spans over OTLP to the collector QYL_ENDPOINT names, which the Demos lane reads them back from.
+using var tracerProvider = QylDemoOtlp.CreateTracerProvider("qyl-real-kafka-demo", "Qyl.Telemetry.AutoInstrumentation");
+
 await WaitForKafkaAsync(bootstrapServers, topic);
 
-using (var producer = new ProducerBuilder<string, string>(new ProducerConfig
+using (var producer = new ProducerBuilder<string, string>(WithSasl(new ProducerConfig
     {
         BootstrapServers = bootstrapServers,
         MessageTimeoutMs = 15000,
-    })
+    }))
     .SetErrorHandler(static (_, _) => { })
     .SetLogHandler(static (_, _) => { })
     .Build())
@@ -51,13 +54,13 @@ using (var producer = new ProducerBuilder<string, string>(new ProducerConfig
     producer.Flush(TimeSpan.FromSeconds(15));
 }
 
-using (var consumer = new ConsumerBuilder<string, string>(new ConsumerConfig
+using (var consumer = new ConsumerBuilder<string, string>(WithSasl(new ConsumerConfig
     {
         BootstrapServers = bootstrapServers,
         GroupId = "qyl-probe-consumer",
         AutoOffsetReset = AutoOffsetReset.Earliest,
         EnableAutoCommit = false,
-    })
+    }))
     .SetErrorHandler(static (_, _) => { })
     .SetLogHandler(static (_, _) => { })
     .Build())
@@ -96,6 +99,8 @@ catch (ProduceException<string, string> exception)
     Console.WriteLine("expected-kafka-error=" + exception.Error.Code);
 }
 
+QylDemoOtlp.Flush(tracerProvider);
+
 var report = KafkaReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
     captured.ToArray());
@@ -107,7 +112,7 @@ return report.Pass ? 0 : 1;
 
 static async Task WaitForKafkaAsync(string bootstrapServers, string topic)
 {
-    using var admin = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = bootstrapServers })
+    using var admin = new AdminClientBuilder(WithSasl(new AdminClientConfig { BootstrapServers = bootstrapServers }))
         .SetErrorHandler(static (_, _) => { })
         .SetLogHandler(static (_, _) => { })
         .Build();
@@ -135,6 +140,24 @@ static async Task WaitForKafkaAsync(string bootstrapServers, string topic)
     throw new InvalidOperationException("Kafka did not become ready.", lastException);
 }
 
+// The testbed broker authenticates with SASL/PLAIN over its TCP proxy. Unset credentials keep the
+// plaintext connection a local broker accepts. The deliberately failing producer above connects
+// nowhere and takes no credentials.
+static T WithSasl<T>(T config)
+    where T : ClientConfig
+{
+    var username = Environment.GetEnvironmentVariable("QYL_KAFKA_SASL_USERNAME");
+    var password = Environment.GetEnvironmentVariable("QYL_KAFKA_SASL_PASSWORD");
+    if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        return config;
+
+    config.SecurityProtocol = SecurityProtocol.SaslPlaintext;
+    config.SaslMechanism = SaslMechanism.Plain;
+    config.SaslUsername = username;
+    config.SaslPassword = password;
+    return config;
+}
+
 static async Task EnsureTopicAsync(IAdminClient admin, string topic)
 {
     try
@@ -148,6 +171,8 @@ static async Task EnsureTopicAsync(IAdminClient admin, string topic)
 }
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Name,
     string Kind,
     string Status,
@@ -155,6 +180,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),

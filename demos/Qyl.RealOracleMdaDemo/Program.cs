@@ -49,11 +49,6 @@ var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-oraclemda-demo";
-    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-    // closed port and asserts on its in-memory exporter alone.
-    options.CollectorEndpoint =
-        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
     options.EnableSessionTagInheritance = false;
@@ -160,7 +155,7 @@ static async Task WaitForOracleAsync(string connectionString)
 {
     Exception? lastException = null;
 
-    // A cold gvenzl/oracle-free container can take minutes to reach "DATABASE IS READY TO USE".
+    // A sleeping testbed database, or a cold one, can take minutes before it answers a query.
     for (var attempt = 0; attempt < 450; attempt++)
     {
         try
@@ -195,6 +190,7 @@ internal sealed record CapturedActivity(
     string Kind,
     string Status,
     string? StatusDescription,
+    string TraceId,
     string SpanId,
     string ParentSpanId,
     IReadOnlyDictionary<string, CapturedTag> Tags,
@@ -212,6 +208,7 @@ internal sealed record CapturedActivity(
             activity.Kind.ToString(),
             activity.Status.ToString(),
             activity.StatusDescription,
+            activity.TraceId.ToHexString(),
             activity.SpanId.ToHexString(),
             activity.ParentSpanId.ToHexString(),
             activity.TagObjects.ToDictionary(

@@ -35,7 +35,6 @@ var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-ilogger-demo";
-    options.EnableCollectorDiscovery = false;
     options.RequireConfiguredEndpoint = true;
     options.EnableMetricsExport = false;
     options.EnableSessionTagInheritance = false;
@@ -57,6 +56,11 @@ logger.LogInformation("qyl information record");
 logger.LogWarning("qyl warning record");
 logger.LogError("qyl error record");
 logger.LogCritical("qyl critical record");
+
+// The OTLP log exporter resolves its HttpClient from the container on its first export, so the records
+// leave for the collector QYL_ENDPOINT names on this flush, while the container is alive; an export
+// that first happens inside Dispose finds the container gone and is dropped.
+host.Services.GetService<LoggerProvider>()?.ForceFlush(5_000);
 
 host.Dispose();
 

@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Qyl;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
@@ -30,13 +31,10 @@ var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
 builder.AddQyl(options =>
 {
     options.ServiceName = "qyl-real-http-client-demo";
-    // The live-check gate points this at its OTLP listener. Unset, the demo exports into a
-    // closed port and asserts on its in-memory exporter alone.
-    options.CollectorEndpoint =
-        new Uri(Environment.GetEnvironmentVariable("QYL_LIVE_CHECK_ENDPOINT") ?? "http://127.0.0.1:1");
-    options.EnableCollectorDiscovery = false;
     options.EnableLogExport = false;
-    options.EnableMetricsExport = false;
+    // The duration metric the report asserts also leaves over OTLP, so the Demos lane can find it in
+    // the collector next to the spans.
+    options.EnableMetricsExport = true;
     options.EnableSessionTagInheritance = false;
 
     // A consumer naming a source qyl already subscribes -- "System.Net.Http" is the one they reach
@@ -122,6 +120,7 @@ listener.Dispose();
 meterListener.Dispose();
 
 host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
+host.Services.GetRequiredService<MeterProvider>().ForceFlush(5_000);
 await host.StopAsync();
 
 var report = HttpClientReport.Create(
@@ -185,6 +184,8 @@ internal sealed record CapturedSpan(string Operation, string Scope, string Kind)
 internal sealed record OperationSpanSet(string Operation, string[] Expected, string[] Actual);
 
 internal sealed record CapturedActivity(
+    string TraceId,
+    string SpanId,
     string Source,
     string Name,
     string OperationName,
@@ -194,6 +195,8 @@ internal sealed record CapturedActivity(
 {
     public static CapturedActivity From(Activity activity)
         => new(
+            activity.TraceId.ToHexString(),
+            activity.SpanId.ToHexString(),
             activity.Source.Name,
             activity.DisplayName,
             activity.OperationName,
