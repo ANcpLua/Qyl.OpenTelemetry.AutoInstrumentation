@@ -40,7 +40,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
-  - tools/verify-real-genai-demo.py
+  - eng/build/Demos/Lanes/GenAiLane.cs
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.MICROSOFTEXTENSIONSAI
   signal: metrics
@@ -74,7 +74,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
-  - tools/verify-real-genai-demo.py
+  - eng/build/Demos/Lanes/GenAiLane.cs
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MICROSOFTAGENTSAI
   signal: traces
@@ -108,7 +108,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
-  - tools/verify-real-genai-demo.py
+  - eng/build/Demos/Lanes/GenAiLane.cs
 - kind: signal_specific_instrumentation_promise
   key: signals.metrics.MICROSOFTAGENTSAI
   signal: metrics
@@ -142,7 +142,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
-  - tools/verify-real-genai-demo.py
+  - eng/build/Demos/Lanes/GenAiLane.cs
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MICROSOFTAGENTSAIWORKFLOWS
   signal: traces
@@ -177,7 +177,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealGenAiDemo
-  - tools/verify-real-genai-demo.py
+  - eng/build/Demos/Lanes/GenAiLane.cs
 - kind: signal_specific_instrumentation_promise
   key: signals.traces.MCP
   signal: traces
@@ -212,7 +212,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealMcpDemo
-  - tools/verify-real-mcp-demo.py
+  - eng/build/Demos/Lanes/McpLane.cs
   conformance_signals:
   - kind: span
     name: mcp.initialize

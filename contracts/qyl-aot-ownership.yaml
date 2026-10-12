@@ -12,9 +12,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealAdoNetDemo
-  - tools/verify-real-adonet-demo.py
+  - eng/build/Demos/Lanes/AdoNetLane.cs
   conformance_signals:
   - kind: span
     name: adonet.command
@@ -55,8 +55,8 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealAspNetCoreDemo
   - demos/Qyl.RealSessionPropagationDemo
-  - tools/verify-real-aspnetcore-demo.py
-  - tools/verify-real-session-propagation-demo.py
+  - eng/build/Demos/Lanes/AspNetCoreLane.cs
+  - eng/build/Demos/Lanes/SessionPropagationLane.cs
   conformance_signals:
   - kind: span
     name: aspnetcore.server
@@ -82,7 +82,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-azure-demo.py
+  - eng/build/Demos/Lanes/AzureLane.cs
   conformance_signals:
   - kind: span
     name: azure.sdk
@@ -105,7 +105,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-elasticsearch-demo.py
+  - eng/build/Demos/Lanes/ElasticsearchLane.cs
   conformance_signals:
   - kind: span
     name: '{db.operation}'
@@ -130,7 +130,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-elastictransport-demo.py
+  - eng/build/Demos/Lanes/ElasticTransportLane.cs
   conformance_signals:
   - kind: span
     name: '{http.request.method}'
@@ -153,7 +153,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs
   - demos/Qyl.RealEfCoreDemo
-  - tools/verify-real-efcore-demo.py
+  - eng/build/Demos/Lanes/EfCoreLane.cs
   conformance_signals:
   - kind: span
     name: efcore.sqlite
@@ -177,7 +177,7 @@ ownership_items:
   - demos/Qyl.RealGraphQlDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-graphql-demo.py
+  - eng/build/Demos/Lanes/GraphQlLane.cs
   conformance_signals:
   - kind: span
     name: graphql.execute
@@ -200,7 +200,7 @@ ownership_items:
   - demos/Qyl.RealGrpcClientDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-grpc-client-demo.py
+  - eng/build/Demos/Lanes/GrpcClientLane.cs
   conformance_signals:
   - kind: span
     name: grpc.client
@@ -225,9 +225,9 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylSessionSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-otlp-receiver.py
-  - tools/verify-real-http-client-demo.py
-  - tools/verify-real-session-propagation-demo.py
+  - eng/build/OtlpEvidence/OtlpWireEvidence.cs
+  - eng/build/Demos/Lanes/HttpClientLane.cs
+  - eng/build/Demos/Lanes/SessionPropagationLane.cs
   conformance_signals:
   - kind: span
     name: httpclient.downstream
@@ -266,9 +266,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealKafkaDemo
-  - tools/verify-real-kafka-demo.py
+  - eng/build/Demos/Lanes/KafkaLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   key: signals.traces.MASSTRANSIT
   supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.11; native ActivitySource "MassTransit"
@@ -283,7 +283,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-masstransit-demo.py
+  - eng/build/Demos/Lanes/MassTransitLane.cs
   conformance_signals:
   - kind: span
     name: '{destination} send'
@@ -308,7 +308,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-mongodb-demo.py
+  - eng/build/Demos/Lanes/MongoDbLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
   key: signals.traces.MYSQLCONNECTOR
   lane: native_source
@@ -321,7 +321,7 @@ ownership_items:
   - demos/Qyl.RealMySqlConnectorDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-mysqlconnector-demo.py
+  - eng/build/Demos/Lanes/MySqlConnectorLane.cs
   conformance_signals:
   - kind: span
     name: mysqlconnector.command
@@ -352,7 +352,7 @@ ownership_items:
   - demos/Qyl.RealMySqlDataDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-mysqldata-demo.py
+  - eng/build/Demos/Lanes/MySqlDataLane.cs
 
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
   key: signals.traces.NPGSQL
@@ -366,7 +366,7 @@ ownership_items:
   - demos/Qyl.RealNpgsqlDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-npgsql-demo.py
+  - eng/build/Demos/Lanes/NpgsqlLane.cs
   conformance_signals:
   - kind: span
     name: npgsql.command
@@ -400,7 +400,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-nservicebus-demo.py
+  - eng/build/Demos/Lanes/NServiceBusLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
   key: signals.traces.ORACLEMDA
   lane: native_source
@@ -413,7 +413,7 @@ ownership_items:
   - demos/Qyl.RealOracleMdaDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-oraclemda-demo.py
+  - eng/build/Demos/Lanes/OracleMdaLane.cs
   conformance_signals:
   - kind: span
     name: oraclemda.command
@@ -440,7 +440,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-rabbitmq-demo.py
+  - eng/build/Demos/Lanes/RabbitMqLane.cs
   conformance_signals:
   - kind: span
     name: publish {messaging.rabbitmq.destination.routing_key}
@@ -468,7 +468,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - tools/verify-real-quartz-demo.py
+  - eng/build/Demos/Lanes/QuartzLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
   key: signals.traces.SQLCLIENT
   lane: source_interceptor
@@ -481,9 +481,9 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedDbCommand.cs
   - src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqlClientDemo
-  - tools/verify-real-sqlclient-demo.py
+  - eng/build/Demos/Lanes/SqlClientLane.cs
   conformance_signals:
   - kind: span
     name: sqlclient.command
@@ -506,9 +506,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqliteDemo
-  - tools/verify-real-sqlite-demo.py
+  - eng/build/Demos/Lanes/SqliteLane.cs
   conformance_signals:
   - kind: span
     name: sqlite.command
@@ -531,9 +531,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealRedisDemo
-  - tools/verify-real-redis-demo.py
+  - eng/build/Demos/Lanes/RedisLane.cs
   conformance_signals:
   - kind: span
     name: redis.command
@@ -557,9 +557,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationGenerator
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealWcfClientDemo
-  - tools/verify-real-wcf-client-demo.py
+  - eng/build/Demos/Lanes/WcfClientLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_025
   key: signals.traces.WCFCORE
   lane: official_library_hook
@@ -572,7 +572,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealCoreWcfDemo
-  - tools/verify-real-corewcf-demo.py
+  - eng/build/Demos/Lanes/CoreWcfLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026
   key: signals.traces.WCFSERVICE
   lane: unsupported_nativeaot
@@ -611,7 +611,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealAspNetCoreMetricsDemo
-  - tools/verify-real-aspnetcore-metrics-demo.py
+  - eng/build/Demos/Lanes/AspNetCoreMetricsLane.cs
   conformance_signals:
   - kind: metric
     name: aspnetcore.components.render_diff.duration
@@ -639,7 +639,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealHttpClientDemo
-  - tools/verify-real-http-client-demo.py
+  - eng/build/Demos/Lanes/HttpClientLane.cs
   conformance_signals:
   - kind: metric
     name: http.client.request.duration
@@ -660,7 +660,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
-  - tools/verify-real-netruntime-metrics-demo.py
+  - eng/build/Demos/Lanes/NetRuntimeMetricsLane.cs
   conformance_signals:
   - kind: metric
     name: dotnet.gc.collections
@@ -687,7 +687,7 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  - eng/build/Contracts/ContractInvariants.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_032
   key: signals.metrics.NSERVICEBUS
   supported_versions: NServiceBus >=8.0.0; verified against 10.2.9; the native meters NServiceBus.Core
@@ -701,8 +701,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-environment-options-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/EnvironmentOptionsBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_033
   key: signals.metrics.PROCESS
   lane: runtime_public_telemetry
@@ -714,7 +714,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
-  - tools/verify-real-netruntime-metrics-demo.py
+  - eng/build/Demos/Lanes/NetRuntimeMetricsLane.cs
   conformance_signals:
   - kind: metric
     name: dotnet.process.cpu.time
@@ -743,9 +743,9 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedDbCommand.cs
   - src/Qyl.Telemetry.AutoInstrumentation/QylDbClientMetrics.cs
-  - tools/verify-source-interceptor-consumer.py
+  - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqlClientDemo
-  - tools/verify-real-sqlclient-demo.py
+  - eng/build/Demos/Lanes/SqlClientLane.cs
   conformance_signals:
   - kind: metric
     name: db.client.operation.duration
@@ -764,7 +764,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealILoggerDemo
-  - tools/verify-real-ilogger-demo.py
+  - eng/build/Demos/Lanes/ILoggerLane.cs
   conformance_signals:
   - kind: log
     name: ilogger.log
@@ -802,8 +802,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/InstrumentationDisabledBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_039
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -814,8 +814,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/InstrumentationDisabledBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_040
   key: global_environment_controls.OTEL_DOTNET_AUTO_TRACES_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -826,8 +826,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/InstrumentationDisabledBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_041
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -838,8 +838,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/InstrumentationDisabledBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_042
   key: global_environment_controls.OTEL_DOTNET_AUTO_METRICS_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -850,8 +850,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-instrumentation-disabled-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/InstrumentationDisabledBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_043
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -863,8 +863,8 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-real-ilogger-demo.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/Demos/Lanes/ILoggerLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -875,8 +875,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions; the logs signal declares no instrumentation id, so the pattern expands over an empty set
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-environment-options-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/EnvironmentOptionsBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_045
   key: instrumentation_options.OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT
   lane: instrumentation_option
@@ -887,9 +887,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealEfCoreDemo
-  - tools/verify-real-efcore-demo.py
+  - eng/build/Demos/Lanes/EfCoreLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
   key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
   lane: not_implemented
@@ -918,9 +918,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealSqlClientDemo
-  - tools/verify-real-sqlclient-demo.py
+  - eng/build/Demos/Lanes/SqlClientLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   lane: unsupported_nativeaot
@@ -953,9 +953,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealAspNetCoreDemo
-  - tools/verify-real-aspnetcore-demo.py
+  - eng/build/Demos/Lanes/AspNetCoreLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_052
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   lane: instrumentation_option
@@ -966,9 +966,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealAspNetCoreDemo
-  - tools/verify-real-aspnetcore-demo.py
+  - eng/build/Demos/Lanes/AspNetCoreLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
   lane: not_implemented
@@ -1015,9 +1015,9 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
+  - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealAspNetCoreDemo
-  - tools/verify-real-aspnetcore-demo.py
+  - eng/build/Demos/Lanes/AspNetCoreLane.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_058
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
   lane: instrumentation_option
@@ -1028,8 +1028,8 @@ ownership_items:
   primary_owner: QylAutoInstrumentationOptions
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
-  - tools/verify-contract-invariants.py
-  - tools/verify-environment-options-behavior.py
+  - eng/build/Contracts/ContractInvariants.cs
+  - eng/build/ConsumerBehavior/EnvironmentOptionsBehavior.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_059
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION
   lane: unsupported_nativeaot
@@ -1097,7 +1097,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylNativeSignals.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealQuartzDemo
-  - tools/verify-real-quartz-demo.py
+  - eng/build/Demos/Lanes/QuartzLane.cs
   notes:
   - Native Quartz metrics are forwarded without recreating instruments or rewriting their dimensions. NativeAOT remains outside
     the verified boundary.
