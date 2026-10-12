@@ -320,26 +320,114 @@ rules run over this repository's own sources and ship to no consumer. `Directory
 the incubating tier on purpose, so `QYL0008` ("copy incubating constants locally") does not apply.
 The rules themselves are owned and documented by the semantic-conventions repository.
 
+## Testbed on Railway
+
+The databases and brokers the demo verifiers connect to run in the Railway project `qyl-testbed`
+(region `europe-west4-drams3a`), declared in [`.railway/railway.ts`](.railway/railway.ts), and not
+on the developer machine: SQL Server ships no arm64 image and Oracle's takes 6 GB of local disk.
+Eight services run the images the verifiers pinned, one replica each, each reachable only through a
+public TCP proxy (no HTTP domain):
+
+| Service | Image | Serves | Limit (vCPU / memory) | Cold wake + query |
+| --- | --- | --- | --- | --- |
+| `rabbitmq` | `rabbitmq:4.1-alpine` | masstransit, rabbitmq | 1 / 512 MiB | 13 s |
+| `kafka` | `apache/kafka:4.1.0` (KRaft, SASL/PLAIN) | kafka | 1 / 1 GiB | 14 s |
+| `mongodb` | `mongo:8-noble` | mongodb | 1 / 1 GiB | 1.6 s |
+| `redis` | `redis:8-alpine` (requirepass) | redis | 1 / 512 MiB | 1.4 s |
+| `postgres` | `postgres:18-alpine` | npgsql | 1 / 512 MiB | 1.4 s |
+| `mysql` | `mysql:9` | mysqlconnector, mysqldata | 1 / 1 GiB | 3.5 s |
+| `oracle` | `gvenzl/oracle-free:23-slim-faststart` | oraclemda | 2 / 3 GiB | 3.7 s |
+| `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | sqlclient | 2 / 2 GiB | 6.1 s |
+
+**Model: sleeping services.** Every service has Railway's Serverless setting (app sleeping) on.
+Railway stops a service once it has sent no outbound packet for 5 minutes, sampled, so 5 to 10
+minutes after the last client disconnects, and the next connection through its TCP proxy starts it
+again. That first connection is reset while the service starts, so a client retries until the
+service answers. The wake column is the probe's time from its first attempt to a successful query,
+with all eight asleep and woken together from Berlin (2026-10-12, slowest of 2 runs). Sleeping stops
+the processes but keeps the container's filesystem: a woken database still holds what was written
+before it slept, and only a deploy starts again from the image (a fresh container was ready within
+25 s, RabbitMQ the slowest). A verifier therefore creates what it needs idempotently or under a
+unique name. SQL Server's start command turns its customer-feedback telemetry off, the one outbound
+traffic that would keep it awake.
+
+**Cost.** Railway Pro bills per minute only while a service runs: $10 per GB-month of memory and $20
+per vCPU-month, that is $0.000231 per GB-minute and $0.000463 per vCPU-minute. Asleep, the project
+costs nothing: there are no volumes and TCP proxies are free, so the idle cost is $0.00 a month. One
+full wake of all eight for 15 minutes costs at most $0.10 at the limits above (10 vCPU and 9.5 GiB,
+about 10.2 GB: $0.069 + $0.035). At the usage Railway measured on the awake services (5.6 GB,
+under 0.1 vCPU) it is about $0.02, which matches what Railway billed for the project's
+first 16 awake minutes. The 5 to 10 minutes a service stays awake after the last connection count
+toward those 15 minutes.
+
+**Environment-file contract.** `~/.config/vitals/qyl-testbed.env`, owner-only (`chmod 600`),
+registered in Vitals as "qyl testbed connection strings (Railway qyl-testbed)". `KEY=value` lines, no
+quotes, no `export`; the verifiers read exactly these keys:
+
+```text
+QYL_TESTBED_RABBITMQ_URL=amqp://USER:PASS@HOST:PORT
+QYL_TESTBED_KAFKA_BOOTSTRAP=HOST:PORT
+QYL_TESTBED_KAFKA_USER=...
+QYL_TESTBED_KAFKA_PASSWORD=...
+QYL_TESTBED_MONGODB_URL=mongodb://USER:PASS@HOST:PORT/?authSource=admin
+QYL_TESTBED_REDIS_URL=redis://:PASS@HOST:PORT
+QYL_TESTBED_POSTGRES_URL=Host=HOST;Port=PORT;Username=USER;Password=PASS;Database=qyl
+QYL_TESTBED_MYSQL_URL=Server=HOST;Port=PORT;User ID=USER;Password=PASS;Database=qyl
+QYL_TESTBED_ORACLE_URL=User Id=system;Password=PASS;Data Source=HOST:PORT/FREEPDB1
+QYL_TESTBED_SQLSERVER_URL=Server=HOST,PORT;User ID=sa;Password=PASS;TrustServerCertificate=True;Encrypt=True
+QYL_TESTBED_WAKE_SECONDS_MAX=SECONDS
+```
+
+Kafka's SASL/PLAIN pair is `QYL_TESTBED_KAFKA_USER` and `QYL_TESTBED_KAFKA_PASSWORD` over the proxy,
+which is also the address the broker advertises. The Postgres, MySQL, Oracle and SQL Server values
+are the Npgsql, MySqlConnector, ODP.NET Core and Microsoft.Data.SqlClient connection-string forms.
+`QYL_TESTBED_WAKE_SECONDS_MAX` is how long a client retries a sleeping service before it fails,
+now 120: the longest start measured (25 s for a fresh container) with room for a wake on
+another Railway host that has to pull the image first. The passwords are 32 random characters that
+exist only as Railway variables (`preserve()` in the partial) and as copies in this file.
+
+**Proof.** The probe wakes all eight at once, retries each until it answers or
+`QYL_TESTBED_WAKE_SECONDS_MAX` runs out, prints one line per service with its time and exits non-zero
+on any failure. Kafka is a produce and consume round trip through the proxy with SASL that also
+checks the advertised listener; Oracle is a `SELECT` in `FREEPDB1`; SQL Server is `SELECT @@VERSION`;
+the others are a write and read or a `SELECT`. `--verbose` prints every failed attempt.
+
+```bash
+bun install --cwd eng/testbed
+bun eng/testbed/probe.ts
+```
+
+**Recreate.** The project is `.railway/railway.ts` (partial `autoinstrumentation`); change it there
+and apply, never in the dashboard. `eng/testbed/provision.sh` creates any missing service, generates
+any missing password with `openssl rand` and sets it from stdin, runs `railway config apply --yes`
+and writes the env file from the Railway variables; `eng/testbed/provision.sh env` only rewrites the
+file. In a fresh checkout, link the project first:
+
+```bash
+railway link --project qyl-testbed        # a new project: railway init --name qyl-testbed
+eng/testbed/provision.sh
+railway config plan --detailed-exit-code  # exits 0 when Railway and the file agree
+```
+
 ## Demos and verifiers
 
 Thirty demo applications under `demos/` are the runtime evidence. Each has a verifier under
-`tools/` that builds it, publishes it NativeAOT where the integration supports it, starts any
-container it needs, runs it and asserts the spans and metrics it emitted:
+`tools/` that builds it, publishes it NativeAOT where the integration supports it, runs it against
+the testbed service it needs and asserts the spans and metrics it emitted:
 
 ```bash
 python3 tools/verify-real-quartz-demo.py
 ```
 
-Ten verifiers need Docker, and each names its image in an overridable variable: `masstransit`
-and `rabbitmq` use `QYL_RABBITMQ_IMAGE` (`rabbitmq:4.1-alpine`), `kafka` uses `QYL_KAFKA_IMAGE`
-(`apache/kafka:4.1.0`), `mongodb` uses `QYL_MONGODB_IMAGE` (`mongo:8-noble`), `redis` uses
-`QYL_REDIS_IMAGE` (`redis:8-alpine`), `npgsql` uses `QYL_POSTGRES_IMAGE` (`postgres:18-alpine`),
-`mysqlconnector` and `mysqldata` use `QYL_MYSQL_IMAGE` (`mysql:9`), `oraclemda` uses
-`QYL_ORACLE_IMAGE` (`gvenzl/oracle-free:23-slim-faststart`), and `sqlclient` uses
-`QYL_SQLSERVER_IMAGE` (`mcr.microsoft.com/mssql/server:2022-latest`, which ships no arm64 image, so
-that lane needs an x64 Docker host). The four database verifiers gained their containers in 15.0.0: a
-native source only emits against a real server, where the old interceptor demos proved themselves
-against a connectionless exception.
+Ten verifiers need a server, and none starts a container: each connects to its service in the
+[testbed on Railway](#testbed-on-railway) through `~/.config/vitals/qyl-testbed.env`. `masstransit`
+and `rabbitmq` use `QYL_TESTBED_RABBITMQ_URL`, `kafka` uses `QYL_TESTBED_KAFKA_BOOTSTRAP`,
+`QYL_TESTBED_KAFKA_USER` and `QYL_TESTBED_KAFKA_PASSWORD`, `mongodb` uses `QYL_TESTBED_MONGODB_URL`,
+`redis` uses `QYL_TESTBED_REDIS_URL`, `npgsql` uses `QYL_TESTBED_POSTGRES_URL`, `mysqlconnector` and
+`mysqldata` use `QYL_TESTBED_MYSQL_URL`, `oraclemda` uses `QYL_TESTBED_ORACLE_URL`, and `sqlclient`
+uses `QYL_TESTBED_SQLSERVER_URL`, so no lane needs Docker or an x64 host. The four database
+verifiers have needed a real server since 15.0.0: a native source only emits against a real server,
+where the old interceptor demos proved themselves against a connectionless exception.
 
 The complete local gate runs every verifier in order — contract invariants, release and demo
 builds, package layout, public API baselines, generator snapshots, the NativeAOT publish matrix,

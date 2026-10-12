@@ -1,0 +1,16 @@
+{
+  "name": "qyl-testbed-probe",
+  "private": true,
+  "description": "Wakes and checks the eight qyl-testbed services on Railway: bun eng/testbed/probe.ts",
+  "type": "module",
+  "dependencies": {
+    "amqplib": "2.2.0",
+    "ioredis": "6.0.0",
+    "kafkajs": "2.2.4",
+    "mongodb": "7.7.0",
+    "mssql": "12.7.2",
+    "mysql2": "3.24.4",
+    "oracledb": "7.0.1",
+    "pg": "8.23.0"
+  }
+}

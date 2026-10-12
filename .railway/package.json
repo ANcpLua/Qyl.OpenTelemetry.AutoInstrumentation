@@ -1,0 +1,8 @@
+{
+  "name": "qyl-testbed-railway-config",
+  "private": true,
+  "description": "Pins the railway/iac SDK that evaluates railway.ts; the Railway CLI ships the engine.",
+  "devDependencies": {
+    "railway": "3.13.1"
+  }
+}

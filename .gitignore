@@ -12,3 +12,6 @@ __pycache__/
 
 # Registry checkout made by `make live-check`.
 .semconv/
+
+# Bun installs for .railway/ and eng/testbed/.
+node_modules/
