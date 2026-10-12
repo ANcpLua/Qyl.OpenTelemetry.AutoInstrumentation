@@ -27,6 +27,10 @@ Downstream pins move in the change that consumes the publish: qyl-api-schema →
 
 Pushing `main` also deploys qyl → `qyl-collector` (`api.qyl.at`, Railway) and qyl.mcp → `qyl-mcp` (`mcp.qyl.at`, Railway). qyl.at deploys manually through `./release.sh` to the `qyl-at` Worker (`qyl.at`, Cloudflare).
 
+## Build
+
+Build, test and pack through the Fallout targets in `eng/build` (one toolchain, C#): `./eng/build.sh <Target>`, listed with their parameters by `./eng/build.sh --help`; `make <target>` wraps them. `./eng/build.sh Check` is the gate SKILL.md names; `./eng/build.sh CheckFull` adds the NativeAOT publish matrix, the thirty demo lanes, the live check, smoke, the web API AOT demo and the OTLP wire evidence. A demo lane exports OTLP to a local qyl collector (the `qyl` tool pinned in `.config/dotnet-tools.json`) and asserts the arrived telemetry through its API, typed by `Qyl.Api.Contracts`. Consumer fixtures live in `eng/fixtures`; the generated contract artifacts are rewritten by `./eng/build.sh Contracts --write-contracts`.
+
 ## Testbed
 
 The demo verifiers' databases and brokers run in the Railway project `qyl-testbed`, declared in `.railway/railway.ts`, never in local Docker containers: see the README section "Testbed on Railway". Their connection strings are in `~/.config/vitals/qyl-testbed.env` (Vitals entry "qyl testbed connection strings (Railway qyl-testbed)"); `bun eng/testbed/probe.ts` wakes and checks all eight services, and `eng/testbed/provision.sh` recreates the project from the partial and rewrites that file.

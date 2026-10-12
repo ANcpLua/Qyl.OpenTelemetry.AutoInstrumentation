@@ -5,6 +5,51 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [Unreleased]
+
+### Changed
+
+- **Build, test and pack go through Fallout targets in C#** (`eng/build`, `./eng/build.sh <Target>`,
+  `./eng/build.sh --help`). They replace the 55 Python scripts under `tools/`, their
+  `requirements.txt`, `tools/smoketest.sh`, the Makefile lanes and the mise tasks: one toolchain.
+  `./eng/build.sh Check` is the gate before a push or a release (it was `mise run check`) and
+  `./eng/build.sh CheckFull` runs everything (it was `mise run check-full`); `make <target>` and the
+  two mise tasks are thin wrappers over them. The targets: `Build`, `Pack`, `Contracts`,
+  `ApiBaseline`, `GeneratorSnapshots`, `PackageLayout`, `ConsumerBehavior`, `AotPublishGate`,
+  `Demos`, `LiveCheck`, `Smoke`, `WebApiAotDemo`, `OtlpEvidence`, `Check`, `CheckFull` and
+  `TestbedProbe`.
+- **The demos are asserted through a local qyl collector.** Every demo exports OTLP to the collector
+  the `qyl` dotnet tool ships (pinned in `.config/dotnet-tools.json`, started once per build run on
+  free loopback ports) through `QYL_ENDPOINT`, and its lane asserts, besides the demo's own report,
+  that every span, measurement series and log record the report names arrived with the reported
+  name, kind, status and attribute values, read through the collector API typed by
+  `Qyl.Api.Contracts`. Every span a demo report lists carries its `TraceId` and `SpanId`. The demos
+  that wired no exporter (ADO.NET, SQLite, EF Core, Kafka, Redis, SqlClient, WCF client and the two
+  metrics demos) export through `demos/Shared/QylDemoOtlp.cs`; the `AddQyl()` demos take its
+  discovery path instead of a hard-coded endpoint.
+- **The ten broker and database lanes use the Railway testbed instead of Docker.** They read
+  `~/.config/vitals/qyl-testbed.env` (`QYL_TESTBED_ENV` overrides the path), wake a sleeping
+  service with a protocol-level probe and a visible countdown for up to
+  `QYL_TESTBED_WAKE_SECONDS_MAX`, and fail naming the service. The SqlClient lane runs on any
+  machine now that SQL Server runs x64 on Railway; the Kafka demo speaks SASL/PLAIN when
+  `QYL_KAFKA_SASL_USERNAME` and `QYL_KAFKA_SASL_PASSWORD` are set; the MongoDB demo empties its
+  collection first, because a woken testbed keeps its data.
+- The contracts cite the C# gates as evidence (`eng/build/Demos/Lanes/<Name>Lane.cs`,
+  `eng/build/ConsumerBehavior/*.cs`), and the generated contract artifacts are rewritten by
+  `./eng/build.sh Contracts --write-contracts`. Consumer fixtures live in `eng/fixtures`.
+- `release.sh` packs through `./eng/build.sh Pack` into `artifacts/release`. Its dry run reports
+  the branch, origin, tag and already-indexed checks as warnings instead of refusing, so it proves
+  the pack from any branch.
+- Version sync accepts an `## [Unreleased]` entry above the released entry of the current
+  `<Version>`, so changes after a release are recorded before the next bump; an `[Unreleased]` entry
+  above anything else while that version is tagged still fails.
+
+### Fixed
+
+- The ILogger demo exported no log record over OTLP: its first export ran inside the host's
+  disposal against an already-disposed container. The gRPC client demo never flushed its batch
+  exporter. Both were invisible while the demos asserted only their in-memory exporters.
+
 ## [24.0.1] - 2026-10-12
 
 ### Changed

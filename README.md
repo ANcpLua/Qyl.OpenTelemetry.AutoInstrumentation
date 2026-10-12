@@ -281,8 +281,8 @@ Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `
 `QylSessionSpanProcessor` copies `session.id` from the nearest tagged in-process ancestor onto
 descendant spans that do not carry one. Remote parents and unrelated trace branches propagate
 nothing, and the copy happens on end, the last moment the ancestor's tag can be observed.
-`demos/Qyl.RealSessionPropagationDemo` and `tools/verify-real-session-propagation-demo.py` hold
-that to three assertions across two real operating-system processes: an in-process descendant
+`demos/Qyl.RealSessionPropagationDemo` and its lane, `eng/build/Demos/Lanes/SessionPropagationLane.cs`,
+hold that to three assertions across two real operating-system processes: an in-process descendant
 inherits the value, a descendant that already carries one keeps its own, and the server span in
 the second process carries none — although `traceparent` arrived, the trace is the same one, and
 the session itself reached that span in baggage.
@@ -411,13 +411,25 @@ railway config plan --detailed-exit-code  # exits 0 when Railway and the file ag
 
 ## Demos and verifiers
 
-Thirty demo applications under `demos/` are the runtime evidence. Each has a verifier under
-`tools/` that builds it, publishes it NativeAOT where the integration supports it, runs it against
-the testbed service it needs and asserts the spans and metrics it emitted:
+Thirty demo applications under `demos/` are the runtime evidence. Each has a lane in the Fallout
+build, `eng/build/Demos/Lanes/<Name>Lane.cs`, that builds it, publishes it NativeAOT where the
+integration supports it, runs it with OTLP pointed at a local qyl collector and asserts it twice:
+the report the demo prints, held to the expectations the lane restates so a demo cannot quietly
+relax its own, and, through the collector's API typed by `Qyl.Api.Contracts`, that every span,
+measurement series and log record the report names arrived over OTLP with the reported name, kind,
+status and attribute values:
 
 ```bash
-python3 tools/verify-real-quartz-demo.py
+./eng/build.sh Demos --lane quartz
 ```
+
+`--lane` takes several names (`--lane quartz http-client`); without it all thirty run. The collector
+is the one the `qyl` dotnet tool pinned in `.config/dotnet-tools.json` ships, started once per build
+run on free loopback ports with a store of its own under `artifacts/qyl-collector`. A lane points a
+demo at it with `QYL_ENDPOINT`; run by hand, a demo takes `AddQyl()`'s discovery path and exports to
+a running `qyl up`. The collector keeps what its attribute policy allows, so a value it never stores
+(`url.full`, `db.query.text`, header captures) is asserted in the demo's report alone, and each lane
+names those keys in its output.
 
 Ten verifiers need a server, and none starts a container: each connects to its service in the
 [testbed on Railway](#testbed-on-railway) through `~/.config/vitals/qyl-testbed.env`. `masstransit`
@@ -429,31 +441,28 @@ uses `QYL_TESTBED_SQLSERVER_URL`, so no lane needs Docker or an x64 host. The fo
 verifiers have needed a real server since 15.0.0: a native source only emits against a real server,
 where the old interceptor demos proved themselves against a connectionless exception.
 
-The complete local gate runs every verifier in order — contract invariants, release and demo
-builds, package layout, public API baselines, generator snapshots, the NativeAOT publish matrix,
-all thirty demos, the live check, the smoke test and the published-consumer evidence:
+The gate before a push or a release is `./eng/build.sh Check`: the contract invariants and the
+generated contract artifacts, the version and documentation pins, the Release builds of the solution
+and of the demo solution, the public API baselines, the generator snapshots, the package layout and
+the consumer behaviors (eight consumers of the packages this checkout packs, NativeAOT publishes
+included). `./eng/build.sh CheckFull` adds the NativeAOT publish matrix, all thirty demo lanes, the
+live check, the package smoke test, the NativeAOT web API demo and the OTLP wire evidence. Every target
+also runs alone, and `./eng/build.sh --help` lists them with their parameters:
 
 ```bash
-python3 tools/verify-aot-autoinstrumentation-goal.py
+./eng/build.sh AotPublishGate --aot-set warned
+./eng/build.sh TestbedProbe
 ```
 
-`--list` prints the command names, and `--only NAME` / `--skip NAME` select from them. The two
-verifiers take different vocabularies and they do not overlap: this gate's names are the ones
-`--list` prints, so a skip is quoted gate names —
-
-```bash
-python3 tools/verify-aot-autoinstrumentation-goal.py --skip "real mongodb demo,live check"
-```
-
-— while `verify-live-check.py` names its demo lanes, one per row of the native-source table:
-
-```bash
-QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
-```
+The OTLP wire evidence is the one gate that does not read the collector: it decodes the exporter's
+own request with the official OTLP protobuf messages, because what it proves — the
+`/v1/traces` path and `application/x-protobuf` body, typed attribute values, and that `url.full`
+left the process redacted — is either below the collector's API or, for `url.full`, a key the
+collector drops at ingest, so a leaked secret would be invisible there.
 
 ## Live check
 
-`tools/verify-live-check.py` runs `weaver registry live-check` as an OTLP/gRPC listener on 4317 and
+`./eng/build.sh LiveCheck` runs `weaver registry live-check` as an OTLP/gRPC listener on 4317 and
 points nine demo lanes at it, so what the instrumentation actually emitted is judged against the
 pinned semantic-convention registry rather than against an assertion written in this repository.
 The lanes are one per row of the native-source table — `azure`, `corewcf`, `elastictransport`,
@@ -481,23 +490,17 @@ Passing only the second changes nothing for those three advisors, and an unreada
 silently, so the gate checks for both halves and refuses to run without them.
 
 The registry is a checkout of
-[Qyl.Telemetry.SemanticConventions](https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions),
-named by `QYL_SEMCONV_REGISTRY`, with `scripts/fetch-core.sh` already run so `registry/manifest.yaml`
-can resolve its filtered core dependency. The published NuGet packages carry the generated C#, not
-the registry itself, which is why the gate needs the source repository:
+[Qyl.Telemetry.SemanticConventions](https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions)
+at `SEMCONV_REF` from `tools/live-check.env`, which the target clones into `.semconv` and prepares
+with the registry's own `scripts/fetch-core.sh`, so `registry/manifest.yaml` can resolve its filtered
+core dependency. The published NuGet packages carry the generated C#, not the registry itself, which
+is why the gate needs the source repository. Weaver is the version `mise.toml` pins (`mise install`).
+The three broker and database lanes wake their testbed service first, like `Demos` does.
+`--live-check-skip <lane>` skips a lane and names the skip in the output as `live-check-partial-ok`:
 
 ```bash
-QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py
-```
-
-`--skip LANE[,LANE...]` skips a lane whose container this machine cannot run, and the skip is named
-in the output as `live-check-partial-ok`. On macOS under OrbStack the MongoDB lane is that lane:
-OrbStack's VM runs a 7.x kernel, and MongoDB 8 refuses to start on Linux 6.19 or newer
-([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)) — the container exits before it
-listens, so the demo cannot connect. Run the other eight locally; the MongoDB demo needs a Linux host with a kernel older than 6.19:
-
-```bash
-QYL_SEMCONV_REGISTRY=../Qyl.Telemetry.SemanticConventions python3 tools/verify-live-check.py --skip mongodb
+./eng/build.sh LiveCheck
+./eng/build.sh LiveCheck --live-check-skip mongodb
 ```
 
 One gap in coverage is recorded rather than hidden: **`RabbitMQ.Client.Subscriber` has no consuming
@@ -509,9 +512,10 @@ the subscriber source emits nothing and its `deliver` and `fetch` spans are unju
 The version lives in `Directory.Build.props` `<Version>`, and the `Qyl.Telemetry.*` family ships as
 one line at one version. Bump it, pack the six packages and push them to nuget.org from your machine
 with the NuGet API key registered in Vitals, then tag the commit `v<version>` and create the GitHub
-release. Nothing runs on a push to `main`: the full `mise run check` runs before every push
-and release, and `./release.sh <version>` publishes (see `SKILL.md`). The full gate includes
-the focused `make verify` lanes, so an unchanged passing lane does not need to run twice.
+release. Nothing runs on a push to `main`: `./eng/build.sh Check` runs before every push and release,
+and `./release.sh <version>` publishes (see `SKILL.md`). It packs through `./eng/build.sh Pack`, which
+puts the six packages into `artifacts/release`; `./release.sh <version> --dry-run` runs every check
+and the real pack and publishes nothing.
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
 ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.
@@ -519,10 +523,9 @@ ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>`
 Two files name the semantic-convention release and they must agree: the
 `Qyl.Telemetry.SemanticConventions` `PackageVersion` in `Directory.Packages.props`, whose generated
 constants the code compiles against, and `SEMCONV_REF` in `tools/live-check.env`, the
-registry tag the live check judges against. `verify-live-check.py` compares the pin against the
-checkout's `VersionPrefix` and fails when they are different releases — judging spans against a
-registry other than the one that produced the constants is the drift that would otherwise look like
-a green gate.
+registry tag the live check judges against. The live check compares the pin against the checkout's
+`VersionPrefix` and fails when they are different releases — judging spans against a registry other
+than the one that produced the constants is the drift that would otherwise look like a green gate.
 
 ## Limitations
 
