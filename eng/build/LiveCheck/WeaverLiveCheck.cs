@@ -193,7 +193,7 @@ static partial class WeaverLiveCheck
 
 /// <summary>
 /// The filtered core registry the qyl manifest depends on, materialized the way the registry's own
-/// scripts/fetch-core.sh does it — that script needs a Python interpreter with PyYAML, which this
+/// scripts/fetch-core.sh does it — that script needs a second language runtime and its YAML library, which this
 /// build does not use. The core tag is read from the manifest's <c>core</c> dependency (its
 /// schema_url names the version); gen-ai/, mcp/, openai/ and the registry.aws.bedrock group are
 /// removed, because a direct unfiltered core dependency collides with the genai dependency.
