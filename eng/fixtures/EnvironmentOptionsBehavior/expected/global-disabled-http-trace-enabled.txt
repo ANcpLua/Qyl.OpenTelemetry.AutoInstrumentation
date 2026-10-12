@@ -1,0 +1,16 @@
+global=False
+traces=False
+metrics=False
+logs=False
+trace.http=True
+trace.sql=False
+metric.http=False
+metric.sql=False
+log.fallback=False
+meters=
+ef.text=False
+sql.text=False
+aspnetcore.req=
+aspnetcore.res=
+aspnetcore.query.unredacted=False
+http.query.unredacted=False

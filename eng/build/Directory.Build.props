@@ -1,0 +1,14 @@
+<Project>
+
+  <!-- The build project is a tool that runs on this machine, not a shipped runtime: it takes none of
+       the repository's NativeAOT, trimming or analyzer settings. Not importing the root
+       Directory.Build.props is the point of this file; the root Directory.Packages.props still
+       supplies every package version. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

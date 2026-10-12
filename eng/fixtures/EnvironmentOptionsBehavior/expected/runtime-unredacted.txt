@@ -1,0 +1,3 @@
+http.status=204
+activity.count=1
+url.full=http://127.0.0.1:PORT/probe?user=alice&token=hunter2

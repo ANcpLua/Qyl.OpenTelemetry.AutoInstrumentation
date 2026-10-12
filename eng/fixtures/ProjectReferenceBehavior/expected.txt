@@ -1,0 +1,9 @@
+command.calls=1
+activity.count=1
+activity.name=SELECT
+activity.kind=Client
+qyl.instrumentation.domain=db.client
+db.system.name=other_sql
+db.operation.name=SELECT
+db.query.summary=SELECT
+db.query.text=<absent>

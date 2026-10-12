@@ -1,0 +1,34 @@
+{
+  "sources": [
+    {
+      "repository": "https://github.com/open-telemetry/opentelemetry-proto",
+      "revision": "b3f75588eb23c5fca62264edd05d382de49beb1a",
+      "files": [
+        {
+          "path": "opentelemetry/proto/collector/trace/v1/trace_service.proto",
+          "upstreamSha256": "03c8cc4e3e101087d884392d6eda32152ad5cd696e6344f50deaa59804a75c7a",
+          "vendoredSha256": "03c8cc4e3e101087d884392d6eda32152ad5cd696e6344f50deaa59804a75c7a"
+        },
+        {
+          "path": "opentelemetry/proto/common/v1/common.proto",
+          "upstreamSha256": "0429795169e29089cc53490b541a0ae89fa7c80492ac58ed2b3c4171cce4ecee",
+          "vendoredSha256": "df792418c7907005769f3a4f8f11779c50f9118998175f103f2a06f7b8860c09",
+          "canonicalization": {
+            "justification": "A POSIX final newline appended; declarations and comments are otherwise byte-identical.",
+            "appendTrailingLineFeeds": 1
+          }
+        },
+        {
+          "path": "opentelemetry/proto/resource/v1/resource.proto",
+          "upstreamSha256": "34fe1c26b8959f09d97656348ae03b105d15a5f07ada0f8f1614ef5dff7d1569",
+          "vendoredSha256": "34fe1c26b8959f09d97656348ae03b105d15a5f07ada0f8f1614ef5dff7d1569"
+        },
+        {
+          "path": "opentelemetry/proto/trace/v1/trace.proto",
+          "upstreamSha256": "45a33961142210add67d583cc525702fb985afdbae181e6daf2143929bad0613",
+          "vendoredSha256": "45a33961142210add67d583cc525702fb985afdbae181e6daf2143929bad0613"
+        }
+      ]
+    }
+  ]
+}

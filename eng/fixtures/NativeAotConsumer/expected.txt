@@ -1,0 +1,8 @@
+name=GET
+kind=Client
+error.type=connection_error
+http.request.method=GET
+qyl.instrumentation.domain=http.client
+server.address=127.0.0.1
+server.port=1
+url.full=http://127.0.0.1:1/nativeaot/client?*

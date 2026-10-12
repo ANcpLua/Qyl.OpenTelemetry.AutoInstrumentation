@@ -8,9 +8,11 @@ obj/
 .agents/
 .claude/worktrees/
 
-__pycache__/
+# Fallout's working files; .fallout/parameters.json marks the root and stays tracked.
+.fallout/temp/
+.fallout/build.schema.json
 
-# Registry checkout made by `make live-check`.
+# Registry checkout made by ./eng/build.sh LiveCheck.
 .semconv/
 
 # Bun installs for .railway/ and eng/testbed/.

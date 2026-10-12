@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "qyl": {
+      "version": "12.1.1",
+      "commands": [
+        "qyl"
+      ],
+      "rollForward": false
+    }
+  }
+}

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Qyl.Build</RootNamespace>
+    <!-- [Parameter] fields are assigned by Fallout through reflection. -->
+    <NoWarn>$(NoWarn);CS0649</NoWarn>
+    <FalloutRootDirectory>..\..</FalloutRootDirectory>
+    <FalloutScriptDirectory>..</FalloutScriptDirectory>
+    <FalloutExcludeConfig>True</FalloutExcludeConfig>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fallout.Common" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    <!-- The typed models of the collector API; QylCollectorClient is the HTTP surface over them. -->
+    <PackageReference Include="Qyl.Api.Contracts" />
+    <!-- The rename table the collector applies at ingest, so a lane compares a renamed key under its live name. -->
+    <PackageReference Include="Qyl.Telemetry.SemanticConventions.Incubating" />
+    <PackageReference Include="YamlDotNet" />
+    <!-- Lifts Fallout.Common's vulnerable transitive 10.0.6 to the pinned servicing release. -->
+    <PackageReference Include="System.Security.Cryptography.Xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OtlpEvidence decodes the exporter's wire bytes with the official OTLP messages. -->
+    <Protobuf Include="OtlpEvidence/Protos/opentelemetry/proto/common/v1/common.proto" ProtoRoot="OtlpEvidence/Protos" GrpcServices="None" />
+    <Protobuf Include="OtlpEvidence/Protos/opentelemetry/proto/resource/v1/resource.proto" ProtoRoot="OtlpEvidence/Protos" GrpcServices="None" />
+    <Protobuf Include="OtlpEvidence/Protos/opentelemetry/proto/trace/v1/trace.proto" ProtoRoot="OtlpEvidence/Protos" GrpcServices="None" />
+    <Protobuf Include="OtlpEvidence/Protos/opentelemetry/proto/collector/trace/v1/trace_service.proto" ProtoRoot="OtlpEvidence/Protos" GrpcServices="None" />
+  </ItemGroup>
+
+</Project>

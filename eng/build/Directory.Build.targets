@@ -1,0 +1,5 @@
+<Project>
+
+  <!-- Stops the upward Directory.Build.targets search at the build project. -->
+
+</Project>

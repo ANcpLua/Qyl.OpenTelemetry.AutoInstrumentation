@@ -1,48 +1,26 @@
-# Every verification lane of this repository, runnable one at a time or together. These are the jobs the
-# former CI ran; `make verify` is the no-Docker set, `make all` adds the Docker demos and the live check.
-# The tools come from mise.toml: run `mise install` once, then `make deps`.
+# A thin wrapper over the Fallout build in eng/build: `make <target>` runs `./eng/build.sh <Target>`,
+# and ARGS passes parameters through, e.g. `make demos ARGS="--lane quartz"`. Every target with its
+# description and parameters: `make help`.
 
-SHELL := /bin/bash
-SLN := Qyl.Telemetry.AutoInstrumentation.slnx
+.PHONY: help build pack contracts api-baseline generator-snapshots package-layout consumer-behavior \
+        aot-publish-gate demos live-check smoke webapi-aot-demo otlp-evidence check check-full testbed-probe
 
-.PHONY: all verify deps build floor smoke otlp-receiver webapi-aot-demo aot-publish-gate demos live-check check help
+help:
+	@./eng/build.sh --help
 
-help: ## List the targets
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
-
-all: verify demos live-check ## Everything: the no-Docker lanes, the real-library Docker demos and the live check
-
-verify: build floor smoke otlp-receiver webapi-aot-demo aot-publish-gate ## The no-Docker lanes in order
-
-deps: ## Python verifier dependencies
-	python3 -m pip install -r tools/requirements.txt
-
-build: ## Build the solution (Release)
-	dotnet build $(SLN) --configuration Release
-
-floor: ## The goal verifier without demos (what the former verify job ran, both shards)
-	python3 tools/verify-aot-autoinstrumentation-goal.py --no-demos --skip "smoketest,webapi aot demo,otlp receiver evidence,live check,nativeaot publish gate"
-
-smoke: ## Package smoke test
-	bash tools/smoketest.sh
-
-otlp-receiver: ## Typed OTLP receiver evidence
-	python3 tools/verify-otlp-receiver.py
-
-webapi-aot-demo: ## NativeAOT web API demo
-	python3 tools/verify-webapi-aot-demo.py
-
-aot-publish-gate: ## NativeAOT publish gate, every set, strict promotion (all four former shards)
-	python3 tools/verify-aot-publish-gate.py --set all --strict-promotion
-
-demos: ## Real-library demos (Docker or OrbStack must be running; the former six shards)
-	python3 tools/verify-aot-autoinstrumentation-goal.py --demos-only
-
-live-check: ## Live check against the registry tag in tools/live-check.env (network; clones into .semconv)
-	set -euo pipefail; set -a; . tools/live-check.env; set +a; \
-	rm -rf .semconv; git clone -q --depth 1 --branch "$$SEMCONV_REF" https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions.git .semconv; \
-	(cd .semconv && ./scripts/fetch-core.sh); \
-	QYL_SEMCONV_REGISTRY="$$PWD/.semconv" python3 tools/verify-live-check.py
-
-check: ## The former CI gate (release build plus the goal verifier)
-	mise run check
+build:               ; ./eng/build.sh Build $(ARGS)
+pack:                ; ./eng/build.sh Pack $(ARGS)
+contracts:           ; ./eng/build.sh Contracts $(ARGS)
+api-baseline:        ; ./eng/build.sh ApiBaseline $(ARGS)
+generator-snapshots: ; ./eng/build.sh GeneratorSnapshots $(ARGS)
+package-layout:      ; ./eng/build.sh PackageLayout $(ARGS)
+consumer-behavior:   ; ./eng/build.sh ConsumerBehavior $(ARGS)
+aot-publish-gate:    ; ./eng/build.sh AotPublishGate $(ARGS)
+demos:               ; ./eng/build.sh Demos $(ARGS)
+live-check:          ; ./eng/build.sh LiveCheck $(ARGS)
+smoke:               ; ./eng/build.sh Smoke $(ARGS)
+webapi-aot-demo:     ; ./eng/build.sh WebApiAotDemo $(ARGS)
+otlp-evidence:       ; ./eng/build.sh OtlpEvidence $(ARGS)
+check:               ; ./eng/build.sh Check $(ARGS)
+check-full:          ; ./eng/build.sh CheckFull $(ARGS)
+testbed-probe:       ; ./eng/build.sh TestbedProbe $(ARGS)

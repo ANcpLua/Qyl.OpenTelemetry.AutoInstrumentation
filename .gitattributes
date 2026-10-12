@@ -1,0 +1,3 @@
+# The vendored OTLP protos stay byte-identical with upstream (see their upstream.lock.json),
+# trailing whitespace included.
+eng/build/OtlpEvidence/Protos/** -whitespace

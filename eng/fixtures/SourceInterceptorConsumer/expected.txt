@@ -1,0 +1,3 @@
+client.calls=2
+activity.count=4
+activity.statuses=error|ok|ok|ok
