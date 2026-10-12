@@ -437,7 +437,7 @@ and `rabbitmq` use `QYL_TESTBED_RABBITMQ_URL`, `kafka` uses `QYL_TESTBED_KAFKA_B
 `QYL_TESTBED_KAFKA_USER` and `QYL_TESTBED_KAFKA_PASSWORD`, `mongodb` uses `QYL_TESTBED_MONGODB_URL`,
 `redis` uses `QYL_TESTBED_REDIS_URL`, `npgsql` uses `QYL_TESTBED_POSTGRES_URL`, `mysqlconnector` and
 `mysqldata` use `QYL_TESTBED_MYSQL_URL`, `oraclemda` uses `QYL_TESTBED_ORACLE_URL`, and `sqlclient`
-uses `QYL_TESTBED_SQLSERVER_URL`, so no lane needs Docker or an x64 host. The four database
+uses `QYL_TESTBED_SQLSERVER_URL`, so no lane needs a local container engine or an x64 host. The four database
 verifiers have needed a real server since 15.0.0: a native source only emits against a real server,
 where the old interceptor demos proved themselves against a connectionless exception.
 

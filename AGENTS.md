@@ -33,4 +33,4 @@ Build, test and pack through the Fallout targets in `eng/build` (one toolchain, 
 
 ## Testbed
 
-The demo verifiers' databases and brokers run in the Railway project `qyl-testbed`, declared in `.railway/railway.ts`, never in local Docker containers: see the README section "Testbed on Railway". Their connection strings are in `~/.config/vitals/qyl-testbed.env` (Vitals entry "qyl testbed connection strings (Railway qyl-testbed)"); `bun eng/testbed/probe.ts` wakes and checks all eight services, and `eng/testbed/provision.sh` recreates the project from the partial and rewrites that file.
+The demo verifiers' databases and brokers run in the Railway project `qyl-testbed`, declared in `.railway/railway.ts`, never on the developer machine: see the README section "Testbed on Railway". Their connection strings are in `~/.config/vitals/qyl-testbed.env` (Vitals entry "qyl testbed connection strings (Railway qyl-testbed)"); `bun eng/testbed/probe.ts` wakes and checks all eight services, and `eng/testbed/provision.sh` recreates the project from the partial and rewrites that file.
