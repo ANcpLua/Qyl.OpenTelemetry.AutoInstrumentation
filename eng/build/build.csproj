@@ -21,8 +21,6 @@
     <!-- The rename table the collector applies at ingest, so a lane compares a renamed key under its live name. -->
     <PackageReference Include="Qyl.Telemetry.SemanticConventions.Incubating" />
     <PackageReference Include="YamlDotNet" />
-    <!-- Lifts Fallout.Common's vulnerable transitive 10.0.6 to the pinned servicing release. -->
-    <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 
   <ItemGroup>

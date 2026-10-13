@@ -18,7 +18,8 @@
     <PackageVersion Include="ErrorProne.NET.Structs" Version="0.6.1-beta.1" />
     <!-- The build project under eng/build: Fallout, the contract YAML reader, the typed collector
          client models and the OTLP protobuf messages OtlpEvidence decodes. -->
-    <PackageVersion Include="Fallout.Common" Version="11.0.18" />
+    <!-- Stay on 10.x. Fallout's 11.0.x packages on nuget.org are unlisted builds from May 2026, older than 10.4.0. -->
+    <PackageVersion Include="Fallout.Common" Version="10.4.0" />
     <PackageVersion Include="Google.Protobuf" Version="3.36.2" />
     <PackageVersion Include="GraphQL" Version="8.8.5" />
     <PackageVersion Include="GraphQL.MicrosoftDI" Version="8.8.5" />
