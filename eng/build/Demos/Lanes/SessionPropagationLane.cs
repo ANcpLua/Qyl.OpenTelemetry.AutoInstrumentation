@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
+using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
 namespace Qyl.Build;
 
@@ -18,7 +19,7 @@ sealed class SessionPropagationLane : DemoLane
     private const string DemoSource = "Qyl.RealSessionPropagationDemo";
     private const string AspNetCoreSource = "Microsoft.AspNetCore";
     private const string HttpClientSource = "System.Net.Http";
-    private const string SessionTag = "session.id";
+    private const string SessionTag = SessionAttributes.Id;
     private const string SessionId = "qyl-real-session-propagation-demo-session";
     private const string OwnSessionId = "qyl-real-session-propagation-demo-own-session";
     private const string DownstreamSessionId = "qyl-real-session-propagation-demo-downstream-session";
