@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="System.ServiceModel.Http" />
     <PackageReference Include="System.ServiceModel.Primitives" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
 

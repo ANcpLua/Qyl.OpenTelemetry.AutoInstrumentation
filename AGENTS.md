@@ -2,7 +2,7 @@
 
 qyl's .NET instrumentation: Roslyn interceptors, public runtime hooks, native ActivitySource/Meter subscriptions, bootstrap and export orchestration.
 
-Push to `main` directly. Gate before every push: `./eng/build.sh Check` (`mise run check`). Releases, re-pins and consumers: [`SKILL.md`](SKILL.md).
+Push to `main` directly. Gate before every push: `./eng/build.sh Check` (`mise run check`); it prints a summary and the log path under `artifacts/logs/`, `QYL_VERBOSE=1` (or `--verbose`) prints everything. Releases, re-pins and consumers: [`SKILL.md`](SKILL.md).
 
 ## Ownership
 

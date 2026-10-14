@@ -2,6 +2,19 @@
 
 Entries older than the newest three, which stay in [CHANGELOG.md](CHANGELOG.md).
 
+## [24.0.1] - 2026-10-12
+
+### Changed
+
+- Compile against `Qyl.Telemetry.SemanticConventions` 9.9.0 and validate emitted telemetry
+  against the matching registry. Its C# and TypeScript bindings are generated from the same
+  resolved qyl registry. qyl continues to own its instrumentation; the upstream .NET automatic
+  instrumentation 1.17.0 contract remains a comparison baseline, and the OpenTelemetry SDK,
+  hosting integration and OTLP exporter remain at 1.19.1.
+- Bind the release tag to the packed commit and reject concurrent tracked edits before publishing.
+- Run the full local verification gate without building the solution twice. Release and
+  dependency-update documentation now describes manual publishing and deployment accurately.
+
 ## [24.0.0] - 2026-10-11
 A breaking release: three public names in `Qyl.Telemetry.Hosting` change, and
 none of the old names remains as an alias.

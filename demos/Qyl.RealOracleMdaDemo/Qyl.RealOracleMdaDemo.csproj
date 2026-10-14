@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Oracle.ManagedDataAccess.Core" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <!-- Enrichment only: the spans arrive without it. The demo registers it in one lane to
          measure exactly which attributes it adds. -->
     <PackageReference Include="Oracle.ManagedDataAccess.OpenTelemetry" />

@@ -5,6 +5,23 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [24.1.1] - 2026-10-14
+
+### Security
+
+- `Qyl.Telemetry.AutoInstrumentation.SqlClient` depends on `System.Security.Cryptography.Pkcs`
+  10.0.13. `Microsoft.Data.SqlClient` 7.1.1, the newest release, brings 9.0.18, which the
+  advisories of 2026-10-13 (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7) cover; the floor reaches
+  consumers through the package.
+
+### Changed
+
+- The build host and the SqlClient, Oracle and WCF demos reference the patched
+  `System.Security.Cryptography.Pkcs` and `.Xml` 10.0.13 (Fallout.Common brought 10.0.10 of both;
+  GHSA-7hqp-7c5m-4vq6, GHSA-c399-9853-6jmj, GHSA-r955-8q5j-3h83); NuGet audit failed those
+  restores.
+- The demo lanes' local collector is the `qyl` tool 12.2.0.
+
 ## [24.1.0] - 2026-10-14
 
 ### Added
@@ -83,18 +100,5 @@ below, and the build, the demos and the release tooling around them change.
 - The ILogger demo exported no log record over OTLP: its first export ran inside the host's
   disposal against an already-disposed container. The gRPC client demo never flushed its batch
   exporter. Both were invisible while the demos asserted only their in-memory exporters.
-
-## [24.0.1] - 2026-10-12
-
-### Changed
-
-- Compile against `Qyl.Telemetry.SemanticConventions` 9.9.0 and validate emitted telemetry
-  against the matching registry. Its C# and TypeScript bindings are generated from the same
-  resolved qyl registry. qyl continues to own its instrumentation; the upstream .NET automatic
-  instrumentation 1.17.0 contract remains a comparison baseline, and the OpenTelemetry SDK,
-  hosting integration and OTLP exporter remain at 1.19.1.
-- Bind the release tag to the packed commit and reject concurrent tracked edits before publishing.
-- Run the full local verification gate without building the solution twice. Release and
-  dependency-update documentation now describes manual publishing and deployment accurately.
 
 Older entries: [CHANGELOG.archive.md](CHANGELOG.archive.md).
