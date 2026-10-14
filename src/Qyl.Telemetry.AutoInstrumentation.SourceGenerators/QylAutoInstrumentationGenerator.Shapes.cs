@@ -1,7 +1,4 @@
 using ANcpLua.Roslyn.Utilities;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 
 namespace Qyl.Telemetry.AutoInstrumentation.SourceGenerators;
@@ -30,7 +27,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         IntegrationDeclaration integration,
         IMethodSymbol symbol,
         ITypeSymbol? receiverType,
-        ITypeSymbol matchedReceiver,
         out ShapeMatch match)
     {
         switch (shape)
@@ -89,11 +85,15 @@ public sealed partial class QylAutoInstrumentationGenerator
 
         if (string.Equals(methodName, "ExecuteScalar", StringComparison.Ordinal) ||
             string.Equals(methodName, "ExecuteNonQuery", StringComparison.Ordinal))
+        {
             return TryGetNoParameters(symbol, out parameters);
+        }
 
         if (string.Equals(methodName, "ExecuteScalarAsync", StringComparison.Ordinal) ||
             string.Equals(methodName, "ExecuteNonQueryAsync", StringComparison.Ordinal))
+        {
             return TryGetOptionalCancellationTokenParameters(symbol, out parameters);
+        }
 
         return false;
     }
@@ -485,11 +485,11 @@ public sealed partial class QylAutoInstrumentationGenerator
             return builder.ToString();
         }
 
-        for (var index = 0; index < operation.Branches.Length; index++)
+        foreach (var branch in operation.Branches)
         {
-            builder.Append(operation.Branches[index].Condition);
+            builder.Append(branch.Condition);
             builder.Append(" ? ");
-            AppendStringLiteral(builder, operation.Branches[index].Command);
+            AppendStringLiteral(builder, branch.Command);
             builder.Append(" : ");
         }
 
@@ -926,12 +926,14 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         var builder = ImmutableArray.CreateBuilder<ParameterSpec>(symbol.Parameters.Length);
         for (var i = 0; i < symbol.Parameters.Length; i++)
+        {
             builder.Add(new ParameterSpec(
                 CleanTypeName(symbol.Parameters[i].Type, symbol),
-                "p" + i.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                "p" + i.ToString(CultureInfo.InvariantCulture),
                 GetDefaultValueExpression(symbol.Parameters[i]),
                 symbol.Parameters[i].IsParams,
                 symbol.Parameters[i].RefKind));
+        }
 
         return builder.ToImmutable().AsEquatableArray();
     }
@@ -951,7 +953,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             return (bool)parameter.ExplicitDefaultValue ? "true" : "false";
 
         if (parameter.Type.SpecialType is SpecialType.System_Int32)
-            return ((int)parameter.ExplicitDefaultValue).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return ((int)parameter.ExplicitDefaultValue).ToString(CultureInfo.InvariantCulture);
 
         if (parameter.Type.SpecialType is SpecialType.System_String)
             return "\"" + parameter.ExplicitDefaultValue.ToString().Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
@@ -1058,7 +1060,7 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         for (var i = 0; i < typeArguments.Length && i < typeParameters.Length; i++)
         {
-            if (SymbolEqualityComparer.Default.Equals(symbol, typeArguments[i]))
+            if (symbol.IsEqualTo(typeArguments[i]))
                 return typeParameters[i].Name;
         }
 
@@ -1119,7 +1121,7 @@ public sealed partial class QylAutoInstrumentationGenerator
                     break;
                 case < ' ':
                     builder.Append("\\u");
-                    builder.Append(((int)character).ToString("x4", System.Globalization.CultureInfo.InvariantCulture));
+                    builder.Append(((int)character).ToString("x4", CultureInfo.InvariantCulture));
                     break;
                 default:
                     builder.Append(character);

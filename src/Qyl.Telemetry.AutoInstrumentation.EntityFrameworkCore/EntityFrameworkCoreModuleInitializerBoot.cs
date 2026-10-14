@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Qyl.Telemetry.AutoInstrumentation;
 
 namespace Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore;
 

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 using Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners.Semantics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;

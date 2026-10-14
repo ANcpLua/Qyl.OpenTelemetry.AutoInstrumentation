@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -63,8 +61,7 @@ internal static class QylCaptureHelpers
             return query;
 
         var builder = new StringBuilder(2 * query.Length);
-        var index = 0;
-        while (index < query.Length)
+        for (var index = 0; index < query.Length; index++)
         {
             var current = query[index];
             if (current is '=')
@@ -80,8 +77,6 @@ internal static class QylCaptureHelpers
             {
                 builder.Append(current);
             }
-
-            index++;
         }
 
         return builder.ToString();

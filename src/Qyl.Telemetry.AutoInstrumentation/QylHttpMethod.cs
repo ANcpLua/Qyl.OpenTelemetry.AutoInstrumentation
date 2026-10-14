@@ -1,6 +1,6 @@
-namespace Qyl.Telemetry.AutoInstrumentation;
-
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+
+namespace Qyl.Telemetry.AutoInstrumentation;
 
 internal static class QylHttpMethod
 {

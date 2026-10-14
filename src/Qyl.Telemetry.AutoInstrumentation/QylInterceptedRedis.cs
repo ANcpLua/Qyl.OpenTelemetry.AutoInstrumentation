@@ -17,13 +17,14 @@ public static class QylInterceptedRedis
     public static Activity? Command([QylFromShape] string? operationName, [QylFromReceiver("Database")] int databaseIndex)
     {
         var databaseNamespace = databaseIndex >= 0 ? databaseIndex.ToString(CultureInfo.InvariantCulture) : null;
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.StackExchangeRedis,
-            SpanNames.DbClient(querySummary: null, operationName, collectionName: null, storedProcedureName: null, databaseNamespace, serverAddress: null, serverPort: null, DbIncubatingAttributes.SystemNameValues.Redis),
-            ActivityKind.Client,
-            QylAttributes.InstrumentationDomainValues.DbRedis);
-        if (activity is null)
+        if (QylActivityFactory.StartTraceActivity(
+                QylAutoInstrumentationIds.StackExchangeRedis,
+                SpanNames.DbClient(querySummary: null, operationName, collectionName: null, storedProcedureName: null, databaseNamespace, serverAddress: null, serverPort: null, DbIncubatingAttributes.SystemNameValues.Redis),
+                ActivityKind.Client,
+                QylAttributes.InstrumentationDomainValues.DbRedis) is not { } activity)
+        {
             return null;
+        }
 
         activity.SetTag(DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Redis);
         if (operationName is not null)

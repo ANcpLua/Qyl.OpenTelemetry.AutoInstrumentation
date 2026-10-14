@@ -1,7 +1,4 @@
 using ANcpLua.Roslyn.Utilities;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -135,7 +132,9 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         var compilation = context.SemanticModel.Compilation;
         if (compilation.AssemblyName is { } assemblyName &&
             s_qylRuntimeAssemblies.Contains(assemblyName))
+        {
             return default;
+        }
 
         var catalog = GetCatalog(compilation);
         if (catalog.Integrations.IsEmpty)
@@ -163,8 +162,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                         invocation.GetLocation()));
         }
 
-        var interceptableLocation = context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken);
-        if (interceptableLocation is null)
+        if (context.SemanticModel.GetInterceptableLocation(invocation, cancellationToken) is not { } interceptableLocation)
             return default;
 
         return new InvocationScanResult(new InterceptedInvocation(target, interceptableLocation), null);
@@ -217,7 +215,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (intercept.Methods.Length > 0 && !intercept.Methods.Contains(symbol.Name))
             return false;
 
-        if (!TryMatchReceiver(intercept.ReceiverType, symbol, out var matchedReceiver))
+        if (!MatchesReceiver(intercept.ReceiverType, symbol))
             return false;
 
         // The library owns a native ActivitySource qyl subscribes, so the call is not this lane's to
@@ -226,7 +224,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (IsNativeSourceReceiver(intercept, receiverType ?? symbol.ContainingType))
             return false;
 
-        if (!TryMatchShape(intercept.Shape, integration, symbol, receiverType, matchedReceiver, out var shape))
+        if (!TryMatchShape(intercept.Shape, integration, symbol, receiverType, out var shape))
         {
             // Only worth reporting when the declaration actually named this API. A declaration with no
             // receiver type or no method list matches every invocation in the compilation and leaves the
@@ -261,8 +259,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (intercept.NativeSourceReceivers.Length is 0)
             return false;
 
-        var containingNamespace = receiverType.ContainingNamespace;
-        if (containingNamespace is null)
+        if (receiverType.ContainingNamespace is not { } containingNamespace)
             return false;
 
         var namespaceName = containingNamespace.ToDisplayString();
@@ -280,9 +277,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         return false;
     }
 
-    private static bool TryMatchReceiver(string declaredReceiverType, IMethodSymbol symbol, out ITypeSymbol receiver)
+    private static bool MatchesReceiver(string declaredReceiverType, IMethodSymbol symbol)
     {
-        receiver = symbol.ContainingType;
         if (declaredReceiverType.Length is 0)
             return true;
 
@@ -292,14 +288,8 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         if (IsOrDerivesOrImplements(symbol.ContainingType, namespaceName, metadataName))
             return true;
 
-        if (symbol.ReducedFrom is { Parameters.Length: > 0 } original &&
-            IsOrDerivesOrImplements(original.Parameters[0].Type, namespaceName, metadataName))
-        {
-            receiver = original.Parameters[0].Type;
-            return true;
-        }
-
-        return false;
+        return symbol.ReducedFrom is { Parameters.Length: > 0 } original &&
+               IsOrDerivesOrImplements(original.Parameters[0].Type, namespaceName, metadataName);
     }
 
     private static void EmitInterceptors(
@@ -409,10 +399,10 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
 
         builder.Append("],\"contractKeys\":[");
         AppendStringLiteral(builder, GetContractKey(target.Integration.Signal, target.InstrumentationId));
-        for (var index = 0; index < target.AdditionalMetricIds.Length; index++)
+        foreach (var metricId in target.AdditionalMetricIds)
         {
             builder.Append(',');
-            AppendStringLiteral(builder, GetContractKey(TelemetrySignal.Metrics, target.AdditionalMetricIds[index]));
+            AppendStringLiteral(builder, GetContractKey(TelemetrySignal.Metrics, metricId));
         }
 
         builder.AppendLine("]}");
@@ -498,7 +488,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("            }");
     }
 
-    private static bool RuntimeObservesAsync(in InterceptorTarget target)
+    private static bool RuntimeObservesTask(in InterceptorTarget target)
         => target.Intercept.ObserveAsync &&
            target.IsAsync &&
            (!target.Intercept.ObserveByRefOnly || HasByRefParameters(target.Parameters));
@@ -508,7 +498,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         var target = invocation.Target;
         var intercept = target.Intercept;
         var helperType = target.Integration.HelperType;
-        var runtimeObservesAsync = RuntimeObservesAsync(in target);
+        var runtimeObservesAsync = RuntimeObservesTask(in target);
         var signatureIsAsync = target.IsAsync && !runtimeObservesAsync;
         EmitAttributeAndSignature(
             builder,
@@ -811,7 +801,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.Append(' ');
         builder.Append(methodPrefix);
         builder.Append('_');
-        builder.Append(index.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        builder.Append(index.ToString(CultureInfo.InvariantCulture));
         builder.Append(typeParameterList);
         builder.Append("(this ");
         builder.Append(receiverType);

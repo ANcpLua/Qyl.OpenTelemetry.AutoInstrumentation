@@ -19,13 +19,14 @@ internal static class QylDbActivityPolicy
         var systemName = GetDbSystemName(instrumentationId);
         var (operation, summary) = QylDbQuerySummary.Describe(command.CommandType, command.CommandText);
         var databaseName = command.Connection?.Database is { } database && !string.IsNullOrWhiteSpace(database) ? database : null;
-        var activity = QylActivityFactory.StartTraceActivity(
-            instrumentationId,
-            SpanNames.DbSqlClient(summary, operation, collectionName: null, storedProcedureName: null, databaseName, serverAddress: null, serverPort: null, systemName),
-            ActivityKind.Client,
-            QylAttributes.InstrumentationDomainValues.DbClient);
-        if (activity is null)
+        if (QylActivityFactory.StartTraceActivity(
+                instrumentationId,
+                SpanNames.DbSqlClient(summary, operation, collectionName: null, storedProcedureName: null, databaseName, serverAddress: null, serverPort: null, systemName),
+                ActivityKind.Client,
+                QylAttributes.InstrumentationDomainValues.DbClient) is not { } activity)
+        {
             return null;
+        }
 
         InFlightCommands.AddOrUpdate(command, activity);
         QylActivityTags.SetDb(activity, systemName, operation, summary);

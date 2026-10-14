@@ -8,7 +8,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 /// body, instrumentation id, domain, signal, and contract manifest from the declaration alone.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class QylIntegrationAttribute : Attribute
 {
     /// <summary>Declares the integration's instrumentation id and domain.</summary>
@@ -109,7 +109,7 @@ public static class QylShapes
 
 /// <summary>Binds a helper parameter to an intercepted argument by position, optionally filtered by the argument's type and converted by a format whose <c>{0}</c> is the argument.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = true, Inherited = false)]
+[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = true)]
 public sealed class QylFromArgumentAttribute : Attribute
 {
     /// <summary>Binds to the intercepted argument at <paramref name="index"/>.</summary>
@@ -130,7 +130,7 @@ public sealed class QylFromArgumentAttribute : Attribute
 
 /// <summary>Binds a helper parameter to the receiver, or to a member path on it.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Parameter)]
 public sealed class QylFromReceiverAttribute : Attribute
 {
     /// <summary>Binds to the receiver itself, or to <paramref name="path"/> read from it.</summary>
@@ -145,15 +145,15 @@ public sealed class QylFromReceiverAttribute : Attribute
 
 /// <summary>Binds a helper parameter to the intercepted method's name.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Parameter)]
 public sealed class QylFromMethodNameAttribute : Attribute;
 
 /// <summary>Binds a helper parameter to the instrumentation id the intercepted call reports under.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Parameter)]
 public sealed class QylFromInstrumentationIdAttribute : Attribute;
 
 /// <summary>Binds a helper parameter to the value the declaration's shape predicate computed for the call.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Parameter)]
 public sealed class QylFromShapeAttribute : Attribute;

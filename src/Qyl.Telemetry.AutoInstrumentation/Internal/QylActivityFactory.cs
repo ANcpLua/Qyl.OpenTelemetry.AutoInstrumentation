@@ -14,8 +14,7 @@ internal static class QylActivityFactory
         if (!QylAutoInstrumentationOptions.Current.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, instrumentationId))
             return null;
 
-        var activity = QylActivitySource.StartActivity(activityName, activityKind);
-        if (activity is null)
+        if (QylActivitySource.StartActivity(activityName, activityKind) is not { } activity)
             return null;
 
         activity.SetTag(QylAttributes.InstrumentationDomain, instrumentationDomain);

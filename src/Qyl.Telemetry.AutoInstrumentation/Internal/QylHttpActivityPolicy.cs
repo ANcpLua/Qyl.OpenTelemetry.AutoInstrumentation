@@ -1,10 +1,7 @@
 using System.Diagnostics;
-using System.Globalization;
 using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
-using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.NetworkAttributes;
-using ServerAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Server.ServerAttributes;
 using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation.Internal;

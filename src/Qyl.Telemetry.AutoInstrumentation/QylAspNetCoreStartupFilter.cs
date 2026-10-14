@@ -1,6 +1,4 @@
-using System;
 using System.Diagnostics;
-using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -42,22 +40,12 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
             next(app);
         };
 
+    // A request qyl does not enrich runs the pipeline as it is, without a state machine; an enriched
+    // one runs it inside ObserveAsync, which sees a synchronous throw and a faulted task alike.
     private static Task InvokeAsync(RequestDelegate requestDelegate, HttpContext context)
-    {
-        var activity = StartRequest(context);
-        if (activity is null)
-            return requestDelegate(context);
-
-        try
-        {
-            return ObserveAsync(requestDelegate(context), context, activity);
-        }
-        catch (Exception exception)
-        {
-            RecordFailure(activity, context, exception);
-            throw;
-        }
-    }
+        => StartRequest(context) is { } activity
+            ? ObserveAsync(requestDelegate, context, activity)
+            : requestDelegate(context);
 
     private static Activity? StartRequest(HttpContext context)
     {
@@ -86,11 +74,11 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
         return activity;
     }
 
-    private static async Task ObserveAsync(Task originalTask, HttpContext context, Activity activity)
+    private static async Task ObserveAsync(RequestDelegate requestDelegate, HttpContext context, Activity activity)
     {
         try
         {
-            await originalTask.ConfigureAwait(false);
+            await requestDelegate(context).ConfigureAwait(false);
         }
         catch (Exception exception)
         {

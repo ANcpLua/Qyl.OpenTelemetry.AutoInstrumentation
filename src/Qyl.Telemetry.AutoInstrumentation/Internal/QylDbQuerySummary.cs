@@ -54,8 +54,7 @@ internal static class QylDbQuerySummary
         // A common-table-expression prefix names no operation; the statement's keyword follows it.
         if (operation is "WITH")
         {
-            string? word;
-            while ((word = scanner.NextWord()) is not null)
+            while (scanner.NextWord() is { } word)
             {
                 var upper = word.ToUpperInvariant();
                 if (upper is "SELECT" or "INSERT" or "UPDATE" or "DELETE" or "MERGE")
@@ -75,8 +74,7 @@ internal static class QylDbQuerySummary
         var expected = operation is "UPDATE" or Call or "EXEC" or "EXECUTE";
         for (var words = 0; words < MaxWordsBeforeTarget; words++)
         {
-            var word = scanner.NextWord();
-            if (word is null)
+            if (scanner.NextWord() is not { } word)
                 return null;
 
             var upper = word.ToUpperInvariant();
@@ -98,7 +96,7 @@ internal static class QylDbQuerySummary
     // schema.object: dot-joined plain identifiers, letters/digits/underscore, starting with a letter or underscore.
     private static bool IsTarget(string word)
     {
-        if (word.Length is 0 || word.Length > MaxTargetLength)
+        if (word.Length is 0 or > MaxTargetLength)
             return false;
 
         var segmentStart = true;

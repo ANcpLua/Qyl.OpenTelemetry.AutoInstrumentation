@@ -6,5 +6,5 @@ public static class SqlClientAutoInstrumentationBootstrap
 {
     /// <summary>Boot qyl Microsoft.Data.SqlClient auto-instrumentation for the current process.</summary>
     public static void Boot()
-        => global::Qyl.Telemetry.AutoInstrumentation.SqlClient.SqlClientModuleInitializerBoot.Boot();
+        => SqlClient.SqlClientModuleInitializerBoot.Boot();
 }

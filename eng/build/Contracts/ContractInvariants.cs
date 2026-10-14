@@ -72,7 +72,7 @@ static partial class ContractInvariants
         "node is InvocationExpressionSyntax",
         "GetInterceptorMethod(invocation, cancellationToken) is not null",
         "GetInterceptableLocation(invocation, cancellationToken)",
-        "interceptableLocation is null",
+        "is not { } interceptableLocation",
         "GetInterceptsLocationAttributeSyntax(",
         "file sealed class InterceptsLocationAttribute",
     ];
@@ -1038,7 +1038,7 @@ static partial class ContractInvariants
                      "GetCatalog(compilation)",
                      "foreach (var integration in catalog.Integrations)",
                      "TryMatchDeclaration(integration, intercept, symbol, receiverType, out target, out var declaredShape)",
-                     "TryMatchShape(intercept.Shape, integration, symbol, receiverType, matchedReceiver, out var shape)",
+                     "TryMatchShape(intercept.Shape, integration, symbol, receiverType, out var shape)",
                      "EmitInterceptorManifest(builder, in target);",
                      "EmitInterceptorBody(builder, in invocation, index);",
                  })
@@ -1058,7 +1058,8 @@ static partial class ContractInvariants
                      "target.InstrumentationId",
                      "target.AdditionalMetricIds",
                      "GetContractKey(target.Integration.Signal, target.InstrumentationId)",
-                     "GetContractKey(TelemetrySignal.Metrics, target.AdditionalMetricIds[index])",
+                     "foreach (var metricId in target.AdditionalMetricIds)",
+                     "GetContractKey(TelemetrySignal.Metrics, metricId)",
                  })
         {
             Gate.Require(manifestEmitter.Contains(token, StringComparison.Ordinal), $"generated interceptor manifest must derive its representation from the declaration: {token}");

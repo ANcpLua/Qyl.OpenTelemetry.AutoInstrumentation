@@ -74,6 +74,11 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
 - README: the QYL1002 rows it already claimed exist; the one source name still typed by hand
   (`Experimental.ModelContextProtocol`) is named; the domain list is the registry's whole value set,
   `db.elasticsearch` and the four application domains included.
+- The ReSharper inspection batch of 2026-10-14 over `src/` (67 findings): redundant usings and
+  qualifiers, declarations folded into their null checks, the redundant `AttributeUsage`
+  properties, braces, the generator's unused receiver parameter and never-read
+  `IntegrationDeclaration.Domain`, the never-read `SqlClientCommand.OperationId`; the ASP.NET Core
+  middleware observes a synchronous throw and a faulted task in one async path. No behavior change.
 - The ASP.NET Core, MCP and session-propagation demos start their own spans with `Spans.Work`
   instead of a hand-made source added through `AdditionalSources`.
 - Every `Qyl.Telemetry.SemanticConventions*` package is pinned at 10.0.0 (`Directory.Packages.props`

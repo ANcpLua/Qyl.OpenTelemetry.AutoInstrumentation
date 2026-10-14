@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Qyl.Telemetry.AutoInstrumentation;
 
 namespace Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners;
 

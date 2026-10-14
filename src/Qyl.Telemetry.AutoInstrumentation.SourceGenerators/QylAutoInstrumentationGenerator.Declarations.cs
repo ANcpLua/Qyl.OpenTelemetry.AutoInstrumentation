@@ -1,6 +1,4 @@
 using ANcpLua.Roslyn.Utilities;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
@@ -64,7 +62,6 @@ public sealed partial class QylAutoInstrumentationGenerator
         string Name,
         string HelperType,
         string InstrumentationId,
-        string Domain,
         TelemetrySignal Signal,
         EquatableArray<string> MetricIds,
         EquatableArray<InterceptDeclaration> Intercepts);
@@ -104,8 +101,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static ImmutableArray<IntegrationDeclaration> ReadIntegrations(IAssemblySymbol assembly)
     {
-        var generatedCode = FindNamespace(assembly.GlobalNamespace, s_generatedCodeNamespace);
-        if (generatedCode is null)
+        if (FindNamespace(assembly.GlobalNamespace, s_generatedCodeNamespace) is not { } generatedCode)
             return ImmutableArray<IntegrationDeclaration>.Empty;
 
         var builder = ImmutableArray.CreateBuilder<IntegrationDeclaration>();
@@ -152,7 +148,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     private static IntegrationDeclaration ReadIntegration(INamedTypeSymbol type, AttributeData attribute)
     {
         var instrumentationId = attribute.GetConstructorArgument<string>(0) ?? string.Empty;
-        var domain = attribute.GetConstructorArgument<string>(1) ?? string.Empty;
         var signal = (TelemetrySignal)attribute.GetNamedArgument<int>("Signal");
         var metricIds = attribute.GetNamedArgumentArray<string>("MetricIds");
         var name = type.Name.StartsWithOrdinal(HelperTypePrefix)
@@ -169,7 +164,6 @@ public sealed partial class QylAutoInstrumentationGenerator
             name,
             CleanTypeName(type),
             instrumentationId,
-            domain,
             signal,
             metricIds.AsEquatableArray(),
             intercepts.ToImmutable().AsEquatableArray());

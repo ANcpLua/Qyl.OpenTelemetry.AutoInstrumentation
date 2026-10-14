@@ -34,7 +34,6 @@ internal static class SqlClientPayloadReader
             ServerAddress: endpoint.Address,
             ServerPort: endpoint.Port,
             ErrorType: isError ? GetErrorType(exception) : null,
-            OperationId: TryGetPayloadStruct<Guid>(payload, OperationIdKey, out var operationId) ? operationId : null,
             Timestamp: TryGetPayloadStruct<long>(payload, TimestampKey, out var timestamp) ? timestamp : null);
 
         return true;
@@ -100,8 +99,7 @@ internal static class SqlClientPayloadReader
 
     private static SqlServerEndpoint ParseDataSource(string? dataSource)
     {
-        var source = NormalizeEmpty(dataSource);
-        if (source is null)
+        if (NormalizeEmpty(dataSource) is not { } source)
             return default;
 
         source = StripProtocolPrefix(source);
@@ -154,7 +152,6 @@ internal readonly record struct SqlClientCommand(
     string? ServerAddress,
     int? ServerPort,
     string? ErrorType,
-    Guid? OperationId,
     long? Timestamp);
 
 internal readonly record struct SqlServerEndpoint(string? Address, int? Port);

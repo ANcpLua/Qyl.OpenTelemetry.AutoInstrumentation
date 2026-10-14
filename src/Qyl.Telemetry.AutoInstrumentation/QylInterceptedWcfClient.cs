@@ -18,13 +18,14 @@ public static class QylInterceptedWcfClient
     /// <summary>Starts the client span for the contract operation against the client's endpoint.</summary>
     public static Activity? Call([QylFromShape] string method, [QylFromReceiver("Endpoint?.Address?.Uri")] Uri? endpointUri)
     {
-        var activity = QylActivityFactory.StartTraceActivity(
-            QylAutoInstrumentationIds.WcfClient,
-            SpanNames.RpcCallClient(method, DotNetWcfSystemName),
-            ActivityKind.Client,
-            QylAttributes.InstrumentationDomainValues.RpcWcfClient);
-        if (activity is null)
+        if (QylActivityFactory.StartTraceActivity(
+                QylAutoInstrumentationIds.WcfClient,
+                SpanNames.RpcCallClient(method, DotNetWcfSystemName),
+                ActivityKind.Client,
+                QylAttributes.InstrumentationDomainValues.RpcWcfClient) is not { } activity)
+        {
             return null;
+        }
 
         QylActivityTags.SetRpc(
             activity,

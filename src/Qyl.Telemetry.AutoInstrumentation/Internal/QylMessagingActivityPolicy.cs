@@ -25,7 +25,7 @@ internal static class QylMessagingActivityPolicy
             MessagingAttributes.OperationTypeValues.Send,
             Send,
             destination);
-        if (activity is not null && partitionId is int id)
+        if (activity is not null && partitionId is { } id)
             activity.SetTag(MessagingAttributes.DestinationPartitionId, id.ToString(CultureInfo.InvariantCulture));
 
         return activity;
@@ -52,12 +52,7 @@ internal static class QylMessagingActivityPolicy
         string operationName,
         string? destination)
     {
-        var activity = QylActivityFactory.StartTraceActivity(
-            instrumentationId,
-            name,
-            kind,
-            domain);
-        if (activity is null)
+        if (QylActivityFactory.StartTraceActivity(instrumentationId, name, kind, domain) is not { } activity)
             return null;
 
         QylActivityTags.SetMessaging(activity, system, operationType, operationName, destination);
