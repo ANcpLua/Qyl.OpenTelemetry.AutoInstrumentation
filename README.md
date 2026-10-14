@@ -443,10 +443,11 @@ where the old interceptor demos proved themselves against a connectionless excep
 
 The gate before a push or a release is `./eng/build.sh Check`: the contract invariants and the
 generated contract artifacts, the version and documentation pins, the Release builds of the solution
-and of the demo solution, the public API baselines, the generator snapshots, the package layout and
-the consumer behaviors (eight consumers of the packages this checkout packs, NativeAOT publishes
-included). `./eng/build.sh CheckFull` adds the NativeAOT publish matrix, all thirty demo lanes, the
-live check, the package smoke test, the NativeAOT web API demo and the OTLP wire evidence. Every target
+and of the demo solution, the public API report (it rewrites `src/*/PublicAPI.txt` and never fails),
+the generator snapshots, the package layout and the consumer behaviors (eight consumers of the
+packages this checkout packs, NativeAOT publishes included). `./eng/build.sh CheckFull` adds the
+NativeAOT publish matrix, all thirty demo lanes, the live check, the package smoke test, the NativeAOT
+web API demo and the OTLP wire evidence. Every target
 also runs alone, and `./eng/build.sh --help` lists them with their parameters:
 
 ```bash

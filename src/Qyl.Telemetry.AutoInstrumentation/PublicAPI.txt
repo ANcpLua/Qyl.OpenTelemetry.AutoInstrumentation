@@ -1,4 +1,3 @@
-#nullable enable
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Convert.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Convert.set -> void
@@ -16,6 +15,7 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromReceiverAttribute.QylFrom
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromShapeAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromShapeAttribute.QylFromShapeAttribute() -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V24 = 24 -> int
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.Domain.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.InstrumentationId.get -> string!
@@ -45,35 +45,34 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Shape.set 
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Start.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Start.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.DbCommand = 1 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Trace = 0 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes
-Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions
-Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
-Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(System.Data.Common.DbCommand! command, string! instrumentationId, string! operationName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Receive() -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedKafka.Send(string? topic, int? partitionId) -> System.Diagnostics.Activity?
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.Command(string? operationName, int databaseIndex) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedRedis.NormalizeCommandText(string? command) -> string?
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedWcfClient.Call(string! method, System.Uri? endpointUri) -> System.Diagnostics.Activity?
-static Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V23 = 23 -> int
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.DbCommand = 1 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody.Trace = 0 -> Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptorBody
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.DbCommand = "DbCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaConsume = "KafkaConsume" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.KafkaProduce = "KafkaProduce" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.RedisCommand = "RedisCommand" -> string!
 const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylShapes.WcfClient = "WcfClient" -> string!
+Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions
+static Qyl.Telemetry.AutoInstrumentation.QylAspNetCoreInstrumentationServiceCollectionExtensions.AddQylAspNetCoreInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
+Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Logs = 2 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
+Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Metrics = 1 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
+Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal.Traces = 0 -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal

@@ -16,6 +16,8 @@
     <PackageReference Include="Fallout.Common" />
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
+    <!-- ApiBaseline reads the public surface of the Release assemblies through Roslyn's metadata symbols. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <!-- The typed models of the collector API; QylCollectorClient is the HTTP surface over them. -->
     <PackageReference Include="Qyl.Api.Contracts" />
     <!-- The rename table the collector applies at ingest, so a lane compares a renamed key under its live name. -->

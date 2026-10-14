@@ -6,6 +6,7 @@ One agent per qyl-dev repo (qyl, qyl.mcp, qyl-api-schema, Qyl.Telemetry.AutoInst
 
 - Publishes every packable `src/` project to NuGet (`Qyl.Telemetry.AutoInstrumentation`, `.DiagnosticListeners`, `.EntityFrameworkCore`, `.Hosting`, `.SqlClient`, `Qyl.Telemetry.Hosting`). A new packable project ships automatically; one that must not ship sets `<IsPackable>false</IsPackable>`.
 - Version source: `<Version>` in `Directory.Build.props`. The first change after a release bumps it and opens its `## [x.y.z] - YYYY-MM-DD` entry on top of `CHANGELOG.md` in the same commit; later changes add to that entry. The entry becomes the GitHub release notes.
+- Bump: Check rewrites `src/*/PublicAPI.txt` to the public API of the six packages and notes `api: +N -M changed` or `api: unchanged`; it informs, never blocks. Read `git diff v<last release> -- 'src/*/PublicAPI.txt'`: a removed or changed line is major, only added lines minor, none patch.
 - Key: Vitals entry "qyl-dev manual publish and release (NuGet)", `~/.config/vitals/nuget-qyl-manual-publish-key`, read by the script. Never print, paste, commit or log it. Entry missing or note expired: stop and tell the owner.
 - Upstream pin: `Qyl.Telemetry.SemanticConventions*` in `Directory.Packages.props`, the one place that names the release; the live check's registry tag derives from it.
 

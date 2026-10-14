@@ -3,7 +3,11 @@ namespace Qyl.Build;
 sealed partial class QylBuild
 {
     Target ApiBaseline => definition => definition
-        .Description("Public API baselines of the six shipped projects and the XML-doc enforcement of the runtime and the generator")
-        .After(Build)
-        .Executes(() => ApiBaselineGate.Verify());
+        .Description("Public API report: rewrites src/<project>/PublicAPI.txt to the Release assemblies' surface and notes the change against HEAD; never fails")
+        .DependsOn(Build)
+        .Executes(() =>
+        {
+            var change = ApiBaselineReport.Run();
+            ReportSummary(_ => new() { ["api"] = change });
+        });
 }

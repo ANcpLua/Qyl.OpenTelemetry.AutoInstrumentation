@@ -1,3 +1,2 @@
-#nullable enable
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.EntityFrameworkCoreAutoInstrumentationBootstrap
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.EntityFrameworkCoreAutoInstrumentationBootstrap.Boot() -> void

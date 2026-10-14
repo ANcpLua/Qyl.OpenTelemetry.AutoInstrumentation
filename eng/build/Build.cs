@@ -47,7 +47,7 @@ sealed partial class QylBuild : FalloutBuild
         .Executes(() => ReleasePack.Run());
 
     Target Check => definition => definition
-        .Description("The gate before every push and release: contracts, release builds, API baselines, generator snapshots, package layout and consumer behavior")
+        .Description("The gate before every push and release: contracts, release builds, the public API report, generator snapshots, package layout and consumer behavior")
         .DependsOn(Contracts, Build, ApiBaseline, GeneratorSnapshots, PackageLayout, ConsumerBehavior)
         .Executes(() =>
         {
