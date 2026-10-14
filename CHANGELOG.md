@@ -7,6 +7,15 @@ packages are then exercised in clean managed and NativeAOT consumers.
 
 ## [24.1.0] - 2026-10-14
 
+### Added
+
+- `Qyl.Telemetry.AutoInstrumentation.dll` carries
+  `[assembly: AssemblyMetadata("QylSemanticConventionsVersion", "9.9.2")]`, the
+  `Qyl.Telemetry.SemanticConventions` release it compiled against, taken at build time from the
+  resolved reference rather than typed again. The nuspec dependency on
+  `Qyl.Telemetry.SemanticConventions` names the same version as its lower bound, and
+  `./eng/build.sh PackageLayout` checks both against the pin.
+
 ### Changed
 
 - `Directory.Packages.props` is the one place that names the semantic-convention release. The live

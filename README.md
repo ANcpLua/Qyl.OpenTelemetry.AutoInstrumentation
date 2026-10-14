@@ -528,6 +528,12 @@ The live check also compares the pin against the checkout's `VersionPrefix` and 
 holds another release — judging spans against a registry other than the one that produced the
 constants is the drift that would otherwise look like a green gate.
 
+A consumer can read the release a package compiled against in two places: the nuspec dependency on
+`Qyl.Telemetry.SemanticConventions`, whose lower bound is the exact pin, and the assembly metadata of
+`Qyl.Telemetry.AutoInstrumentation.dll`,
+`[assembly: AssemblyMetadata("QylSemanticConventionsVersion", "<version>")]`, which the build takes
+from the resolved reference and `./eng/build.sh PackageLayout` checks against the pin.
+
 ## Limitations
 
 - Only source-visible call sites can be intercepted. Calls hidden in compiled dependencies,

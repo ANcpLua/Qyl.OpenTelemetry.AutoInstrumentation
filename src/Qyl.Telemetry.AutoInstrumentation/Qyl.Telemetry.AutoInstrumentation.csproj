@@ -65,6 +65,24 @@
     </ItemGroup>
   </Target>
 
+  <!-- Stamp the Qyl.Telemetry.SemanticConventions release this assembly compiled against, taken from the
+       resolved reference rather than typed again, so a consumer can read it:
+       [assembly: AssemblyMetadata("QylSemanticConventionsVersion", "<version>")]. The nuspec carries the
+       same version as the lower bound of its Qyl.Telemetry.SemanticConventions dependency. -->
+  <Target Name="AddQylSemanticConventionsVersion" DependsOnTargets="ResolveReferences" BeforeTargets="GetAssemblyAttributes">
+    <ItemGroup>
+      <_QylSemanticConventionsReference Include="@(ReferencePath)" Condition="'%(ReferencePath.NuGetPackageId)' == 'Qyl.Telemetry.SemanticConventions'" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_QylSemanticConventionsVersion>@(_QylSemanticConventionsReference->'%(NuGetPackageVersion)'->Distinct())</_QylSemanticConventionsVersion>
+    </PropertyGroup>
+    <Error Condition="'$(_QylSemanticConventionsVersion)' == '' or $(_QylSemanticConventionsVersion.Contains(';'))"
+           Text="Expected exactly one resolved Qyl.Telemetry.SemanticConventions version among the references, found '$(_QylSemanticConventionsVersion)'." />
+    <ItemGroup>
+      <AssemblyMetadata Include="QylSemanticConventionsVersion" Value="$(_QylSemanticConventionsVersion)" />
+    </ItemGroup>
+  </Target>
+
   <!-- The generator reads this assembly's integration declarations and emits QylDeclaredInstrumentations.
        Under PublishAot it is consumed as the prebuilt analyzer from the standard artifacts/ layout, the
        same contract the AOT-published demos satisfy. -->
