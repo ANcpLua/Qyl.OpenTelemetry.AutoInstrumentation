@@ -220,7 +220,7 @@ if (( dry )); then
 fi
 for p in "$OUT"/*.nupkg; do
   # --skip-duplicate: a rerun after a partial push (pushed, not indexed yet) goes on.
-  dotnet nuget push "$p" --api-key "$(<"$NUGET_KEY_FILE")" --source "$NUGET_SOURCE" --skip-duplicate
+  NUGET_API_KEY="$(<"$NUGET_KEY_FILE")" dotnet nuget push "$p" --source "$NUGET_SOURCE" --skip-duplicate
 done
 
 say "tag and GitHub release (notes from CHANGELOG.md)"
