@@ -2,6 +2,64 @@
 
 Entries older than the newest three, which stay in [CHANGELOG.md](CHANGELOG.md).
 
+## [24.0.2] - 2026-10-14
+
+No change to the packages' own source or public API: they are rebuilt on the dependency pins
+below, and the build, the demos and the release tooling around them change.
+
+### Changed
+
+- **Build, test and pack go through Fallout targets in C#** (`eng/build`, `./eng/build.sh <Target>`,
+  `./eng/build.sh --help`). They replace the 55 Python scripts under `tools/`, their
+  `requirements.txt`, `tools/smoketest.sh`, the Makefile lanes and the mise tasks: one toolchain.
+  `./eng/build.sh Check` is the gate before a push or a release (it was `mise run check`) and
+  `./eng/build.sh CheckFull` runs everything (it was `mise run check-full`); `make <target>` and the
+  two mise tasks are thin wrappers over them. The targets: `Build`, `Pack`, `Contracts`,
+  `ApiBaseline`, `GeneratorSnapshots`, `PackageLayout`, `ConsumerBehavior`, `AotPublishGate`,
+  `Demos`, `LiveCheck`, `Smoke`, `WebApiAotDemo`, `OtlpEvidence`, `Check`, `CheckFull` and
+  `TestbedProbe`.
+- **The demos are asserted through a local qyl collector.** Every demo exports OTLP to the collector
+  the `qyl` dotnet tool ships (pinned in `.config/dotnet-tools.json`, started once per build run on
+  free loopback ports) through `QYL_ENDPOINT`, and its lane asserts, besides the demo's own report,
+  that every span, measurement series and log record the report names arrived with the reported
+  name, kind, status and attribute values, read through the collector API typed by
+  `Qyl.Api.Contracts`. Every span a demo report lists carries its `TraceId` and `SpanId`. The demos
+  that wired no exporter (ADO.NET, SQLite, EF Core, Kafka, Redis, SqlClient, WCF client and the two
+  metrics demos) export through `demos/Shared/QylDemoOtlp.cs`; the `AddQyl()` demos take its
+  discovery path instead of a hard-coded endpoint.
+- **The ten broker and database lanes use the Railway testbed instead of Docker.** They read
+  `~/.config/vitals/qyl-testbed.env` (`QYL_TESTBED_ENV` overrides the path), wake a sleeping
+  service with a protocol-level probe and a visible countdown for up to
+  `QYL_TESTBED_WAKE_SECONDS_MAX`, and fail naming the service. The SqlClient lane runs on any
+  machine now that SQL Server runs x64 on Railway; the Kafka demo speaks SASL/PLAIN when
+  `QYL_KAFKA_SASL_USERNAME` and `QYL_KAFKA_SASL_PASSWORD` are set; the MongoDB demo empties its
+  collection first, because a woken testbed keeps its data.
+- The contracts cite the C# gates as evidence (`eng/build/Demos/Lanes/<Name>Lane.cs`,
+  `eng/build/ConsumerBehavior/*.cs`), and the generated contract artifacts are rewritten by
+  `./eng/build.sh Contracts --write-contracts`. Consumer fixtures live in `eng/fixtures`.
+- `release.sh` packs through `./eng/build.sh Pack` into `artifacts/release`. Its dry run reports
+  the branch, origin, tag and already-indexed checks as warnings instead of refusing, so it proves
+  the pack from any branch, and it proves the NuGet key for every package id through NuGet's
+  package-verification handshake instead of pushing an already-published package with
+  `--skip-duplicate`: a dry run publishes nothing.
+- Compile against `Qyl.Telemetry.SemanticConventions` 9.9.2 (from 9.9.0) and run the live check
+  against the `v9.9.2` registry. 9.9.1 declared `qyl.gen_ai.tool.call.arguments_hash`, which qyl
+  does not emit; 9.9.2 changed only how that repository builds and tests. The source generator
+  embeds `ANcpLua.Roslyn.Utilities.Sources` 2.2.48 (from 2.2.47), and the build types the collector
+  client with `Qyl.Api.Contracts` 12.1.2 (from 12.1.1, the same contract revision).
+- Version sync requires the top CHANGELOG entry to be `## [<Version>] - YYYY-MM-DD` and rejects
+  an `[Unreleased]` entry: a change is recorded under the version that ships it, bumping
+  `<Version>` first when that version is already released.
+
+### Fixed
+
+- `bun eng/testbed/probe.ts` no longer prints a `TimeoutNegativeWarning`: kafkajs 2.2.4 schedules
+  its request-queue check `throttledUntil - Date.now()` ms ahead, which is `-1 - Date.now()` while
+  the queue is unthrottled. `eng/testbed/patches/kafkajs@2.2.4.patch` clamps the delay at 0.
+- The ILogger demo exported no log record over OTLP: its first export ran inside the host's
+  disposal against an already-disposed container. The gRPC client demo never flushed its batch
+  exporter. Both were invisible while the demos asserted only their in-memory exporters.
+
 ## [24.0.1] - 2026-10-12
 
 ### Changed
