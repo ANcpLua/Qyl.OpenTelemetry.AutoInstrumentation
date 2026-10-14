@@ -37,8 +37,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- This is an instrumentation library that version-locks with the incubating semantic-convention
-         tier on purpose, so QYL0008 ("copy incubating constants locally") does not apply here. -->
+    <!-- Every project here is an instrumentation library or a demo that proves one: both version-lock
+         with the incubating semantic-convention tier on purpose (QYL0008, "copy incubating constants
+         locally", does not apply) and own ActivitySources (QYL0111 does not apply). The consumer
+         fixtures under artifacts/fixtures do not inherit this file, so the rules reach them as they
+         reach any application. -->
     <OtelSemConvInstrumentationLibrary>true</OtelSemConvInstrumentationLibrary>
   </PropertyGroup>
 

@@ -56,6 +56,7 @@ static class PackageLayoutGate
         var nuspec = Read(archive, nuspecName);
         Gate.Require(buildTargets == transitiveTargets, "build and buildTransitive targets diverged");
         VerifySemanticConventionsVersion(archive, nuspec);
+        VerifyAnalyzersFlow(nuspec);
 
         VerifyTargets("build targets", buildTargets);
         VerifyTargets("buildTransitive targets", transitiveTargets);
@@ -97,6 +98,40 @@ static class PackageLayoutGate
             () => $"{assemblyName} carries QylSemanticConventionsVersion {ContractValue.RenderSorted(stamped)}, expected exactly {pin}");
         Log.Information("semantic-conventions-version-ok {Version} (nuspec dependency and assembly metadata)", pin);
     }
+
+    /// <summary>The semantic-convention analyzers reach every consumer of the package family: the core
+    /// nuspec depends on Qyl.Telemetry.SemanticConventions.Analyzers at the pin and excludes neither its
+    /// analyzers nor its build assets, the exclude="Build,Analyzers" NuGet writes for a default
+    /// PrivateAssets. ApplicationScopeBehavior proves the flow end to end through Qyl.Telemetry.Hosting.</summary>
+    private static void VerifyAnalyzersFlow(string nuspec)
+    {
+        var pin = Repo.Pin(AnalyzersPackage);
+        var dependencies = XDocument.Parse(nuspec).Descendants()
+            .Where(static element => element.Name.LocalName == "dependency" && (string?)element.Attribute("id") == AnalyzersPackage)
+            .ToArray();
+        Gate.Require(dependencies.Length > 0, $"the core nuspec does not depend on {AnalyzersPackage}: its analyzers stop at the core package");
+        foreach (var dependency in dependencies)
+        {
+            Gate.Require((string?)dependency.Attribute("version") == pin,
+                () => $"the core nuspec depends on {AnalyzersPackage} {(string?)dependency.Attribute("version")}, expected {pin}");
+            var excluded = Assets(dependency, "exclude");
+            Gate.Require(!excluded.Contains("analyzers") && !excluded.Contains("build"),
+                () => $"the core nuspec excludes {ContractValue.RenderSorted(excluded)} of {AnalyzersPackage}: {dependency}");
+            var included = Assets(dependency, "include");
+            Gate.Require(included.Count == 0 || included.Contains("all") || (included.Contains("analyzers") && included.Contains("buildtransitive")),
+                () => $"the core nuspec includes only {ContractValue.RenderSorted(included)} of {AnalyzersPackage}: {dependency}");
+        }
+
+        Log.Information("analyzers-flow-ok {Package} {Version}, nothing excluded", AnalyzersPackage, pin);
+    }
+
+    private const string AnalyzersPackage = "Qyl.Telemetry.SemanticConventions.Analyzers";
+
+    private static HashSet<string> Assets(XElement dependency, string attribute)
+        => ((string?)dependency.Attribute(attribute) ?? "")
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(static asset => asset.ToLowerInvariant())
+            .ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Decodes an [assembly: AssemblyMetadata(key, value)] without loading the assembly.</summary>
     private static (string Key, string Value)? AssemblyMetadata(MetadataReader reader, CustomAttribute attribute)

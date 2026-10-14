@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -62,6 +63,8 @@ public static class QylHostApplicationBuilderExtensions
     /// Workflows use <c>WorkflowBuilder.WithOpenTelemetry()</c>. MCP and CoreWCF emit from
     /// their official SDK paths without a separate telemetry wrapper.
     /// </remarks>
+    [SuppressMessage("OpenTelemetry", "QYL0700",
+        Justification = "The endpoint is the caller's, the environment's or discovery's, applied in ConfigureExporter; with none of them the exporter's localhost default is the local qyl collector, which is the intended default.")]
     public static IHostApplicationBuilder AddQyl(
         this IHostApplicationBuilder builder,
         Action<QylTelemetryOptions>? configure = null)

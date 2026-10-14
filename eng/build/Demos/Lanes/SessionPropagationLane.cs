@@ -16,7 +16,7 @@ namespace Qyl.Build;
 /// </summary>
 sealed class SessionPropagationLane : DemoLane
 {
-    private const string DemoSource = "Qyl.RealSessionPropagationDemo";
+    private const string DemoSource = "Qyl.Telemetry.Application";
     private const string AspNetCoreSource = "Microsoft.AspNetCore";
     private const string HttpClientSource = "System.Net.Http";
     private const string SessionTag = SessionAttributes.Id;

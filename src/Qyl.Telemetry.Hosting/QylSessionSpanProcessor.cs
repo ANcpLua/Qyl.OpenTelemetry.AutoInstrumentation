@@ -24,7 +24,7 @@ internal sealed class QylSessionSpanProcessor : BaseProcessor<Activity>
 
         for (var ancestor = data.Parent; ancestor is not null; ancestor = ancestor.Parent)
         {
-            if (ancestor.GetTagItem(SessionAttributes.Id) is { } sessionId)
+            if (ancestor.GetTagItem(SessionAttributes.Id) is string sessionId)
             {
                 data.SetTag(SessionAttributes.Id, sessionId);
                 return;

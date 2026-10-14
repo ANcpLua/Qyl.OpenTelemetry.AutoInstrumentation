@@ -12,6 +12,7 @@ using Qyl;
 using ErrorAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
 using QylAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl.QylAttributes;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 using UrlAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Url.UrlAttributes;
 
@@ -28,7 +29,6 @@ builder.AddQyl(options =>
     options.ServiceName = "qyl-real-aspnetcore-demo";
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
-    options.AdditionalSources.Add(DemoWork.SourceName);
 });
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exported));
@@ -45,7 +45,7 @@ app.MapGet("/items/{id:int}", (HttpContext context) =>
 {
     // A child span of the request, so the session tag the filter puts on the hosting activity has
     // something to reach.
-    using (DemoWork.Source.StartActivity(DemoWork.ChildSpanName))
+    using (Spans.Work(DemoWork.ChildSpanName))
     {
     }
 
@@ -127,14 +127,12 @@ Console.WriteLine(json);
 
 return report.Pass ? 0 : 1;
 
-/// <summary>The application's own span, and the source AddQyl subscribes through AdditionalSources.</summary>
+/// <summary>The application's own span, on the application scope AddQyl subscribes.</summary>
 internal static class DemoWork
 {
-    public const string SourceName = "Qyl.RealAspNetCoreDemo";
+    public const string SourceName = QylTelemetryNames.Scopes.QylTelemetryApplication;
 
     public const string ChildSpanName = "demo child work";
-
-    public static ActivitySource Source { get; } = new(SourceName);
 }
 
 /// <summary>

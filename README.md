@@ -52,7 +52,9 @@ warning to the publish:
 dotnet publish -r <rid> -p:PublishAot=true
 ```
 
-`AddQyl()` activates the qyl listeners; registers the qyl `ActivitySource`, the framework-native
+`AddQyl()` activates the qyl listeners; registers the application scope `Qyl.Telemetry.Application`
+behind `Qyl.Spans.Source` (the generated starters and `Spans.Work` start on it, so application code
+creates no source and registers nothing), the qyl `ActivitySource`, the framework-native
 `Microsoft.AspNetCore` and `System.Net.Http` sources, the version-pinned GenAI, MCP, Azure SDK and
 CoreWCF sources and every enabled row of the native-source table; adds the ASP.NET Core enrichment
 middleware, `QylNativeSpanProcessor` and `QylSessionSpanProcessor`; registers the meter inventory;
@@ -75,7 +77,7 @@ An application that wires the SDK itself references
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService("my-service"))
     .WithTracing(t => t
-        .AddSource("Qyl.Telemetry.AutoInstrumentation")
+        .AddSource("Qyl.Telemetry.AutoInstrumentation", "Qyl.Telemetry.Application")
         .AddOtlpExporter());
 builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 ```
@@ -294,9 +296,11 @@ next process sees the session only if the application put it in baggage on purpo
 
 qyl's own spans and instruments carry the registry-owned scope names
 `Qyl.Telemetry.AutoInstrumentation` (`ActivitySource`) and
-`Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`).
-Mirror them in `AddSource(...)`, `AddMeter(...)` or
-`OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
+`Qyl.Telemetry.AutoInstrumentation.Database` (`Meter`, carrying `db.client.operation.duration`);
+the application's spans carry `Qyl.Telemetry.Application`. Both sources carry the qyl registry's
+schema URL, `SchemaUrl.Qyl` (`https://qyl.at/schemas/<release>`), so the collector's `schema_urls`
+name the registry release each producer compiled against. A manually wired SDK mirrors them in
+`AddSource(...)`, `AddMeter(...)` or `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
 `QylGeneratedCodeAbi.V25` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
@@ -313,12 +317,16 @@ The source generator reports two diagnostics of its own:
 Skipping in silence would hide the loss of instrumentation, and emitting an interceptor with a
 mismatched signature would break the consumer's build; the diagnostic is the third option.
 
-`Qyl.Telemetry.AutoInstrumentation` also consumes
-`Qyl.Telemetry.SemanticConventions.Analyzers` (same pinned line) with `PrivateAssets="all"`, so the `QYL0xxx`
-rules run over this repository's own sources and ship to no consumer. `Directory.Build.props` sets
-`OtelSemConvInstrumentationLibrary=true`: this is an instrumentation library that version-locks with
-the incubating tier on purpose, so `QYL0008` ("copy incubating constants locally") does not apply.
-The rules themselves are owned and documented by the semantic-conventions repository.
+`Qyl.Telemetry.AutoInstrumentation` depends on `Qyl.Telemetry.SemanticConventions.Analyzers` (same
+pinned line) with `PrivateAssets="none"`, so the `QYL0xxx` rules reach every consumer through
+`Qyl.Telemetry.Hosting` with nothing else to install. Among them: `QYL0111` (no hand-made
+`ActivitySource` and no raw `StartActivity` in application code; spans start through `Qyl.Spans`),
+`QYL0112` (a constant `Spans.Work` name and `SetAppTag` key), `QYL0110` (a `catch` that rethrows inside a
+starter's scope calls `RecordFailure`) and `QYL0120` (no `OpenTelemetry.Instrumentation.*` tracer
+extension next to `AddQyl`). A library that owns its sources sets `OtelSemConvInstrumentationLibrary=true`,
+which silences `QYL0111` and `QYL0008` ("copy incubating constants locally"); this repository's
+`Directory.Build.props` sets it for its libraries and demos, which version-lock with the incubating tier
+on purpose. The rules themselves are owned and documented by the semantic-conventions repository.
 
 ## Testbed on Railway
 

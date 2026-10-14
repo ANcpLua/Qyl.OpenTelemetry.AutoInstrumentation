@@ -87,8 +87,9 @@ if (!rejected)
 using var host = builder.Build();
 await host.StartAsync();
 
-using (var source = new ActivitySource("Qyl.Telemetry.AutoInstrumentation"))
-using (var activity = source.StartActivity("addqyl-probe", ActivityKind.Internal))
+// The application's own span, on the scope AddQyl subscribes: a consumer starts no ActivitySource
+// (QYL0111 fails that build).
+using (Spans.Work("addqyl-probe"))
 {
 }
 
@@ -116,8 +117,7 @@ buildTime.AddQyl(o =>
 using (var buildTimeHost = buildTime.Build())
 {
     await buildTimeHost.StartAsync();
-    using (var source = new ActivitySource("Qyl.Telemetry.AutoInstrumentation"))
-    using (var activity = source.StartActivity("build-time-probe", ActivityKind.Internal))
+    using (Spans.Work("build-time-probe"))
     {
     }
 

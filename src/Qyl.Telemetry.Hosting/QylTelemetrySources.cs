@@ -88,7 +88,12 @@ internal static class QylTelemetrySources
     internal static string[] GetEnabledActivitySourceNames()
     {
         var options = QylAutoInstrumentationOptions.Current;
-        var names = new List<string>(8 + NativeSourceRows.Length);
+        var names = new List<string>(9 + NativeSourceRows.Length);
+
+        // The application's own spans: the registry-owned scope behind Qyl.Spans.Source, which the
+        // generated starters and Spans.Work start on. It is the application's telemetry, not an
+        // instrumentation, so no toggle turns it off.
+        names.Add(Spans.Source.Name);
 
         if (options.HasAnyActivityInstrumentationEnabled())
             names.Add(QylActivitySource.Name);

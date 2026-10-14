@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Trace;
 using Qyl;
+using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
 // qyl's OWN behaviour, not a library's. `session.id` is the one key qyl moves by itself, and
@@ -53,7 +54,7 @@ static async Task<int> RunUpstreamAsync(int port)
     var exported = new List<Activity>();
     var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
     {
-        ApplicationName = SessionDemo.SourceName,
+        ApplicationName = SessionDemo.ApplicationName,
         DisableDefaults = true,
     });
     builder.AddQyl(options =>
@@ -63,7 +64,6 @@ static async Task<int> RunUpstreamAsync(int port)
         options.EnableMetricsExport = false;
         // The processor under test. Every other demo turns it off; this one is about it.
         options.EnableSessionTagInheritance = true;
-        options.AdditionalSources.Add(SessionDemo.SourceName);
     });
     builder.Services.AddOpenTelemetry()
         .WithTracing(tracing => tracing.AddInMemoryExporter(exported));
@@ -72,7 +72,7 @@ static async Task<int> RunUpstreamAsync(int port)
     await host.StartAsync();
 
     using (var httpClient = new HttpClient())
-    using (var root = SessionDemo.Source.StartActivity(SessionDemo.UpstreamRootSpanName))
+    using (var root = Spans.Work(SessionDemo.UpstreamRootSpanName))
     {
         root!.SetTag(SessionAttributes.Id, SessionDemo.UpstreamSessionId);
 
@@ -82,12 +82,12 @@ static async Task<int> RunUpstreamAsync(int port)
         root.AddBaggage(SessionAttributes.Id, SessionDemo.UpstreamSessionId);
 
         // Property 1: an in-process descendant with no session of its own inherits the ancestor's.
-        using (SessionDemo.Source.StartActivity(SessionDemo.UpstreamInheritedSpanName))
+        using (Spans.Work(SessionDemo.UpstreamInheritedSpanName))
         {
         }
 
         // Property 2: a descendant that already carries a session keeps its own.
-        using (var own = SessionDemo.Source.StartActivity(SessionDemo.UpstreamOwnSessionSpanName))
+        using (var own = Spans.Work(SessionDemo.UpstreamOwnSessionSpanName))
         {
             own!.SetTag(SessionAttributes.Id, SessionDemo.UpstreamOwnSessionId);
         }
@@ -121,7 +121,6 @@ static async Task<int> RunDownstreamAsync(int port)
         options.EnableLogExport = false;
         options.EnableMetricsExport = false;
         options.EnableSessionTagInheritance = true;
-        options.AdditionalSources.Add(SessionDemo.SourceName);
     });
     builder.Services.AddOpenTelemetry()
         .WithTracing(tracing => tracing.AddInMemoryExporter(exported));
@@ -134,7 +133,7 @@ static async Task<int> RunDownstreamAsync(int port)
     {
         // A child of the SERVER span: the span that would inherit a session.id if the server span
         // had been given one. It must not have one either.
-        using (SessionDemo.Source.StartActivity(SessionDemo.DownstreamProbeChildSpanName))
+        using (Spans.Work(SessionDemo.DownstreamProbeChildSpanName))
         {
         }
 
@@ -155,11 +154,11 @@ static async Task<int> RunDownstreamAsync(int port)
     // The in-process control, in THIS process: a locally rooted span carrying its own session and a
     // child that inherits it. A downstream whose processor was simply absent would otherwise
     // "prove" the remote boundary by proving nothing at all.
-    using (var localRoot = SessionDemo.Source.StartActivity(SessionDemo.DownstreamLocalRootSpanName))
+    using (var localRoot = Spans.Work(SessionDemo.DownstreamLocalRootSpanName))
     {
         localRoot!.SetTag(SessionAttributes.Id, SessionDemo.DownstreamSessionId);
 
-        using (SessionDemo.Source.StartActivity(SessionDemo.DownstreamLocalChildSpanName))
+        using (Spans.Work(SessionDemo.DownstreamLocalChildSpanName))
         {
         }
     }
@@ -182,10 +181,13 @@ static int Emit(SessionPropagationReport report)
     return report.Pass ? 0 : 1;
 }
 
-/// <summary>The demo's own span source, its role names, its routes and the four session values.</summary>
+/// <summary>The demo's application name and span scope, its role names, its routes and the four session values.</summary>
 internal static class SessionDemo
 {
-    internal const string SourceName = "Qyl.RealSessionPropagationDemo";
+    internal const string ApplicationName = "Qyl.RealSessionPropagationDemo";
+
+    /// <summary>The application scope its own spans start on through <c>Spans.Work</c>.</summary>
+    internal const string SourceName = QylTelemetryNames.Scopes.QylTelemetryApplication;
     internal const string AspNetCoreSourceName = "Microsoft.AspNetCore";
     internal const string HttpClientSourceName = "System.Net.Http";
 
@@ -211,8 +213,6 @@ internal static class SessionDemo
 
     /// <summary>The downstream process's own, locally rooted session: the in-process control.</summary>
     internal const string DownstreamSessionId = "qyl-real-session-propagation-demo-downstream-session";
-
-    internal static ActivitySource Source { get; } = new(SourceName);
 }
 
 internal sealed record CapturedActivity(

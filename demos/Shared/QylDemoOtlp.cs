@@ -32,7 +32,11 @@ internal static class QylDemoOtlp
         return Sdk.CreateTracerProviderBuilder()
             .ConfigureResource(resource => resource.AddService(serviceName))
             .AddSource(sources)
-            .AddOtlpExporter(exporter => Configure(exporter, endpoint, "/v1/traces"))
+            .AddOtlpExporter(exporter =>
+            {
+                exporter.Protocol = Protocol(endpoint);
+                exporter.Endpoint = SignalEndpoint(endpoint, "/v1/traces");
+            })
             .Build();
     }
 
@@ -45,7 +49,11 @@ internal static class QylDemoOtlp
         return Sdk.CreateMeterProviderBuilder()
             .ConfigureResource(resource => resource.AddService(serviceName))
             .AddMeter(meters)
-            .AddOtlpExporter(exporter => Configure(exporter, endpoint, "/v1/metrics"))
+            .AddOtlpExporter(exporter =>
+            {
+                exporter.Protocol = Protocol(endpoint);
+                exporter.Endpoint = SignalEndpoint(endpoint, "/v1/metrics");
+            })
             .Build();
     }
 
@@ -55,17 +63,11 @@ internal static class QylDemoOtlp
     /// <summary>Collects and exports every meter the provider holds; a no-op without a provider.</summary>
     internal static void Flush(MeterProvider? provider) => provider?.ForceFlush(10_000);
 
-    private static void Configure(OtlpExporterOptions exporter, Uri endpoint, string signalPath)
-    {
-        if (endpoint.Port == GrpcPort)
-        {
-            exporter.Protocol = OtlpExportProtocol.Grpc;
-            exporter.Endpoint = endpoint;
-        }
-        else
-        {
-            exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-            exporter.Endpoint = new Uri(endpoint, signalPath);
-        }
-    }
+    // Port 4317 is the collector's gRPC listener; anything else speaks OTLP/HTTP, whose programmatic
+    // endpoint is used verbatim, so the per-signal path is appended.
+    private static OtlpExportProtocol Protocol(Uri endpoint)
+        => endpoint.Port == GrpcPort ? OtlpExportProtocol.Grpc : OtlpExportProtocol.HttpProtobuf;
+
+    private static Uri SignalEndpoint(Uri endpoint, string signalPath)
+        => endpoint.Port == GrpcPort ? endpoint : new Uri(endpoint, signalPath);
 }

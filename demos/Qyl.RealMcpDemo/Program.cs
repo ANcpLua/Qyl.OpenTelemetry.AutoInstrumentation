@@ -21,7 +21,6 @@ using NetworkAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Network.N
 using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
 const string mcpSourceName = "Experimental.ModelContextProtocol";
-const string rootSourceName = "Qyl.RealMcpDemo";
 const string sessionId = "qyl-mcp-evidence-session";
 
 var exportedActivities = new ActivityExportCollection();
@@ -37,7 +36,6 @@ builder.AddQyl(options =>
     options.ServiceName = "qyl-real-mcp-demo";
     options.EnableLogExport = false;
     options.EnableMetricsExport = false;
-    options.AdditionalSources.Add(rootSourceName);
 });
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exportedActivities));
@@ -76,9 +74,9 @@ string rootTraceId;
 string rootSpanId;
 var toolListed = false;
 var toolCalled = false;
-using (var rootSource = new ActivitySource(rootSourceName))
-using (var root = rootSource.StartActivity("mcp evidence", ActivityKind.Internal)
-                  ?? throw new InvalidOperationException("qyl did not register the demo root ActivitySource"))
+// The application's own root span, on the scope AddQyl subscribes.
+using (var root = Spans.Work("mcp evidence")
+                  ?? throw new InvalidOperationException("qyl did not subscribe the application scope"))
 {
     root.SetTag(SessionAttributes.Id, sessionId);
     rootTraceId = root.TraceId.ToString();

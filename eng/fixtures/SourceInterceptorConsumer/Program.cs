@@ -63,5 +63,11 @@ var outcomes = dbActivities
 Console.WriteLine("client.calls=" + calls.ToString(CultureInfo.InvariantCulture));
 Console.WriteLine("activity.count=" + dbActivities.Length.ToString(CultureInfo.InvariantCulture));
 Console.WriteLine("activity.statuses=" + string.Join("|", outcomes));
+// The qyl source carries the qyl registry's schema URL, the one the application scope carries.
+Console.WriteLine("activity.schema-url=" + string.Join("|", dbActivities
+    .Select(static activity => activity.Source.TelemetrySchemaUrl == Qyl.Telemetry.SemanticConventions.SchemaUrl.Qyl
+        ? "SchemaUrl.Qyl"
+        : activity.Source.TelemetrySchemaUrl ?? "none")
+    .Distinct(StringComparer.Ordinal)));
 
 return calls == 2 && dbActivities.Length == 4 ? 0 : 1;

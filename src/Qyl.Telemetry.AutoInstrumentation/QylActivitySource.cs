@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Qyl.Telemetry.SemanticConventions;
 using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
@@ -14,10 +15,13 @@ internal static class QylActivitySource
     /// or in <c>OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES</c>.</summary>
     public const string Name = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentation;
 
-    /// <summary>The single source instance.</summary>
-    public static readonly ActivitySource Source = new(
-        Name,
-        QylInstrumentation.Version);
+    /// <summary>The single source instance. It carries the qyl registry's schema URL, the release whose
+    /// <c>qyl.*</c> keys its spans write, like the application scope behind <c>Qyl.Spans.Source</c>.</summary>
+    public static readonly ActivitySource Source = new(new ActivitySourceOptions(Name)
+    {
+        Version = QylInstrumentation.Version,
+        TelemetrySchemaUrl = SchemaUrl.Qyl,
+    });
 
     internal static bool IsRecordingEnabled
         => Source.HasListeners();
