@@ -19,7 +19,7 @@ One agent per qyl-dev repo (qyl, qyl.mcp, qyl-api-schema, Qyl.Telemetry.AutoInst
 
 1. `main` holds `<Version>` with its CHANGELOG entry on top, gate green, pushed.
 2. `./release.sh <x.y.z>` (`--dry-run` first only when a step is new or unsure; the script refuses before publishing when anything is off). It returns before indexing, once NuGet accepted the push and the tag and GitHub release exist; a detached job runs `./eng/build.sh VerifyRelease --published-version <x.y.z>` (index wait for all six, the package smoke against nuget.org) and then the snapshot refresh (`published-versions.yaml` in qyl.at), logging to `artifacts/release-<x.y.z>-verify.log`. Do not run the snapshot refresh by hand.
-3. `./release.sh --wait <x.y.z>` blocks until that log ends in VERIFIED or FAILED; nothing else about this release until then. Exit 3 = not indexed in time, `./release.sh --verify <x.y.z>` checks again; any other FAILED after publication is a patch release.
+3. `./release.sh --wait <x.y.z>` blocks until that log ends in VERIFIED or FAILED; nothing else about this release until then. A subagent never runs it: it stops after step 2 and reports, and the main session runs `--wait` in a background shell (a subagent's prompt cache lives 5 minutes, so a blocking wait re-reads its whole context cold). Exit 3 = not indexed in time, `./release.sh --verify <x.y.z>` checks again; any other FAILED after publication is a patch release.
 4. VERIFIED: notify the consumers.
 
 ## Notify
