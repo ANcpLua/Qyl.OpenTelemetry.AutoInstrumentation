@@ -5,6 +5,25 @@ set -eo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 BUILD_PROJECT_FILE="$SCRIPT_DIR/build/build.csproj"
 
+# Quiet unless --verbose or QYL_VERBOSE=1: eng/quiet.sh prints the target table, PASS or FAIL and
+# the failing target's last lines, and keeps the whole output in artifacts/logs/build-<targets>.log.
+verbose=${QYL_VERBOSE:-0}
+arguments=()
+name=build
+for argument in "$@"; do
+    case $argument in
+        --verbose) verbose=1; continue ;;
+        --help | -h) verbose=1 ;;
+        -*) parameters=1 ;;
+        *) [[ -n ${parameters:-} ]] || name+="-$argument" ;;
+    esac
+    arguments+=("$argument")
+done
+if [[ $verbose != 1 ]]; then
+    exec "$SCRIPT_DIR/quiet.sh" "${name//[^A-Za-z0-9._-]/_}" -- "$SCRIPT_DIR/build.sh" ${arguments[@]+"${arguments[@]}"}
+fi
+set -- ${arguments[@]+"${arguments[@]}"}
+
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export DOTNET_NOLOGO=1
 # This machine shares its cores with other gates: every build here runs on at most four.

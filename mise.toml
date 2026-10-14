@@ -6,8 +6,10 @@
 
 [tasks.check]
 description = "The gate before a push or a release: ./eng/build.sh Check"
+quiet = true
 run = "./eng/build.sh Check"
 
 [tasks.check-full]
 description = "Everything, on demand: ./eng/build.sh CheckFull"
+quiet = true
 run = "./eng/build.sh CheckFull"
