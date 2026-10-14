@@ -108,6 +108,16 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
             optInSignals,
             static (productionContext, signals) => ReportMissingOptIns(productionContext, signals));
 
+        // QylConsumerBuild: an executable's own version and revision as constants, AddQyl's default
+        // service.version.
+        var consumerBuild = context.AnalyzerConfigOptionsProvider
+            .Combine(context.CompilationProvider.Select(static (compilation, _) => IsConsumerExecutable(compilation)))
+            .Select(static (pair, _) => pair.Right ? ReadConsumerBuild(pair.Left.GlobalOptions) : null);
+
+        context.RegisterSourceOutput(
+            consumerBuild,
+            static (productionContext, build) => EmitConsumerBuild(productionContext, build));
+
         var declaredSignals = context.CompilationProvider
             .Select(static (compilation, cancellationToken) => ReadDeclaredSignals(compilation, cancellationToken));
 

@@ -13,40 +13,91 @@ namespace Qyl.Telemetry.AutoInstrumentation.SourceGenerators;
 /// <remarks>
 /// One table, one diagnostic, one message shape. A row is not a claim that the library is silent
 /// without the call — that differs per library, and the row's consequence text says which case it
-/// is. MySql.Data has no row on purpose: its add-on package's <c>AddConnectorNet()</c> is
-/// <c>AddSource("connector-net")</c> and nothing more, which is exactly what <c>AddQyl()</c>
-/// already does, so there is nothing for a consumer to add.
+/// is. The GenAI rows report at Warning: without the call the chat, agent and workflow spans never
+/// exist, which is telemetry silently off rather than telemetry reduced. MySql.Data has no row on
+/// purpose: its add-on package's <c>AddConnectorNet()</c> is <c>AddSource("connector-net")</c> and
+/// nothing more, which is exactly what <c>AddQyl()</c> already does, so there is nothing for a
+/// consumer to add.
 /// </remarks>
 public sealed partial class QylAutoInstrumentationGenerator
 {
     /// <summary>One library's opt-in: what names it, what turns its telemetry on, and what is lost without it.</summary>
+    /// <param name="Library">The library the message names.</param>
+    /// <param name="TriggerNamespace">The namespace (or a parent of it) of a call that uses the library.</param>
+    /// <param name="TriggerType">When set, the type (or a base of the type) that declares the using call.</param>
+    /// <param name="TriggerMethods">The names of the calls that use the library.</param>
+    /// <param name="OptInMethod">The name of the call that turns its telemetry on.</param>
+    /// <param name="OptInNamespace">When set, the namespace (or a parent of it) that call must come from.</param>
+    /// <param name="OptInDisplay">The call as the message shows it.</param>
+    /// <param name="Consequence">What is lost without the call.</param>
+    /// <param name="Severity">Info for reduced telemetry, Warning for telemetry that stays off.</param>
     private readonly record struct OptInDeclaration(
         string Library,
         string TriggerNamespace,
+        string TriggerType,
         EquatableArray<string> TriggerMethods,
         string OptInMethod,
+        string OptInNamespace,
         string OptInDisplay,
-        string Consequence);
+        string Consequence,
+        DiagnosticSeverity Severity);
 
     private static readonly ImmutableArray<OptInDeclaration> s_optIns =
     [
         new(
             "GraphQL.NET",
             "GraphQL",
+            string.Empty,
             ImmutableArray.Create("AddGraphQL").AsEquatableArray(),
             "UseTelemetry",
+            string.Empty,
             "IGraphQLBuilder.UseTelemetry()",
-            "GraphQL.NET's ActivitySource stays silent, so the application produces no GraphQL spans at all"),
+            "GraphQL.NET's ActivitySource stays silent, so the application produces no GraphQL spans at all",
+            DiagnosticSeverity.Info),
         new(
             "Oracle ODP.NET",
             "Oracle.ManagedDataAccess",
+            string.Empty,
             ImmutableArray.Create("ExecuteScalar", "ExecuteNonQuery", "ExecuteReader").AsEquatableArray(),
             "AddOracleDataProviderInstrumentation",
+            string.Empty,
             "TracerProviderBuilder.AddOracleDataProviderInstrumentation()",
             "ODP.NET still emits its command spans, but only with db.system, db.odp.roundtrip.count, "
             + "db.odp.roundtrip.duration and db.response.returned_rows; db.name, db.user, db.statement, "
             + "server.address, server.port, db.odp.connection.id, db.odp.sql_id and exception recording "
-            + "stay off"),
+            + "stay off",
+            DiagnosticSeverity.Info),
+        new(
+            "Microsoft.Extensions.AI",
+            "Microsoft.Extensions.AI",
+            string.Empty,
+            ImmutableArray.Create("GetResponseAsync", "GetStreamingResponseAsync").AsEquatableArray(),
+            "UseOpenTelemetry",
+            "Microsoft.Extensions.AI",
+            "ChatClientBuilder.UseOpenTelemetry()",
+            "the Experimental.Microsoft.Extensions.AI ActivitySource stays silent, so no chat or execute_tool span "
+            + "and no token usage is recorded",
+            DiagnosticSeverity.Warning),
+        new(
+            "Microsoft.Agents.AI",
+            "Microsoft.Agents.AI",
+            "Microsoft.Agents.AI.AIAgent",
+            ImmutableArray.Create("RunAsync", "RunStreamingAsync").AsEquatableArray(),
+            "UseOpenTelemetry",
+            "Microsoft.Agents.AI",
+            "AIAgentBuilder.UseOpenTelemetry()",
+            "the Experimental.Microsoft.Agents.AI ActivitySource stays silent, so no invoke_agent span is recorded",
+            DiagnosticSeverity.Warning),
+        new(
+            "Microsoft.Agents.AI.Workflows",
+            "Microsoft.Agents.AI.Workflows",
+            "Microsoft.Agents.AI.Workflows.WorkflowBuilder",
+            ImmutableArray.Create("Build").AsEquatableArray(),
+            "WithOpenTelemetry",
+            "Microsoft.Agents.AI.Workflows",
+            "WorkflowBuilder.WithOpenTelemetry()",
+            "the Microsoft.Agents.AI.Workflows ActivitySource stays silent, so no workflow span is recorded",
+            DiagnosticSeverity.Warning),
     ];
 
     /// <summary>What one invocation said about the opt-in table: it used a library, or it opted one in.</summary>
@@ -65,10 +116,13 @@ public sealed partial class QylAutoInstrumentationGenerator
         for (var row = 0; row < s_optIns.Length; row++)
         {
             var declaration = s_optIns[row];
-            if (string.Equals(symbol.Name, declaration.OptInMethod, StringComparison.Ordinal))
+            if (string.Equals(symbol.Name, declaration.OptInMethod, StringComparison.Ordinal) &&
+                (declaration.OptInNamespace.Length is 0 || IsInNamespace(symbol, declaration.OptInNamespace)))
+            {
                 return new OptInSignal(row + 1, true, null);
+            }
 
-            if (!ContainsOrdinal(declaration.TriggerMethods, symbol.Name))
+            if (!ContainsOrdinal(declaration.TriggerMethods, symbol.Name) || !IsTriggerType(symbol, declaration.TriggerType))
                 continue;
 
             if (IsInNamespace(symbol, declaration.TriggerNamespace) ||
@@ -80,6 +134,20 @@ public sealed partial class QylAutoInstrumentationGenerator
         }
 
         return default;
+    }
+
+    private static bool IsTriggerType(IMethodSymbol symbol, string triggerType)
+    {
+        if (triggerType.Length is 0)
+            return true;
+
+        for (var type = symbol.ContainingType; type is not null; type = type.BaseType)
+        {
+            if (string.Equals(type.ToDisplayString(), triggerType, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 
     private static bool ContainsOrdinal(EquatableArray<string> values, string value)
@@ -135,6 +203,9 @@ public sealed partial class QylAutoInstrumentationGenerator
             context.ReportDiagnostic(Diagnostic.Create(
                 QylGeneratorDiagnostics.NativeTelemetryOptInMissing,
                 used[row],
+                declaration.Severity,
+                additionalLocations: null,
+                properties: null,
                 declaration.Library,
                 declaration.OptInDisplay,
                 declaration.Consequence));

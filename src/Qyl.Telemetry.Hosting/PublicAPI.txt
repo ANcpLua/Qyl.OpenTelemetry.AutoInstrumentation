@@ -7,6 +7,8 @@ Qyl.QylTelemetryOptions.CollectorEndpoint.get -> System.Uri?
 Qyl.QylTelemetryOptions.CollectorEndpoint.set -> void
 Qyl.QylTelemetryOptions.ConfigureTracing.get -> System.Action<OpenTelemetry.Trace.TracerProviderBuilder!>?
 Qyl.QylTelemetryOptions.ConfigureTracing.set -> void
+Qyl.QylTelemetryOptions.DeploymentEnvironment.get -> string?
+Qyl.QylTelemetryOptions.DeploymentEnvironment.set -> void
 Qyl.QylTelemetryOptions.EnableCollectorDiscovery.get -> bool
 Qyl.QylTelemetryOptions.EnableCollectorDiscovery.set -> void
 Qyl.QylTelemetryOptions.EnableLogExport.get -> bool
@@ -18,8 +20,9 @@ Qyl.QylTelemetryOptions.EnableSessionTagInheritance.set -> void
 Qyl.QylTelemetryOptions.QylTelemetryOptions() -> void
 Qyl.QylTelemetryOptions.RequireConfiguredEndpoint.get -> bool
 Qyl.QylTelemetryOptions.RequireConfiguredEndpoint.set -> void
-Qyl.QylTelemetryOptions.ResourceAttributes.get -> System.Collections.Generic.IList<System.Collections.Generic.KeyValuePair<string!, object!>>!
 Qyl.QylTelemetryOptions.ServiceName.get -> string?
 Qyl.QylTelemetryOptions.ServiceName.set -> void
+Qyl.QylTelemetryOptions.ServiceNamespace.get -> string?
+Qyl.QylTelemetryOptions.ServiceNamespace.set -> void
 Qyl.QylTelemetryOptions.ServiceVersion.get -> string?
 Qyl.QylTelemetryOptions.ServiceVersion.set -> void

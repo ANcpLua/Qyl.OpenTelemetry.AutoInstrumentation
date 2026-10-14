@@ -126,9 +126,10 @@ A library that emits only `DiagnosticSource`/`DiagnosticListener` events counts 
 a contrib package by another name. A library whose `ActivitySource` stays silent until the consumer
 opts in *in their own code* still takes source + processor — qyl does not call the opt-in on the
 application's behalf, because an interceptor that did would be the mechanism this rule removes.
-No source name is typed by hand anywhere: `QylTelemetrySources` reads
-`QylTelemetryNames.VendorActivitySources`, so a name missing from the pin is a
-semantic-convention release blocker rather than a string literal.
+`QylTelemetrySources` reads every source name from `QylTelemetryNames` (the vendor sources and
+the scopes), so a name missing from the pin is a semantic-convention release blocker rather than a
+string literal. One name is still typed by hand: `Experimental.ModelContextProtocol`, which the
+registry does not declare yet.
 
 ### Subscribed native sources
 
@@ -204,7 +205,9 @@ Three rows of the native-source table stay silent, or stay poorer, until the app
 call in its own code. qyl never makes that call: injecting a consumer's opt-in would be the
 interception this package family exists to remove, and it would turn on telemetry the application
 did not ask for. The source generator reports `QYL1002` when a compilation uses the library and
-never makes the call.
+never makes the call: at Info for GraphQL.NET and ODP.NET, at Warning for the three GenAI libraries,
+whose spans never exist without it (a chat call, `AIAgent.RunAsync` or `WorkflowBuilder.Build`
+without `UseOpenTelemetry()` / `WithOpenTelemetry()`).
 
 | Library | The call | Without it |
 | --- | --- | --- |
@@ -267,31 +270,37 @@ level and its authoritative source, is the generated
 
 ## The qyl attributes
 
-`qyl.instrumentation.domain` is the only qyl-owned attribute written onto a span.
+`qyl.instrumentation.domain` is the only qyl-owned attribute the instrumentation writes onto a
+span; the application adds its business keys as `qyl.app.<key>` through `span.SetAppTag(key, value)`.
 `QylNativeSpanProcessor` writes it onto the spans of the native-source table, and the ASP.NET Core
 middleware writes it onto the hosting activity, which is the one native span whose own library
 writes nothing. Everything else on a native span is the library's own. The domain is what the qyl collector's dashboard classifies on,
 together with the semantic-convention keys the library emits, so a span that reaches the collector
 without it is unclassifiable no matter what it is called.
 
-Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `aspnetcore.server`,
-`azure.sdk`, `db.client`, `db.efcore`, `db.mongodb`, `db.redis`, `db.sqlclient`,
-`elastic.transport`, `graphql`, `http.client`, `job.quartz`, `messaging.kafka`,
-`messaging.masstransit`, `messaging.nservicebus`, `messaging.rabbitmq`, `rpc.grpc` and
-`rpc.wcf.client`.
+Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `app`,
+`aspnetcore.server`, `azure.sdk`, `db.client`, `db.efcore`, `db.elasticsearch`, `db.mongodb`,
+`db.redis`, `db.sqlclient`, `elastic.transport`, `gen_ai.execute_tool`, `gen_ai.invoke_agent`,
+`graphql`, `http.client`, `job.quartz`, `messaging.kafka`, `messaging.masstransit`,
+`messaging.nservicebus`, `messaging.process`, `messaging.rabbitmq`, `rpc.grpc` and
+`rpc.wcf.client`. `app`, `messaging.process`, `gen_ai.invoke_agent` and `gen_ai.execute_tool` are
+the application's: the generated starters and `Spans.Work` stamp them.
 
+`session.id` is the session spine, and qyl moves it two ways. The ASP.NET Core middleware that
+`AddQyl()` registers stamps the request's W3C `baggage` member `session.id` onto the server span,
+admitted only as a session id (unreserved URI characters, at most 128, not dots alone; anything else
+is left off), so every ASP.NET Core service joins an agent's session without code. Then
 `QylSessionSpanProcessor` copies `session.id` from the nearest tagged in-process ancestor onto
 descendant spans that do not carry one. Remote parents and unrelated trace branches propagate
 nothing, and the copy happens on end, the last moment the ancestor's tag can be observed.
 `demos/Qyl.RealSessionPropagationDemo` and its lane, `eng/build/Demos/Lanes/SessionPropagationLane.cs`,
 hold that to three assertions across two real operating-system processes: an in-process descendant
 inherits the value, a descendant that already carries one keeps its own, and the server span in
-the second process carries none — although `traceparent` arrived, the trace is the same one, and
-the session itself reached that span in baggage.
+the second process, remote-parented on the same trace, carries the session that reached it in
+baggage, which its in-process child inherits.
 
-`session.id` is a **span tag and nothing else**. Nothing in `Qyl.Telemetry.Hosting` puts it on the
-wire: an outgoing request carries the trace context and whatever baggage the application itself put
-on `Activity.Current`, which is what `System.Net.Http` propagates. A tag is not baggage, so the
+qyl writes **no baggage**. An outgoing request carries the trace context and whatever baggage the
+application itself put on `Activity.Current`, which is what `System.Net.Http` propagates, so the
 next process sees the session only if the application put it in baggage on purpose.
 
 qyl's own spans and instruments carry the registry-owned scope names
@@ -312,7 +321,7 @@ The source generator reports two diagnostics of its own:
 | Id | Severity | Reported when |
 | --- | --- | --- |
 | `QYL1001` | Info | A call site names a declared integration's receiver type and method but its signature does not fit the declared shape, typically because the library changed the signature in a new major. No interceptor is emitted for that call, so it produces no qyl telemetry. Update the declaration or pin the library to a version the shape describes. |
-| `QYL1002` | Info | The compilation uses a library whose native `ActivitySource` qyl subscribes but never makes the call that library needs before it emits, or before it emits in full — see [the opt-in table](#the-libraries-whose-telemetry-the-consumer-turns-on). The message names the call and what is lost without it. |
+| `QYL1002` | Info; Warning for the GenAI rows | The compilation uses a library whose native `ActivitySource` qyl subscribes but never makes the call that library needs before it emits, or before it emits in full — see [the opt-in table](#the-libraries-whose-telemetry-the-consumer-turns-on). The message names the call and what is lost without it. |
 
 Skipping in silence would hide the loss of instrumentation, and emitting an interceptor with a
 mismatched signature would break the consumer's build; the diagnostic is the third option.

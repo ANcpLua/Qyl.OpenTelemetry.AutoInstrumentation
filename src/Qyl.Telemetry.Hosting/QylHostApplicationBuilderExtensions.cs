@@ -9,7 +9,9 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Qyl.Telemetry.AutoInstrumentation;
+using Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 using Qyl.Telemetry.AutoInstrumentation.Hosting;
+using DeploymentAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Deployment.DeploymentAttributes;
 
 namespace Qyl;
 
@@ -18,12 +20,13 @@ namespace Qyl;
 /// auto-instrumentation bootstrap, wires the OpenTelemetry SDK with ASP.NET Core's own server span
 /// (enriched by the qyl middleware, never duplicated), every row of the native-source table — the
 /// BCL's outbound <c>System.Net.Http</c> span among them — plus the native and
-/// qyl-owned meter inventory, carries
-/// <c>session.id</c> from a span to its in-process descendants, and exports traces, metrics, and
-/// logs over OTLP — to
+/// qyl-owned meter inventory and the application scope behind <c>Qyl.Spans.Source</c>; derives the
+/// resource from the build and the host; stamps a request's <c>baggage</c> member <c>session.id</c>
+/// onto its server span and carries <c>session.id</c> from a span to its in-process descendants; and
+/// exports traces, metrics, and logs over OTLP — to
 /// <c>OTEL_EXPORTER_OTLP_ENDPOINT</c> when set, otherwise to a locally discovered qyl collector.
-/// <c>session.id</c> is a span tag and never baggage, so it does not reach the next process on its
-/// own. The specialist EF Core and SqlClient packages emit spans under the single qyl
+/// qyl writes no baggage, so the session reaches the next process only in baggage the application
+/// puts there. The specialist EF Core and SqlClient packages emit spans under the single qyl
 /// ActivitySource, so they need no extra source registration here. Applications still install the
 /// specialist package for each dependency-heavy database integration; adding competing native
 /// sources would double-report the same operations.
@@ -137,13 +140,16 @@ public static class QylHostApplicationBuilderExtensions
                           ?? Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME")
                           ?? builder.Environment.ApplicationName;
 
+        // The resource is derived, not typed: the version is the consuming build's own (the generated
+        // QylConsumerBuild registers it before Main) and the environment is the host's.
+        var serviceVersion = options.ServiceVersion ?? QylConsumerBuildInfo.Version;
+        var deploymentEnvironment = options.DeploymentEnvironment ?? builder.Environment.EnvironmentName;
+
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource =>
             {
-                resource.AddService(serviceName, serviceVersion: options.ServiceVersion);
-
-                if (options.ResourceAttributes.Count > 0)
-                    resource.AddAttributes(options.ResourceAttributes);
+                resource.AddService(serviceName, serviceNamespace: options.ServiceNamespace, serviceVersion: serviceVersion);
+                resource.AddAttributes([new KeyValuePair<string, object>(DeploymentAttributes.EnvironmentName, deploymentEnvironment)]);
             })
             .WithTracing(tracing =>
             {

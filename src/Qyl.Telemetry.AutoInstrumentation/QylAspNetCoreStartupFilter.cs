@@ -82,6 +82,7 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
             context.Request.QueryString.HasValue ? context.Request.QueryString.Value![1..] : null,
             context.Request.Scheme);
         QylCaptureHelpers.SetRequestHeaders(activity, options.AspNetCoreCapturedRequestHeaderMap, context.Request.Headers);
+        QylSessionBaggage.Stamp(activity);
         return activity;
     }
 

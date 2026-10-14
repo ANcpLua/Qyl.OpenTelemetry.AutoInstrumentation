@@ -2,9 +2,11 @@ namespace Qyl.Build;
 
 /// <summary>
 /// Builds the snapshot fixture and compares what the generator emitted byte for byte with the verified
-/// snapshot; asserts the QYL1001 diagnostic for the fixture's shape-mismatch call site; and rebuilds
-/// every implemented-signal demo to compare the live interceptor manifests with the verified artifact.
-/// A mismatch leaves the received file beside the generated output.
+/// snapshots (the interceptors and QylConsumerBuild, the fixture's version and revision as constants);
+/// asserts the QYL1001 diagnostic for the fixture's shape-mismatch call site and the three GenAI QYL1002
+/// rows for its unopted Microsoft.Extensions.AI, Agents.AI and Workflows calls; and rebuilds every
+/// implemented-signal demo to compare the live interceptor manifests with the verified artifact. A
+/// mismatch leaves the received file beside the generated output.
 /// </summary>
 static class GeneratorSnapshotGate
 {
@@ -15,7 +17,19 @@ static class GeneratorSnapshotGate
     private static AbsolutePath ReceivedManifestArtifact => GeneratedRoot / "QylAutoInstrumentation.ContractManifests.received.jsonl";
 
     private static readonly (string Verified, string Generated)[] ExpectedFiles =
-        [("QylAutoInstrumentation.Interceptors.g.verified.cs", "QylAutoInstrumentation.Interceptors.g.cs")];
+    [
+        ("QylAutoInstrumentation.Interceptors.g.verified.cs", "QylAutoInstrumentation.Interceptors.g.cs"),
+        ("QylConsumerBuild.g.verified.cs", "QylConsumerBuild.g.cs"),
+    ];
+
+    // The three GenAI rows of QYL1002 at Warning, each with the call it names; the fixture's
+    // GenAiOptIns.cs uses all three libraries and opts none of them in.
+    private static readonly (string Library, string Call)[] ExpectedOptInWarnings =
+    [
+        ("Microsoft.Agents.AI", "AIAgentBuilder.UseOpenTelemetry()"),
+        ("Microsoft.Agents.AI.Workflows", "WorkflowBuilder.WithOpenTelemetry()"),
+        ("Microsoft.Extensions.AI", "ChatClientBuilder.UseOpenTelemetry()"),
+    ];
 
     private static readonly string[] RequiredInterceptorTokens =
     [
@@ -38,6 +52,7 @@ static class GeneratorSnapshotGate
         var buildOutput = RunBuild();
         CompareSnapshots(GeneratedFilesByName());
         VerifyShapeMismatchDiagnostic(buildOutput, File.ReadAllText(VerifiedRoot / "QylAutoInstrumentation.Interceptors.g.verified.cs"));
+        VerifyOptInWarnings(buildOutput);
         CompareContractManifestCoverage();
         Log.Information("generator-snapshots-ok");
     }
@@ -116,6 +131,27 @@ static class GeneratorSnapshotGate
         foreach (var token in new[] { "QylUnmatchedCommand", "ShapeMismatch.cs" })
             Gate.Require(!interceptors.Contains(token, StringComparison.Ordinal), $"an interceptor was emitted for the non-matching call site: {token}");
         Log.Information("  - QYL1001 reported once and no interceptor emitted: {Message}", message);
+    }
+
+    /// <summary>
+    /// QYL1002 reports a GenAI library used without its telemetry opt-in at Warning, once per library:
+    /// without the call its ActivitySource never emits, which is telemetry silently off.
+    /// </summary>
+    private static void VerifyOptInWarnings(string buildOutput)
+    {
+        var reported = buildOutput.Split('\n')
+            .Where(static line => line.Contains("warning QYL1002:", StringComparison.Ordinal))
+            .Select(static line => line.Split("warning QYL1002:", 2)[1].Trim().Split(" [", 2)[0])
+            .ToHashSet(StringComparer.Ordinal);
+        Gate.Require(reported.Count == ExpectedOptInWarnings.Length,
+            () => $"expected {ExpectedOptInWarnings.Length} distinct QYL1002 warnings from the snapshot fixture, got {reported.Count}: {ContractValue.RenderSorted(reported)}");
+        foreach (var (library, call) in ExpectedOptInWarnings)
+        {
+            Gate.Require(reported.Any(message => message.StartsWith($"qyl subscribes {library}'s ActivitySource, but this compilation never calls '{call}'", StringComparison.Ordinal)),
+                () => $"no QYL1002 warning names {library} and {call}: {ContractValue.RenderSorted(reported)}");
+        }
+
+        Log.Information("  - QYL1002 warned for the {Count} unopted GenAI libraries", ExpectedOptInWarnings.Length);
     }
 
     private static void CompareContractManifestCoverage()

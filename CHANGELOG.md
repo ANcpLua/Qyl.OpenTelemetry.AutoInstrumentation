@@ -16,6 +16,27 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
   unconditionally: a span from a generated starter or `Spans.Work` is exported with no
   `ActivitySource` and no `AddSource` in application code.
 
+- `AddQyl()` derives the resource (ADR D5): `service.version` defaults to the consuming build's own
+  version and source revision (`InformationalVersion`, e.g. `1.4.0+3f2a9c1`), which the package's
+  build assets expose to the generator as compiler-visible properties and the generator compiles
+  into the application as `QylConsumerBuild` (constants `Version` and `Revision`; its module
+  initializer hands the version over, no reflection); `deployment.environment.name` defaults to
+  `IHostEnvironment.EnvironmentName`. New options `ServiceNamespace` (`service.namespace`) and
+  `DeploymentEnvironment`.
+- The session spine: the ASP.NET Core middleware stamps the request's W3C `baggage` member
+  `session.id` onto the server span (a session id only: unreserved URI characters, at most 128,
+  not dots alone), which `QylSessionSpanProcessor` carries to every in-process descendant. Every
+  ASP.NET Core service joins an agent's session without code; `Qyl.Api`'s own filter is redundant.
+- `QYL1002` reports, at Warning, `Microsoft.Extensions.AI`, `Microsoft.Agents.AI` and
+  `Microsoft.Agents.AI.Workflows` used without `UseOpenTelemetry()` / `WithOpenTelemetry()`: their
+  `ActivitySource`s stay silent without it. GraphQL.NET and ODP.NET stay at Info.
+
+### Removed
+
+- `QylTelemetryOptions.ResourceAttributes`, the last string-keyed slot: the resource is derived
+  (`ServiceName`, `ServiceNamespace`, `ServiceVersion`, `DeploymentEnvironment`), and
+  `OTEL_RESOURCE_ATTRIBUTES` still reaches the SDK.
+
 ### Changed
 
 - The semantic-convention analyzers flow to every consumer: the core package references
@@ -36,6 +57,9 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
   generated starters name spans the same way; `QylSpanNames` is deleted. One name changes: a
   StackExchange.Redis command span is `{db.operation.name} {db.namespace}`, the database index
   (`GET 0`), where it was the command alone.
+- The session-propagation lane's third property is the stamp: the second process's server span
+  carries the session that reached it in baggage, with no `Qyl.Api`, and its child inherits it. The
+  ASP.NET Core demo drops its own baggage filter and proves the middleware's.
 - The Npgsql and HttpClient demos run their failing call inside the application's own `Spans.Work`
   span and assert the `RecordFailure` triple on it; the Kafka demo asserts it on the interceptor's
   failed producer span.

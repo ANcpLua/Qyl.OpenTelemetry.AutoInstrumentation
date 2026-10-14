@@ -1,3 +1,5 @@
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylConsumerBuildInfo
+static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylConsumerBuildInfo.Register(string! version) -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Convert.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Convert.set -> void

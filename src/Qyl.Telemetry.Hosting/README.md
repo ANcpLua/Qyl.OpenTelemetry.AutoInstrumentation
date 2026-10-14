@@ -44,15 +44,16 @@ builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
 | Option | Default | Effect |
 |---|---|---|
 | `ServiceName` | `OTEL_SERVICE_NAME`, else the host application name | The `service.name` resource attribute. |
-| `ServiceVersion` | unset | The `service.version` resource attribute; leave it unset to omit the attribute. |
-| `ResourceAttributes` | empty | Extra attributes merged onto the resource, for facts about the process rather than one span. |
+| `ServiceVersion` | the build's own version | The `service.version` resource attribute. By default the consuming build's `InformationalVersion` with its source revision (`1.4.0+3f2a9c1`), compiled into the application by the package's generator. |
+| `ServiceNamespace` | unset | The `service.namespace` resource attribute: the system this service belongs to. |
+| `DeploymentEnvironment` | the host environment | The `deployment.environment.name` resource attribute, by default `IHostEnvironment.EnvironmentName`. |
 | `ConfigureTracing` | unset | A hook for tracing setup the typed options do not cover. It runs after the qyl sources and processors and before the OTLP exporter. |
 | `CollectorEndpoint` | unset | An explicit collector endpoint, ahead of the order above. |
 | `EnableCollectorDiscovery` | `true` | Probe `localhost` and the host `qyl` for a collector when no endpoint is set. |
 | `RequireConfiguredEndpoint` | `false` | Export only when an endpoint is set or discovered, instead of falling back to the exporter's `localhost` default. A process that is itself a telemetry destination, such as a collector, sets it to `true`. |
 | `EnableLogExport` | `true` | Export application logs over OTLP. |
 | `EnableMetricsExport` | `true` | Register and export the qyl meter inventory and the GenAI meters. |
-| `EnableSessionTagInheritance` | `true` | Copy `session.id` from the nearest in-process ancestor span onto spans that lack it. It sets a span tag only; nothing goes on the wire to the next process. |
+| `EnableSessionTagInheritance` | `true` | Copy `session.id` from the nearest in-process ancestor span onto spans that lack it. It sets a span tag only; nothing goes on the wire to the next process. The server span of an ASP.NET Core request carries the `session.id` of the request's W3C `baggage` either way. |
 | `AdditionalSources` | empty | More `ActivitySource` names to subscribe. |
 | `AdditionalMeters` | empty | More `Meter` names to subscribe. |
 

@@ -15,18 +15,26 @@ public sealed class QylTelemetryOptions
     public string? ServiceName { get; set; }
 
     /// <summary>
-    /// Version stamped on the OpenTelemetry resource as <c>service.version</c>. Leave null to omit
-    /// it. Setting it makes a telemetry regression attributable to a specific build, which is the
-    /// whole point of the attribute — a deployment that cannot name its own version cannot be
-    /// bisected.
+    /// Version stamped on the OpenTelemetry resource as <c>service.version</c>. Defaults to the
+    /// consuming build's own version: its <c>InformationalVersion</c>, carrying the source revision
+    /// as SemVer build metadata, which the package's generator compiles into the application. A
+    /// telemetry regression is then attributable to a specific build without a line of code.
     /// </summary>
     public string? ServiceVersion { get; set; }
 
     /// <summary>
-    /// Extra attributes merged onto the OpenTelemetry resource, for facts that describe the process
-    /// rather than any one span — schema URL, deployment environment, enabled capabilities.
+    /// The system this service belongs to, stamped as <c>service.namespace</c>: services of one
+    /// system share it, and two systems may each have a service of the same name. Leave null to omit
+    /// it.
     /// </summary>
-    public IList<KeyValuePair<string, object>> ResourceAttributes { get; } = [];
+    public string? ServiceNamespace { get; set; }
+
+    /// <summary>
+    /// The environment the service runs in, stamped as <c>deployment.environment.name</c>. Defaults
+    /// to the host's <c>IHostEnvironment.EnvironmentName</c> (<c>DOTNET_ENVIRONMENT</c> or
+    /// <c>ASPNETCORE_ENVIRONMENT</c>, else <c>Production</c>).
+    /// </summary>
+    public string? DeploymentEnvironment { get; set; }
 
     /// <summary>
     /// Escape hatch for tracing configuration the typed properties do not cover — extra processors,

@@ -7,4 +7,19 @@
   <PropertyGroup Condition="'$(_QylAutoInstrumentationCoreBuildAssetsAlreadyImported)' != 'true'">
     <InterceptorsNamespaces>$(InterceptorsNamespaces);Qyl.Telemetry.AutoInstrumentation.Generated</InterceptorsNamespaces>
   </PropertyGroup>
+
+  <!-- The consuming build's version and source revision, visible to the qyl generator: it writes them
+       into QylConsumerBuild as constants, and AddQyl stamps the version as service.version. Items are
+       evaluated after every import, so a second import is deduplicated by the Exclude, not by the
+       import guard above. -->
+  <ItemGroup>
+    <CompilerVisibleProperty Include="InformationalVersion" Exclude="@(CompilerVisibleProperty)" />
+    <CompilerVisibleProperty Include="SourceRevisionId" Exclude="@(CompilerVisibleProperty)" />
+  </ItemGroup>
+
+  <!-- Both are set by targets rather than at evaluation, and the analyzer config is written before
+       those run, so they are resolved first. -->
+  <Target Name="_QylResolveConsumerBuildProperties"
+          BeforeTargets="GenerateMSBuildEditorConfigFileCore"
+          DependsOnTargets="GetAssemblyVersion;AddSourceRevisionToInformationalVersion" />
 </Project>

@@ -14,10 +14,11 @@ using Qyl;
 using QylTelemetryNames = Qyl.Telemetry.SemanticConventions.Names.QylTelemetryNames;
 using SessionAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Session.SessionAttributes;
 
-// qyl's OWN behaviour, not a library's. `session.id` is the one key qyl moves by itself, and
-// QylSessionSpanProcessor moves it exactly one way: from the nearest tagged IN-PROCESS ancestor
-// onto a descendant that carries none. It is a span tag, never baggage, so qyl puts nothing on the
-// wire and the next process receives nothing from qyl.
+// qyl's OWN behaviour, not a library's. `session.id` is the one key qyl moves by itself, in two
+// ways: QylSessionSpanProcessor copies it from the nearest tagged IN-PROCESS ancestor onto a
+// descendant that carries none, and AddQyl's ASP.NET Core middleware stamps the request's W3C
+// baggage member `session.id` onto the server span. qyl writes no baggage: the session crosses a
+// process boundary only because the application put it there.
 //
 // One executable, two roles. The two roles run as two real operating-system processes, and the
 // PROCESSES ARE STARTED BY eng/build/Demos/Lanes/SessionPropagationLane.cs ALONE — this program never
@@ -77,8 +78,8 @@ static async Task<int> RunUpstreamAsync(int port)
         root!.SetTag(SessionAttributes.Id, SessionDemo.UpstreamSessionId);
 
         // The application's own doing, and the ONLY way the value reaches the next process: it puts
-        // the session in baggage on purpose. qyl writes no baggage — the assertion downstream is
-        // that the value arrives there and qyl still refuses to make a tag out of it.
+        // the session in baggage on purpose. qyl writes no baggage; downstream, AddQyl alone (no
+        // Qyl.Api) turns the arrived member into the server span's session.id.
         root.AddBaggage(SessionAttributes.Id, SessionDemo.UpstreamSessionId);
 
         // Property 1: an in-process descendant with no session of its own inherits the ancestor's.
@@ -131,8 +132,7 @@ static async Task<int> RunDownstreamAsync(int port)
     app.MapHealthChecks("/healthz");
     app.MapGet(SessionDemo.ProbePath, (HttpContext context) =>
     {
-        // A child of the SERVER span: the span that would inherit a session.id if the server span
-        // had been given one. It must not have one either.
+        // A child of the SERVER span: it inherits the session the server span was stamped with.
         using (Spans.Work(SessionDemo.DownstreamProbeChildSpanName))
         {
         }
@@ -340,26 +340,25 @@ internal sealed record SessionPropagationReport(
         RequireTag(localChild, SessionAttributes.Id, SessionDemo.DownstreamSessionId, failures);
         RequireInProcessParent(localChild, failures);
 
-        // PROPERTY 3. The server span's parent is remote: an id arrived over the wire, no ancestor
-        // object exists, and qyl writes no session onto it — even though the upstream's session did
-        // arrive, in baggage, on this very span.
+        // PROPERTY 3. The server span's parent is remote: an id arrived over the wire and no
+        // ancestor object exists, so no processor can copy anything onto it. The session reaches it
+        // in baggage, and AddQyl's middleware stamps the baggage member onto the server span: the
+        // session spine, with no Qyl.Api in this process.
         if (server is not null)
         {
             if (server.HasInProcessParent)
                 failures.Add($"{server.Tuple} has an in-process parent: the two roles did not run in two processes");
             if (StringComparer.Ordinal.Equals(server.ParentSpanId, EmptySpanId))
                 failures.Add($"{server.Tuple} has no remote parent: the request carried no traceparent");
-            if (server.Tags.TryGetValue(SessionAttributes.Id, out var remoteSession))
-                failures.Add($"{server.Tuple} carries {SessionAttributes.Id}={remoteSession} across a process boundary");
             if (!StringComparer.Ordinal.Equals(server.Kind, "Server"))
                 failures.Add($"expected kind Server on {server.Tuple}, got {server.Kind}");
         }
 
         RequireBaggage(server, SessionAttributes.Id, SessionDemo.UpstreamSessionId, failures);
+        RequireTag(server, SessionAttributes.Id, SessionDemo.UpstreamSessionId, failures);
 
-        // The server span carries no session, so its own in-process child inherits none either.
-        if (probeChild is not null && probeChild.Tags.TryGetValue(SessionAttributes.Id, out var childSession))
-            failures.Add($"{probeChild.Tuple} carries {SessionAttributes.Id}={childSession} below a remote-parented span");
+        // The stamped server span is an in-process ancestor of the probe child, which inherits it.
+        RequireTag(probeChild, SessionAttributes.Id, SessionDemo.UpstreamSessionId, failures);
 
         return new SessionPropagationReport(
             SessionDemo.DownstreamRole,

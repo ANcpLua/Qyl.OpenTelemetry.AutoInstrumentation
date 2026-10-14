@@ -9,10 +9,11 @@ namespace Qyl.Build;
 /// Runs the session-propagation demo as TWO REAL PROCESSES and holds qyl to its own contract:
 /// (1) an in-process descendant of a span carrying session.id inherits it, (2) a descendant that
 /// already carries its own is not overwritten, (3) across a real HTTP boundary into a second process
-/// the server span carries NO session.id, although traceparent arrived, the trace is the same one and
-/// the session reached that span in baggage. This lane, never the demo binary, starts both processes,
-/// and each report has to name the process id the lane launched. The downstream role's locally rooted
-/// control proves its processor works, so (3) measures the boundary and not a missing processor.
+/// the server span carries the session.id that reached it in baggage — stamped by AddQyl's ASP.NET Core
+/// middleware, no Qyl.Api involved — on the same trace with a remote parent, and its in-process child
+/// inherits it. This lane, never the demo binary, starts both processes, and each report has to name
+/// the process id the lane launched. The downstream role's locally rooted control proves its processor
+/// works on a span that no baggage reached.
 /// </summary>
 sealed class SessionPropagationLane : DemoLane
 {
@@ -110,12 +111,6 @@ sealed class SessionPropagationLane : DemoLane
         Gate.Require(actual == expected, $"{run.Label} span '{ReportedActivity.Text(span, "Name")}' expected {SessionTag}={expected}, got {actual ?? "absent"}");
     }
 
-    private static void RequireNoTag(DemoRun run, JsonElement span)
-    {
-        Gate.Require(!ReportedActivity.HasTag(span, SessionTag),
-            $"{run.Label} span '{ReportedActivity.Text(span, "Name")}' carries {SessionTag}={ReportedActivity.Tag(span, SessionTag)} across a process boundary — qyl copies the session onto a remote-parented span");
-    }
-
     private static void VerifyContract(DemoRun upstream, DemoRun downstream)
     {
         // Two processes, not two hosts.
@@ -145,7 +140,7 @@ sealed class SessionPropagationLane : DemoLane
         Gate.Require(ReportedActivity.Text(client, "TraceId") == ReportedActivity.Text(root, "TraceId"),
             $"upstream client span is on trace {ReportedActivity.Text(client, "TraceId")}, root is on {ReportedActivity.Text(root, "TraceId")}");
 
-        // PROPERTY 3 — one trace, a real remote parent, and no session on the server span.
+        // PROPERTY 3 — one trace, a real remote parent, and the baggage session stamped on the server span.
         Gate.Require(ReportedActivity.Text(server, "TraceId") == ReportedActivity.Text(client, "TraceId"),
             "downstream server span and upstream client span are not on one trace — the two processes are not one trace");
         Gate.Require(ReportedActivity.Text(server, "ParentSpanId") == ReportedActivity.Text(client, "SpanId"),
@@ -153,12 +148,13 @@ sealed class SessionPropagationLane : DemoLane
         Gate.Require(ReportedActivity.Text(server, "ParentSpanId") != EmptySpanId, "downstream server span has no remote parent at all");
         Gate.Require(server.TryGetProperty("HasInProcessParent", out var serverParent) && serverParent.ValueKind is JsonValueKind.False,
             "downstream server span has an IN-PROCESS parent — the roles did not run in two processes");
-        RequireNoTag(downstream, server);
 
-        // The session reached the second process in baggage, which the application put there. qyl wrote no tag.
+        // The session reached the second process in baggage, which the application put there, and
+        // AddQyl stamped it onto the server span; the server span's in-process child inherits it.
         var baggage = server.TryGetProperty("Baggage", out var map) && map.ValueKind is JsonValueKind.Object && map.TryGetProperty(SessionTag, out var value) ? value.GetString() : null;
         Gate.Require(baggage == SessionId, $"downstream span 'GET /probe' expected baggage {SessionTag}={SessionId}, got {baggage ?? "absent"}");
-        RequireNoTag(downstream, probeChild);
+        RequireTag(downstream, server, SessionId);
+        RequireTag(downstream, probeChild, SessionId);
 
         // The control: propagation is installed and working in the downstream process.
         RequireTag(downstream, localRoot, DownstreamSessionId);

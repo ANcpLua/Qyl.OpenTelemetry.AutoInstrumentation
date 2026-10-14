@@ -3,14 +3,21 @@ namespace Qyl.Build;
 /// <summary>
 /// The application scope, through the packages alone: a consumer's <c>Spans.Work</c> span is exported
 /// by <c>AddQyl</c> under <c>Qyl.Telemetry.Application</c>, versioned with the registry release and
-/// carrying the qyl schema URL, and a consumer that builds its own <c>ActivitySource</c> fails its
-/// build with QYL0111. Both consumers reference <c>Qyl.Telemetry.Hosting</c> and nothing else, so the
-/// failure also proves the semantic-convention analyzers flow through it.
+/// carrying the qyl schema URL, on a resource whose <c>service.version</c> is the consumer build's own
+/// version and source revision (the generated <c>QylConsumerBuild</c>) and whose
+/// <c>deployment.environment.name</c> is the host environment; and a consumer that builds its own
+/// <c>ActivitySource</c> fails its build with QYL0111. Both consumers reference
+/// <c>Qyl.Telemetry.Hosting</c> and nothing else, so the failure also proves the semantic-convention
+/// analyzers flow through it.
 /// </summary>
 static class ApplicationScopeBehavior
 {
     private const string WorkFixture = "ApplicationScopeBehavior";
     private const string RawSourceFixture = "RawActivitySource";
+
+    // The consumer build's own version and revision; the SDK joins them as SemVer build metadata.
+    private const string ConsumerVersion = "3.1.4";
+    private const string ConsumerRevision = "4f1c0de";
 
     public static void Run()
     {
@@ -26,8 +33,13 @@ static class ApplicationScopeBehavior
             "span=checkout|Internal\n" +
             $"scope=Qyl.Telemetry.Application|{registry}|https://qyl.at/schemas/{registry}\n" +
             "qyl.instrumentation.domain=app\n" +
-            "qyl.app.order.id=o-1\n");
+            "qyl.app.order.id=o-1\n" +
+            "service.name=qyl-application-scope-behavior\n" +
+            "service.namespace=shop\n" +
+            $"service.version={ConsumerVersion}+{ConsumerRevision}\n" +
+            "deployment.environment.name=Production\n");
         Log.Information("  - Spans.Work exported under Qyl.Telemetry.Application {Version} with the qyl schema URL", registry);
+        Log.Information("  - service.version {Version}+{Revision} from the consumer build, deployment.environment.name from the host", ConsumerVersion, ConsumerRevision);
 
         var raw = Consumer("application-scope-raw-source", RawSourceFixture, version);
         var build = Shell.Run("dotnet", ["build", raw, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo"], raw.Parent);
@@ -45,7 +57,9 @@ static class ApplicationScopeBehavior
         FixtureWorkspace.CopyFixture(fixture, directory, "Program.cs");
         var project = directory / "Consumer.csproj";
         ConsumerFixture.WriteProject(project, "Microsoft.NET.Sdk",
-            "    <OutputType>Exe</OutputType>\n",
+            "    <OutputType>Exe</OutputType>\n" +
+            $"    <Version>{ConsumerVersion}</Version>\n" +
+            $"    <SourceRevisionId>{ConsumerRevision}</SourceRevisionId>\n",
             ConsumerFixture.PackageReference("Qyl.Telemetry.Hosting", version) +
             ConsumerFixture.PackageReference("OpenTelemetry.Exporter.InMemory", Repo.Pin("OpenTelemetry.Exporter.InMemory")));
         return project;

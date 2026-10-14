@@ -33,11 +33,6 @@ builder.AddQyl(options =>
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing.AddInMemoryExporter(exported));
 
-// Registered after AddQyl, exactly as a Qyl.Api application registers its session-baggage filter:
-// qyl's own filter stays outermost, and Activity.Current in this one is the hosting activity that
-// the whole request hangs off.
-builder.Services.AddSingleton<IStartupFilter, SessionStartupFilter>();
-
 var app = builder.Build();
 
 app.MapHealthChecks("/healthz");
@@ -133,32 +128,6 @@ internal static class DemoWork
     public const string SourceName = QylTelemetryNames.Scopes.QylTelemetryApplication;
 
     public const string ChildSpanName = "demo child work";
-}
-
-/// <summary>
-/// Stands in for <c>Qyl.Api</c>'s session-baggage filter: it reads the agent's <c>baggage</c> header
-/// and stamps <c>session.id</c> on whatever activity is current. Nothing here knows which activity
-/// that is — which is the point of the assertion it feeds.
-/// </summary>
-internal sealed class SessionStartupFilter : IStartupFilter
-{
-    private const string Member = SessionAttributes.Id + "=";
-
-    /// <inheritdoc />
-    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) =>
-        app =>
-        {
-            app.Use(static (context, nextMiddleware) =>
-            {
-                var header = context.Request.Headers["baggage"].ToString();
-                if (Activity.Current is { } activity && header.StartsWith(Member, StringComparison.Ordinal))
-                    activity.SetTag(SessionAttributes.Id, header[Member.Length..]);
-
-                return nextMiddleware(context);
-            });
-
-            next(app);
-        };
 }
 
 internal sealed record CapturedActivity(
@@ -265,8 +234,8 @@ internal sealed record AspNetCoreReport(
         RequireStatus(successSpan, "Unset", failures);
         RequireStatus(failureSpan, "Error", failures);
 
-        // The session: an agent's baggage header, stamped by the application's own filter onto
-        // whatever Activity.Current is — the hosting activity — and copied from there onto the
+        // The session: an agent's baggage header, stamped by AddQyl's own middleware onto the
+        // hosting activity — no filter of the application's — and copied from there onto the
         // request's child spans by QylSessionSpanProcessor.
         RequireTag(successSpan, SessionIdTag, SessionId, failures);
         var childSpan = activities.FirstOrDefault(static activity =>
