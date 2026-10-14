@@ -9,7 +9,9 @@ namespace Qyl.Build;
 /// <list type="bullet">
 /// <item>a package id followed by a version, and each "Pinned" table row, against Directory.Packages.props;</item>
 /// <item>a backticked NuGet range, against the MassTransit.RabbitMQ range;</item>
-/// <item>the live-check registry tag, against SEMCONV_REF in tools/live-check.env;</item>
+/// <item>every hard-coded SEMCONV_REF and every `v…` registry tag in a tracked file (the CHANGELOG's
+/// history aside), against v + the Qyl.Telemetry.SemanticConventions pin, which the live check derives
+/// its registry tag from;</item>
 /// <item>the N-row contract count, against the total in contracts/coverage-matrix.md;</item>
 /// <item>a QylGeneratedCodeAbi.V&lt;N&gt; anchor, against the Directory.Build.props major;</item>
 /// <item>a nuget.org/packages/&lt;id&gt;/&lt;version&gt; link in a contract YAML, against Directory.Packages.props.</item>
@@ -52,13 +54,13 @@ static partial class DocPins
             CheckPackageMentions(path, text, pins, errors);
             CheckPinnedRows(path, text, pins, errors);
             CheckRanges(path, text, pins, errors);
-            CheckRegistryTag(path, text, errors);
             CheckRowCount(path, text, errors);
             CheckAbiAnchor(path, text, errors);
         }
 
         foreach (var path in ContractYamls)
             CheckContractLinks(path, File.ReadAllText(path), pins, errors);
+        CheckRegistryReferences(errors);
 
         Gate.Require(errors.Count == 0, () => string.Join("\n", errors) + $"\ndoc-pins: {errors.Count} copied version(s) differ from their source");
         Log.Information("doc-pins-ok");
@@ -118,14 +120,23 @@ static partial class DocPins
         }
     }
 
-    private static void CheckRegistryTag(AbsolutePath path, string text, List<string> errors)
+    /// <summary>The registry tag is derived from the package pin (Repo.SemconvRef) and typed nowhere else:
+    /// a script, env file, mise task or doc that still hard-codes a SEMCONV_REF, or names a registry tag,
+    /// other than v + the pin is the second source that let 24.0.1 compile against one release while the
+    /// registry named another.</summary>
+    private static void CheckRegistryReferences(List<string> errors)
     {
-        var reference = SemconvRef().Match(File.ReadAllText(Repo.LiveCheckEnv));
-        Gate.Require(reference.Success, $"doc-pins: {Repo.Relative(Repo.LiveCheckEnv)} sets no SEMCONV_REF");
-        foreach (Match match in new Regex("`(v" + VersionPattern + ")` registry").Matches(text))
+        var expected = Repo.SemconvRef;
+        var grep = Shell.Run("git", ["-C", Repo.Root, "grep", "-n", "-I", "-F", "-e", "SEMCONV_REF", "-e", "` registry", "--", ".", ":(exclude)CHANGELOG.md"], Repo.Root);
+        Gate.Require(grep.ExitCode is 0 or 1, () => "doc-pins: git grep failed: " + grep.Describe());
+        foreach (var line in grep.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
-            if (match.Groups[1].Value != reference.Groups[1].Value)
-                errors.Add($"{Repo.Relative(path)}: registry {match.Groups[1].Value} != SEMCONV_REF {reference.Groups[1].Value}");
+            var location = string.Join(':', line.Split(':', 3)[..2]);
+            foreach (Match match in RegistryReference().Matches(line))
+            {
+                if (match.Groups["ref"].Value != expected)
+                    errors.Add($"{location}: registry {match.Groups["ref"].Value} != {expected} (v + {Repo.SemanticConventionsPackage} pin)");
+            }
         }
     }
 
@@ -169,8 +180,9 @@ static partial class DocPins
     [GeneratedRegex(@"`(\[\d[^`\],]*,[^`\]]*[\])])`")]
     private static partial Regex NuGetRange();
 
-    [GeneratedRegex(@"^\s*SEMCONV_REF\s*=\s*(\S+)\s*$", RegexOptions.Multiline)]
-    private static partial Regex SemconvRef();
+    // A hard-coded SEMCONV_REF (shell, env file, TOML, YAML or MSBuild) or a backticked registry tag.
+    [GeneratedRegex(@"SEMCONV_REF\s*[:=>]\s*[""']?(?<ref>v?\d+\.\d+\.\d+[^\s""'`;<]*)|`(?<ref>v\d+\.\d+\.\d+[^`]*)` registry")]
+    private static partial Regex RegistryReference();
 
     [GeneratedRegex(@"^\| Total contract items \| (\d+) \|$", RegexOptions.Multiline)]
     private static partial Regex TotalRow();

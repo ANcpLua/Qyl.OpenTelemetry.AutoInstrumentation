@@ -8,8 +8,8 @@
 #                                   Checks the real run enforces (main, origin/main, tag, already on
 #                                   NuGet) only warn, so a dry run proves the pack from any branch.
 #
-# Version source: <Version> in Directory.Build.props, bumped in its own commit together with
-# the CHANGELOG.md entry "## [x.y.z]"; the tag names HEAD. The script never edits either.
+# Version source: <Version> in Directory.Build.props with its CHANGELOG.md entry "## [x.y.z]" on
+# top (the first change after a release bumps both); the tag names HEAD. The script never edits either.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -58,7 +58,7 @@ if [[ -n $(git ls-remote --tags origin "refs/tags/v$version") ]] || git rev-pars
   refuse "tag v$version already exists"
 fi
 dv=$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' Directory.Build.props | head -1)
-[[ $dv == "$version" ]] || die "Directory.Build.props <Version> is $dv, not $version; bump it in its own commit first"
+[[ $dv == "$version" ]] || die "Directory.Build.props <Version> is $dv, not $version; bump it and its CHANGELOG entry first"
 grep -q "^## \[$version\]" CHANGELOG.md || die "CHANGELOG.md has no '## [$version]' entry"
 gh auth status >/dev/null 2>&1 || die "gh is not logged in"
 

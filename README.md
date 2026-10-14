@@ -491,9 +491,9 @@ silently, so the gate checks for both halves and refuses to run without them.
 
 The registry is a checkout of
 [Qyl.Telemetry.SemanticConventions](https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions)
-at `SEMCONV_REF` from `tools/live-check.env`, which the target clones into `.semconv` and prepares
-with the registry's own `scripts/fetch-core.sh`, so `registry/manifest.yaml` can resolve its filtered
-core dependency. The published NuGet packages carry the generated C#, not the registry itself, which
+at the tag `v` + the `Qyl.Telemetry.SemanticConventions` pin in `Directory.Packages.props`, which the
+target clones into `.semconv` and prepares the way the registry's own `scripts/fetch-core.sh` does,
+so `registry/manifest.yaml` can resolve its filtered core dependency. The published NuGet packages carry the generated C#, not the registry itself, which
 is why the gate needs the source repository. Weaver is the version `mise.toml` pins (`mise install`).
 The three broker and database lanes wake their testbed service first, like `Demos` does.
 `--live-check-skip <lane>` skips a lane and names the skip in the output as `live-check-partial-ok`:
@@ -520,12 +520,13 @@ the real pack and a NuGet key probe for every package id, and publishes nothing.
 The package major is the compile-time ABI rather than the product version, which is why it runs
 ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.
 
-Two files name the semantic-convention release and they must agree: the
-`Qyl.Telemetry.SemanticConventions` `PackageVersion` in `Directory.Packages.props`, whose generated
-constants the code compiles against, and `SEMCONV_REF` in `tools/live-check.env`, the
-registry tag the live check judges against. The live check compares the pin against the checkout's
-`VersionPrefix` and fails when they are different releases — judging spans against a registry other
-than the one that produced the constants is the drift that would otherwise look like a green gate.
+One line names the semantic-convention release: the `Qyl.Telemetry.SemanticConventions`
+`PackageVersion` in `Directory.Packages.props`. The code compiles against its generated constants,
+the live check derives its registry tag from it (`v<version>`), and `./eng/build.sh Contracts` fails
+when a tracked file hard-codes a `SEMCONV_REF` or a registry tag that names another release.
+The live check also compares the pin against the checkout's `VersionPrefix` and fails when the tag
+holds another release — judging spans against a registry other than the one that produced the
+constants is the drift that would otherwise look like a green gate.
 
 ## Limitations
 

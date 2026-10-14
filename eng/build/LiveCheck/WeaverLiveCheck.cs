@@ -19,7 +19,6 @@ namespace Qyl.Build;
 static partial class WeaverLiveCheck
 {
     private const string RegistryRepository = "https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions.git";
-    private const string SemconvPackage = "Qyl.Telemetry.SemanticConventions";
 
     // AddQyl's exporter speaks gRPC to port 4317 and OTLP/HTTP to any other, and weaver listens for
     // gRPC only, so the listener takes the conventional gRPC port.
@@ -103,21 +102,22 @@ static partial class WeaverLiveCheck
             Log.Information("live-check-ok");
     }
 
-    /// <summary>Clones the registry at SEMCONV_REF, fetches its filtered core, and checks it is the
-    /// release whose constants this repository compiles against.</summary>
+    /// <summary>Clones the registry at Repo.SemconvRef (v + the Qyl.Telemetry.SemanticConventions pin),
+    /// fetches its filtered core, and checks the tag holds the release whose constants this repository
+    /// compiles against.</summary>
     private static AbsolutePath PrepareRegistry()
     {
-        var reference = SemconvRef();
+        var reference = Repo.SemconvRef;
         Checkout.DeleteDirectory();
         Shell.Checked("git", ["clone", "-q", "--depth", "1", "--branch", reference, RegistryRepository, Checkout], Repo.Root);
         MaterializeCore();
 
         Gate.Require((Checkout / "registry" / "manifest.yaml").FileExists(), $"{Repo.Relative(Checkout)} has no registry/manifest.yaml");
-        var pinned = Repo.Pin(SemconvPackage);
+        var pinned = Repo.Pin(Repo.SemanticConventionsPackage);
         var checkedOut = VersionPrefix().Match(File.ReadAllText(Checkout / "Directory.Build.props")) is { Success: true } match ? match.Groups[1].Value : null;
         // Judging spans against a registry other than the one that produced the constants is the drift
         // that would look like a green gate.
-        Gate.Require(pinned == checkedOut, $"the {reference} registry is {checkedOut}, but Directory.Packages.props pins {SemconvPackage} {pinned}");
+        Gate.Require(pinned == checkedOut, $"the {reference} registry is {checkedOut}, but Directory.Packages.props pins {Repo.SemanticConventionsPackage} {pinned}");
         Gate.Require((Checkout / ".build" / "core-filtered" / "model").DirectoryExists(), "the filtered core registry is missing at .build/core-filtered/model");
 
         var policies = Checkout / "registry" / "policies" / "live_check_advice";
@@ -126,13 +126,6 @@ static partial class WeaverLiveCheck
         Gate.Require((Checkout / "registry" / ".weaver.toml").FileExists(), $"the {checkedOut} registry ships no registry/.weaver.toml, so the built-in advisors would stand");
         Log.Information("registry {Version} at {Reference}: {Checkout}; advice policies: {Policies}", checkedOut, reference, Repo.Relative(Checkout), string.Join(", ", rego));
         return Checkout;
-    }
-
-    public static string SemconvRef()
-    {
-        var match = SemconvRefLine().Match(File.ReadAllText(Repo.LiveCheckEnv));
-        Gate.Require(match.Success, $"{Repo.Relative(Repo.LiveCheckEnv)} sets no SEMCONV_REF");
-        return match.Groups[1].Value;
     }
 
     /// <summary>weaver from PATH, else the version mise.toml pins.</summary>
@@ -183,9 +176,6 @@ static partial class WeaverLiveCheck
             return true;
         }
     }
-
-    [GeneratedRegex(@"^\s*SEMCONV_REF\s*=\s*(\S+)\s*$", RegexOptions.Multiline)]
-    private static partial Regex SemconvRefLine();
 
     [GeneratedRegex(@"<VersionPrefix[^>]*>([^<]+)</VersionPrefix>")]
     private static partial Regex VersionPrefix();

@@ -12,8 +12,10 @@ is `./eng/build.sh Check`; packages are .NET only (`dotnet restore Qyl.Telemetry
   `.DiagnosticListeners`, `.EntityFrameworkCore`, `.Hosting`, `.SqlClient` and
   `Qyl.Telemetry.Hosting`. The release command derives the list from `src/`; a new packable
   project ships automatically, a project that must not ship sets `<IsPackable>false</IsPackable>`.
-- Version source: `<Version>` in `Directory.Build.props`, bumped in its own commit together with
-  the `## [x.y.z]` entry in `CHANGELOG.md`; the tag names that commit. The CHANGELOG entry
+- Version source: `<Version>` in `Directory.Build.props`. The first change after a release bumps
+  it and opens its `## [x.y.z] - YYYY-MM-DD` entry in `CHANGELOG.md` in the same commit; later
+  changes add to that entry (the gate rejects an `[Unreleased]` block and a top entry other than
+  `<Version>`); the tag names the commit the release packs. The CHANGELOG entry
   becomes the GitHub release notes.
 - Release command: `./release.sh <x.y.z> --dry-run`, then `./release.sh <x.y.z>` (`./eng/build.sh Pack`
   into `artifacts/release`, push, tag, GitHub release, wait for indexing). The script snapshots the packed
@@ -36,7 +38,9 @@ is `./eng/build.sh Check`; packages are .NET only (`dotnet restore Qyl.Telemetry
   commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
   the owner.
 - Upstream pins this repo must keep fresh: `Qyl.Telemetry.SemanticConventions*` in
-  `Directory.Packages.props`, and `SEMCONV_REF` in `tools/live-check.env`, which moves with it.
+  `Directory.Packages.props`, the one place that names the release; the live check's registry tag
+  is `v` + that pin, and `./eng/build.sh Contracts` fails on a hard-coded `SEMCONV_REF` or registry
+  tag that names another release.
 - Consumers to notify after all six packages are indexed: qyl (`Version.props`
   `QylTelemetryVersion`) and qyl.at (`src/data/site.ts`).
 
@@ -51,7 +55,8 @@ is `./eng/build.sh Check`; packages are .NET only (`dotnet restore Qyl.Telemetry
 
 ## Releasing
 
-1. Land the bump commit on `main`: `Directory.Build.props` `<Version>` and the CHANGELOG entry.
+1. `main` holds the release: `Directory.Build.props` `<Version>` and its CHANGELOG entry on top,
+   gate green, pushed.
 2. `./release.sh <x.y.z> --dry-run` only when a step is new or unsure; otherwise go straight to
    the release, the script refuses before it publishes when anything is off.
 3. `./release.sh <x.y.z>`.
@@ -79,13 +84,14 @@ then: regenerate the lockfile, run the gate, commit, push main
 
 Act at once, before continuing your own work, so both agents keep moving:
 
-1. Set the new `Qyl.Telemetry.SemanticConventions*` version in `Directory.Packages.props` and
-   `SEMCONV_REF` in `tools/live-check.env`.
+1. Set the new `Qyl.Telemetry.SemanticConventions*` version in `Directory.Packages.props`.
 2. `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx` (add `--force-evaluate` where a `packages.lock.json` exists).
+   NU1102 for a version the flat-container index already lists is NuGet's 30-minute HTTP cache:
+   delete that id's `list_<id>.dat` under `dotnet nuget locals http-cache --list` and restore again.
 3. `./eng/build.sh Check`.
 4. Commit `chore: pin Qyl.Telemetry.SemanticConventions <version>` and push `main` immediately.
-5. If the pin changes what this repo ships, bump `<Version>`, add the CHANGELOG entry and
-   continue with "Releasing": one release per repo per wave.
+5. If the pin changes what this repo ships, record it under the next `<Version>` (bumping it if
+   the current one is released) and continue with "Releasing": one release per repo per wave.
 
 ## Order rules that never change
 

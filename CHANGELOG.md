@@ -5,6 +5,16 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [24.1.0] - 2026-10-14
+
+### Changed
+
+- `Directory.Packages.props` is the one place that names the semantic-convention release. The live
+  check clones the registry at `v` + the `Qyl.Telemetry.SemanticConventions` pin;
+  `tools/live-check.env` and its hand-kept `SEMCONV_REF` are deleted, and `./eng/build.sh Contracts`
+  fails when a tracked file (the CHANGELOG's history aside) hard-codes a `SEMCONV_REF` or a registry
+  tag that names another release.
+
 ## [24.0.2] - 2026-10-14
 
 No change to the packages' own source or public API: they are rebuilt on the dependency pins

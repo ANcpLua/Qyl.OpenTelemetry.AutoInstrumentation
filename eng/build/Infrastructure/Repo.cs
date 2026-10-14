@@ -16,7 +16,6 @@ static partial class Repo
     public static AbsolutePath DemoSolution => Root / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx";
     public static AbsolutePath BuildProps => Root / "Directory.Build.props";
     public static AbsolutePath PackagesProps => Root / "Directory.Packages.props";
-    public static AbsolutePath LiveCheckEnv => Root / "tools" / "live-check.env";
     public static AbsolutePath ToolManifest => Root / ".config" / "dotnet-tools.json";
 
     public const string TargetFramework = "net10.0";
@@ -72,6 +71,12 @@ static partial class Repo
         Gate.Require(PackagePins.TryGetValue(packageId, out var version), $"Directory.Packages.props pins no {packageId}");
         return version!.StartsWith('[') ? version[1..].Split(',')[0] : version;
     }
+
+    public const string SemanticConventionsPackage = "Qyl.Telemetry.SemanticConventions";
+
+    /// <summary>The registry tag the live check judges against: "v" + the
+    /// Qyl.Telemetry.SemanticConventions pin, so the package and the registry are one version typed once.</summary>
+    public static string SemconvRef => "v" + Pin(SemanticConventionsPackage);
 
     public static string RuntimeIdentifier
     {
