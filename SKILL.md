@@ -20,7 +20,7 @@ One agent per qyl-dev repo (qyl, qyl.mcp, qyl-api-schema, Qyl.Telemetry.AutoInst
 2. `./release.sh <x.y.z>` (`--dry-run` first only when a step is new or unsure; the script refuses before publishing when anything is off).
 3. If it ends "not all indexed yet", poll every 30 s; nothing else about this release until all six are indexed.
 4. All six indexed: notify the consumers.
-5. Run `/Users/alexandernachtmann/Downloads/qyl-codex-claude/refresh-published-versions.sh` (rewrites `qyl-published-versions.yaml`, the snapshot every agent reads first).
+5. Run `/Users/alexandernachtmann/RiderProjects/qyl.at/scripts/refresh-published-versions.sh` (rewrites, commits and pushes `published-versions.yaml` in qyl.at, the snapshot every agent reads first).
 
 ## Notify
 
