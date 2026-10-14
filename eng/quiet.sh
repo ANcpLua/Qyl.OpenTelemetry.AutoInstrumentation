@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Runs gate steps quietly. The terminal gets one line per step (for a Fallout run, its target
 # table), then PASS or FAIL with the total time and the log path; a failing step adds its last 60
-# lines (for a Fallout run, the failing target's). The whole output goes to
-# artifacts/logs/<name>.log. The exit code is the failing step's, else 0. QYL_VERBOSE=1 streams
-# everything to the terminal instead.
+# lines (for a Fallout run, the failing target's). A Fallout run that plans dotcov's
+# ReportCoverage also prints the coverage verdict, and its exit code is named. The whole output
+# goes to artifacts/logs/<name>.log. The exit code is the failing step's, else 0. QYL_VERBOSE=1
+# streams everything to the terminal instead.
 #
 #   eng/quiet.sh <name> '<command>' ['<command>' ...]  each command through bash, in order,
 #                                                         stopping at the first failure
@@ -37,6 +38,33 @@ fallout_rows() {
       print "$quick more target", ($quick == 1 ? "" : "s"), " succeeded in under a second\n" if $quick;
       print "$notrun target", ($notrun == 1 ? "" : "s"), " not run\n" if $notrun;
     }' "$1"
+}
+
+# dotcov's coverage gate in a step's output, when its Fallout run planned ReportCoverage: the
+# verdict line (PASS, FAIL, NODATA or DISABLED with both rates and their minimums), or a failed
+# test run, which the Coverage targets report like `dotcov test`. DotCov.Fallout logs the verdict
+# in the build's own output; `dotcov` the CLI writes it as the first stderr line, which reaches
+# the step output too.
+coverage_verdict() {
+  perl -ne '$gate = 1 if /^ReportCoverage\s+(?:Succeeded|Failed|Skipped|NotRun|Aborted)\b/;
+    $verdict = $1 if /\b((?:PASS|FAIL|NODATA|DISABLED): line \S+ \(min [^)]*\), branch .*?)\s*$/
+      || /\b(dotnet test exited with code -?\d+; coverage was not evaluated\.)/;
+    END { print "coverage gate: $verdict\n" if $gate && defined $verdict }' "$1"
+}
+
+# dotcov's exit code named, for a step whose Fallout run planned ReportCoverage. Any other failed
+# target exits 255 and stays a number.
+coverage_exit() {
+  perl -ne 'if (/^ReportCoverage\s+(?:Succeeded|Failed|Skipped|NotRun|Aborted)\b/) { $gate = 1; last }
+    END { exit !$gate }' "$1" || return 0
+  case $2 in
+    1) printf ', coverage FAIL' ;;
+    2) printf ', invalid coverage parameter' ;;
+    3) printf ', coverage NODATA' ;;
+    4) printf ', coverage DISABLED' ;;
+    5) printf ', coverage report unreadable' ;;
+    6) printf ', test run failed' ;;
+  esac
 }
 
 # The last lines of each failed Fallout target's block (at most three), or of the whole output.
@@ -95,7 +123,7 @@ main() {
   trap 'mkdir -p "${log%/*}" && mv -f "$work/log" "$log"; rm -rf "$work"' EXIT
   : >"$work/log"
 
-  local started=$SECONDS status=0 failed=
+  local started=$SECONDS status=0 failed= named=
   run_step() {
     local label=$1 start=$SECONDS indent= word=PASS
     shift
@@ -109,6 +137,8 @@ main() {
       ((status == 0)) || failed=": $label"
     fi
     fallout_rows "$work/step" | sed "s/^/$indent/"
+    coverage_verdict "$work/step" | sed "s/^/$indent/"
+    ((status == 0)) || named=$(coverage_exit "$work/step" "$status")
     ((status == 0)) || failure_tail "$work/step"
   }
 
@@ -124,7 +154,7 @@ main() {
   if ((status == 0)); then
     printf 'PASS %s in %s, log %s\n' "$name" "$(duration $((SECONDS - started)))" "$log"
   else
-    printf 'FAIL %s in %s (exit %d%s), log %s\n' "$name" "$(duration $((SECONDS - started)))" "$status" "$failed" "$log"
+    printf 'FAIL %s in %s (exit %d%s%s), log %s\n' "$name" "$(duration $((SECONDS - started)))" "$status" "$named" "$failed" "$log"
   fi
   return "$status"
 }
