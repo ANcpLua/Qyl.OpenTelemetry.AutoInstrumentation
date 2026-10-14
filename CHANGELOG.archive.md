@@ -2,6 +2,29 @@
 
 Entries older than the newest three, which stay in [CHANGELOG.md](CHANGELOG.md).
 
+## [24.1.0] - 2026-10-14
+
+### Added
+
+- `Qyl.Telemetry.AutoInstrumentation.dll` carries
+  `[assembly: AssemblyMetadata("QylSemanticConventionsVersion", "9.9.2")]`, the
+  `Qyl.Telemetry.SemanticConventions` release it compiled against, taken at build time from the
+  resolved reference rather than typed again. The nuspec dependency on
+  `Qyl.Telemetry.SemanticConventions` names the same version as its lower bound, and
+  `./eng/build.sh PackageLayout` checks both against the pin.
+
+### Changed
+
+- `Directory.Packages.props` is the one place that names the semantic-convention release. The live
+  check clones the registry at `v` + the `Qyl.Telemetry.SemanticConventions` pin;
+  `tools/live-check.env` and its hand-kept `SEMCONV_REF` are deleted, and `./eng/build.sh Contracts`
+  fails when a tracked file (the CHANGELOG's history aside) hard-codes a `SEMCONV_REF` or a registry
+  tag that names another release.
+- The `release.sh` dry run retries a failed key probe twice before refusing, so a dropped
+  connection to nuget.org no longer reads as a rejected key.
+
+Older entries: [CHANGELOG.archive.md](CHANGELOG.archive.md).
+
 ## [24.0.2] - 2026-10-14
 
 No change to the packages' own source or public API: they are rebuilt on the dependency pins

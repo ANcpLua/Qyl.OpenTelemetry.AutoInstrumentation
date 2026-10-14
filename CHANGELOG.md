@@ -5,6 +5,12 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [25.0.1] - 2026-10-15
+
+### Changed
+
+- Qyl.Telemetry.SemanticConventions 10.0.1. `Qyl.Telemetry.Hosting` carries its analyzers to consumers, so QYL0113 now reports `SetAppTag` keys whose name the registry does not persist (`SetAppTag("user.email", ...)` is `qyl.app.user.email`, dropped like `user.email`). The persistence table also treats plain token counts as token-exempt and four vendor keys as not persisted.
+
 ## [25.0.0] - 2026-10-14
 
 The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.SemanticConventions`
@@ -102,26 +108,3 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
   GHSA-7hqp-7c5m-4vq6, GHSA-c399-9853-6jmj, GHSA-r955-8q5j-3h83); NuGet audit failed those
   restores.
 - The demo lanes' local collector is the `qyl` tool 12.2.0.
-
-## [24.1.0] - 2026-10-14
-
-### Added
-
-- `Qyl.Telemetry.AutoInstrumentation.dll` carries
-  `[assembly: AssemblyMetadata("QylSemanticConventionsVersion", "9.9.2")]`, the
-  `Qyl.Telemetry.SemanticConventions` release it compiled against, taken at build time from the
-  resolved reference rather than typed again. The nuspec dependency on
-  `Qyl.Telemetry.SemanticConventions` names the same version as its lower bound, and
-  `./eng/build.sh PackageLayout` checks both against the pin.
-
-### Changed
-
-- `Directory.Packages.props` is the one place that names the semantic-convention release. The live
-  check clones the registry at `v` + the `Qyl.Telemetry.SemanticConventions` pin;
-  `tools/live-check.env` and its hand-kept `SEMCONV_REF` are deleted, and `./eng/build.sh Contracts`
-  fails when a tracked file (the CHANGELOG's history aside) hard-codes a `SEMCONV_REF` or a registry
-  tag that names another release.
-- The `release.sh` dry run retries a failed key probe twice before refusing, so a dropped
-  connection to nuget.org no longer reads as a rejected key.
-
-Older entries: [CHANGELOG.archive.md](CHANGELOG.archive.md).
