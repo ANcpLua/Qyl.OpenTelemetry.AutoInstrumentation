@@ -3,7 +3,8 @@ namespace Qyl.Build;
 /// <summary>
 /// Npgsql's native source against the testbed PostgreSQL, managed and NativeAOT: the physical connect
 /// and every command, and nothing else — returning a connection to the pool and taking it back out
-/// are untraced.
+/// are untraced. The failing select runs inside the application's own Spans.Work span, which carries
+/// the RecordFailure triple.
 /// </summary>
 sealed class NpgsqlLane : DemoLane
 {
@@ -11,7 +12,8 @@ sealed class NpgsqlLane : DemoLane
     {
         ["connection-open"] = ["Npgsql|Client"],
         ["select"] = ["Npgsql|Client"],
-        ["failing-select"] = ["Npgsql|Client"],
+        // The failing command and the application's Spans.Work span that records the failure.
+        ["failing-select"] = ["Npgsql|Client", "Qyl.Telemetry.Application|Internal"],
         ["connection-close"] = [],
         ["pooled-reopen"] = [],
     };

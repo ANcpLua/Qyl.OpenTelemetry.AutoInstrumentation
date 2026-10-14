@@ -45,7 +45,7 @@ internal static class QylHttpActivityPolicy
             activity.SetTag(HttpAttributes.Route, route);
 
         if (StringComparer.Ordinal.Equals(activity.DisplayName, activity.OperationName))
-            activity.DisplayName = QylSpanNames.HttpServer(method, activity.GetTagItem(HttpAttributes.Route) as string);
+            activity.DisplayName = SpanNames.HttpServer(method, activity.GetTagItem(HttpAttributes.Route) as string);
     }
 
     public static void SetServerResponseStatus(Activity activity, int statusCode)

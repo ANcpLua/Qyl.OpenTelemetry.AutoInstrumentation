@@ -16,9 +16,10 @@ public static class QylInterceptedRedis
     /// <summary>Starts the client span for the resolved wire command on the receiving database.</summary>
     public static Activity? Command([QylFromShape] string? operationName, [QylFromReceiver("Database")] int databaseIndex)
     {
+        var databaseNamespace = databaseIndex >= 0 ? databaseIndex.ToString(CultureInfo.InvariantCulture) : null;
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.StackExchangeRedis,
-            QylSpanNames.Db(operationName, DbIncubatingAttributes.SystemNameValues.Redis),
+            SpanNames.DbClient(querySummary: null, operationName, collectionName: null, storedProcedureName: null, databaseNamespace, serverAddress: null, serverPort: null, DbIncubatingAttributes.SystemNameValues.Redis),
             ActivityKind.Client,
             QylAttributes.InstrumentationDomainValues.DbRedis);
         if (activity is null)
@@ -27,8 +28,8 @@ public static class QylInterceptedRedis
         activity.SetTag(DbAttributes.SystemName, DbIncubatingAttributes.SystemNameValues.Redis);
         if (operationName is not null)
             QylActivityTags.SetDbOperation(activity, operationName, operationName);
-        if (databaseIndex >= 0)
-            activity.SetTag(DbAttributes.Namespace, databaseIndex.ToString(CultureInfo.InvariantCulture));
+        if (databaseNamespace is not null)
+            activity.SetTag(DbAttributes.Namespace, databaseNamespace);
 
         return activity;
     }

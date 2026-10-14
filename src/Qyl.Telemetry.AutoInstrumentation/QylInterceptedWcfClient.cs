@@ -20,7 +20,7 @@ public static class QylInterceptedWcfClient
     {
         var activity = QylActivityFactory.StartTraceActivity(
             QylAutoInstrumentationIds.WcfClient,
-            QylSpanNames.Rpc(method, DotNetWcfSystemName),
+            SpanNames.RpcCallClient(method, DotNetWcfSystemName),
             ActivityKind.Client,
             QylAttributes.InstrumentationDomainValues.RpcWcfClient);
         if (activity is null)

@@ -79,6 +79,7 @@ using (var consumer = new ConsumerBuilder<string, string>(WithSasl(new ConsumerC
     Console.WriteLine("consumed-messages=" + received.ToString(CultureInfo.InvariantCulture));
 }
 
+var expectedFailureMessage = string.Empty;
 try
 {
     using var failingProducer = new ProducerBuilder<string, string>(new ProducerConfig
@@ -96,6 +97,7 @@ try
 }
 catch (ProduceException<string, string> exception)
 {
+    expectedFailureMessage = exception.Message;
     Console.WriteLine("expected-kafka-error=" + exception.Error.Code);
 }
 
@@ -103,7 +105,8 @@ QylDemoOtlp.Flush(tracerProvider);
 
 var report = KafkaReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
-    captured.ToArray());
+    captured.ToArray(),
+    expectedFailureMessage);
 
 var json = JsonSerializer.Serialize(report, RealKafkaJsonContext.Default.KafkaReport);
 Console.WriteLine(json);
@@ -176,7 +179,9 @@ internal sealed record CapturedActivity(
     string Name,
     string Kind,
     string Status,
-    IReadOnlyDictionary<string, string> Tags)
+    string StatusDescription,
+    IReadOnlyDictionary<string, string> Tags,
+    CapturedEvent[] Events)
 {
     public static CapturedActivity From(Activity activity)
         => new(
@@ -185,11 +190,22 @@ internal sealed record CapturedActivity(
             activity.DisplayName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
+            activity.StatusDescription ?? string.Empty,
             activity.TagObjects.ToDictionary(
                 static tag => tag.Key,
                 static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
-                StringComparer.Ordinal));
+                StringComparer.Ordinal),
+            [.. activity.Events.Select(static activityEvent => new CapturedEvent(
+                activityEvent.Name,
+                activityEvent.Tags
+                    .Where(static tag => tag.Key is "exception.type")
+                    .ToDictionary(
+                        static tag => tag.Key,
+                        static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
+                        StringComparer.Ordinal)))]);
 }
+
+internal sealed record CapturedEvent(string Name, IReadOnlyDictionary<string, string> Tags);
 
 internal sealed record KafkaReport(
     string RuntimeMode,
@@ -197,7 +213,10 @@ internal sealed record KafkaReport(
     string[] Failures,
     CapturedActivity[] Activities)
 {
-    public static KafkaReport Create(string runtimeMode, CapturedActivity[] activities)
+    // The longest status description Spans.RecordFailure writes.
+    private const int MaxStatusDescriptionLength = 256;
+
+    public static KafkaReport Create(string runtimeMode, CapturedActivity[] activities, string expectedFailureMessage)
     {
         var failures = new List<string>();
         var kafkaSpans = activities
@@ -237,8 +256,23 @@ internal sealed record KafkaReport(
 
         foreach (var span in sendError)
         {
+            // The failure triple of Spans.RecordFailure, which the interceptor records: status Error
+            // with the exception's message as the description (the one message carrier that survives
+            // ingest), error.type bounded to the generic type's name, and the exception event.
             RequireTag(span, Qyl.Telemetry.SemanticConventions.Attributes.Error.ErrorAttributes.Type, "Confluent.Kafka.ProduceException`2", failures);
             RequireKind(span, "Producer", failures);
+            var description = expectedFailureMessage.Length <= MaxStatusDescriptionLength
+                ? expectedFailureMessage
+                : expectedFailureMessage[..MaxStatusDescriptionLength];
+            if (description.Length is 0 || !StringComparer.Ordinal.Equals(span.StatusDescription, description))
+                failures.Add($"expected the failed producer span's status description '{description}', got '{span.StatusDescription}'");
+            var exceptionEvents = span.Events.Where(static activityEvent => activityEvent.Name is "exception").ToArray();
+            if (exceptionEvents.Length != 1 ||
+                !exceptionEvents[0].Tags.TryGetValue("exception.type", out var exceptionType) ||
+                !exceptionType.StartsWith("Confluent.Kafka.ProduceException`2", StringComparison.Ordinal))
+            {
+                failures.Add($"expected one exception event of Confluent.Kafka.ProduceException`2 on the failed producer span, got [{string.Join(", ", span.Events.Select(static activityEvent => activityEvent.Name))}]");
+            }
         }
 
         foreach (var span in receive)

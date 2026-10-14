@@ -293,8 +293,11 @@ internal sealed record RedisReport(
                 continue;
             }
 
-            if (!StringComparer.Ordinal.Equals(span.Name, operation))
-                failures.Add($"{probe.Label}: expected span name {operation}, got {span.Name}");
+            // The registry's db.client name chain: {db.operation.name} {db.namespace}, the namespace being
+            // the database index asserted above.
+            var expectedName = operation + " 0";
+            if (!StringComparer.Ordinal.Equals(span.Name, expectedName))
+                failures.Add($"{probe.Label}: expected span name {expectedName}, got {span.Name}");
 
             var accepted = s_acceptedWireCommands.TryGetValue(probe.Label, out var declared)
                 ? declared

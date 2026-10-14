@@ -24,6 +24,21 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
   every `QYL0xxx` rule, among them QYL0111 (no hand-made `ActivitySource` or raw `StartActivity` in
   application code) at Error. `./eng/build.sh PackageLayout` checks the dependency;
   `ConsumerBehavior` builds a package consumer whose `new ActivitySource` fails with QYL0111.
+- **A failure is recorded with `Spans.RecordFailure`** (ADR D4), the call application code makes: the
+  generated interceptors, the asynchronous observer, the ADO.NET command interceptor and the ASP.NET
+  Core middleware now set status Error *with the exception's message as the description* (bounded
+  to 256 characters; the one message carrier that survives ingest), `error.type`, and the exception
+  event. `RecordException` gave neither the description nor the event. `error.type` of a generic
+  exception stays bounded (`Confluent.Kafka.ProduceException`2`).
+- The generated-code helper `QylInterceptedActivity.RecordException` is `RecordFailure`.
+- Span names come from the registry's `qyl.span_name` chains (`Qyl.SpanNames`, generated in the
+  semantic-convention package) with the attributes each span records, so interceptors and the
+  generated starters name spans the same way; `QylSpanNames` is deleted. One name changes: a
+  StackExchange.Redis command span is `{db.operation.name} {db.namespace}`, the database index
+  (`GET 0`), where it was the command alone.
+- The Npgsql and HttpClient demos run their failing call inside the application's own `Spans.Work`
+  span and assert the `RecordFailure` triple on it; the Kafka demo asserts it on the interceptor's
+  failed producer span.
 - The qyl `ActivitySource` carries the qyl registry's schema URL (`SchemaUrl.Qyl`,
   `https://qyl.at/schemas/10.0.0`), like the application scope.
 - The ASP.NET Core, MCP and session-propagation demos start their own spans with `Spans.Work`

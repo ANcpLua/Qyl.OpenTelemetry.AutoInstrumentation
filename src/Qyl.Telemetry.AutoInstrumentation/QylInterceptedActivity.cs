@@ -7,15 +7,20 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylInterceptedActivity
 {
-    /// <summary>Records the exception the intercepted call threw on the activity.</summary>
-    public static void RecordException(Activity? activity, Exception exception)
-        => QylActivityStatus.RecordException(activity, exception);
+    /// <summary>Records the failure of the intercepted call on the activity with
+    /// <c>Spans.RecordFailure</c>: status Error with the message as the description, <c>error.type</c>
+    /// and the exception event.</summary>
+    public static void RecordFailure(Activity? activity, Exception exception)
+    {
+        if (activity is not null)
+            QylActivityStatus.RecordFailure(activity, exception);
+    }
 
-    /// <summary>Observes an asynchronous operation and records qyl exception telemetry.</summary>
+    /// <summary>Observes an asynchronous operation and records its failure on the activity.</summary>
     public static Task ObserveAsync(Task? task, Activity? activity)
         => QylActivityObserver.ObserveAsync(task, activity);
 
-    /// <summary>Observes an asynchronous operation and records qyl exception telemetry.</summary>
+    /// <summary>Observes an asynchronous operation and records its failure on the activity.</summary>
     public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
         => QylActivityObserver.ObserveAsync(task, activity);
 }

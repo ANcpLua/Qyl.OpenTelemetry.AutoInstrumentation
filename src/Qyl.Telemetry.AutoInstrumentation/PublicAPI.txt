@@ -47,7 +47,7 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Start.set 
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync(System.Threading.Tasks.Task? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
+static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordFailure(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(System.Data.Common.DbCommand! command, string! instrumentationId, string! operationName) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long

@@ -18,9 +18,10 @@ internal static class QylDbActivityPolicy
     {
         var systemName = GetDbSystemName(instrumentationId);
         var (operation, summary) = QylDbQuerySummary.Describe(command.CommandType, command.CommandText);
+        var databaseName = command.Connection?.Database is { } database && !string.IsNullOrWhiteSpace(database) ? database : null;
         var activity = QylActivityFactory.StartTraceActivity(
             instrumentationId,
-            QylSpanNames.Db(summary, systemName),
+            SpanNames.DbSqlClient(summary, operation, collectionName: null, storedProcedureName: null, databaseName, serverAddress: null, serverPort: null, systemName),
             ActivityKind.Client,
             QylAttributes.InstrumentationDomainValues.DbClient);
         if (activity is null)
@@ -29,8 +30,7 @@ internal static class QylDbActivityPolicy
         InFlightCommands.AddOrUpdate(command, activity);
         QylActivityTags.SetDb(activity, systemName, operation, summary);
 
-        var databaseName = command.Connection?.Database;
-        if (!string.IsNullOrWhiteSpace(databaseName))
+        if (databaseName is not null)
             activity.SetTag(DbAttributes.Namespace, databaseName);
 
         QylSensitiveCapturePolicy.SetDbQueryText(activity, command, instrumentationId);

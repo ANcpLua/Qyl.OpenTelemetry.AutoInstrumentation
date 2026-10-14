@@ -540,7 +540,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("            {");
         builder.Append("                ");
         builder.Append(SharedHelperType);
-        builder.AppendLine(".RecordException(activity, exception);");
+        builder.AppendLine(".RecordFailure(activity, exception);");
         if (intercept.Metric.Length > 0)
             AppendRecordDurationStatement(builder, in target);
         if (runtimeObservesAsync)
@@ -764,7 +764,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("            {");
         builder.Append("                ");
         builder.Append(SharedHelperType);
-        builder.AppendLine(".RecordException(activity, exception);");
+        builder.AppendLine(".RecordFailure(activity, exception);");
         AppendRecordDurationStatement(builder, in target);
         builder.AppendLine("                throw;");
         builder.AppendLine("            }");

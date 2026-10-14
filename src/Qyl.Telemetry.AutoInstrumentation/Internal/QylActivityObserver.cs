@@ -34,7 +34,7 @@ internal static class QylActivityObserver
         }
         catch (Exception exception)
         {
-            QylActivityStatus.RecordException(activity, exception);
+            QylActivityStatus.RecordFailure(activity, exception);
             throw;
         }
         finally
@@ -51,7 +51,7 @@ internal static class QylActivityObserver
         }
         catch (Exception exception)
         {
-            QylActivityStatus.RecordException(activity, exception);
+            QylActivityStatus.RecordFailure(activity, exception);
             throw;
         }
         finally

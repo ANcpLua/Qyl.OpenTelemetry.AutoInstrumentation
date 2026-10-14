@@ -15,14 +15,16 @@ internal static class QylMessagingActivityPolicy
 
     public static Activity? StartKafkaProducerActivity(string? topic, int? partitionId)
     {
+        var destination = string.IsNullOrEmpty(topic) ? null : topic;
         var activity = Start(
             QylAutoInstrumentationIds.Kafka,
+            SpanNames.MessagingSendProducer(Send, destinationTemplate: null, destination, serverAddress: null, serverPort: null),
             ActivityKind.Producer,
             QylAttributes.InstrumentationDomainValues.MessagingKafka,
             MessagingAttributes.SystemValues.Kafka,
             MessagingAttributes.OperationTypeValues.Send,
             Send,
-            destination: string.IsNullOrEmpty(topic) ? null : topic);
+            destination);
         if (activity is not null && partitionId is int id)
             activity.SetTag(MessagingAttributes.DestinationPartitionId, id.ToString(CultureInfo.InvariantCulture));
 
@@ -32,6 +34,7 @@ internal static class QylMessagingActivityPolicy
     public static Activity? StartKafkaConsumerActivity()
         => Start(
             QylAutoInstrumentationIds.Kafka,
+            SpanNames.MessagingReceiveClient(Receive, destinationTemplate: null, destinationName: null, serverAddress: null, serverPort: null),
             ActivityKind.Client,
             QylAttributes.InstrumentationDomainValues.MessagingKafka,
             MessagingAttributes.SystemValues.Kafka,
@@ -41,6 +44,7 @@ internal static class QylMessagingActivityPolicy
 
     private static Activity? Start(
         string instrumentationId,
+        string name,
         ActivityKind kind,
         string domain,
         string system,
@@ -50,7 +54,7 @@ internal static class QylMessagingActivityPolicy
     {
         var activity = QylActivityFactory.StartTraceActivity(
             instrumentationId,
-            QylSpanNames.Messaging(operationName, destination),
+            name,
             kind,
             domain);
         if (activity is null)

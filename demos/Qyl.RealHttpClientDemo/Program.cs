@@ -103,15 +103,23 @@ using (var response = await httpClient.GetAsync($"http://127.0.0.1:{server.Port}
 
 await server.Completion;
 
-// One request to a dead port, so error.type carries connection_error and no status code exists.
+// One request to a dead port, so error.type carries connection_error and no status code exists. It runs
+// inside the application's own span, the way a consumer writes it: Spans.Work on the application
+// scope and Spans.RecordFailure in the catch.
 operation = HttpClientReport.ConnectionFailureOperation;
-try
+var failureMessage = string.Empty;
+using (var work = Spans.Work(HttpClientReport.ConnectionFailureWorkName))
 {
-    using var response = await httpClient.GetAsync("http://127.0.0.1:1/fail?token=secret");
-}
-catch (HttpRequestException exception)
-{
-    Console.WriteLine($"expected-failure={exception.GetType().Name}");
+    try
+    {
+        using var response = await httpClient.GetAsync("http://127.0.0.1:1/fail?token=secret");
+    }
+    catch (HttpRequestException exception)
+    {
+        work?.RecordFailure(exception);
+        failureMessage = exception.Message;
+        Console.WriteLine($"expected-failure={exception.GetType().Name}");
+    }
 }
 
 // Stop listening before the SDK flushes. The OTLP exporter's own calls to the collector are
@@ -128,7 +136,8 @@ var report = HttpClientReport.Create(
     server.Port,
     capturedSpans.ToArray(),
     exportedActivities.Select(CapturedActivity.From).ToArray(),
-    capturedMetrics.ToArray());
+    capturedMetrics.ToArray(),
+    failureMessage);
 
 var json = JsonSerializer.Serialize(report, RealHttpClientJsonContext.Default.HttpClientReport);
 Console.WriteLine(json);
@@ -191,7 +200,9 @@ internal sealed record CapturedActivity(
     string OperationName,
     string Kind,
     string Status,
-    IReadOnlyDictionary<string, string> Tags)
+    string StatusDescription,
+    IReadOnlyDictionary<string, string> Tags,
+    CapturedEvent[] Events)
 {
     public static CapturedActivity From(Activity activity)
         => new(
@@ -202,11 +213,22 @@ internal sealed record CapturedActivity(
             activity.OperationName,
             activity.Kind.ToString(),
             activity.Status.ToString(),
+            activity.StatusDescription ?? string.Empty,
             activity.TagObjects.ToDictionary(
                 static tag => tag.Key,
                 static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
-                StringComparer.Ordinal));
+                StringComparer.Ordinal),
+            [.. activity.Events.Select(static activityEvent => new CapturedEvent(
+                activityEvent.Name,
+                activityEvent.Tags
+                    .Where(static tag => tag.Key is "exception.type")
+                    .ToDictionary(
+                        static tag => tag.Key,
+                        static tag => Convert.ToString(tag.Value, CultureInfo.InvariantCulture) ?? string.Empty,
+                        StringComparer.Ordinal)))]);
 }
+
+internal sealed record CapturedEvent(string Name, IReadOnlyDictionary<string, string> Tags);
 
 internal sealed record CapturedMetric(
     string MeterName,
@@ -236,6 +258,15 @@ internal sealed record HttpClientReport(
     internal const string ErrorStatusOperation = "error-status";
     internal const string ConnectionFailureOperation = "connection-failure";
 
+    /// <summary>The application's own span around the connection failure.</summary>
+    internal const string ConnectionFailureWorkName = "fetch from a dead port";
+
+    // The application scope that span starts on, through Spans.Work.
+    private const string ApplicationScope = "Qyl.Telemetry.Application";
+
+    // The longest status description Spans.RecordFailure writes.
+    private const int MaxStatusDescriptionLength = 256;
+
     // The runtime's own socket / DNS / TLS / connection-pool diagnostics. This is the ONE prefix the
     // span-set assertion excludes; everything else the process emits has to be an expected tuple.
     private const string ExcludedScopePrefix = "Experimental.";
@@ -247,7 +278,8 @@ internal sealed record HttpClientReport(
         int serverPort,
         CapturedSpan[] capturedSpans,
         CapturedActivity[] activities,
-        CapturedMetric[] metrics)
+        CapturedMetric[] metrics,
+        string failureMessage)
     {
         var failures = new List<string>();
 
@@ -264,7 +296,7 @@ internal sealed record HttpClientReport(
         var spanSets = new[]
         {
             SpanSet(capturedSpans, ErrorStatusOperation, [HttpClientTelemetry.SourceName + "/Client"], failures),
-            SpanSet(capturedSpans, ConnectionFailureOperation, [HttpClientTelemetry.SourceName + "/Client"], failures),
+            SpanSet(capturedSpans, ConnectionFailureOperation, [ApplicationScope + "/Internal", HttpClientTelemetry.SourceName + "/Client"], failures),
         };
 
         // Stated separately from the multiset so the deleted qyl span is named in the failure.
@@ -365,6 +397,33 @@ internal sealed record HttpClientReport(
                 failures.Add($"unexpected operation name: {span.OperationName}");
         }
 
+        // The application's span around the connection failure carries the failure triple of
+        // Spans.RecordFailure: status Error with the exception's message as the bounded description,
+        // error.type the exception's full type name, and the exception event.
+        var applicationSpans = activities
+            .Where(static activity => StringComparer.Ordinal.Equals(activity.Source, ApplicationScope))
+            .ToArray();
+        if (applicationSpans.Length != 1)
+            failures.Add($"expected 1 exported application span, got {applicationSpans.Length.ToString(CultureInfo.InvariantCulture)}");
+        foreach (var span in applicationSpans)
+        {
+            if (!StringComparer.Ordinal.Equals(span.Name, ConnectionFailureWorkName) || !StringComparer.Ordinal.Equals(span.Kind, "Internal"))
+                failures.Add($"expected the application span '{ConnectionFailureWorkName}' of kind Internal, got '{span.Name}' of kind {span.Kind}");
+            RequireStatus(span, "Error", failures);
+            var description = failureMessage.Length <= MaxStatusDescriptionLength ? failureMessage : failureMessage[..MaxStatusDescriptionLength];
+            if (description.Length is 0 || !StringComparer.Ordinal.Equals(span.StatusDescription, description))
+                failures.Add($"expected the application span's status description '{description}', got '{span.StatusDescription}'");
+            RequireTag(span, ErrorAttributes.Type, typeof(HttpRequestException).FullName!, failures);
+            RequireTag(span, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.App, failures);
+            var exceptionEvents = span.Events.Where(static activityEvent => activityEvent.Name is "exception").ToArray();
+            if (span.Events.Length != 1 || exceptionEvents.Length != 1 ||
+                !exceptionEvents[0].Tags.TryGetValue("exception.type", out var exceptionType) ||
+                !StringComparer.Ordinal.Equals(exceptionType, typeof(HttpRequestException).FullName))
+            {
+                failures.Add($"expected one exception event of {typeof(HttpRequestException).FullName} on the application span, got [{string.Join(", ", span.Events.Select(static activityEvent => activityEvent.Name))}]");
+            }
+        }
+
         var httpMetrics = metrics
             .Where(static metric =>
                 StringComparer.Ordinal.Equals(metric.MeterName, HttpClientTelemetry.MeterName) &&
@@ -397,7 +456,7 @@ internal sealed record HttpClientReport(
             failures.ToArray(),
             spanSets,
             excludedScopes,
-            httpSpans,
+            [.. httpSpans, .. applicationSpans],
             httpMetrics);
     }
 

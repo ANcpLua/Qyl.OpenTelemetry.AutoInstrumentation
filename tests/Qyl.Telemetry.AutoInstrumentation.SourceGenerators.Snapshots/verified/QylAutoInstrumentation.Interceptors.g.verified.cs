@@ -33,7 +33,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
             }
             catch (global::System.Exception exception)
             {
-                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(activity, exception);
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordFailure(activity, exception);
                 global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(metricStart, "ADONET");
                 throw;
             }
@@ -58,7 +58,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
             }
             catch (global::System.Exception exception)
             {
-                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordException(activity, exception);
+                global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordFailure(activity, exception);
                 global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(metricStart, "ADONET");
                 throw;
             }

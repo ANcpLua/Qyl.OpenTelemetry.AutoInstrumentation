@@ -35,7 +35,7 @@ internal sealed class EntityFrameworkCoreDiagnosticListener : QylDiagnosticListe
             return;
 
         using var activity = QylActivitySource.StartAt(
-            QylSpanNames.Db(command.QuerySummary, command.DbSystem),
+            SpanNames.DbSqlClient(command.QuerySummary, command.Operation, collectionName: null, storedProcedureName: null, command.Namespace, serverAddress: null, serverPort: null, command.DbSystem),
             ActivityKind.Client,
             command.StartTime);
         activity?.SetEndTime((command.StartTime + command.Duration).UtcDateTime);

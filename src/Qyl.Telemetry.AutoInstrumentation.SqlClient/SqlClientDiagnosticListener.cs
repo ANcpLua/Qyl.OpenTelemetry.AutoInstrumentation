@@ -76,7 +76,7 @@ internal sealed class SqlClientDiagnosticListener : QylDiagnosticListenerSubscri
 
         var endTime = TimeProvider.System.GetUtcNow();
         using var activity = QylActivitySource.StartAt(
-            QylSpanNames.Db(command.QuerySummary, DbAttributes.SystemNameValues.MicrosoftSqlServer),
+            SpanNames.DbSqlClient(command.QuerySummary, command.Operation, collectionName: null, storedProcedureName: null, command.Namespace, command.ServerAddress, command.ServerPort, DbAttributes.SystemNameValues.MicrosoftSqlServer),
             ActivityKind.Client,
             endTime - duration);
         activity?.SetEndTime(endTime.UtcDateTime);

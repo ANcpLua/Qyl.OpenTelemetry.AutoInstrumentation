@@ -81,7 +81,12 @@ using (recorder.Measure(NpgsqlReport.SelectOperation))
     Console.WriteLine("select-scalar=" + (Convert.ToString(scalar, CultureInfo.InvariantCulture) ?? string.Empty));
 }
 
+// The application's own span around the failing call, the way a consumer writes it: Spans.Work on
+// the application scope, and Spans.RecordFailure in the catch. Npgsql's command span below it keeps
+// its own failure attributes.
+var failureMessage = string.Empty;
 using (recorder.Measure(NpgsqlReport.FailingSelectOperation))
+using (var work = Spans.Work(NpgsqlReport.FailingSelectWorkName))
 {
     try
     {
@@ -90,6 +95,8 @@ using (recorder.Measure(NpgsqlReport.FailingSelectOperation))
     }
     catch (PostgresException exception)
     {
+        work?.RecordFailure(exception);
+        failureMessage = exception.Message;
         Console.WriteLine("expected-postgres-sqlstate=" + exception.SqlState);
     }
 }
@@ -113,7 +120,8 @@ var report = NpgsqlReport.Create(
     database,
     recorder.SnapshotAll(),
     recorder.SnapshotWindows(),
-    [.. exportedActivities.Select(CapturedActivity.From)]);
+    [.. exportedActivities.Select(CapturedActivity.From)],
+    failureMessage);
 
 var json = JsonSerializer.Serialize(report, RealNpgsqlJsonContext.Default.NpgsqlReport);
 Console.WriteLine(json);
@@ -288,6 +296,9 @@ internal sealed record NpgsqlReport(
     internal const string SelectText = "SELECT 1";
     internal const string FailingSelectText = "SELECT missing_column";
 
+    /// <summary>The application's own span around the failing select.</summary>
+    internal const string FailingSelectWorkName = "read missing column";
+
     // The runtime's own socket / DNS / TLS diagnostics. They are in this process only because the
     // listener above is unfiltered; qyl never subscribes to them. This is the ONLY excluded prefix.
     private const string ExcludedSourcePrefix = "Experimental.";
@@ -301,6 +312,13 @@ internal sealed record NpgsqlReport(
     private const string ReceivedFirstResponseEvent = "received-first-response";
 
     private const string SourceName = QylTelemetryNames.VendorActivitySources.Npgsql;
+
+    // The application scope the demo's own span starts on, through Spans.Work.
+    private const string ApplicationSourceName = QylTelemetryNames.Scopes.QylTelemetryApplication;
+    private const string ApplicationSpan = ApplicationSourceName + "|" + nameof(ActivityKind.Internal);
+
+    // The longest status description Spans.RecordFailure writes.
+    private const int MaxStatusDescriptionLength = 256;
 
     private static readonly string ExceptionEventName = ExceptionEventDefinitions.Exception.Name;
     private const string ClientSpan = SourceName + "|" + nameof(ActivityKind.Client);
@@ -340,7 +358,8 @@ internal sealed record NpgsqlReport(
         // A physical connect is one CONNECT span.
         new(ConnectOperation, [ClientSpan]),
         new(SelectOperation, [ClientSpan]),
-        new(FailingSelectOperation, [ClientSpan]),
+        // The failing command, and the application's span around it that records the failure.
+        new(FailingSelectOperation, [ClientSpan, ApplicationSpan]),
         // Returning the connection to the pool is not traced, and neither is taking it back out:
         // only a physical connect produces a CONNECT span.
         new(CloseOperation, []),
@@ -352,7 +371,8 @@ internal sealed record NpgsqlReport(
         string database,
         CapturedActivity[] allSpans,
         RecordedWindow[] windows,
-        CapturedActivity[] exportedSpans)
+        CapturedActivity[] exportedSpans,
+        string failureMessage)
     {
         var failures = new List<string>();
         var observed = allSpans.Where(IsAsserted).ToArray();
@@ -364,13 +384,14 @@ internal sealed record NpgsqlReport(
             .ToArray();
 
         // Every span that is not a runtime `Experimental.` diagnostic must come from the driver's
-        // own source. An OpenTelemetry.Instrumentation.* package loaded alongside fails here.
+        // own source or be the application's own span. An OpenTelemetry.Instrumentation.* package
+        // loaded alongside fails here.
         foreach (var source in observed
                      .Select(static span => span.Source)
                      .Distinct(StringComparer.Ordinal)
                      .Order(StringComparer.Ordinal))
         {
-            if (!StringComparer.Ordinal.Equals(source, SourceName))
+            if (!StringComparer.Ordinal.Equals(source, SourceName) && !StringComparer.Ordinal.Equals(source, ApplicationSourceName))
                 failures.Add($"unexpected activity source {source}");
         }
 
@@ -419,8 +440,11 @@ internal sealed record NpgsqlReport(
             VerifyConnect(connect[0], database, failures);
         if (byOperation.TryGetValue(SelectOperation, out var select) && select.Length is 1)
             VerifySucceededCommand(select[0], database, failures);
-        if (byOperation.TryGetValue(FailingSelectOperation, out var failing) && failing.Length is 1)
-            VerifyFailedCommand(failing[0], database, failures);
+        if (byOperation.TryGetValue(FailingSelectOperation, out var failing) && failing.Length is 2)
+        {
+            VerifyFailedCommand(Array.Find(failing, static span => span.Source == SourceName)!, database, failures);
+            VerifyApplicationFailure(Array.Find(failing, static span => span.Source == ApplicationSourceName)!, failureMessage, failures);
+        }
 
         var librarySpans = observed
             .Where(static span => StringComparer.Ordinal.Equals(span.Source, SourceName))
@@ -468,6 +492,11 @@ internal sealed record NpgsqlReport(
                 $"AddQyl exported {exported.Length.ToString(CultureInfo.InvariantCulture)} of the " +
                 $"{librarySpans.Length.ToString(CultureInfo.InvariantCulture)} Npgsql spans");
         }
+
+        // ...and the application's span, on the scope AddQyl subscribes without being told.
+        var exportedApplication = exportedSpans.Count(static span => StringComparer.Ordinal.Equals(span.Source, ApplicationSourceName));
+        if (exportedApplication is not 1)
+            failures.Add($"AddQyl exported {exportedApplication.ToString(CultureInfo.InvariantCulture)} application spans, expected 1");
 
         return new NpgsqlReport(
             runtimeMode,
@@ -544,6 +573,30 @@ internal sealed record NpgsqlReport(
         RequireEventTag(exception, ExceptionAttributes.Type, typeof(PostgresException).FullName!, failures);
         RequireEventTagPresent(exception, ExceptionAttributes.Message, failures);
         RequireEventTagPresent(exception, ExceptionAttributes.Stacktrace, failures);
+    }
+
+    /// <summary>
+    /// The failure triple of Spans.RecordFailure on the application's span: status Error with the
+    /// exception's message as the bounded description (the one message carrier that survives
+    /// ingest), error.type the exception's full type name, and the exception event.
+    /// </summary>
+    private static void VerifyApplicationFailure(CapturedActivity span, string failureMessage, ICollection<string> failures)
+    {
+        RequireName(span, FailingSelectWorkName, failures);
+        if (!StringComparer.Ordinal.Equals(span.Kind, nameof(ActivityKind.Internal)))
+            failures.Add($"expected kind Internal on span {span.Name}, got {span.Kind}");
+        RequireStatus(span, nameof(ActivityStatusCode.Error), failures);
+        var description = failureMessage.Length <= MaxStatusDescriptionLength ? failureMessage : failureMessage[..MaxStatusDescriptionLength];
+        if (description.Length is 0 || !StringComparer.Ordinal.Equals(span.StatusDescription, description))
+            failures.Add($"expected status description '{description}' on span {span.Name}, got '{span.StatusDescription}'");
+        RequireTag(span, ErrorAttributes.Type, typeof(PostgresException).FullName!, failures);
+        RequireTag(span, QylAttributes.InstrumentationDomain, QylAttributes.InstrumentationDomainValues.App, failures);
+        RequireEvents(span, [ExceptionEventName], failures);
+        var exception = Array.Find(
+            span.Events,
+            static candidate => StringComparer.Ordinal.Equals(candidate.Name, ExceptionEventName));
+        if (exception is not null)
+            RequireEventTag(exception, ExceptionAttributes.Type, typeof(PostgresException).FullName!, failures);
     }
 
     private static void VerifyCommonCommandTags(CapturedActivity span, string database, ICollection<string> failures)

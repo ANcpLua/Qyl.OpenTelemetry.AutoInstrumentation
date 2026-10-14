@@ -70,7 +70,7 @@ public static class QylInterceptedDbCommand
         }
         catch (Exception exception)
         {
-            QylInterceptedActivity.RecordException(activity, exception);
+            QylInterceptedActivity.RecordFailure(activity, exception);
             QylDbClientMetrics.RecordDuration(metricStart, instrumentationId);
             throw;
         }

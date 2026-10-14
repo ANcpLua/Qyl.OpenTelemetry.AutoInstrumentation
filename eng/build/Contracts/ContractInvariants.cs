@@ -32,7 +32,6 @@ static partial class ContractInvariants
     private static AbsolutePath RuntimeProjectPath => RuntimeSourceRoot / "Qyl.Telemetry.AutoInstrumentation.csproj";
     private static AbsolutePath MetricMetersPath => RuntimeSourceRoot / "QylMetricMeters.cs";
     private static AbsolutePath DbClientMetricsPath => RuntimeSourceRoot / "QylDbClientMetrics.cs";
-    private static AbsolutePath ActivityNamesPath => RuntimeSourceRoot / "Internal" / "QylSpanNames.cs";
     private static AbsolutePath SensitiveCapturePolicyPath => RuntimeSourceRoot / "Internal" / "QylSensitiveCapturePolicy.cs";
 
     private static AbsolutePath[] RuntimeEmissionRoots =>
@@ -238,7 +237,6 @@ static partial class ContractInvariants
         VerifyDemoSolutionReleaseMapping();
         VerifyMetricContract();
         VerifySensitiveAttributeEmissionPolicy();
-        VerifyBoundedActivityNamePolicy();
         VerifyBehaviorSemanticsContract();
         VerifyProductiveMechanismContract();
         Log.Information("contract-invariants-ok");
@@ -843,24 +841,6 @@ static partial class ContractInvariants
         }
     }
 
-    // Philosophy guard: public span-name composers must not accept unbounded inputs.
-    private static void VerifyBoundedActivityNamePolicy()
-    {
-        var names = File.ReadAllText(ActivityNamesPath);
-        string[] forbidden = ["url", "uri", "path", "query", "exception", "message", "statement", "text"];
-        foreach (Match match in SpanNameComposer().Matches(names))
-        {
-            var parameters = match.Groups[1].Value.Split(',')
-                .Where(static parameter => parameter.Trim().Length > 0)
-                .Select(static parameter => parameter.Trim().Split(' ')[^1].Trim('?'));
-            foreach (var parameter in parameters)
-            {
-                var lowered = parameter.ToLowerInvariant();
-                Gate.Require(!forbidden.Any(fragment => lowered.Contains(fragment, StringComparison.Ordinal)), $"QylSpanNames composer must not accept unbounded parameter '{parameter}'");
-            }
-        }
-    }
-
     private static List<string> FindCatchBlocks(string text)
     {
         var blocks = new List<string>();
@@ -1222,9 +1202,6 @@ static partial class ContractInvariants
 
     [GeneratedRegex(@"internal string\[\] ([A-Za-z0-9_]+)")]
     private static partial Regex InternalStringArrayMember();
-
-    [GeneratedRegex(@"public static string [A-Za-z0-9]+\(([^)]*)\)")]
-    private static partial Regex SpanNameComposer();
 
     [GeneratedRegex(@"\bcatch\b")]
     private static partial Regex CatchKeyword();

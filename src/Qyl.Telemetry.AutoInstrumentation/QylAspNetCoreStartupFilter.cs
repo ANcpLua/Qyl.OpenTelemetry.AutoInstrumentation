@@ -133,9 +133,9 @@ internal sealed class QylAspNetCoreStartupFilter : IStartupFilter
             return;
         }
 
-        // The exception type is the better error.type, so it is written first and the status-code
-        // rule below finds the tag already set rather than replacing it with the bare "500".
-        QylActivityStatus.RecordException(activity, exception);
+        // The exception type is the better error.type, so the failure is recorded first and the
+        // status-code rule below finds the tag already set rather than replacing it with the bare "500".
+        QylActivityStatus.RecordFailure(activity, exception);
         RecordResponse(activity, context, context.Response.HasStarted ? context.Response.StatusCode : 500);
     }
 
