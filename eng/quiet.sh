@@ -23,12 +23,20 @@ plain() {
   perl -pe 'BEGIN { $| = 1 } s/\e\[[0-?]*[ -\/]*[@-~]//g; s/\e\][^\a\e]*(?:\a|\e\\)//g; s/^.*\r(?=.)//; s/\r$//; s/\xc2\xa0/ /g; s/\xe2\x80\x8b//g'
 }
 
-# The rows of the last Fallout target table in a step's output.
+# The rows of the last Fallout target table in a step's output. Targets that succeeded in under a
+# second without a note, and targets a failure kept from running, are counted instead of listed.
 fallout_rows() {
   perl -ne 'if (/^Target\s+Status\s+Duration\s*$/) { @rows = (); $in = 1; next }
     if ($in && /^Total\s/) { $in = 0; next }
-    if ($in && /^\S+\s+(?:Succeeded|Failed|Skipped|NotRun|Aborted)\b/) { s/\s+$//; push @rows, "$_\n" }
-    END { print @rows }' "$1"
+    if ($in && /^\S+\s+(?:Succeeded|Failed|Skipped|NotRun|Aborted)\b/) { s/\s+$//; push @rows, $_ }
+    END {
+      my ($quick, $notrun) = (0, 0);
+      for (@rows) {
+        if (/^\S+\s+Succeeded\s+< 1sec$/) { $quick++ } elsif (/^\S+\s+NotRun$/) { $notrun++ } else { print "$_\n" }
+      }
+      print "$quick more target", ($quick == 1 ? "" : "s"), " succeeded in under a second\n" if $quick;
+      print "$notrun target", ($notrun == 1 ? "" : "s"), " not run\n" if $notrun;
+    }' "$1"
 }
 
 # The last lines of each failed Fallout target's block (at most three), or of the whole output.
