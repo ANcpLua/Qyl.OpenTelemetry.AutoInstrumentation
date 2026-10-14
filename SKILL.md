@@ -1,4 +1,4 @@
-# Qyl.Telemetry.AutoInstrumentation: release, pins and agent hand-offs
+# Qyl.Telemetry.AutoInstrumentation: release and pins
 
 Who reads this: the one agent working on this repository's `main`. Agent, user and owner are
 the same word. There is one agent per repository, six in all (qyl, qyl.mcp, qyl-api-schema,
@@ -61,14 +61,12 @@ is `./eng/build.sh Check`; packages are .NET only (`dotnet restore Qyl.Telemetry
 5. The moment all six are indexed: stop watching and notify the consumers (section "Notify").
 6. Run
    `/Users/alexandernachtmann/Downloads/qyl-codex-claude/refresh-published-versions.sh`, which rewrites
-   `qyl-published-versions.yaml` beside it from the registries (the snapshot every agent reads first).
+   `qyl-published-versions.yaml` beside it from the registries.
 
 ## Notify
 
 One message per consumer repo, to its running agent through the session's agent-messaging
-tool when there is one (Claude Code: `ListAgents`, then `SendMessage`). If the consumer has
-no running agent, append the same text to the handoff file above under "Pending re-pins";
-the owner relays it. Text:
+tool when there is one (Claude Code: `ListAgents`, then `SendMessage`). Text:
 
 ```
 RELEASE Qyl.Telemetry.AutoInstrumentation* + Qyl.Telemetry.Hosting <version> indexed <UTC time>

@@ -1,6 +1,6 @@
 # Qyl.Telemetry.AutoInstrumentation
 
-Release, re-pin and agent hand-offs: follow [`SKILL.md`](SKILL.md) at this repo root (canonical clone `/Users/alexandernachtmann/RiderProjects/Qyl.Telemetry.AutoInstrumentation/SKILL.md`); the one command is `./release.sh`. Published versions: `/Users/alexandernachtmann/Downloads/qyl-codex-claude/qyl-published-versions.yaml`.
+Release and re-pin: follow [`SKILL.md`](SKILL.md) at this repo root (canonical clone `/Users/alexandernachtmann/RiderProjects/Qyl.Telemetry.AutoInstrumentation/SKILL.md`); the one command is `./release.sh`. Published versions are read from the registry (nuget.org) or `Directory.Build.props` `<Version>`.
 
 ## Ownership and upstream versions
 
