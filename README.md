@@ -325,6 +325,8 @@ The rules themselves are owned and documented by the semantic-conventions reposi
 The databases and brokers the demo verifiers connect to run in the Railway project `qyl-testbed`
 (region `europe-west4-drams3a`), declared in [`.railway/railway.ts`](.railway/railway.ts), and not
 on the developer machine: SQL Server ships no arm64 image and Oracle's takes 6 GB of local disk.
+The pattern, generalized for any repository with a Claude Code and a Codex skill to adopt it, is
+[ANcpLua/railway-testbed](https://github.com/ANcpLua/railway-testbed).
 Eight services run the images the verifiers pinned, one replica each, each reachable only through a
 public TCP proxy (no HTTP domain):
 
