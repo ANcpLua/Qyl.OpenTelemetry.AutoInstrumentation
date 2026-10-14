@@ -474,7 +474,7 @@ it receives: the library's keys, the vendor keys it passes through and the
 
 `--fail-on violation` is the threshold and there is no allowlist in the gate. A finding is closed by
 changing what the instrumentation writes or by declaring the key in the registry, never by waving it
-through. The lanes must report zero violations against the pinned `v9.9.0` registry.
+through. The lanes must report zero violations against the pinned `v9.9.2` registry.
 
 How a finding is *levelled* is the registry's decision, and it takes two flags that must travel
 together:

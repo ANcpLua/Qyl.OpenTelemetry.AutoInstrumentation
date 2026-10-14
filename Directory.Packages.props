@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageVersion Include="ANcpLua.Analyzers" Version="2.1.2" />
-    <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.47" />
+    <PackageVersion Include="ANcpLua.Roslyn.Utilities.Sources" Version="2.2.48" />
     <PackageVersion Include="Azure.Core" Version="1.63.0" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.30.1" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
@@ -57,10 +57,10 @@
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.301" />
     <PackageVersion Include="Oracle.ManagedDataAccess.OpenTelemetry" Version="23.26.300" />
     <PackageVersion Include="Quartz" Version="4.4.0" />
-    <PackageVersion Include="Qyl.Telemetry.SemanticConventions" Version="9.9.0" />
-    <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Incubating" Version="9.9.0" />
-    <PackageVersion Include="Qyl.Api.Contracts" Version="12.1.1" />
-    <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Analyzers" Version="9.9.0" />
+    <PackageVersion Include="Qyl.Telemetry.SemanticConventions" Version="9.9.2" />
+    <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Incubating" Version="9.9.2" />
+    <PackageVersion Include="Qyl.Api.Contracts" Version="12.1.2" />
+    <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Analyzers" Version="9.9.2" />
     <PackageVersion Include="RabbitMQ.Client" Version="7.2.2" />
     <PackageVersion Include="Roslynator.Analyzers" Version="5.0.1" />
     <!-- Override Microsoft.Data.Sqlite's vulnerable native transitive (GHSA-2m69-gcr7-jv3q). -->
