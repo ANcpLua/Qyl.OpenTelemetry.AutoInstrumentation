@@ -7,8 +7,8 @@ namespace Qyl.Build;
 /// must match the shipped package. Directory.Build.props &lt;Version&gt; is the single source:
 /// <list type="bullet">
 /// <item>it must be &gt;= the latest stable v* tag;</item>
-/// <item>CHANGELOG.md's top entry must be [Unreleased] (only while that version is untagged) or
-/// [&lt;that version&gt;] - &lt;date&gt;, and released entries must be unique and descending;</item>
+/// <item>CHANGELOG.md's top entry must be [&lt;that version&gt;] - &lt;date&gt;, no [Unreleased] entry may
+/// exist, and the entries must be unique and descending;</item>
 /// <item>any version-pinned README package-reference example must equal it;</item>
 /// <item>the generated-code ABI anchor and emitted references must match the package major;</item>
 /// <item>QylInstrumentation.Version must stay derived from the build, never a semver literal.</item>
@@ -58,12 +58,6 @@ static partial class VersionSync
         return null;
     }
 
-    private static bool TagExists(string version)
-    {
-        var result = Shell.Run("git", ["-C", Repo.Root, "tag", "--list", $"v{version}"], Repo.Root);
-        return result.ExitCode == 0 && result.Stdout.Trim() == $"v{version}";
-    }
-
     private static void CheckPropsVersion(string version)
     {
         if (LatestStableTag() is not { } tag)
@@ -82,39 +76,24 @@ static partial class VersionSync
     {
         var headings = ChangelogHeading().Matches(File.ReadAllText(Changelog)).ToArray();
         Gate.Require(headings.Length > 0, "version-sync: CHANGELOG.md has no '## [version]' heading");
+        // A change is recorded under the version that ships it: bump <Version> and open its entry in the
+        // same commit, so the built version always has its notes and no [Unreleased] block waits for one.
+        var versions = headings.Select(static heading => heading.Groups["version"].Value).ToArray();
+        Gate.Require(!versions.Contains("Unreleased", StringComparer.Ordinal),
+            $"version-sync: CHANGELOG.md has an [Unreleased] entry. Record the changes under '## [{version}] - YYYY-MM-DD', bumping Directory.Build.props <Version> first if v{version} is already released.");
         var top = headings[0];
         var topVersion = top.Groups["version"].Value;
-        if (topVersion == "Unreleased" && TagExists(version))
-        {
-            // Changes made after a release, waiting for the next bump: the released entry for the
-            // current version follows directly. An [Unreleased] entry above any other heading, while
-            // the props version is tagged, is a release that forgot to close its entry.
-            var next = headings.Length > 1 ? headings[1] : null;
-            Gate.Require(next is not null && next.Groups["version"].Value == version && next.Groups["date"].Success,
-                $"version-sync: CHANGELOG.md top entry is [Unreleased] and v{version} is tagged, but the next entry is not '## [{version}] - YYYY-MM-DD'. Close the entry as '## [{version}] - YYYY-MM-DD' before the release gate runs.");
-            Log.Information("  - CHANGELOG top entry is [Unreleased] above the released [{Version}]; the next release bumps <Version>", version);
-        }
-        else if (topVersion == "Unreleased")
-        {
-            Log.Information("  - CHANGELOG top entry is [Unreleased]; v{Version} is not tagged yet", version);
-        }
-        else if (topVersion != version)
-        {
-            throw Gate.Fail($"version-sync: CHANGELOG.md top entry is [{topVersion}] but Directory.Build.props <Version> is {version}. Add '## [{version}] - YYYY-MM-DD' (or '## [Unreleased]' until the tag).");
-        }
-        else
-        {
-            Gate.Require(top.Groups["date"].Success, $"version-sync: CHANGELOG.md entry [{version}] has no ISO date: expected '## [{version}] - YYYY-MM-DD'");
-            Log.Information("  - CHANGELOG top entry [{Version}] - {Date} matches props version", version, top.Groups["date"].Value);
-        }
+        Gate.Require(topVersion == version,
+            $"version-sync: CHANGELOG.md top entry is [{topVersion}] but Directory.Build.props <Version> is {version}. Add '## [{version}] - YYYY-MM-DD' above it.");
+        Gate.Require(top.Groups["date"].Success, $"version-sync: CHANGELOG.md entry [{version}] has no ISO date: expected '## [{version}] - YYYY-MM-DD'");
+        Log.Information("  - CHANGELOG top entry [{Version}] - {Date} matches props version", version, top.Groups["date"].Value);
 
-        var released = headings.Select(static heading => heading.Groups["version"].Value).Where(static value => value != "Unreleased").ToArray();
-        var duplicates = released.GroupBy(static value => value, StringComparer.Ordinal).Where(static group => group.Count() > 1).Select(static group => group.Key).ToArray();
+        var duplicates = versions.GroupBy(static value => value, StringComparer.Ordinal).Where(static group => group.Count() > 1).Select(static group => group.Key).ToArray();
         Gate.Require(duplicates.Length == 0, () => $"version-sync: CHANGELOG.md has duplicate release entries: {ContractValue.RenderSorted(duplicates)}");
-        var ordered = released.Select(Semver).ToArray();
+        var ordered = versions.Select(Semver).ToArray();
         Gate.Require(ordered.SequenceEqual(ordered.OrderByDescending(static value => value)),
-            () => $"version-sync: CHANGELOG.md release entries are not in descending order: {ContractValue.Render(released.ToList())}");
-        Log.Information("  - {Count} CHANGELOG release entries unique and descending", released.Length);
+            () => $"version-sync: CHANGELOG.md release entries are not in descending order: {ContractValue.Render(versions.ToList())}");
+        Log.Information("  - {Count} CHANGELOG release entries unique and descending", versions.Length);
     }
 
     private static void CheckReadme(string version)

@@ -5,7 +5,10 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
-## [Unreleased]
+## [24.0.2] - 2026-10-14
+
+No change to the packages' own source or public API: they are rebuilt on the dependency pins
+below, and the build, the demos and the release tooling around them change.
 
 ### Changed
 
@@ -47,9 +50,9 @@ packages are then exercised in clean managed and NativeAOT consumers.
   does not emit; 9.9.2 changed only how that repository builds and tests. The source generator
   embeds `ANcpLua.Roslyn.Utilities.Sources` 2.2.48 (from 2.2.47), and the build types the collector
   client with `Qyl.Api.Contracts` 12.1.2 (from 12.1.1, the same contract revision).
-- Version sync accepts an `## [Unreleased]` entry above the released entry of the current
-  `<Version>`, so changes after a release are recorded before the next bump; an `[Unreleased]` entry
-  above anything else while that version is tagged still fails.
+- Version sync requires the top CHANGELOG entry to be `## [<Version>] - YYYY-MM-DD` and rejects
+  an `[Unreleased]` entry: a change is recorded under the version that ships it, bumping
+  `<Version>` first when that version is already released.
 
 ### Fixed
 
