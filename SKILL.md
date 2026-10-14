@@ -1,77 +1,35 @@
 # Qyl.Telemetry.AutoInstrumentation: release and pins
 
-Who reads this: the one agent working on this repository's `main`. Agent, user and owner are
-the same word. There is one agent per repository, six in all (qyl, qyl.mcp, qyl-api-schema,
-Qyl.Telemetry.AutoInstrumentation, Qyl.Telemetry.SemanticConventions, qyl.at), each on its own
-`main`. Commit and push to `main` directly: no pull requests, no CI, no branch rules. The gate
-is `./eng/build.sh Check`; packages are .NET only (`dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx`, no JavaScript lockfile).
+One agent per qyl-dev repo (qyl, qyl.mcp, qyl-api-schema, Qyl.Telemetry.AutoInstrumentation, Qyl.Telemetry.SemanticConventions, qyl.at), each on its own `main`; agent, user and owner are one word. No PR, no CI, no publishing workflow: releases run on this machine with the keys in Vitals (`vitals keys`).
 
 ## This repository
 
-- Publishes to NuGet every packable project under `src/`: `Qyl.Telemetry.AutoInstrumentation`,
-  `.DiagnosticListeners`, `.EntityFrameworkCore`, `.Hosting`, `.SqlClient` and
-  `Qyl.Telemetry.Hosting`. The release command derives the list from `src/`; a new packable
-  project ships automatically, a project that must not ship sets `<IsPackable>false</IsPackable>`.
-- Version source: `<Version>` in `Directory.Build.props`. The first change after a release bumps
-  it and opens its `## [x.y.z] - YYYY-MM-DD` entry in `CHANGELOG.md` in the same commit; later
-  changes add to that entry (the gate rejects an `[Unreleased]` block and a top entry other than
-  `<Version>`); the tag names the commit the release packs. The CHANGELOG entry
-  becomes the GitHub release notes.
-- Release command: `./release.sh <x.y.z> --dry-run`, then `./release.sh <x.y.z>` (`./eng/build.sh Pack`
-  into `artifacts/release`, push, tag, GitHub release, wait for indexing). The script snapshots the packed
-  commit, refuses tracked edits or a changed HEAD after packing, and tags that exact commit.
-- Build, test and pack go through the Fallout targets in `eng/build`: `./eng/build.sh <Target>`,
-  `./eng/build.sh --help` lists them with their parameters, `make <target>` is a thin wrapper.
-- `./eng/build.sh Check` is the gate before every push and every release: contract invariants and
-  generated contract artifacts, version and doc pins, the Release builds of both solutions, public
-  API baselines, generator snapshots, package layout and the consumer behaviors. That is all a
-  release needs.
-- `./eng/build.sh CheckFull` runs everything on demand (Check, the strict NativeAOT publish matrix,
-  the thirty demo lanes asserted through a local qyl collector with the ten broker and database
-  lanes on the Railway testbed, the live check, smoke, the web API AOT demo and the OTLP wire
-  evidence): when a change touches AOT publishing, a real-library integration or the registry pin,
-  never as a release precondition. Focused reruns: `./eng/build.sh Demos --lane <name>`,
-  `./eng/build.sh LiveCheck`, `./eng/build.sh AotPublishGate`. `mise install` provides dotnet and
-  Weaver 0.27.0 (pinned in `mise.toml`), which LiveCheck finds through mise.
-- Key: `vitals keys` entry "qyl-dev manual publish and release (NuGet)", file
-  `~/.config/vitals/nuget-qyl-manual-publish-key`. The script reads it; never print, paste,
-  commit or log a key. If the entry is missing or its note's expiry has passed, stop and tell
-  the owner.
-- Upstream pins this repo must keep fresh: `Qyl.Telemetry.SemanticConventions*` in
-  `Directory.Packages.props`, the one place that names the release; the live check's registry tag
-  is `v` + that pin, and `./eng/build.sh Contracts` fails on a hard-coded `SEMCONV_REF` or registry
-  tag that names another release.
-- Consumers to notify after all six packages are indexed: qyl (`Version.props`
-  `QylTelemetryVersion`) and qyl.at (`src/data/site.ts`).
+- Publishes every packable `src/` project to NuGet (`Qyl.Telemetry.AutoInstrumentation`, `.DiagnosticListeners`, `.EntityFrameworkCore`, `.Hosting`, `.SqlClient`, `Qyl.Telemetry.Hosting`). A new packable project ships automatically; one that must not ship sets `<IsPackable>false</IsPackable>`.
+- Version source: `<Version>` in `Directory.Build.props`. The first change after a release bumps it and opens its `## [x.y.z] - YYYY-MM-DD` entry on top of `CHANGELOG.md` in the same commit; later changes add to that entry. The entry becomes the GitHub release notes.
+- Key: Vitals entry "qyl-dev manual publish and release (NuGet)", `~/.config/vitals/nuget-qyl-manual-publish-key`, read by the script. Never print, paste, commit or log it. Entry missing or note expired: stop and tell the owner.
+- Upstream pin: `Qyl.Telemetry.SemanticConventions*` in `Directory.Packages.props`, the one place that names the release; the live check's registry tag derives from it.
 
-## Before any work: the stale-version guard
+## Stale-version guard, before any work
 
-1. `git pull --ff-only origin main`.
-2. `mise install`, then `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx`.
-3. Compare the pinned `Qyl.Telemetry.SemanticConventions` version with the last entry of
-   `curl -fsSL https://api.nuget.org/v3-flatcontainer/qyl.telemetry.semanticconventions/index.json`.
-   If a newer version is indexed, re-pin first (section "When a release lands"), then start
-   the actual work. Never build on a pin older than what is indexed.
+1. `git pull --ff-only origin main`, `mise install`, `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx`.
+2. Compare the SemanticConventions pin with the last entry of `curl -fsSL https://api.nuget.org/v3-flatcontainer/qyl.telemetry.semanticconventions/index.json`; if the index is ahead, re-pin first.
 
-## Releasing
+## Release
 
-1. `main` holds the release: `Directory.Build.props` `<Version>` and its CHANGELOG entry on top,
-   gate green, pushed.
-2. `./release.sh <x.y.z> --dry-run` only when a step is new or unsure; otherwise go straight to
-   the release, the script refuses before it publishes when anything is off.
-3. `./release.sh <x.y.z>`.
-4. Watch indexing: the script polls the flat-container index of all six ids. If it ends with
-   "not all indexed yet", keep polling every 30 s. Until all six are indexed, do nothing else
-   about this release.
-5. The moment all six are indexed: stop watching and notify the consumers (section "Notify").
-6. Run
-   `/Users/alexandernachtmann/Downloads/qyl-codex-claude/refresh-published-versions.sh`, which rewrites
-   `qyl-published-versions.yaml` beside it from the registries.
+1. `main` holds `<Version>` with its CHANGELOG entry on top, gate green, pushed.
+2. `./release.sh <x.y.z>` (`--dry-run` first only when a step is new or unsure; the script refuses before publishing when anything is off).
+3. If it ends "not all indexed yet", poll every 30 s; nothing else about this release until all six are indexed.
+4. All six indexed: notify the consumers.
+5. Run `/Users/alexandernachtmann/Downloads/qyl-codex-claude/refresh-published-versions.sh` (rewrites `qyl-published-versions.yaml`, the snapshot every agent reads first).
 
 ## Notify
 
-One message per consumer repo, to its running agent through the session's agent-messaging
-tool when there is one (Claude Code: `ListAgents`, then `SendMessage`). Text:
+| Consumer | Re-pins |
+|---|---|
+| qyl | `Version.props` `QylTelemetryVersion` |
+| qyl.at | `src/data/site.ts` |
+
+One message per consumer through the session's agent-messaging tool (Claude Code: `ListAgents`, then `SendMessage`):
 
 ```
 RELEASE Qyl.Telemetry.AutoInstrumentation* + Qyl.Telemetry.Hosting <version> indexed <UTC time>
@@ -80,21 +38,13 @@ re-pin: <Version.props QylTelemetryVersion | src/data/site.ts>
 then: regenerate the lockfile, run the gate, commit, push main
 ```
 
-## When a release lands and you are the consumer
+## Re-pin when SemanticConventions releases
 
-Act at once, before continuing your own work, so both agents keep moving:
+Act at once, before your own work:
 
-1. Set the new `Qyl.Telemetry.SemanticConventions*` version in `Directory.Packages.props`.
-2. `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx` (add `--force-evaluate` where a `packages.lock.json` exists).
-   NU1102 for a version the flat-container index already lists is NuGet's 30-minute HTTP cache:
-   delete that id's `list_<id>.dat` under `dotnet nuget locals http-cache --list` and restore again.
-3. `./eng/build.sh Check`.
-4. Commit `chore: pin Qyl.Telemetry.SemanticConventions <version>` and push `main` immediately.
-5. If the pin changes what this repo ships, record it under the next `<Version>` (bumping it if
-   the current one is released) and continue with "Releasing": one release per repo per wave.
+1. Set the new version in `Directory.Packages.props`.
+2. `mise exec -- dotnet restore Qyl.Telemetry.AutoInstrumentation.slnx` (`--force-evaluate` where a `packages.lock.json` exists). NU1102 for a version the index lists is NuGet's 30-minute HTTP cache: delete that id's `list_<id>.dat` under `dotnet nuget locals http-cache --list`, restore again.
+3. `./eng/build.sh Check`; commit `chore: pin Qyl.Telemetry.SemanticConventions <version>`; push `main`.
+4. If the pin changes what ships, record it under the next `<Version>` (bump it if the current one is released) and release: one release per repo per wave.
 
-## Order rules that never change
-
-- This repo and SemanticConventions both feed qyl: qyl re-pins both in one commit once both are
-  indexed, so tell qyl's agent whether SemanticConventions moved in the same wave.
-- qyl.at lists a version only after the index confirms it.
+This repo and SemanticConventions both feed qyl, which re-pins both in one commit once both are indexed: tell qyl's agent whether SemanticConventions moved in the same wave.

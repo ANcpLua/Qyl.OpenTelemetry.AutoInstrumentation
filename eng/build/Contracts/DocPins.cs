@@ -10,7 +10,7 @@ namespace Qyl.Build;
 /// <item>a package id followed by a version, and each "Pinned" table row, against Directory.Packages.props;</item>
 /// <item>a backticked NuGet range, against the MassTransit.RabbitMQ range;</item>
 /// <item>every hard-coded SEMCONV_REF and every `v…` registry tag in a tracked file (the CHANGELOG's
-/// history aside), against v + the Qyl.Telemetry.SemanticConventions pin, which the live check derives
+/// history and its archive aside), against v + the Qyl.Telemetry.SemanticConventions pin, which the live check derives
 /// its registry tag from;</item>
 /// <item>the N-row contract count, against the total in contracts/coverage-matrix.md;</item>
 /// <item>a QylGeneratedCodeAbi.V&lt;N&gt; anchor, against the Directory.Build.props major;</item>
@@ -127,7 +127,7 @@ static partial class DocPins
     private static void CheckRegistryReferences(List<string> errors)
     {
         var expected = Repo.SemconvRef;
-        var grep = Shell.Run("git", ["-C", Repo.Root, "grep", "-n", "-I", "-F", "-e", "SEMCONV_REF", "-e", "` registry", "--", ".", ":(exclude)CHANGELOG.md"], Repo.Root);
+        var grep = Shell.Run("git", ["-C", Repo.Root, "grep", "-n", "-I", "-F", "-e", "SEMCONV_REF", "-e", "` registry", "--", ".", ":(exclude)CHANGELOG.md", ":(exclude)CHANGELOG.archive.md"], Repo.Root);
         Gate.Require(grep.ExitCode is 0 or 1, () => "doc-pins: git grep failed: " + grep.Describe());
         foreach (var line in grep.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
