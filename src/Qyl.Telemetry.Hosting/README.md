@@ -17,6 +17,29 @@ builder.AddQyl();
 That is the whole integration. There is no per-library enable step: every supported source is on
 unless its `OTEL_DOTNET_AUTO_<ID>_INSTRUMENTATION_ENABLED` toggle turns it off.
 
+The package also carries `SKILL.md`, the guide for a coding agent working in the application: what
+`AddQyl()` already records, the generated span starters (`Spans.Work`, `Spans.DbClient`, ...),
+`SetAppTag` for business keys, `RecordFailure`, and the three things the compiler cannot check.
+
+## Your own spans
+
+Application code starts spans through `Qyl.Spans`, on the application scope `AddQyl()` subscribes,
+never with a hand-made `ActivitySource` (the bundled analyzers reject one, QYL0111):
+
+```csharp
+using var span = Spans.Work("checkout");
+span?.SetAppTag("order.id", orderId);
+try
+{
+    await checkout.RunAsync(order);
+}
+catch (Exception exception)
+{
+    span?.RecordFailure(exception);
+    throw;
+}
+```
+
 ## Where the telemetry goes
 
 `AddQyl()` exports to the first of these that is set:

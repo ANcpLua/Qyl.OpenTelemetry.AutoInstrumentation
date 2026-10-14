@@ -25,7 +25,7 @@ below is what proves it.
 
 | Package | What it does |
 | --- | --- |
-| `Qyl.Telemetry.Hosting` | One-line onboarding. `builder.AddQyl()` wires the OpenTelemetry SDK, subscribes the native `ActivitySource` table, adds the two processors, registers the meter inventory and exports OTLP with collector discovery. |
+| `Qyl.Telemetry.Hosting` | One-line onboarding. `builder.AddQyl()` wires the OpenTelemetry SDK, subscribes the native `ActivitySource` table and the application scope, adds the two processors, registers the meter inventory and exports OTLP with collector discovery. Its package root carries `SKILL.md`, the guide for a coding agent in the consuming application. |
 | `Qyl.Telemetry.AutoInstrumentation` | The core runtime: the single qyl `ActivitySource`, the interceptor declarations and helper bodies, the options surface, the compiler-facing ABI, the build assets and the source generator. |
 | `Qyl.Telemetry.AutoInstrumentation.Hosting` | Process bootstrap: a `[ModuleInitializer]` activates the qyl listeners when the assembly loads, and `AddQylAutoInstrumentation()` wires them explicitly. |
 | `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners` | The base `DiagnosticListener` subscriber and the shared semantics helpers the EF Core and SqlClient packages build on. |

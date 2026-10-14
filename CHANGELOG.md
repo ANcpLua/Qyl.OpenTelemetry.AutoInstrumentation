@@ -31,6 +31,12 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
   `Microsoft.Agents.AI.Workflows` used without `UseOpenTelemetry()` / `WithOpenTelemetry()`: their
   `ActivitySource`s stay silent without it. GraphQL.NET and ODP.NET stay at Info.
 
+- `Qyl.Telemetry.Hosting` carries `SKILL.md` at its package root (ADR D7): the guide for a coding
+  agent in the consuming application. It opens with what `AddQyl()` already records, then the
+  starters, `Work`, `SetAppTag` and `RecordFailure`, and the three things the compiler cannot see
+  (the messaging parent context, `UseOpenTelemetry()` on a custom source name, business keys).
+  `./eng/build.sh PackageLayout` checks it is packed.
+
 ### Removed
 
 - `QylTelemetryOptions.ResourceAttributes`, the last string-keyed slot: the resource is derived
@@ -65,6 +71,9 @@ The agent-first API of the qyl API DSL ADR (2026-10-14), on `Qyl.Telemetry.Seman
   failed producer span.
 - The qyl `ActivitySource` carries the qyl registry's schema URL (`SchemaUrl.Qyl`,
   `https://qyl.at/schemas/10.0.0`), like the application scope.
+- README: the QYL1002 rows it already claimed exist; the one source name still typed by hand
+  (`Experimental.ModelContextProtocol`) is named; the domain list is the registry's whole value set,
+  `db.elasticsearch` and the four application domains included.
 - The ASP.NET Core, MCP and session-propagation demos start their own spans with `Spans.Work`
   instead of a hand-made source added through `AdditionalSources`.
 - Every `Qyl.Telemetry.SemanticConventions*` package is pinned at 10.0.0 (`Directory.Packages.props`

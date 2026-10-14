@@ -7,7 +7,8 @@ namespace Qyl.Build;
 
 /// <summary>The packed Qyl.Telemetry.AutoInstrumentation: required build assets present, identical in
 /// build/ and buildTransitive/, no entry or token of a forbidden instrumentation mechanism, and the
-/// semantic-convention release it compiled against readable by a consumer as the pin.</summary>
+/// semantic-convention release it compiled against readable by a consumer as the pin. The packed
+/// Qyl.Telemetry.Hosting carries the consumer SKILL.md at its root.</summary>
 static class PackageLayoutGate
 {
     private static readonly string[] RequiredPackageEntries =
@@ -31,6 +32,7 @@ static class PackageLayoutGate
         var package = LocalFeed.Directory / $"Qyl.Telemetry.AutoInstrumentation.{version}.nupkg";
         Gate.Require(package.FileExists(), $"package missing: {package}");
         VerifyPackage(package);
+        VerifyHostingSkill(LocalFeed.Directory / $"Qyl.Telemetry.Hosting.{version}.nupkg");
         Log.Information("package-layout-ok");
     }
 
@@ -132,6 +134,30 @@ static class PackageLayoutGate
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(static asset => asset.ToLowerInvariant())
             .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>A model consuming qyl finds its guide in the package it installed: SKILL.md at the root
+    /// of Qyl.Telemetry.Hosting, a skill (name and description front matter) that opens with what
+    /// AddQyl already records.</summary>
+    private static void VerifyHostingSkill(AbsolutePath package)
+    {
+        Gate.Require(package.FileExists(), $"package missing: {package}");
+        using var archive = ZipFile.OpenRead(package);
+        Gate.Require(archive.GetEntry("SKILL.md") is not null, $"{package.Name} carries no SKILL.md at its root");
+        var skill = Read(archive, "SKILL.md");
+        foreach (var token in new[]
+                 {
+                     "---\nname: qyl-telemetry\ndescription: ",
+                     "`AddQyl()` already records the HTTP server span",
+                     "start no span for those operations",
+                     "Spans.Work(", "SetAppTag(", "RecordFailure(",
+                     "## What the compiler cannot see",
+                 })
+        {
+            Gate.Require(skill.Contains(token, StringComparison.Ordinal), $"{package.Name} SKILL.md missing: {token}");
+        }
+
+        Log.Information("hosting-skill-ok {Package} carries SKILL.md", package.Name);
+    }
 
     /// <summary>Decodes an [assembly: AssemblyMetadata(key, value)] without loading the assembly.</summary>
     private static (string Key, string Value)? AssemblyMetadata(MetadataReader reader, CustomAttribute attribute)
