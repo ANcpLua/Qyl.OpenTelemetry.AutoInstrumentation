@@ -96,7 +96,10 @@ if (( dry )); then
       echo "warning: $id is not on NuGet yet; the key probe needs a published version, so its first push is the probe"
       continue
     fi
-    key_probe "$id" "$published" || die "the NuGet key failed the probe for $id: expired, revoked, without push scope, or its account does not own $id (vitals keys)"
+    # A rejected key fails every attempt; a dropped connection does not.
+    probed=0
+    for _ in 1 2 3; do key_probe "$id" "$published" && { probed=1; break; }; sleep 3; done
+    (( probed )) || die "the NuGet key failed the probe for $id three times: expired, revoked, without push scope, or its account does not own $id (vitals keys)"
     echo "key probe: $id ok (verified against $published, nothing published)"
   done
   say "dry run finished: ${#projects[@]} packages at $version in $OUT; nothing published, nothing tagged"

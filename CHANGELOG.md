@@ -23,6 +23,8 @@ packages are then exercised in clean managed and NativeAOT consumers.
   `tools/live-check.env` and its hand-kept `SEMCONV_REF` are deleted, and `./eng/build.sh Contracts`
   fails when a tracked file (the CHANGELOG's history aside) hard-codes a `SEMCONV_REF` or a registry
   tag that names another release.
+- The `release.sh` dry run retries a failed key probe twice before refusing, so a dropped
+  connection to nuget.org no longer reads as a rejected key.
 
 ## [24.0.2] - 2026-10-14
 
