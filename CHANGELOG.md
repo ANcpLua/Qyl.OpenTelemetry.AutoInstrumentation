@@ -51,6 +51,9 @@ packages are then exercised in clean managed and NativeAOT consumers.
 
 ### Fixed
 
+- `bun eng/testbed/probe.ts` no longer prints a `TimeoutNegativeWarning`: kafkajs 2.2.4 schedules
+  its request-queue check `throttledUntil - Date.now()` ms ahead, which is `-1 - Date.now()` while
+  the queue is unthrottled. `eng/testbed/patches/kafkajs@2.2.4.patch` clamps the delay at 0.
 - The ILogger demo exported no log record over OTLP: its first export ran inside the host's
   disposal against an already-disposed container. The gRPC client demo never flushed its batch
   exporter. Both were invisible while the demos asserted only their in-memory exporters.

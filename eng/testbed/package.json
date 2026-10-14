@@ -12,5 +12,8 @@
     "mysql2": "3.24.4",
     "oracledb": "7.0.1",
     "pg": "8.23.0"
+  },
+  "patchedDependencies": {
+    "kafkajs@2.2.4": "patches/kafkajs@2.2.4.patch"
   }
 }

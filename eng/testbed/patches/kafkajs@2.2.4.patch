@@ -1,0 +1,15 @@
+diff --git a/src/network/requestQueue/index.js b/src/network/requestQueue/index.js
+index eee14d66c3869d90f7bac0ac755ecbad3f2a2741..e5346607bf7e0a6dc2703faec27142bfeb97db43 100644
+--- a/src/network/requestQueue/index.js
++++ b/src/network/requestQueue/index.js
+@@ -309,7 +309,9 @@ module.exports = class RequestQueue extends EventEmitter {
+     // will be fine, and potentially fix up a new timeout if needed at that time.
+     // Note that if we're merely "overloaded" by having too many inflight requests
+     // we will anyways check the queue when one of them gets fulfilled.
+-    let scheduleAt = this.throttledUntil - Date.now()
++    // throttledUntil starts at -1, so an unthrottled queue computed -1 - Date.now(): a negative
++    // delay Node and Bun clamp to 1 ms with a TimeoutNegativeWarning. Clamp it here instead.
++    let scheduleAt = Math.max(0, this.throttledUntil - Date.now())
+     if (!this.throttleCheckTimeoutId) {
+       if (this.pending.length > 0) {
+         scheduleAt = scheduleAt > 0 ? scheduleAt : CHECK_PENDING_REQUESTS_INTERVAL
