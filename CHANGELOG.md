@@ -39,7 +39,9 @@ packages are then exercised in clean managed and NativeAOT consumers.
   `./eng/build.sh Contracts --write-contracts`. Consumer fixtures live in `eng/fixtures`.
 - `release.sh` packs through `./eng/build.sh Pack` into `artifacts/release`. Its dry run reports
   the branch, origin, tag and already-indexed checks as warnings instead of refusing, so it proves
-  the pack from any branch.
+  the pack from any branch, and it proves the NuGet key for every package id through NuGet's
+  package-verification handshake instead of pushing an already-published package with
+  `--skip-duplicate`: a dry run publishes nothing.
 - Compile against `Qyl.Telemetry.SemanticConventions` 9.9.2 (from 9.9.0) and run the live check
   against the `v9.9.2` registry. 9.9.1 declared `qyl.gen_ai.tool.call.arguments_hash`, which qyl
   does not emit; 9.9.2 changed only how that repository builds and tests. The source generator

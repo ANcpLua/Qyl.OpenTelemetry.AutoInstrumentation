@@ -4,7 +4,7 @@
 # Pack (./eng/build.sh Pack); this script adds the release checks, the push, the tag and the release.
 #
 #   ./release.sh <x.y.z>            pack every packable src project, push, tag v<x.y.z>, GitHub release
-#   ./release.sh <x.y.z> --dry-run  every check, the real pack and a NuGet key probe; nothing changes.
+#   ./release.sh <x.y.z> --dry-run  every check, the real pack and a NuGet key probe that publishes nothing.
 #                                   Checks the real run enforces (main, origin/main, tag, already on
 #                                   NuGet) only warn, so a dry run proves the pack from any branch.
 #
@@ -15,6 +15,7 @@ cd "$(dirname "$0")"
 
 NUGET_SOURCE=https://api.nuget.org/v3/index.json
 NUGET_FLAT=https://api.nuget.org/v3-flatcontainer
+NUGET_GALLERY=https://www.nuget.org/api/v2
 NUGET_KEY_FILE=$HOME/.config/vitals/nuget-qyl-manual-publish-key  # vitals keys: "qyl-dev manual publish and release (NuGet)"
 OUT=artifacts/release  # where ./eng/build.sh Pack puts the packages
 
@@ -27,7 +28,20 @@ die() { echo "release: $*" >&2; exit 1; }
 refuse() { (( dry )) || die "$*"; echo "warning: $*; the real run refuses"; }
 lower() { tr '[:upper:]' '[:lower:]' <<<"$1"; }
 indexed() { curl -fsSL "$NUGET_FLAT/$(lower "$1")/index.json" 2>/dev/null | grep -q "\"$2\""; }
-latest() { curl -fsSL "$NUGET_FLAT/$(lower "$1")/index.json" | grep -o '"[0-9][^"]*"' | tail -1 | tr -d '"'; }
+latest() { curl -fsSL "$NUGET_FLAT/$(lower "$1")/index.json" 2>/dev/null | grep -o '"[0-9][^"]*"' | tail -1 | tr -d '"'; }
+# The key probe publishes nothing: it is NuGet's push-symbols handshake. The key mints a one-use
+# package verification key for <id> <version> (only a live key with push scope can), and that key
+# verifies with 200 only when the key's account owns <id>; the verify call consumes it. The key
+# travels in a curl config on stdin, never on a command line.
+key_probe() {
+  local id=$1 version=$2 minted temp
+  minted=$(printf 'header = "X-NuGet-ApiKey: %s"\n' "$(<"$NUGET_KEY_FILE")" |
+    curl -fsS -X POST -H 'Content-Length: 0' -K - "$NUGET_GALLERY/package/create-verification-key/$id/$version") || return 1
+  temp=$(sed -n 's/.*"Key":"\([^"]*\)".*/\1/p' <<<"$minted")
+  [[ -n $temp ]] || return 1
+  [[ $(printf 'header = "X-NuGet-ApiKey: %s"\n' "$temp" |
+    curl -sS -o /dev/null -w '%{http_code}' -K - "$NUGET_GALLERY/verifykey/$id/$version") == 200 ]]
+}
 
 say "checks"
 [[ -r $NUGET_KEY_FILE ]] || die "NuGet key missing: $NUGET_KEY_FILE (vitals keys)"
@@ -73,13 +87,18 @@ ls -1 "$OUT"/*.nupkg
 assert_packed_commit
 
 say "NuGet push"
-probe_dir=$(mktemp -d); notes=$(mktemp); trap 'rm -rf "$probe_dir" "$notes"' EXIT
+notes=$(mktemp); trap 'rm -f "$notes"' EXIT
 if (( dry )); then
-  id=$(lower "$(basename "${projects[0]}" .csproj)")
-  published=$(latest "$id")
-  curl -fsSL -o "$probe_dir/probe.nupkg" "$NUGET_FLAT/$id/$published/$id.$published.nupkg"
-  echo "dry run: pushing the published $id $published again with --skip-duplicate to prove the key (expect 'already exists')"
-  dotnet nuget push "$probe_dir/probe.nupkg" --api-key "$(<"$NUGET_KEY_FILE")" --source "$NUGET_SOURCE" --skip-duplicate
+  for p in "${projects[@]}"; do
+    id=$(basename "$p" .csproj)
+    published=$(latest "$id" || true)
+    if [[ -z $published ]]; then
+      echo "warning: $id is not on NuGet yet; the key probe needs a published version, so its first push is the probe"
+      continue
+    fi
+    key_probe "$id" "$published" || die "the NuGet key failed the probe for $id: expired, revoked, without push scope, or its account does not own $id (vitals keys)"
+    echo "key probe: $id ok (verified against $published, nothing published)"
+  done
   say "dry run finished: ${#projects[@]} packages at $version in $OUT; nothing published, nothing tagged"
   git status --short --untracked-files=no
   exit 0

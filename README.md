@@ -514,8 +514,8 @@ one line at one version. Bump it, pack the six packages and push them to nuget.o
 with the NuGet API key registered in Vitals, then tag the commit `v<version>` and create the GitHub
 release. Nothing runs on a push to `main`: `./eng/build.sh Check` runs before every push and release,
 and `./release.sh <version>` publishes (see `SKILL.md`). It packs through `./eng/build.sh Pack`, which
-puts the six packages into `artifacts/release`; `./release.sh <version> --dry-run` runs every check
-and the real pack and publishes nothing.
+puts the six packages into `artifacts/release`; `./release.sh <version> --dry-run` runs every check,
+the real pack and a NuGet key probe for every package id, and publishes nothing.
 
 The package major is the compile-time ABI rather than the product version, which is why it runs
 ahead of the rest of qyl: an `X.y` package pairs with `QylGeneratedCodeAbi.V<X>` and nothing else.
