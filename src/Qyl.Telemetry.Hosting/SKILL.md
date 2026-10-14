@@ -24,6 +24,8 @@ Start them through `Qyl.Spans` and `Qyl.IncubatingSpans` (namespace `Qyl`), neve
 - `IncubatingSpans.MessagingProcessConsumer(MessagingSystem.Kafka, "process", batchMessageCount: null, destinationName: "orders", destinationTemplate: null, producer: producerContext)`: processing one received message.
 - `IncubatingSpans.GenAiInvokeAgent(...)` and `GenAiExecuteTool(...)`: an agent or tool loop that Microsoft.Agents.AI does not run. Never inside an `AIFunctionFactory.Create` delegate (QYL0122): `FunctionInvokingChatClient` records that span already.
 
+An `ActivityListener` of your own (a test, a sampler) selects the application's spans by name: `listener.ShouldListenTo = source => source.Name == QylTelemetryNames.Scopes.QylTelemetryApplication`. Never compare against `Spans.Source`: reading it inside `ShouldListenTo` runs `Spans`' type initializer, which consults the listeners while creating the source, and throws `TypeInitializationException`.
+
 ## Business attributes
 
 `span?.SetAppTag("order.id", orderId)` writes `qyl.app.order.id` (string, long, double or bool). The key is a constant (QYL0112) and contains no token the collector denies (QYL0113): `token`, `secret`, `password`, `message`, `body`, `query`, `result`, `prompt` and the rest of `RegistryPolicy.DeniedKeyTokens`. At most 16 per span, each value up to 256 characters.
