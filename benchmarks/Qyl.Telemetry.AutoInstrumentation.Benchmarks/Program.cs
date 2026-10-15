@@ -4,7 +4,6 @@ using System.Collections;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
-using Qyl.Telemetry.AutoInstrumentation;
 using Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 if (args.Contains("--smoke", StringComparer.Ordinal))
@@ -37,7 +36,7 @@ public class DbCommandHotPathBenchmarks
     };
 
     [Benchmark(Baseline = true)]
-    public int DirectSqlClientCommand() => command.CommandText!.Length;
+    public int DirectSqlClientCommand() => command.CommandText.Length;
 
     [Benchmark]
     public int InterceptedSqlClientCommand()

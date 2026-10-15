@@ -126,15 +126,14 @@ internal static class QylDbQuerySummary
     /// </summary>
     private ref struct Scanner(string text)
     {
-        private readonly string _text = text;
         private int _position;
         private bool _stopped;
 
         public string? NextWord()
         {
-            while (!_stopped && _position < _text.Length)
+            while (!_stopped && _position < text.Length)
             {
-                var current = _text[_position];
+                var current = text[_position];
 
                 if (char.IsWhiteSpace(current) || current is ',' or '*' or '=' or '<' or '>' or '+')
                 {
@@ -144,15 +143,15 @@ internal static class QylDbQuerySummary
 
                 if (current is '-' && Peek(1) is '-')
                 {
-                    while (_position < _text.Length && _text[_position] is not '\n')
+                    while (_position < text.Length && text[_position] is not '\n')
                         _position++;
                     continue;
                 }
 
                 if (current is '/' && Peek(1) is '*')
                 {
-                    var end = _text.IndexOf("*/", _position + 2, StringComparison.Ordinal);
-                    _position = end < 0 ? _text.Length : end + 2;
+                    var end = text.IndexOf("*/", _position + 2, StringComparison.Ordinal);
+                    _position = end < 0 ? text.Length : end + 2;
                     continue;
                 }
 
@@ -164,7 +163,7 @@ internal static class QylDbQuerySummary
 
                 if (char.IsDigit(current))
                 {
-                    while (_position < _text.Length && (char.IsDigit(_text[_position]) || _text[_position] is '.'))
+                    while (_position < text.Length && (char.IsDigit(text[_position]) || text[_position] is '.'))
                         _position++;
                     continue;
                 }
@@ -178,9 +177,9 @@ internal static class QylDbQuerySummary
                 if (char.IsLetter(current) || current is '_')
                 {
                     var start = _position;
-                    while (_position < _text.Length && (char.IsLetterOrDigit(_text[_position]) || _text[_position] is '_' or '.'))
+                    while (_position < text.Length && (char.IsLetterOrDigit(text[_position]) || text[_position] is '_' or '.'))
                         _position++;
-                    return _text[start.._position];
+                    return text[start.._position];
                 }
 
                 _stopped = true;
@@ -190,16 +189,16 @@ internal static class QylDbQuerySummary
         }
 
         private char Peek(int offset)
-            => _position + offset < _text.Length ? _text[_position + offset] : '\0';
+            => _position + offset < text.Length ? text[_position + offset] : '\0';
 
         // A balanced group holds sub-queries, column lists, and argument lists; nothing inside it is a
         // target, and a quote or marker inside it ends the scan exactly as it would outside.
         private void SkipGroup()
         {
             var depth = 0;
-            while (_position < _text.Length)
+            while (_position < text.Length)
             {
-                var current = _text[_position++];
+                var current = text[_position++];
                 if (current is '(')
                 {
                     depth++;

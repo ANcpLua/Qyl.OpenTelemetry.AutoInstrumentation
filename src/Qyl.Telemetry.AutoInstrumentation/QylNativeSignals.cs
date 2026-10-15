@@ -5,17 +5,11 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 /// the environment toggles bind to is generated from declarations rather than retyped.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-internal sealed class QylSignalAttribute : Attribute
+internal sealed class QylSignalAttribute(string instrumentationId, QylAutoInstrumentationSignal signal) : Attribute
 {
-    public QylSignalAttribute(string instrumentationId, QylAutoInstrumentationSignal signal)
-    {
-        InstrumentationId = instrumentationId;
-        Signal = signal;
-    }
+    public string InstrumentationId { get; } = instrumentationId;
 
-    public string InstrumentationId { get; }
-
-    public QylAutoInstrumentationSignal Signal { get; }
+    public QylAutoInstrumentationSignal Signal { get; } = signal;
 }
 
 /// <summary>

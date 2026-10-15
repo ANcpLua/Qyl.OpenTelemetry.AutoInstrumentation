@@ -71,14 +71,11 @@ public sealed partial class QylAutoInstrumentationGenerator
         EquatableArray<string> Metrics,
         EquatableArray<string> Logs);
 
-    private sealed class DeclarationCatalog
+    private sealed class DeclarationCatalog(ImmutableArray<IntegrationDeclaration> integrations)
     {
         public static readonly DeclarationCatalog Empty = new(ImmutableArray<IntegrationDeclaration>.Empty);
 
-        public DeclarationCatalog(ImmutableArray<IntegrationDeclaration> integrations)
-            => Integrations = integrations;
-
-        public ImmutableArray<IntegrationDeclaration> Integrations { get; }
+        public ImmutableArray<IntegrationDeclaration> Integrations { get; } = integrations;
     }
 
     // One catalog per compilation: the referenced runtime assembly's declarations are read once and

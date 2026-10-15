@@ -5,6 +5,13 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [25.1.0] - 2026-10-15
+
+### Changed
+
+- Update the shared convention bindings and consumer analyzers to Qyl.Telemetry.SemanticConventions 10.1.0.
+- Apply JetBrains cleanup for redundant imports and null suppression, constructor initialization, and private scanner state without changing the public API.
+
 ## [25.0.3] - 2026-10-15
 
 ### Documentation
