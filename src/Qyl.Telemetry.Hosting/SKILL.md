@@ -13,7 +13,20 @@ using Qyl;
 builder.AddQyl(o => o.ServiceNamespace = "shop");
 ```
 
-`service.name`, `service.version` (this build's version and commit) and `deployment.environment.name` (the host environment) come from the build and the host; set `ServiceName`, `ServiceVersion` or `DeploymentEnvironment` only to override them. A request's W3C `baggage` member `session.id` becomes the server span's `session.id`, and every span below it inherits it.
+`service.name` defaults to `OTEL_SERVICE_NAME`, then the host application name; `service.version` comes from this build's version and commit, and `deployment.environment.name` from the host environment. Set `ServiceName`, `ServiceVersion` or `DeploymentEnvironment` only to override them. A request's W3C `baggage` member `session.id` becomes the server span's `session.id`, and every span below it inherits it.
+
+## Services started by Qyl.Orchestration
+
+Use [`Qyl.Orchestration`](https://github.com/ANcpLua/qyl/blob/main/packages/Qyl.Orchestration/README.md) in the host or test harness for process startup, service endpoints, readiness and shutdown. Each child application still references `Qyl.Telemetry.Hosting` and calls `AddQyl()`; the orchestrator supplies its process name as the default `OTEL_SERVICE_NAME`.
+
+For an existing collector or test receiver accepting OTLP over HTTP/protobuf, set the child's export destination through its `QylProcessBuilder`:
+
+```csharp
+service.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", receiverBaseUri.ToString())
+    .WithEnvironment("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
+```
+
+Use the receiver's base URI, without `/v1/traces`. In an isolated test, `WithoutEnvironmentPrefix("OTEL_")` and `WithoutEnvironmentPrefix("QYL_")` remove inherited exporter settings before explicit values are applied. `WithReference(otherService)` supplies that service's HTTP address; `WaitFor(otherService)` controls startup order. The orchestration library does not start a collector or register telemetry in the child applications.
 
 ## Your own spans
 

@@ -5,6 +5,12 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [25.0.3] - 2026-10-15
+
+### Documentation
+
+- `Qyl.Telemetry.Hosting`'s `qyl-telemetry` skill explains how to export telemetry from services started by `Qyl.Orchestration`: keep `AddQyl()` in each service, pass the receiver's OTLP endpoint and protocol through the child environment, and separate service references and readiness from telemetry setup. It also documents the `OTEL_SERVICE_NAME` default.
+
 ## [25.0.2] - 2026-10-15
 
 ### Documentation
