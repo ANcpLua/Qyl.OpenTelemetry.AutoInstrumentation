@@ -2,6 +2,23 @@
 
 Entries older than the newest three, which stay in [CHANGELOG.md](CHANGELOG.md).
 
+## [24.1.1] - 2026-10-14
+
+### Security
+
+- `Qyl.Telemetry.AutoInstrumentation.SqlClient` depends on `System.Security.Cryptography.Pkcs`
+  10.0.13. `Microsoft.Data.SqlClient` 7.1.1, the newest release, brings 9.0.18, which the
+  advisories of 2026-10-13 (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7) cover; the floor reaches
+  consumers through the package.
+
+### Changed
+
+- The build host and the SqlClient, Oracle and WCF demos reference the patched
+  `System.Security.Cryptography.Pkcs` and `.Xml` 10.0.13 (Fallout.Common brought 10.0.10 of both;
+  GHSA-7hqp-7c5m-4vq6, GHSA-c399-9853-6jmj, GHSA-r955-8q5j-3h83); NuGet audit failed those
+  restores.
+- The demo lanes' local collector is the `qyl` tool 12.2.0.
+
 ## [24.1.0] - 2026-10-14
 
 ### Added
