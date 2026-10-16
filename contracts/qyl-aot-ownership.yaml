@@ -14,7 +14,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealAdoNetDemo
-  - eng/build/Demos/Lanes/AdoNetLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AdoNetTests.cs
   conformance_signals:
   - kind: span
     name: adonet.command
@@ -55,8 +55,8 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealAspNetCoreDemo
   - demos/Qyl.RealSessionPropagationDemo
-  - eng/build/Demos/Lanes/AspNetCoreLane.cs
-  - eng/build/Demos/Lanes/SessionPropagationLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AspNetCoreTests.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/SessionPropagationTests.cs
   conformance_signals:
   - kind: span
     name: aspnetcore.server
@@ -82,7 +82,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/AzureLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AzureTests.cs
   conformance_signals:
   - kind: span
     name: azure.sdk
@@ -105,7 +105,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/ElasticsearchLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/ElasticsearchTests.cs
   conformance_signals:
   - kind: span
     name: '{db.operation}'
@@ -130,7 +130,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/ElasticTransportLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/ElasticTransportTests.cs
   conformance_signals:
   - kind: span
     name: '{http.request.method}'
@@ -153,7 +153,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs
   - demos/Qyl.RealEfCoreDemo
-  - eng/build/Demos/Lanes/EfCoreLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/EfCoreTests.cs
   conformance_signals:
   - kind: span
     name: efcore.sqlite
@@ -177,7 +177,7 @@ ownership_items:
   - demos/Qyl.RealGraphQlDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/GraphQlLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/GraphQlTests.cs
   conformance_signals:
   - kind: span
     name: graphql.execute
@@ -200,7 +200,7 @@ ownership_items:
   - demos/Qyl.RealGrpcClientDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/GrpcClientLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/GrpcClientTests.cs
   conformance_signals:
   - kind: span
     name: grpc.client
@@ -226,8 +226,8 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylSessionSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - eng/build/OtlpEvidence/OtlpWireEvidence.cs
-  - eng/build/Demos/Lanes/HttpClientLane.cs
-  - eng/build/Demos/Lanes/SessionPropagationLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/HttpClientTests.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/SessionPropagationTests.cs
   conformance_signals:
   - kind: span
     name: httpclient.downstream
@@ -268,7 +268,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealKafkaDemo
-  - eng/build/Demos/Lanes/KafkaLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/KafkaTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_012
   key: signals.traces.MASSTRANSIT
   supported_versions: MassTransit >=8.0.0 (Apache-2.0); verified against 8.5.11; native ActivitySource "MassTransit"
@@ -283,7 +283,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/MassTransitLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/MassTransitTests.cs
   conformance_signals:
   - kind: span
     name: '{destination} send'
@@ -308,7 +308,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/MongoDbLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/MongoDbTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_014
   key: signals.traces.MYSQLCONNECTOR
   lane: native_source
@@ -321,7 +321,7 @@ ownership_items:
   - demos/Qyl.RealMySqlConnectorDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/MySqlConnectorLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/MySqlConnectorTests.cs
   conformance_signals:
   - kind: span
     name: mysqlconnector.command
@@ -352,7 +352,7 @@ ownership_items:
   - demos/Qyl.RealMySqlDataDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/MySqlDataLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/MySqlDataTests.cs
 
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_016
   key: signals.traces.NPGSQL
@@ -366,7 +366,7 @@ ownership_items:
   - demos/Qyl.RealNpgsqlDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/NpgsqlLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/NpgsqlTests.cs
   conformance_signals:
   - kind: span
     name: npgsql.command
@@ -400,7 +400,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/NServiceBusLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/NServiceBusTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_018
   key: signals.traces.ORACLEMDA
   lane: native_source
@@ -413,7 +413,7 @@ ownership_items:
   - demos/Qyl.RealOracleMdaDemo
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/OracleMdaLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/OracleMdaTests.cs
   conformance_signals:
   - kind: span
     name: oraclemda.command
@@ -440,7 +440,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/RabbitMqLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/RabbitMqTests.cs
   conformance_signals:
   - kind: span
     name: publish {messaging.rabbitmq.destination.routing_key}
@@ -468,7 +468,7 @@ ownership_items:
   - src/Qyl.Telemetry.Hosting/QylNativeSpanProcessor.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
-  - eng/build/Demos/Lanes/QuartzLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/QuartzTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_021
   key: signals.traces.SQLCLIENT
   lane: source_interceptor
@@ -483,7 +483,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqlClientDemo
-  - eng/build/Demos/Lanes/SqlClientLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/SqlClientTests.cs
   conformance_signals:
   - kind: span
     name: sqlclient.command
@@ -508,7 +508,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqliteDemo
-  - eng/build/Demos/Lanes/SqliteLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/SqliteTests.cs
   conformance_signals:
   - kind: span
     name: sqlite.command
@@ -533,7 +533,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealRedisDemo
-  - eng/build/Demos/Lanes/RedisLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/RedisTests.cs
   conformance_signals:
   - kind: span
     name: redis.command
@@ -559,7 +559,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealWcfClientDemo
-  - eng/build/Demos/Lanes/WcfClientLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/WcfClientTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_025
   key: signals.traces.WCFCORE
   lane: official_library_hook
@@ -572,7 +572,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylTelemetrySources.cs
   - demos/Qyl.RealCoreWcfDemo
-  - eng/build/Demos/Lanes/CoreWcfLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/CoreWcfTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_026
   key: signals.traces.WCFSERVICE
   lane: unsupported_nativeaot
@@ -611,7 +611,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealAspNetCoreMetricsDemo
-  - eng/build/Demos/Lanes/AspNetCoreMetricsLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AspNetCoreMetricsTests.cs
   conformance_signals:
   - kind: metric
     name: aspnetcore.components.render_diff.duration
@@ -639,7 +639,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealHttpClientDemo
-  - eng/build/Demos/Lanes/HttpClientLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/HttpClientTests.cs
   conformance_signals:
   - kind: metric
     name: http.client.request.duration
@@ -660,7 +660,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
-  - eng/build/Demos/Lanes/NetRuntimeMetricsLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/NetRuntimeMetricsTests.cs
   conformance_signals:
   - kind: metric
     name: dotnet.gc.collections
@@ -714,7 +714,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation/QylMetricMeters.cs
   - demos/Qyl.RealNetRuntimeMetricsDemo
-  - eng/build/Demos/Lanes/NetRuntimeMetricsLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/NetRuntimeMetricsTests.cs
   conformance_signals:
   - kind: metric
     name: dotnet.process.cpu.time
@@ -745,7 +745,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylDbClientMetrics.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqlClientDemo
-  - eng/build/Demos/Lanes/SqlClientLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/SqlClientTests.cs
   conformance_signals:
   - kind: metric
     name: db.client.operation.duration
@@ -764,7 +764,7 @@ ownership_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealILoggerDemo
-  - eng/build/Demos/Lanes/ILoggerLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/ILoggerTests.cs
   conformance_signals:
   - kind: log
     name: ilogger.log
@@ -864,7 +864,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - eng/build/Contracts/ContractInvariants.cs
-  - eng/build/Demos/Lanes/ILoggerLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/ILoggerTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_044
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
   lane: environment_control
@@ -889,7 +889,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealEfCoreDemo
-  - eng/build/Demos/Lanes/EfCoreLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/EfCoreTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_046
   key: instrumentation_options.OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT
   lane: not_implemented
@@ -920,7 +920,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealSqlClientDemo
-  - eng/build/Demos/Lanes/SqlClientLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/SqlClientTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_049
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   lane: unsupported_nativeaot
@@ -955,7 +955,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealAspNetCoreDemo
-  - eng/build/Demos/Lanes/AspNetCoreLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AspNetCoreTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_052
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   lane: instrumentation_option
@@ -968,7 +968,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealAspNetCoreDemo
-  - eng/build/Demos/Lanes/AspNetCoreLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AspNetCoreTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
   lane: not_implemented
@@ -1017,7 +1017,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - eng/build/Contracts/ContractInvariants.cs
   - demos/Qyl.RealAspNetCoreDemo
-  - eng/build/Demos/Lanes/AspNetCoreLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/AspNetCoreTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_058
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION
   lane: instrumentation_option
@@ -1097,7 +1097,7 @@ ownership_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylNativeSignals.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealQuartzDemo
-  - eng/build/Demos/Lanes/QuartzLane.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/QuartzTests.cs
   notes:
   - Native Quartz metrics are forwarded without recreating instruments or rewriting their dimensions. NativeAOT remains outside
     the verified boundary.

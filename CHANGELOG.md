@@ -5,6 +5,21 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [26.0.0] - 2026-10-16
+
+### Changed
+
+- Update the OpenTelemetry SDK, exporters and hosting integration to 1.20.0 for metric concurrency, async suppression and shutdown log delivery fixes.
+- Update semantic-convention bindings and analyzers to 12.0.0, including the measured Oracle duration wire type, and Roslyn source utilities to 3.0.0.
+- Advance the generated-code ABI to V26; generators and runtime packages must share that major.
+- Pin the repository to .NET SDK 10.0.401 and native MSTest 4.5.1 with Microsoft.Testing.Platform.
+- Replace the custom demo runner with thirty native MSTest integration cases using Qyl.Telemetry.Testing 1.1.0. Retain complete OTLP captures, original export payloads and registry reports, compare independent application reports, and join child processes before reading their telemetry.
+- Remove the ILogger demo's manual-flush workaround and verify first-batch shutdown delivery in managed and Native AOT applications.
+- Convert two known producer representations without changing their meaning: Microsoft.Extensions.AI finish-reason JSON to a string array, and MassTransit message-size text to a nonnegative Int64. Preserve malformed and out-of-range values for diagnostics.
+- Verify conversion boundaries through the public host pipeline and attribute Oracle child spans by their operation context and parent IDs, preserving background exporter activities in the diagnostic report.
+- Remove the unused collector harness, its stale tool pin and the API-contract dependency that only that harness used.
+- Remove unused internal HTTP-header and ambient-start helpers; keep the timing paths used by EF Core and SqlClient.
+
 ## [25.1.0] - 2026-10-15
 
 ### Changed

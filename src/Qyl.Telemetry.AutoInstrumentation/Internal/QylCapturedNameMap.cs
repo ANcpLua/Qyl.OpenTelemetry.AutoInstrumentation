@@ -6,7 +6,7 @@ internal sealed class QylCapturedNameMap
 {
     private const string McpParameterHeaderPrefix = "mcp-param-";
 
-    internal static readonly QylCapturedNameMap Empty = new([], []);
+    private static readonly QylCapturedNameMap Empty = new([], []);
 
     private readonly string[] _lookupNames;
     private readonly string[] _tagNames;

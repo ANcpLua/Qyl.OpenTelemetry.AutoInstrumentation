@@ -647,5 +647,5 @@ static class ContractEvidence
     /// <summary>Any demo lane file, registered or not, or one of the runtime gates: a
     /// compile-binding-only row may cite none of them.</summary>
     public static bool IsRuntimeVerification(string entry) =>
-        entry.StartsWith("eng/build/Demos/Lanes/", StringComparison.Ordinal) || RuntimeGates.Contains(entry);
+        entry.StartsWith("tests/Qyl.Telemetry.Integration.Tests/Lanes/", StringComparison.Ordinal) || RuntimeGates.Contains(entry);
 }

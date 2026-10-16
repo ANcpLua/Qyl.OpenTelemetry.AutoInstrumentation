@@ -17,36 +17,16 @@ internal static class QylActivitySource
 
     /// <summary>The single source instance. It carries the qyl registry's schema URL, the release whose
     /// <c>qyl.*</c> keys its spans write, like the application scope behind <c>Qyl.Spans.Source</c>.</summary>
-    public static readonly ActivitySource Source = new(new ActivitySourceOptions(Name)
+    private static readonly ActivitySource Source = new(new ActivitySourceOptions(Name)
     {
         Version = QylInstrumentation.Version,
         TelemetrySchemaUrl = SchemaUrl.Qyl,
     });
 
-    internal static bool IsRecordingEnabled
-        => Source.HasListeners();
-
     internal static Activity? StartActivity(string operationName, ActivityKind activityKind)
         => Source.HasListeners()
             ? Source.StartActivity(operationName, activityKind)
             : null;
-
-    /// <summary>
-    /// Starts a qyl span stamped to the ambient (framework) <see cref="Activity"/>'s real start time,
-    /// so DiagnosticListener bridges that only observe the completion (<c>*.Stop</c>) event emit the
-    /// operation's TRUE duration instead of a ~0 span. Parents to the current activity to preserve
-    /// trace correlation; falls back to a now-stamped span when there is no ambient activity.
-    /// </summary>
-    internal static Activity? StartAtAmbientStart(string operationName, ActivityKind activityKind)
-    {
-        if (!Source.HasListeners())
-            return null;
-
-        var ambient = Activity.Current;
-        return ambient is null
-            ? Source.StartActivity(operationName, activityKind)
-            : Source.StartActivity(operationName, activityKind, ambient.Context, tags: null, links: null, startTime: ambient.StartTimeUtc);
-    }
 
     /// <summary>
     /// Starts a qyl span at the operation's REAL start time, for DiagnosticListener bridges whose

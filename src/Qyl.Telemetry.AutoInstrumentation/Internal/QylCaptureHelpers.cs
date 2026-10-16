@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
@@ -8,37 +7,6 @@ namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
 internal static class QylCaptureHelpers
 {
-    public static void SetHttpHeaders(
-        Activity? activity,
-        QylCapturedNameMap configuredHeaders,
-        HttpHeaders? primaryHeaders,
-        HttpHeaders? contentHeaders)
-        => SetHttpHeaders(activity, configuredHeaders, primaryHeaders, null, contentHeaders);
-
-    public static void SetHttpHeaders(
-        Activity? activity,
-        QylCapturedNameMap configuredHeaders,
-        HttpHeaders? primaryHeaders,
-        HttpHeaders? fallbackHeaders,
-        HttpHeaders? contentHeaders)
-    {
-        if (activity is null || configuredHeaders.Count is 0)
-            return;
-
-        for (var index = 0; index < configuredHeaders.Count; index++)
-        {
-            var lookupName = configuredHeaders.GetLookupName(index);
-
-            if (TrySetHeaderTag(activity, configuredHeaders, index, lookupName, primaryHeaders))
-                continue;
-
-            if (TrySetHeaderTag(activity, configuredHeaders, index, lookupName, fallbackHeaders))
-                continue;
-
-            TrySetHeaderTag(activity, configuredHeaders, index, lookupName, contentHeaders);
-        }
-    }
-
     public static void SetRequestHeaders(
         Activity? activity,
         QylCapturedNameMap configuredHeaders,
@@ -87,20 +55,4 @@ internal static class QylCaptureHelpers
             ? []
             : [.. values.Where(static value => value is not null).Select(static value => value!)];
 
-    private static string[] ToTagValues(IEnumerable<string> values)
-        => values as string[] ?? [.. values];
-
-    private static bool TrySetHeaderTag(
-        Activity activity,
-        QylCapturedNameMap configuredHeaders,
-        int index,
-        string lookupName,
-        HttpHeaders? headers)
-    {
-        if (headers is null || !headers.TryGetValues(lookupName, out var values))
-            return false;
-
-        activity.SetTag(configuredHeaders.GetTagName(index), ToTagValues(values));
-        return true;
-    }
 }

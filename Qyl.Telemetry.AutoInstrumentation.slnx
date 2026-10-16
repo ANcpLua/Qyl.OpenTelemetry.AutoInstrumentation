@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="eng/build/build.csproj" />
   <Project Path="benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks/Qyl.Telemetry.AutoInstrumentation.Benchmarks.csproj" />
   <Project Path="src/Qyl.Telemetry.AutoInstrumentation/Qyl.Telemetry.AutoInstrumentation.csproj" />
   <Project Path="src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj" />
@@ -8,4 +9,5 @@
   <Project Path="src/Qyl.Telemetry.AutoInstrumentation.SqlClient/Qyl.Telemetry.AutoInstrumentation.SqlClient.csproj" />
   <Project Path="src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj" />
   <Project Path="tests/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots/Fixture/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots.Fixture.csproj" />
+  <Project Path="tests/Qyl.Telemetry.Integration.Tests/Qyl.Telemetry.Integration.Tests.csproj" />
 </Solution>

@@ -9,12 +9,11 @@ sealed partial class QylBuild : FalloutBuild
 {
     public static int Main() => Execute<QylBuild>(static build => build.Build);
 
-    /// <summary>Stops the run's collector, and after a green run drops artifacts/publish: the NativeAOT
+    /// <summary>After a green run drops artifacts/publish: the NativeAOT
     /// binaries are a pure verification byproduct (several GB over the full matrix), executed and asserted
     /// within the run. A failed run keeps them for inspection.</summary>
     protected override void OnBuildFinished()
     {
-        QylCollector.StopShared();
         var publish = Repo.Artifacts / "publish";
         if (IsSucceeding && publish.DirectoryExists())
         {

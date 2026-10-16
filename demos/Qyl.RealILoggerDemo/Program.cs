@@ -45,24 +45,22 @@ builder.AddQyl(options =>
 builder.Services.Configure<OpenTelemetryLoggerOptions>(logging => logging.AddInMemoryExporter(exportedRecords));
 builder.Logging.SetMinimumLevel(LogLevel.Trace);
 
-using var host = builder.Build();
+bool providerRegistered;
+using (var host = builder.Build())
+{
+    providerRegistered = host.Services.GetServices<ILoggerProvider>().OfType<OpenTelemetryLoggerProvider>().Any();
+    var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Qyl.RealILoggerDemo");
 
-var providerRegistered = host.Services.GetServices<ILoggerProvider>().OfType<OpenTelemetryLoggerProvider>().Any();
-var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Qyl.RealILoggerDemo");
-
-logger.LogTrace("qyl trace record");
-logger.LogDebug("qyl debug record");
-logger.LogInformation("qyl information record");
-logger.LogWarning("qyl warning record");
-logger.LogError("qyl error record");
-logger.LogCritical("qyl critical record");
-
-// The OTLP log exporter resolves its HttpClient from the container on its first export, so the records
-// leave for the collector QYL_ENDPOINT names on this flush, while the container is alive; an export
-// that first happens inside Dispose finds the container gone and is dropped.
-host.Services.GetService<LoggerProvider>()?.ForceFlush(5_000);
-
-host.Dispose();
+    logger.LogTrace("qyl trace record");
+    logger.LogDebug("qyl debug record");
+    logger.LogInformation("qyl information record");
+    logger.LogWarning("qyl warning record");
+    logger.LogError("qyl error record");
+    logger.LogCritical("qyl critical record");
+    // The first OTLP log export may happen during container disposal. SDK 1.20.0 falls
+    // back to a default HttpClient when its factory's container has already been disposed.
+    // Do not warm the exporter with ForceFlush: the integration case verifies shutdown delivery.
+}
 
 Console.WriteLine("ilogger-record-count=" + exportedRecords.Count.ToString(CultureInfo.InvariantCulture));
 

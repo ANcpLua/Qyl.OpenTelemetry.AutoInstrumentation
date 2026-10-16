@@ -1,0 +1,16 @@
+<Project Sdk="MSTest.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
+    <!-- These cases exercise instrumentation on the producer's raw wire representations.
+         Application consumer fixtures continue to enforce generated span starters. -->
+    <OtelSemConvInstrumentationLibrary>true</OtelSemConvInstrumentationLibrary>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../eng/build/build.csproj" />
+    <ProjectReference Include="../../src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj" />
+    <PackageReference Include="Qyl.Telemetry.Testing" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" />
+  </ItemGroup>
+</Project>

@@ -10,5 +10,5 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 public static class QylGeneratedCodeAbi
 {
     /// <summary>The 25.x generated-code ABI anchor.</summary>
-    public const int V25 = 25;
+    public const int V26 = 26;
 }

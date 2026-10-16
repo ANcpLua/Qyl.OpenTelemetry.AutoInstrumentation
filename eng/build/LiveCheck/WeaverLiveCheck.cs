@@ -50,7 +50,7 @@ static partial class WeaverLiveCheck
         var testbed = lanes.Any(static lane => lane.Services.Count > 0) ? Testbed.Load() : null;
         Gate.Require(QylCollectorPortFree(OtlpGrpcPort), $"port {OtlpGrpcPort} is taken; weaver needs it for the OTLP/gRPC listener (stop the process holding it, e.g. a running `qyl up`)");
 
-        var adminPort = QylCollector.FreePort();
+        var adminPort = Shell.FreeTcpPort();
         string[] arguments =
         [
             "registry", "live-check",
@@ -78,7 +78,23 @@ static partial class WeaverLiveCheck
                 foreach (var service in lane.Services)
                     testbed!.Wake(service);
                 var started = DateTime.UtcNow;
-                lane.Run(new LaneContext(lane, endpoint, new WeaverJudgesTelemetry(), testbed));
+                // This is an independent registry check, not a replacement implementation of the
+                // native tests' telemetry assertions. The real demo exits nonzero if its report fails.
+                var environment = Shell.CleanEnvironment();
+                environment["QYL_ENDPOINT"] = endpoint.ToString().TrimEnd('/');
+                foreach (var service in lane.Services)
+                    foreach (var (key, value) in testbed!.DemoEnvironment(service))
+                        environment[key] = value;
+                DotNet.Build(lane.Project);
+                var managed = Shell.Checked("dotnet", [Repo.BinAssembly(lane.Project)], lane.Project.Parent,
+                    environment, s_laneTimeout);
+                Gate.Require(managed.Stderr.Length == 0, managed.Describe());
+                if (lane.RunsNativeAot)
+                {
+                    var executable = AotPublish.PublishDemo(lane.Demo);
+                    var native = Shell.Checked(executable, [], Path.GetDirectoryName(executable), environment, s_laneTimeout);
+                    Gate.Require(native.Stderr.Length == 0, native.Describe());
+                }
                 Gate.Require(DateTime.UtcNow - started < s_laneTimeout, $"{lane.Name} lane took longer than {s_laneTimeout.TotalMinutes:0} minutes");
                 EnsureAlive(listener, $"during the {lane.Name} lane");
             }

@@ -17,7 +17,7 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromReceiverAttribute.QylFrom
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromShapeAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromShapeAttribute.QylFromShapeAttribute() -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V25 = 25 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V26 = 26 -> int
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.Domain.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.InstrumentationId.get -> string!

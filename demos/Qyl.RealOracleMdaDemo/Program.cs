@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -83,38 +84,46 @@ await host.StartAsync();
 
 // The second listener is the point of this demo. It listens to EVERY ActivitySource in the
 // process and snapshots each activity as it stops, so the report can assert the exact span set a
-// database operation produces rather than a filtered subset.
-var observedSpans = new List<CapturedActivity>();
-var phase = OracleMdaReport.PhaseStartup;
+// database operation produces rather than a filtered subset. A phase belongs to its execution
+// context: a batch export on the SDK worker is not part of a concurrent database command.
+var observedSpans = new ConcurrentQueue<CapturedActivity>();
+var phase = new AsyncLocal<string?> { Value = OracleMdaReport.PhaseStartup };
+var operationPhases = new ConcurrentDictionary<(ActivityTraceId Trace, ActivitySpanId Span), string>();
 using var activityListener = new ActivityListener
 {
     ShouldListenTo = static _ => true,
     Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-    ActivityStopped = activity => observedSpans.Add(CapturedActivity.From(activity, phase)),
+    // ODP.NET's connection child can run without the caller's ExecutionContext. Its explicit
+    // parent still identifies the operation; freeze that ownership when the activity starts.
+    ActivityStarted = activity => operationPhases[(activity.TraceId, activity.SpanId)] =
+        operationPhases.TryGetValue((activity.TraceId, activity.ParentSpanId), out var parentPhase)
+            ? parentPhase : phase.Value ?? OracleMdaReport.PhaseBackground,
+    ActivityStopped = activity => observedSpans.Enqueue(CapturedActivity.From(activity,
+        operationPhases.GetValueOrDefault((activity.TraceId, activity.SpanId), OracleMdaReport.PhaseBackground))),
 };
 ActivitySource.AddActivityListener(activityListener);
 
 var connection = new OracleConnection(unpooledConnectionString);
 
-phase = OracleMdaReport.PhaseOpen;
+phase.Value = OracleMdaReport.PhaseOpen;
 connection.Open();
 Console.WriteLine("oracle-open=1");
 
-phase = OracleMdaReport.PhaseScalar;
+phase.Value = OracleMdaReport.PhaseScalar;
 await using (var command = new OracleCommand(OracleMdaReport.ScalarStatement, connection))
 {
     var scalar = command.ExecuteScalar();
     Console.WriteLine("scalar-value=" + Convert.ToString(scalar, CultureInfo.InvariantCulture));
 }
 
-phase = OracleMdaReport.PhaseNonQuery;
+phase.Value = OracleMdaReport.PhaseNonQuery;
 await using (var command = new OracleCommand(OracleMdaReport.NonQueryStatement, connection))
 {
     var affected = command.ExecuteNonQuery();
     Console.WriteLine("nonquery-rows=" + affected.ToString(CultureInfo.InvariantCulture));
 }
 
-phase = OracleMdaReport.PhaseFailing;
+phase.Value = OracleMdaReport.PhaseFailing;
 await using (var command = new OracleCommand(OracleMdaReport.FailingStatement, connection))
 {
     try
@@ -128,13 +137,18 @@ await using (var command = new OracleCommand(OracleMdaReport.FailingStatement, c
     }
 }
 
-phase = OracleMdaReport.PhaseClose;
+// Exercise a real batch export while the listener and database phase are still active. Its HTTP
+// activity remains in ObservedActivities, independently of the Oracle operation's span set.
+if (!host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000))
+    throw new InvalidOperationException("The in-operation Oracle telemetry flush did not complete.");
+
+phase.Value = OracleMdaReport.PhaseClose;
 connection.Close();
 
 // The listener stops here, before the flush below. What the OTLP exporter does with the spans is
 // the demo's own telemetry, not a database operation.
 activityListener.Dispose();
-phase = OracleMdaReport.PhaseShutdown;
+phase.Value = OracleMdaReport.PhaseShutdown;
 connection.Dispose();
 
 host.Services.GetRequiredService<TracerProvider>().ForceFlush(5_000);
@@ -143,7 +157,7 @@ await host.StopAsync();
 var report = OracleMdaReport.Create(
     RuntimeFeature.IsDynamicCodeSupported ? "dynamic-code-supported" : "nativeaot",
     mode,
-    observedSpans,
+    observedSpans.ToArray(),
     exportedActivities);
 
 var json = JsonSerializer.Serialize(report, RealOracleMdaJsonContext.Default.OracleMdaReport);
@@ -236,7 +250,8 @@ internal sealed record OracleMdaReport(
     string[] ExcludedSources,
     string[] TagVocabulary,
     PhaseSpanSet[] SpanSets,
-    CapturedActivity[] Activities)
+    CapturedActivity[] Activities,
+    CapturedActivity[] ObservedActivities)
 {
     /// <summary>No vendor add-on: <c>AddQyl()</c>'s AddSource is the whole registration.</summary>
     internal const string ModeNone = "none";
@@ -263,6 +278,7 @@ internal sealed record OracleMdaReport(
     internal const string PhaseFailing = "command-failing";
     internal const string PhaseClose = "close";
     internal const string PhaseShutdown = "shutdown";
+    internal const string PhaseBackground = "background";
 
     // The one exclusion rule. "Experimental.*" is the runtime's own socket, DNS and TLS
     // diagnostics: qyl never subscribes those sources, and they appear here only because this
@@ -323,14 +339,14 @@ internal sealed record OracleMdaReport(
     public static OracleMdaReport Create(
         string runtimeMode,
         string addonMode,
-        List<CapturedActivity> observedSpans,
+        IReadOnlyList<CapturedActivity> observedSpans,
         List<Activity> exportedActivities)
     {
         var failures = new List<string>();
         var enriched = StringComparer.Ordinal.Equals(addonMode, ModeAddonEnriched);
 
         var asserted = observedSpans
-            .Where(static span => !span.Source.StartsWith(ExcludedSourcePrefix, StringComparison.Ordinal))
+            .Where(static span => span.Phase != PhaseBackground && !span.Source.StartsWith(ExcludedSourcePrefix, StringComparison.Ordinal))
             .ToArray();
         var excludedSources = observedSpans
             .Where(static span => span.Source.StartsWith(ExcludedSourcePrefix, StringComparison.Ordinal))
@@ -389,7 +405,8 @@ internal sealed record OracleMdaReport(
             excludedSources,
             vocabulary,
             spanSets,
-            asserted);
+            asserted,
+            [.. observedSpans]);
     }
 
     /// <summary>

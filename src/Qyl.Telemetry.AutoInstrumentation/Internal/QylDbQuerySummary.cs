@@ -41,7 +41,7 @@ internal static class QylDbQuerySummary
         return (Call, procedure is not null && IsTarget(procedure) ? Call + " " + procedure : Call);
     }
 
-    public static (string? Operation, string? Summary) Describe(string? commandText)
+    private static (string? Operation, string? Summary) Describe(string? commandText)
     {
         if (string.IsNullOrWhiteSpace(commandText))
             return (null, null);

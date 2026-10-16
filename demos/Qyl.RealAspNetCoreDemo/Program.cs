@@ -137,7 +137,7 @@ internal sealed record CapturedActivity(
     string Name,
     string Kind,
     string Status,
-    IReadOnlyDictionary<string, string> Tags)
+    IReadOnlyDictionary<string, object?> Tags)
 {
     public static CapturedActivity From(Activity activity)
         => new(
@@ -149,12 +149,7 @@ internal sealed record CapturedActivity(
             activity.Status.ToString(),
             activity.TagObjects.ToDictionary(
                 static tag => tag.Key,
-                static tag => tag.Value switch
-                {
-                    string s => s,
-                    System.Collections.IEnumerable e => string.Join(",", e.Cast<object?>()),
-                    var other => Convert.ToString(other, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty,
-                },
+                static tag => tag.Value,
                 StringComparer.Ordinal));
 }
 
@@ -200,16 +195,16 @@ internal sealed record AspNetCoreReport(
 
         var successSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
-            StringComparer.Ordinal.Equals(statusCode, "204"));
+            StringComparer.Ordinal.Equals(Convert.ToString(statusCode, System.Globalization.CultureInfo.InvariantCulture), "204"));
         var failureSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
-            StringComparer.Ordinal.Equals(statusCode, "500"));
+            StringComparer.Ordinal.Equals(Convert.ToString(statusCode, System.Globalization.CultureInfo.InvariantCulture), "500"));
         var routelessSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
-            StringComparer.Ordinal.Equals(statusCode, "404"));
+            StringComparer.Ordinal.Equals(Convert.ToString(statusCode, System.Globalization.CultureInfo.InvariantCulture), "404"));
         var disconnectSpan = httpServerSpans.FirstOrDefault(static activity =>
             activity.Tags.TryGetValue(HttpAttributes.ResponseStatusCode, out var statusCode) &&
-            StringComparer.Ordinal.Equals(statusCode, "499"));
+            StringComparer.Ordinal.Equals(Convert.ToString(statusCode, System.Globalization.CultureInfo.InvariantCulture), "499"));
 
         Require(successSpan, "204 route span", failures);
         Require(failureSpan, "500 route span", failures);
@@ -255,8 +250,8 @@ internal sealed record AspNetCoreReport(
         RequireTag(successSpan, UrlAttributes.Query, redactionDisabled ? "sample=1" : "sample=Redacted", failures);
         if (captureOptIn)
         {
-            RequireTag(successSpan, RequestHeader, "rv1", failures);
-            RequireTag(successSpan, ResponseHeader, "sv1", failures);
+            RequireArrayTag(successSpan, RequestHeader, ["rv1"], failures);
+            RequireArrayTag(successSpan, ResponseHeader, ["sv1"], failures);
         }
         else if (successSpan is not null &&
                  (successSpan.Tags.ContainsKey(RequestHeader) ||
@@ -309,8 +304,21 @@ internal sealed record AspNetCoreReport(
         if (!StringComparer.Ordinal.Equals(activity.Status, expected))
             failures.Add($"expected span status {expected}, got {activity.Status}");
     }
+
+    private static void RequireArrayTag(CapturedActivity? activity, string key, string[] expected, ICollection<string> failures)
+    {
+        if (activity is not null && (!activity.Tags.TryGetValue(key, out var actual) ||
+                                    actual is not string[] values || !values.SequenceEqual(expected)))
+            failures.Add($"expected {key} to be the string array [{string.Join(", ", expected)}]");
+    }
 }
 
 [JsonSerializable(typeof(AspNetCoreReport))]
+[JsonSerializable(typeof(string[]))]
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(long))]
+[JsonSerializable(typeof(double))]
+[JsonSerializable(typeof(bool))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
 internal sealed partial class RealAspNetCoreJsonContext : JsonSerializerContext;

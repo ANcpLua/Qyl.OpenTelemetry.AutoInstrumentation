@@ -6,7 +6,15 @@ namespace Qyl.Build;
 /// <summary>Every path, version and platform fact the gates share. Nothing here is typed twice.</summary>
 static partial class Repo
 {
-    public static AbsolutePath Root => FalloutBuild.RootDirectory;
+    public static AbsolutePath Root { get; } = FindRoot();
+
+    private static string FindRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+            if (File.Exists(Path.Combine(directory.FullName, "Qyl.Telemetry.AutoInstrumentation.slnx")))
+                return directory.FullName;
+        throw new DirectoryNotFoundException("The build and integration tests must run from the AutoInstrumentation checkout.");
+    }
     public static AbsolutePath Src => Root / "src";
     public static AbsolutePath DemosDirectory => Root / "demos";
     public static AbsolutePath ContractsDirectory => Root / "contracts";
@@ -14,9 +22,9 @@ static partial class Repo
     public static AbsolutePath Fixtures => Root / "eng" / "fixtures";
     public static AbsolutePath Solution => Root / "Qyl.Telemetry.AutoInstrumentation.slnx";
     public static AbsolutePath DemoSolution => Root / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx";
+    public static AbsolutePath IntegrationTests => Root / "tests" / "Qyl.Telemetry.Integration.Tests" / "Qyl.Telemetry.Integration.Tests.csproj";
     public static AbsolutePath BuildProps => Root / "Directory.Build.props";
     public static AbsolutePath PackagesProps => Root / "Directory.Packages.props";
-    public static AbsolutePath ToolManifest => Root / ".config" / "dotnet-tools.json";
 
     public const string TargetFramework = "net10.0";
     public const string NuGetOrg = "https://api.nuget.org/v3/index.json";

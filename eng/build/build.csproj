@@ -18,14 +18,16 @@
     <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
     <!-- ApiBaseline reads the public surface of the Release assemblies through Roslyn's metadata symbols. -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <!-- The typed models of the collector API; QylCollectorClient is the HTTP surface over them. -->
-    <PackageReference Include="Qyl.Api.Contracts" />
     <!-- The rename table the collector applies at ingest, so a lane compares a renamed key under its live name. -->
     <PackageReference Include="Qyl.Telemetry.SemanticConventions.Incubating" />
     <PackageReference Include="YamlDotNet" />
     <!-- Fallout.Common's NuGet.Packaging and MSBuild bring 10.0.10 of both (GHSA advisories of 2026-10-13). -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Qyl.Telemetry.Integration.Tests" />
   </ItemGroup>
 
   <ItemGroup>

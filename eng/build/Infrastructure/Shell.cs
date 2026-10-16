@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace Qyl.Build;
@@ -19,6 +21,13 @@ sealed record ProcessResult(string Command, int ExitCode, string Stdout, string 
 static class Shell
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(30);
+
+    public static int FreeTcpPort()
+    {
+        using var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        return ((IPEndPoint)listener.LocalEndpoint).Port;
+    }
 
     public static Dictionary<string, string> CleanEnvironment()
     {
@@ -146,6 +155,26 @@ sealed class RunningProcess : IDisposable
 
         _process.WaitForExit();
         Task.WaitAll(_stdoutPump, _stderrPump);
+        return new ProcessResult(Command, _process.ExitCode, Stdout, Stderr, _process.Id, _stopwatch.Elapsed);
+    }
+
+    public async Task<ProcessResult> WaitForExitAsync(TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        using var deadline = new CancellationTokenSource(timeout);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
+        try
+        {
+            await _process.WaitForExitAsync(linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            Kill();
+            await Task.WhenAll(_stdoutPump, _stderrPump).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            throw Gate.Fail($"{Command} did not finish within {timeout.TotalSeconds:0}s\nstdout={Stdout}\nstderr={Stderr}");
+        }
+
+        await Task.WhenAll(_stdoutPump, _stderrPump).ConfigureAwait(false);
         return new ProcessResult(Command, _process.ExitCode, Stdout, Stderr, _process.Id, _stopwatch.Elapsed);
     }
 

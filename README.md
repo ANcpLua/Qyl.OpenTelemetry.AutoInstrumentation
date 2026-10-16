@@ -16,10 +16,11 @@ contract.
 
 Every attribute key, attribute value and telemetry scope name this package writes is a generated
 constant from `Qyl.Telemetry.SemanticConventions`, at the line `Directory.Packages.props` pins. The
-instrumentation writes those constants
-and nothing else: it never renames, drops or coerces what a library emitted. Deprecated keys and
-vendor keys travel as the library wrote them and the qyl collector rewrites them; the live check
-below is what proves it.
+instrumentation uses those constants for its own attributes. It preserves vendor attributes and
+deprecated keys for the collector. Two known producer representations are converted before export:
+Microsoft.Extensions.AI's JSON finish-reason string becomes a string array, and MassTransit's
+message-size string becomes an exact nonnegative Int64. Unparseable values remain visible to the
+registry checks; no duration unit is inferred or converted.
 
 ## Packages
 
@@ -274,7 +275,8 @@ level and its authoritative source, is the generated
 span; the application adds its business keys as `qyl.app.<key>` through `span.SetAppTag(key, value)`.
 `QylNativeSpanProcessor` writes it onto the spans of the native-source table, and the ASP.NET Core
 middleware writes it onto the hosting activity, which is the one native span whose own library
-writes nothing. Everything else on a native span is the library's own. The domain is what the qyl collector's dashboard classifies on,
+writes nothing. Other values come from the library, with the two explicit wire-type conversions
+described above. The domain is what the qyl collector's dashboard classifies on,
 together with the semantic-convention keys the library emits, so a span that reaches the collector
 without it is unclassifiable no matter what it is called.
 
@@ -293,7 +295,7 @@ is left off), so every ASP.NET Core service joins an agent's session without cod
 `QylSessionSpanProcessor` copies `session.id` from the nearest tagged in-process ancestor onto
 descendant spans that do not carry one. Remote parents and unrelated trace branches propagate
 nothing, and the copy happens on end, the last moment the ancestor's tag can be observed.
-`demos/Qyl.RealSessionPropagationDemo` and its lane, `eng/build/Demos/Lanes/SessionPropagationLane.cs`,
+`demos/Qyl.RealSessionPropagationDemo` and its test, `tests/Qyl.Telemetry.Integration.Tests/Lanes/SessionPropagationTests.cs`,
 hold that to three assertions across two real operating-system processes: an in-process descendant
 inherits the value, a descendant that already carries one keeps its own, and the server span in
 the second process, remote-parented on the same trace, carries the session that reached it in
@@ -310,7 +312,7 @@ the application's spans carry `Qyl.Telemetry.Application`. Both sources carry th
 schema URL, `SchemaUrl.Qyl` (`https://qyl.at/schemas/<release>`), so the collector's `schema_urls`
 name the registry release each producer compiled against. A manually wired SDK mirrors them in
 `AddSource(...)`, `AddMeter(...)` or `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V25` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V26` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 
@@ -430,25 +432,24 @@ railway config plan --detailed-exit-code  # exits 0 when Railway and the file ag
 
 ## Demos and verifiers
 
-Thirty demo applications under `demos/` are the runtime evidence. Each has a lane in the Fallout
-build, `eng/build/Demos/Lanes/<Name>Lane.cs`, that builds it, publishes it NativeAOT where the
-integration supports it, runs it with OTLP pointed at a local qyl collector and asserts it twice:
-the report the demo prints, held to the expectations the lane restates so a demo cannot quietly
-relax its own, and, through the collector's API typed by `Qyl.Api.Contracts`, that every span,
-measurement series and log record the report names arrived over OTLP with the reported name, kind,
-status and attribute values:
+Thirty demo applications under `demos/` are the runtime evidence. Native MSTest cases in
+`tests/Qyl.Telemetry.Integration.Tests/Lanes/<Name>Tests.cs` build and execute them, including
+Native AOT where the integration supports it. Each execution owns a `Qyl.Telemetry.Testing`
+OTLP receiver. The cases check the application's report against independent expectations, then
+compare the complete capture with the reported spans, metric attributes and logs. Full captures
+and registry reports remain under `artifacts/integration-tests` and are attached to test results:
 
 ```bash
 ./eng/build.sh Demos --lane quartz
 ```
 
-`--lane` takes several names (`--lane quartz http-client`); without it all thirty run. The collector
-is the one the `qyl` dotnet tool pinned in `.config/dotnet-tools.json` ships, started once per build
-run on free loopback ports with a store of its own under `artifacts/qyl-collector`. A lane points a
-demo at it with `QYL_ENDPOINT`; run by hand, a demo takes `AddQyl()`'s discovery path and exports to
-a running `qyl up`. The collector keeps what its attribute policy allows, so a value it never stores
-(`url.full`, `db.query.text`, header captures) is asserted in the demo's report alone, and each lane
-names those keys in its output.
+`--lane` takes several names (`--lane quartz http-client`); without it all thirty run. Fallout
+selects the native test categories and rejects an empty selection. Each child receives its
+receiver through `QYL_ENDPOINT`; the test joins the process before reading the capture, after
+exporter disposal. No clock window, settling sleep or collector attribute policy filters the
+evidence. Run by hand, a demo takes `AddQyl()`'s discovery path and exports to a running `qyl up`.
+The ILogger case delays periodic export and requires the first log batch to survive host disposal,
+in both managed and Native AOT applications, without a manual flush.
 
 Ten verifiers need a server, and none starts a container: each connects to its service in the
 [testbed on Railway](#testbed-on-railway) through `~/.config/vitals/qyl-testbed.env`. `masstransit`
@@ -474,16 +475,14 @@ also runs alone, and `./eng/build.sh --help` lists them with their parameters:
 ./eng/build.sh TestbedProbe
 ```
 
-The OTLP wire evidence is the one gate that does not read the collector: it decodes the exporter's
-own request with the official OTLP protobuf messages, because what it proves — the
-`/v1/traces` path and `application/x-protobuf` body, typed attribute values, and that `url.full`
-left the process redacted — is either below the collector's API or, for `url.full`, a key the
-collector drops at ingest, so a leaked secret would be invisible there.
+The separate OTLP wire target checks the HTTP request path, content type, typed values and
+redaction using official protobuf messages and independent fixed expectations. It complements
+the native integration cases. Collector persistence is verified in qyl's integration suite.
 
 ## Live check
 
 `./eng/build.sh LiveCheck` runs `weaver registry live-check` as an OTLP/gRPC listener on 4317 and
-points nine demo lanes at it, so what the instrumentation actually emitted is judged against the
+points nine real demo applications at it, so what the instrumentation actually emitted is judged against the
 pinned semantic-convention registry rather than against an assertion written in this repository.
 The lanes are one per row of the native-source table — `azure`, `corewcf`, `elastictransport`,
 `elasticsearch`, `masstransit`, `mongodb`, `nservicebus`, `quartz`, `rabbitmq` — with RabbitMQ's two

@@ -6,22 +6,19 @@ sealed partial class QylBuild
     readonly string[] Lane = [];
 
     Target Demos => definition => definition
-        .Description("The thirty demo lanes: build/publish each demo, export OTLP to a local qyl collector, assert its report and the arrived telemetry")
+        .Description("Native MSTest integration cases: real managed/NativeAOT applications, independent reports and complete OTLP captures")
         .After(AotPublishGate)
         .Executes(() =>
         {
             var lanes = Lane.Length == 0 ? DemoLanes.All : Lane.Select(DemoLanes.ByName).ToArray();
-            var testbed = lanes.Any(static lane => lane.Services.Count > 0) ? Testbed.Load() : null;
-            var collector = QylCollector.Shared;
-            foreach (var lane in lanes)
-            {
-                Log.Information("== {Lane} demo lane ({Demo}) ==", lane.Name, lane.Demo);
-                foreach (var service in lane.Services)
-                    testbed!.Wake(service);
-                lane.Run(new LaneContext(lane, collector.OtlpHttp, new CollectorTelemetryCheck(collector.Client, lane.ServiceName), testbed));
-                Log.Information("real-{Lane}-demo-ok", lane.Name);
-            }
-
+            var results = Repo.Artifacts / "integration-results" / Guid.NewGuid().ToString("N");
+            results.CreateDirectory();
+            var filter = Lane.Length == 0 ? Array.Empty<string>() : new[] { "--filter", string.Join('|', lanes.Select(static lane => "TestCategory=" + lane.Name)) };
+            // Full discovery includes the four public-pipeline representation cases as well as the lanes.
+            var minimum = Lane.Length == 0 ? lanes.Count + 4 : lanes.Count;
+            Shell.Checked("dotnet", ["run", "--project", Repo.IntegrationTests, "-c", "Release", "--",
+                "--report-trx", "--results-directory", results, "--minimum-expected-tests", minimum.ToString(System.Globalization.CultureInfo.InvariantCulture), .. filter],
+                Repo.Root, timeout: TimeSpan.FromHours(3), echo: true);
             Log.Information("demos-ok lanes={Lanes}", string.Join(",", lanes.Select(static lane => lane.Name)));
         });
 }

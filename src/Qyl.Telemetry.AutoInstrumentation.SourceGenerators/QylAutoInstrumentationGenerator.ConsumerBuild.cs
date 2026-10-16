@@ -57,7 +57,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         builder.AppendLine("    /// <summary>This build's version and source revision, as constants.</summary>");
         builder.AppendLine("    internal static class QylConsumerBuild");
         builder.AppendLine("    {");
-        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V25;");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V26;");
         builder.AppendLine();
         builder.AppendLine("        /// <summary>The informational version, carrying the source revision as SemVer build metadata: the service.version AddQyl stamps.</summary>");
         builder.Append("        public const string Version = ");

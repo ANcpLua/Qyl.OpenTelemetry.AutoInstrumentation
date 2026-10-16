@@ -166,8 +166,7 @@ public static class QylHostApplicationBuilderExtensions
                 }
 
                 var nativeSourceRows = QylTelemetrySources.GetEnabledNativeSourceRows();
-                if (nativeSourceRows.Length > 0)
-                    tracing.AddProcessor(new QylNativeSpanProcessor(nativeSourceRows));
+                tracing.AddProcessor(new QylNativeSpanProcessor(nativeSourceRows));
 
                 if (options.EnableSessionTagInheritance)
                     tracing.AddProcessor(new QylSessionSpanProcessor());

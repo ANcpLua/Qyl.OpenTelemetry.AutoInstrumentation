@@ -257,14 +257,14 @@ internal sealed record CapturedActivity(
     string TraceId,
     string SpanId,
     string ParentSpanId,
-    Dictionary<string, string> Tags,
+    Dictionary<string, object?> Tags,
     string[] EventTagValues)
 {
     public static CapturedActivity From(Activity activity)
     {
         var tags = activity.TagObjects.ToDictionary(
             static tag => tag.Key,
-            static tag => TelemetryValue.Format(tag.Value),
+            static tag => tag.Value,
             StringComparer.Ordinal);
         var eventTagValues = activity.Events
             .SelectMany(static activityEvent => activityEvent.Tags)
@@ -438,7 +438,7 @@ internal sealed record GenAiReport(
             ValidateChatSpan(span, failures);
 
         Require(
-            spans.Any(static span => span.Tags.TryGetValue(GenAiAttributes.RequestStream, out var value) && value == "True"),
+            spans.Any(static span => span.Tags.TryGetValue(GenAiAttributes.RequestStream, out var value) && value is true),
             "missing streaming MEAI span",
             failures);
     }
@@ -527,7 +527,7 @@ internal sealed record GenAiReport(
                     failures.Add($"sensitive telemetry tag was present: {activity.SourceName}:{activity.Name}:{key}");
             }
 
-            foreach (var value in activity.Tags.Values.Append(activity.Name).Concat(activity.EventTagValues))
+            foreach (var value in activity.Tags.Values.Select(TelemetryValue.Format).Append(activity.Name).Concat(activity.EventTagValues))
             {
                 foreach (var forbiddenValue in forbiddenValues)
                 {
@@ -689,7 +689,7 @@ internal sealed record GenAiReport(
     }
 
     private static bool HasTag(CapturedActivity activity, string key, string expected)
-        => activity.Tags.TryGetValue(key, out var actual) && StringComparer.Ordinal.Equals(actual, expected);
+        => activity.Tags.TryGetValue(key, out var actual) && StringComparer.Ordinal.Equals(TelemetryValue.Format(actual), expected);
 
     private static bool HasTag(CapturedMeasurement measurement, string key, string expected)
         => measurement.Tags.TryGetValue(key, out var actual) && StringComparer.Ordinal.Equals(actual, expected);
@@ -727,5 +727,12 @@ internal static class TelemetryValue
 }
 
 [JsonSerializable(typeof(GenAiReport))]
+[JsonSerializable(typeof(string[]))]
+[JsonSerializable(typeof(string))]
+[JsonSerializable(typeof(int))]
+[JsonSerializable(typeof(long))]
+[JsonSerializable(typeof(float))]
+[JsonSerializable(typeof(double))]
+[JsonSerializable(typeof(bool))]
 [JsonSourceGenerationOptions(WriteIndented = true)]
 internal sealed partial class RealGenAiJsonContext : JsonSerializerContext;

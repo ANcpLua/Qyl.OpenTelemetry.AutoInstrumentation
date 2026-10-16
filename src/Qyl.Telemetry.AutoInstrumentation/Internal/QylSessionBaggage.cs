@@ -25,7 +25,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 internal static class QylSessionBaggage
 {
     /// <summary>The longest <c>session.id</c> admitted from the wire.</summary>
-    internal const int MaxSessionIdLength = 128;
+    private const int MaxSessionIdLength = 128;
 
     internal static void Stamp(Activity activity)
     {

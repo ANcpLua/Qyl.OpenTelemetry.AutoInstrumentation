@@ -322,7 +322,7 @@ static partial class ContractInvariants
     {
         var cited = ContractModel.ImplementedSignalItems(contract)
             .SelectMany(ContractModel.Evidence)
-            .Where(static entry => entry.StartsWith("eng/build/Demos/Lanes/", StringComparison.Ordinal))
+            .Where(static entry => entry.StartsWith("tests/Qyl.Telemetry.Integration.Tests/Lanes/", StringComparison.Ordinal))
             .ToHashSet(StringComparer.Ordinal);
         var registered = DemoLanes.All.Select(static lane => lane.EvidencePath).ToHashSet(StringComparer.Ordinal);
         var missing = cited.Except(registered).ToArray();
