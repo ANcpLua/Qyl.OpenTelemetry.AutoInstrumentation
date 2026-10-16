@@ -42,7 +42,7 @@ static class FixtureWorkspace
     public static AbsolutePath Root => Repo.Artifacts / "fixtures";
 
     /// <summary>The packages this checkout ships. In published mode they come from nuget.org instead.</summary>
-    public static readonly string[] LocalPackagePatterns =
+    private static readonly string[] LocalPackagePatterns =
     [
         "Qyl.Telemetry.AutoInstrumentation",
         "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners",

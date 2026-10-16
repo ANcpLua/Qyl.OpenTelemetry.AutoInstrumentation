@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using OpenTelemetry.Exporter;
 
 namespace Qyl;
 
@@ -15,31 +16,31 @@ namespace Qyl;
 /// </remarks>
 internal static class CollectorDiscovery
 {
-    private static readonly Lazy<Task<Uri?>> s_probe =
+    private static readonly Lazy<Task<CollectorDestination?>> ProbeTask =
         new(static () => Task.Run(ProbeForCollector), LazyThreadSafetyMode.ExecutionAndPublication);
 
     // OTLP/HTTP first: it works over HTTP/1.1 everywhere, while plaintext gRPC needs an explicit
     // HTTP/2-without-TLS arrangement. The "qyl" hostname covers the container-network default.
-    private static readonly (string Host, int Port)[] s_probeTargets =
+    private static readonly (string Host, int Port, OtlpExportProtocol Protocol)[] ProbeTargets =
     [
-        ("localhost", 4318),
-        ("localhost", 4317),
-        ("qyl", 4318),
-        ("qyl", 4317)
+        ("localhost", 4318, OtlpExportProtocol.HttpProtobuf),
+        ("localhost", 4317, OtlpExportProtocol.Grpc),
+        ("qyl", 4318, OtlpExportProtocol.HttpProtobuf),
+        ("qyl", 4317, OtlpExportProtocol.Grpc)
     ];
 
     /// <summary>Starts the one process-wide probe, or returns the running one. Never blocks.</summary>
-    internal static Task<Uri?> Start() => s_probe.Value;
+    internal static Task<CollectorDestination?> Start() => ProbeTask.Value;
 
     /// <summary>
     /// The probe's answer, waited for at most <paramref name="timeout"/>. Called from the exporter's
     /// options callback, which the SDK invokes when it builds the pipeline; a probe that has not
     /// finished by then yields no endpoint rather than holding the build open.
     /// </summary>
-    internal static Uri? WaitForEndpoint(Task<Uri?> probe, TimeSpan timeout)
+    internal static CollectorDestination? WaitForEndpoint(Task<CollectorDestination?> probe, TimeSpan timeout)
         => probe.Wait(timeout) ? probe.GetAwaiter().GetResult() : null;
 
-    private static Uri? ProbeForCollector()
+    private static CollectorDestination? ProbeForCollector()
     {
         // QYL_ENDPOINT names a collector without claiming OTEL_EXPORTER_OTLP_ENDPOINT, which every
         // OTLP exporter in the process would honor. Discovery only runs when the standard variable
@@ -48,12 +49,16 @@ internal static class CollectorDiscovery
         // somewhere the operator did not ask for.
         var configured = Environment.GetEnvironmentVariable("QYL_ENDPOINT");
         if (!string.IsNullOrWhiteSpace(configured))
-            return Uri.TryCreate(configured, UriKind.Absolute, out var configuredUri) ? configuredUri : null;
+        {
+            return Uri.TryCreate(configured, UriKind.Absolute, out var configuredUri)
+                ? new CollectorDestination(configuredUri, OtlpExportProtocol.HttpProtobuf)
+                : null;
+        }
 
-        foreach (var (host, port) in s_probeTargets)
+        foreach (var (host, port, protocol) in ProbeTargets)
         {
             if (TcpProbe(host, port))
-                return new Uri($"http://{host}:{port}");
+                return new CollectorDestination(new Uri($"http://{host}:{port}"), protocol);
         }
 
         return null;
@@ -65,15 +70,11 @@ internal static class CollectorDiscovery
         {
             using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var result = socket.BeginConnect(host, port, null, null);
-            var connected = result.AsyncWaitHandle.WaitOne(TimeSpan.FromMilliseconds(100));
-
-            if (connected && socket.Connected)
-            {
-                socket.EndConnect(result);
-                return true;
-            }
-
-            return false;
+            using var completed = result.AsyncWaitHandle;
+            if (!completed.WaitOne(TimeSpan.FromMilliseconds(100)) || !socket.Connected)
+                return false;
+            socket.EndConnect(result);
+            return true;
         }
         catch (SocketException)
         {
@@ -82,3 +83,5 @@ internal static class CollectorDiscovery
         }
     }
 }
+
+internal sealed record CollectorDestination(Uri Endpoint, OtlpExportProtocol Protocol);

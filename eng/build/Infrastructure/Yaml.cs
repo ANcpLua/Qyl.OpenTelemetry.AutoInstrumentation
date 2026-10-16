@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
-using YamlDotNet.Serialization;
 
 namespace Qyl.Build;
 
@@ -26,7 +25,7 @@ static partial class Yaml
     }
 
     public static OrderedDictionary<string, object?> LoadMapping(string path) =>
-        Load(path) as OrderedDictionary<string, object?> ?? throw Gate.Fail($"YAML root must be an object: {Repo.Relative((Fallout.Common.IO.AbsolutePath)path)}");
+        Load(path) as OrderedDictionary<string, object?> ?? throw Gate.Fail($"YAML root must be an object: {Repo.Relative((AbsolutePath)path)}");
 
     private static object? Convert(YamlNode node) => node switch
     {
@@ -75,16 +74,6 @@ static partial class Yaml
     }
 
     private static long ApplySign(string sign, long value) => sign == "-" ? -value : value;
-
-    /// <summary>Block-style YAML for a generated artifact; strings that would read back as another type are quoted.</summary>
-    public static string Dump(object? graph)
-    {
-        var serializer = new SerializerBuilder()
-            .WithQuotingNecessaryStrings()
-            .DisableAliases()
-            .Build();
-        return serializer.Serialize(graph);
-    }
 
     /// <summary>Two-space indented JSON with no escaping beyond what JSON requires.</summary>
     public static string ToJson(object? graph)

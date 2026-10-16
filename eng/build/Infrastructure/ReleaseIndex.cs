@@ -34,7 +34,7 @@ static class ReleaseIndex
         {
             pending.RemoveAll(probe =>
             {
-                if (!Serves(probe))
+                if (!IsAvailable(probe))
                     return false;
                 Log.Information("indexed: {Probe} after {Seconds} s", probe.Name, (int)clock.Elapsed.TotalSeconds);
                 return true;
@@ -57,7 +57,7 @@ static class ReleaseIndex
         }
     }
 
-    private static bool Serves(Probe probe)
+    private static bool IsAvailable(Probe probe)
     {
         try
         {

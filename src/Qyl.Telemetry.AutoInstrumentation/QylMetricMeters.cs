@@ -4,32 +4,26 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 
 internal static class QylMetricMeters
 {
-    internal const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";
-    internal const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";
-    internal const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";
-    internal const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";
-    internal const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";
-    internal const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";
-    internal const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
-    internal const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";
-    internal const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";
-    internal const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
-    internal const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
-    internal const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
-    internal const string HttpClientMeterName = "System.Net.Http";
-    internal const string NameResolutionMeterName = "System.Net.NameResolution";
+    private const string AspNetCoreHostingMeterName = "Microsoft.AspNetCore.Hosting";
+    private const string AspNetCoreRoutingMeterName = "Microsoft.AspNetCore.Routing";
+    private const string AspNetCoreDiagnosticsMeterName = "Microsoft.AspNetCore.Diagnostics";
+    private const string AspNetCoreRateLimitingMeterName = "Microsoft.AspNetCore.RateLimiting";
+    private const string AspNetCoreHeaderParsingMeterName = "Microsoft.AspNetCore.HeaderParsing";
+    private const string AspNetCoreServerKestrelMeterName = "Microsoft.AspNetCore.Server.Kestrel";
+    private const string AspNetCoreHttpConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
+    private const string AspNetCoreAuthorizationMeterName = "Microsoft.AspNetCore.Authorization";
+    private const string AspNetCoreAuthenticationMeterName = "Microsoft.AspNetCore.Authentication";
+    private const string AspNetCoreComponentsMeterName = "Microsoft.AspNetCore.Components";
+    private const string AspNetCoreComponentsLifecycleMeterName = "Microsoft.AspNetCore.Components.Lifecycle";
+    private const string AspNetCoreComponentsServerCircuitsMeterName = "Microsoft.AspNetCore.Components.Server.Circuits";
+    private const string HttpClientMeterName = "System.Net.Http";
+    private const string NameResolutionMeterName = "System.Net.NameResolution";
     /// <summary>The qyl database meter (<c>db.client.operation.duration</c>).</summary>
     internal const string DatabaseMeterName = QylTelemetryNames.Scopes.QylTelemetryAutoInstrumentationDatabase;
-    /// <summary>Npgsql's library-native Meter, carrying its connection-pool and command instruments.</summary>
-    internal const string NpgsqlNativeMeterName = "Npgsql";
-    /// <summary>NServiceBus's library-native core Meter.</summary>
-    internal const string NServiceBusNativeMeterName = "NServiceBus.Core";
-    /// <summary>NServiceBus's library-native incoming-pipeline Meter.</summary>
-    internal const string NServiceBusNativeIncomingPipelineMeterName = "NServiceBus.Core.Pipeline.Incoming";
     /// <summary>The runtime's built-in meter (GC, JIT, thread pool, exceptions, process CPU and memory). qyl subscribes to it and produces nothing on it.</summary>
-    internal const string RuntimeMeterName = QylTelemetryNames.Scopes.SystemRuntime;
+    private const string RuntimeMeterName = QylTelemetryNames.Scopes.SystemRuntime;
     /// <summary>Quartz 4's library-native meter, published as QuartzInstrumentation.MeterName.</summary>
-    internal const string QuartzNativeMeterName = "Quartz";
+    private const string QuartzNativeMeterName = "Quartz";
 
     /// <summary>
     /// The meter names each instrumentation id contributes, in registration order. Two ids may name

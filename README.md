@@ -272,13 +272,13 @@ level and its authoritative source, is the generated
 ## The qyl attributes
 
 `qyl.instrumentation.domain` is the only qyl-owned attribute the instrumentation writes onto a
-span; the application adds its business keys as `qyl.app.<key>` through `span.SetAppTag(key, value)`.
+span; applications add native typed attributes with `span.SetTag(key, value)`, using their own names.
 `QylNativeSpanProcessor` writes it onto the spans of the native-source table, and the ASP.NET Core
 middleware writes it onto the hosting activity, which is the one native span whose own library
 writes nothing. Other values come from the library, with the two explicit wire-type conversions
 described above. The domain is what the qyl collector's dashboard classifies on,
-together with the semantic-convention keys the library emits, so a span that reaches the collector
-without it is unclassifiable no matter what it is called.
+together with the semantic-convention keys the library emits. Application-owned sources and
+attributes remain valid without a qyl-specific prefix.
 
 Its value set is registry-owned (`QylAttributes.InstrumentationDomainValues`): `app`,
 `aspnetcore.server`, `azure.sdk`, `db.client`, `db.efcore`, `db.elasticsearch`, `db.mongodb`,
@@ -312,7 +312,7 @@ the application's spans carry `Qyl.Telemetry.Application`. Both sources carry th
 schema URL, `SchemaUrl.Qyl` (`https://qyl.at/schemas/<release>`), so the collector's `schema_urls`
 name the registry release each producer compiled against. A manually wired SDK mirrors them in
 `AddSource(...)`, `AddMeter(...)` or `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V26` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V27` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 
@@ -330,14 +330,12 @@ mismatched signature would break the consumer's build; the diagnostic is the thi
 
 `Qyl.Telemetry.AutoInstrumentation` depends on `Qyl.Telemetry.SemanticConventions.Analyzers` (same
 pinned line) with `PrivateAssets="none"`, so the `QYL0xxx` rules reach every consumer through
-`Qyl.Telemetry.Hosting` with nothing else to install. Among them: `QYL0111` (no hand-made
-`ActivitySource` and no raw `StartActivity` in application code; spans start through `Qyl.Spans`),
-`QYL0112` (a constant `Spans.Work` name and `SetAppTag` key), `QYL0110` (a `catch` that rethrows inside a
-starter's scope calls `RecordFailure`) and `QYL0120` (no `OpenTelemetry.Instrumentation.*` tracer
-extension next to `AddQyl`). A library that owns its sources sets `OtelSemConvInstrumentationLibrary=true`,
-which silences `QYL0111` and `QYL0008` ("copy incubating constants locally"); this repository's
-`Directory.Build.props` sets it for its libraries and demos, which version-lock with the incubating tier
-on purpose. The rules themselves are owned and documented by the semantic-conventions repository.
+`Qyl.Telemetry.Hosting` with nothing else to install. Among them: `QYL0112` (a constant
+`Spans.Work` name), `QYL0110` (a rethrow inside a starter's scope calls `RecordFailure`) and
+`QYL0120` (no duplicate tracer instrumentation next to `AddQyl`). Applications may use native
+`ActivitySource` instances and typed `SetTag` attributes. A library that version-locks to the
+incubating tier sets `OtelSemConvInstrumentationLibrary=true` to acknowledge QYL0008. The rules
+are owned and documented by the semantic-conventions repository.
 
 ## Testbed on Railway
 

@@ -5,10 +5,9 @@ namespace Qyl.Build;
 /// by <c>AddQyl</c> under <c>Qyl.Telemetry.Application</c>, versioned with the registry release and
 /// carrying the qyl schema URL, on a resource whose <c>service.version</c> is the consumer build's own
 /// version and source revision (the generated <c>QylConsumerBuild</c>) and whose
-/// <c>deployment.environment.name</c> is the host environment; and a consumer that builds its own
-/// <c>ActivitySource</c> fails its build with QYL0111. Both consumers reference
-/// <c>Qyl.Telemetry.Hosting</c> and nothing else, so the failure also proves the semantic-convention
-/// analyzers flow through it.
+/// <c>deployment.environment.name</c> is the host environment; and a consumer may register its own
+/// <c>ActivitySource</c> and export native typed application attributes. Both consumers reference
+/// <c>Qyl.Telemetry.Hosting</c> and the real in-memory SDK exporter.
 /// </summary>
 static class ApplicationScopeBehavior
 {
@@ -33,7 +32,7 @@ static class ApplicationScopeBehavior
             "span=checkout|Internal\n" +
             $"scope=Qyl.Telemetry.Application|{registry}|https://qyl.at/schemas/{registry}\n" +
             "qyl.instrumentation.domain=app\n" +
-            "qyl.app.order.id=o-1\n" +
+            "checkout.order.id=o-1\n" +
             "service.name=qyl-application-scope-behavior\n" +
             "service.namespace=shop\n" +
             $"service.version={ConsumerVersion}+{ConsumerRevision}\n" +
@@ -42,12 +41,16 @@ static class ApplicationScopeBehavior
         Log.Information("  - service.version {Version}+{Revision} from the consumer build, deployment.environment.name from the host", ConsumerVersion, ConsumerRevision);
 
         var raw = Consumer("application-scope-raw-source", RawSourceFixture, version);
-        var build = Shell.Run("dotnet", ["build", raw, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo"], raw.Parent);
-        var output = build.Stdout + build.Stderr;
-        Gate.Require(build.ExitCode != 0, () => "a consumer's own new ActivitySource built; QYL0111 did not reach it through Qyl.Telemetry.Hosting\n" + build.Describe());
-        Gate.Require(output.Contains("error QYL0111", StringComparison.Ordinal) && output.Contains("Program.cs(10,", StringComparison.Ordinal),
-            () => "the raw-source consumer failed, but not with QYL0111 on its new ActivitySource\n" + build.Describe());
-        Log.Information("  - a consumer's new ActivitySource fails its build with QYL0111");
+        DotNet.Build(raw, workingDirectory: raw.Parent);
+        var rawCompleted = ConsumerFixture.RunAssembly(ConsumerFixture.Assembly(raw.Parent, "Consumer"));
+        Gate.Require(rawCompleted.ExitCode == 0, () => "native-source consumer failed\n" + rawCompleted.Describe());
+        ConsumerFixture.RequireOutput("native application attributes", rawCompleted.Stdout,
+            "exported=1\n" +
+            "scope=Shop.Orders\n" +
+            "checkout.sequence=Int64|9007199254740993\n" +
+            "checkout.accepted=Boolean|False\n" +
+            "checkout.labels=String[]|first,second\n");
+        Log.Information("  - an application-owned ActivitySource exports native typed attributes through AddQyl");
         Log.Information("application-scope-behavior-ok");
     }
 

@@ -28,9 +28,15 @@ service.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", receiverBaseUri.ToString(
 
 Use the receiver's base URI, without `/v1/traces`. In an isolated test, `WithoutEnvironmentPrefix("OTEL_")` and `WithoutEnvironmentPrefix("QYL_")` remove inherited exporter settings before explicit values are applied. `WithReference(otherService)` supplies that service's HTTP address; `WaitFor(otherService)` controls startup order. The orchestration library does not start a collector or register telemetry in the child applications.
 
+For OTLP/gRPC, supply `capture.GrpcEndpoint` as the standard OTLP endpoint and set
+`OTEL_EXPORTER_OTLP_PROTOCOL` to `grpc`. In a host configured directly in code, set
+`options.CollectorEndpoint = capture.GrpcEndpoint` and
+`options.CollectorProtocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc`. The transport is explicit;
+an arbitrary endpoint's port does not identify its protocol.
+
 ## Your own spans
 
-Start them through `Qyl.Spans` and `Qyl.IncubatingSpans` (namespace `Qyl`), never with `new ActivitySource` or `StartActivity` (QYL0111, an error). Each starter names the span, sets its kind and `qyl.instrumentation.domain`, and returns `null` when nothing listens, so write `span?.`. The value sets (`DbSystemName`, `ErrorType`, `MessagingSystem`) are open structs in `Qyl.Telemetry.SemanticConventions.Activities` and `Qyl.Telemetry.SemanticConventions.Incubating.Activities`.
+Use `Qyl.Spans` and `Qyl.IncubatingSpans` (namespace `Qyl`) for generated starters, or register an application-owned `ActivitySource` with `options.AdditionalSources.Add(sourceName)`. Each starter names the span, sets its kind and `qyl.instrumentation.domain`, and returns `null` when nothing listens, so write `span?.`. The value sets (`DbSystemName`, `ErrorType`, `MessagingSystem`) are open structs in `Qyl.Telemetry.SemanticConventions.Activities` and `Qyl.Telemetry.SemanticConventions.Incubating.Activities`.
 
 - `Spans.Work("checkout")`: business work no convention describes. The name is a constant (QYL0112).
 - `Spans.DbClient(DbSystemName.Postgresql, collectionName: "orders", @namespace: "shop", operationName: "insert", serverPort: null)`: a store no subscribed library records, such as an in-memory one (`DbSystemName.Custom("memory")`). Every conditionally required parameter has no default, so `null` is written on purpose.
@@ -41,7 +47,7 @@ An `ActivityListener` of your own (a test, a sampler) selects the application's 
 
 ## Business attributes
 
-`span?.SetAppTag("order.id", orderId)` writes `qyl.app.order.id` (string, long, double or bool). The key is a constant (QYL0112) and contains no token the collector denies (QYL0113): `token`, `secret`, `password`, `message`, `body`, `query`, `result`, `prompt` and the rest of `RegistryPolicy.DeniedKeyTokens`. At most 16 per span, each value up to 256 characters.
+Use `span?.SetTag("checkout.order.id", orderId)` and native typed values, including arrays. Names belong to the application; no qyl prefix is required or added. Known semantic-convention attributes still use their declared types. The collector's explicit persistence policy is separate from registry membership; retain the receiver's original capture when checking what a collector stores.
 
 ## Failures
 
@@ -64,4 +70,4 @@ A `catch` that rethrows inside a starter's scope without `RecordFailure` does no
 
 1. **The messaging parent context.** `MessagingProcessConsumer` takes the producer's `ActivityContext`, extracted from the message headers; `default` starts a new trace and cuts the message off from its sender.
 2. **`UseOpenTelemetry()` on a custom source name.** `AddQyl()` subscribes the default Microsoft.Extensions.AI, Agents.AI and Workflows sources; `UseOpenTelemetry(sourceName: "...")` records spans no one exports. Keep the default name. (QYL1002 warns only when the call is missing.)
-3. **Business keys.** Which facts identify the work (an order, a tenant, a plan) only the application knows: put them on its spans with `SetAppTag`.
+3. **Business keys.** Which facts identify the work (an order, a tenant, a plan) only the application knows: put them on its spans with native `SetTag` attributes.

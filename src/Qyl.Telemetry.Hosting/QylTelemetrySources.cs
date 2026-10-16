@@ -8,26 +8,26 @@ internal static class QylTelemetrySources
 {
     internal const string MicrosoftExtensionsAi = QylTelemetryNames.VendorActivitySources.ExperimentalMicrosoftExtensionsAI;
     internal const string MicrosoftAgentsAi = QylTelemetryNames.VendorActivitySources.ExperimentalMicrosoftAgentsAI;
-    internal const string MicrosoftAgentsAiWorkflows = QylTelemetryNames.VendorActivitySources.MicrosoftAgentsAIWorkflows;
-    internal const string ModelContextProtocol = "Experimental.ModelContextProtocol";
-    internal const string CoreWcf = QylTelemetryNames.VendorActivitySources.CoreWCFPrimitives;
-    internal const string Azure = QylTelemetryNames.VendorActivitySources.Azure;
-    internal const string AspNetCore = QylFrameworkActivitySources.AspNetCore;
-    internal const string HttpClient = QylFrameworkActivitySources.HttpClient;
-    internal const string ConnectorNet = QylTelemetryNames.VendorActivitySources.ConnectorNet;
-    internal const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
-    internal const string GraphQl = QylTelemetryNames.VendorActivitySources.GraphQL;
-    internal const string GrpcNetClient = QylTelemetryNames.VendorActivitySources.GrpcNetClient;
+    private const string MicrosoftAgentsAiWorkflows = QylTelemetryNames.VendorActivitySources.MicrosoftAgentsAIWorkflows;
+    private const string ModelContextProtocol = "Experimental.ModelContextProtocol";
+    private const string CoreWcf = QylTelemetryNames.VendorActivitySources.CoreWCFPrimitives;
+    private const string Azure = QylTelemetryNames.VendorActivitySources.Azure;
+    private const string AspNetCore = QylFrameworkActivitySources.AspNetCore;
+    private const string HttpClient = QylFrameworkActivitySources.HttpClient;
+    private const string ConnectorNet = QylTelemetryNames.VendorActivitySources.ConnectorNet;
+    private const string ElasticTransport = QylTelemetryNames.VendorActivitySources.ElasticTransport;
+    private const string GraphQl = QylTelemetryNames.VendorActivitySources.GraphQL;
+    private const string GrpcNetClient = QylTelemetryNames.VendorActivitySources.GrpcNetClient;
     internal const string MassTransit = QylTelemetryNames.VendorActivitySources.MassTransit;
-    internal const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
-    internal const string MySqlConnector = QylTelemetryNames.VendorActivitySources.MySqlConnector;
-    internal const string Npgsql = QylTelemetryNames.VendorActivitySources.Npgsql;
-    internal const string OracleManagedDataAccessCore =
+    private const string MongoDbDriver = QylTelemetryNames.VendorActivitySources.MongoDBDriver;
+    private const string MySqlConnector = QylTelemetryNames.VendorActivitySources.MySqlConnector;
+    private const string Npgsql = QylTelemetryNames.VendorActivitySources.Npgsql;
+    private const string OracleManagedDataAccessCore =
         QylTelemetryNames.VendorActivitySources.OracleManagedDataAccessCore;
-    internal const string NServiceBusCore = QylTelemetryNames.VendorActivitySources.NServiceBusCore;
-    internal const string Quartz = QylTelemetryNames.VendorActivitySources.Quartz;
-    internal const string RabbitMqPublisher = QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher;
-    internal const string RabbitMqSubscriber = QylTelemetryNames.VendorActivitySources.RabbitMQClientSubscriber;
+    private const string NServiceBusCore = QylTelemetryNames.VendorActivitySources.NServiceBusCore;
+    private const string Quartz = QylTelemetryNames.VendorActivitySources.Quartz;
+    private const string RabbitMqPublisher = QylTelemetryNames.VendorActivitySources.RabbitMQClientPublisher;
+    private const string RabbitMqSubscriber = QylTelemetryNames.VendorActivitySources.RabbitMQClientSubscriber;
 
     /// <summary>
     /// The libraries whose own <c>ActivitySource</c> qyl subscribes to instead of intercepting: the

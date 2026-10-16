@@ -1,3 +1,4 @@
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Trace;
 
 namespace Qyl;
@@ -49,6 +50,14 @@ public sealed class QylTelemetryOptions
     /// (see <see cref="EnableCollectorDiscovery"/>).
     /// </summary>
     public Uri? CollectorEndpoint { get; set; }
+
+    /// <summary>
+    /// Transport for an explicit <see cref="CollectorEndpoint"/>. Defaults to HTTP/protobuf;
+    /// choose <see cref="OtlpExportProtocol.Grpc"/> for a gRPC endpoint on any port. Endpoints
+    /// supplied through standard OTLP environment variables use the SDK's protocol configuration.
+    /// Local collector discovery carries the protocol declared for its conventional target.
+    /// </summary>
+    public OtlpExportProtocol CollectorProtocol { get; set; } = OtlpExportProtocol.HttpProtobuf;
 
     /// <summary>
     /// Probe localhost (and the <c>qyl</c> container-network host) for a running collector when no

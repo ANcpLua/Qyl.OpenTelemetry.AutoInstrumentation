@@ -23,7 +23,7 @@ static class WebApiAotDemoGate
         "CompiledModels/ProbeItemUnsafeAccessors.cs",
     ];
 
-    public static AbsolutePath VerifiedPath => Repo.Fixtures / Fixture / "verified" / "report.json";
+    private static AbsolutePath VerifiedPath => Repo.Fixtures / Fixture / "verified" / "report.json";
 
     public static void Run(bool updateVerified)
     {

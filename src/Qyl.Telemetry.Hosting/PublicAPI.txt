@@ -5,6 +5,8 @@ Qyl.QylTelemetryOptions.AdditionalMeters.get -> System.Collections.Generic.IList
 Qyl.QylTelemetryOptions.AdditionalSources.get -> System.Collections.Generic.IList<string!>!
 Qyl.QylTelemetryOptions.CollectorEndpoint.get -> System.Uri?
 Qyl.QylTelemetryOptions.CollectorEndpoint.set -> void
+Qyl.QylTelemetryOptions.CollectorProtocol.get -> OpenTelemetry.Exporter.OtlpExportProtocol
+Qyl.QylTelemetryOptions.CollectorProtocol.set -> void
 Qyl.QylTelemetryOptions.ConfigureTracing.get -> System.Action<OpenTelemetry.Trace.TracerProviderBuilder!>?
 Qyl.QylTelemetryOptions.ConfigureTracing.set -> void
 Qyl.QylTelemetryOptions.DeploymentEnvironment.get -> string?

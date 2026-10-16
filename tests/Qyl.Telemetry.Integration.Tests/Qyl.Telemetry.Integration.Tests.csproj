@@ -2,8 +2,8 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
-    <!-- These cases exercise instrumentation on the producer's raw wire representations.
-         Application consumer fixtures continue to enforce generated span starters. -->
+    <!-- These cases exercise the platform's instrumentation and raw producer representations,
+         including qyl-owned namespaces used by instrumentation fixtures. -->
     <OtelSemConvInstrumentationLibrary>true</OtelSemConvInstrumentationLibrary>
   </PropertyGroup>
   <ItemGroup>

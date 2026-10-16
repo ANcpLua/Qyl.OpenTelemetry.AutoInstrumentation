@@ -24,7 +24,7 @@ static partial class Repo
     public static AbsolutePath DemoSolution => Root / "Qyl.Telemetry.AutoInstrumentation.Demos.slnx";
     public static AbsolutePath IntegrationTests => Root / "tests" / "Qyl.Telemetry.Integration.Tests" / "Qyl.Telemetry.Integration.Tests.csproj";
     public static AbsolutePath BuildProps => Root / "Directory.Build.props";
-    public static AbsolutePath PackagesProps => Root / "Directory.Packages.props";
+    private static AbsolutePath PackagesProps => Root / "Directory.Packages.props";
 
     public const string TargetFramework = "net10.0";
     public const string NuGetOrg = "https://api.nuget.org/v3/index.json";
@@ -34,7 +34,6 @@ static partial class Repo
 
     public static AbsolutePath CoreProject => SourceProject("Qyl.Telemetry.AutoInstrumentation");
     public static AbsolutePath GeneratorProject => SourceProject("Qyl.Telemetry.AutoInstrumentation.SourceGenerators");
-    public static AbsolutePath DiagnosticListenersProject => SourceProject("Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners");
     public static AbsolutePath AutoHostingProject => SourceProject("Qyl.Telemetry.AutoInstrumentation.Hosting");
     public static AbsolutePath HostingProject => SourceProject("Qyl.Telemetry.Hosting");
     public static AbsolutePath CoreBuildTargets => Src / "Qyl.Telemetry.AutoInstrumentation" / "buildTransitive" / "Qyl.Telemetry.AutoInstrumentation.targets";

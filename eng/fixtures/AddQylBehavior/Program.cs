@@ -87,8 +87,8 @@ if (!rejected)
 using var host = builder.Build();
 await host.StartAsync();
 
-// The application's own span, on the scope AddQyl subscribes: a consumer starts no ActivitySource
-// (QYL0111 fails that build).
+// The application's own span uses the generated application scope. Applications may also
+// register their own ActivitySource names through AddQyl options.
 using (Spans.Work("addqyl-probe"))
 {
 }

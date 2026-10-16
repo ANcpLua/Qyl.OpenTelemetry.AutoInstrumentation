@@ -28,7 +28,7 @@ static class OtlpWireEvidence
     private const string Secret = "super-secret";
     private const string LoopbackPrefix = "http://127.0.0.1:";
 
-    public static AbsolutePath VerifiedPath => Repo.Fixtures / Fixture / "verified" / "trace-evidence.json";
+    private static AbsolutePath VerifiedPath => Repo.Fixtures / Fixture / "verified" / "trace-evidence.json";
 
     public static void Run(bool updateVerified, string? publishedVersion)
     {

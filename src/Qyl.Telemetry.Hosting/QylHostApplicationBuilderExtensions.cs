@@ -98,10 +98,13 @@ public static class QylHostApplicationBuilderExtensions
             return builder;
         }
 
-        builder.Services.AddSingleton<QylRegistration>();
-
         var options = new QylTelemetryOptions();
         configure?.Invoke(options);
+        if (options.CollectorProtocol is not (OtlpExportProtocol.Grpc or OtlpExportProtocol.HttpProtobuf))
+            throw new ArgumentOutOfRangeException(nameof(QylTelemetryOptions.CollectorProtocol),
+                options.CollectorProtocol, "CollectorProtocol must be Grpc or HttpProtobuf.");
+
+        builder.Services.AddSingleton<QylRegistration>();
 
         QylAutoInstrumentationBootstrap.Boot();
         builder.Services.AddQylAspNetCoreInstrumentation();
@@ -113,7 +116,9 @@ public static class QylHostApplicationBuilderExtensions
         // fills the gap when neither the app nor the environment configured an endpoint.
         var endpointFromEnvironment =
             !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(OtlpEndpointVariable));
-        var endpoint = options.CollectorEndpoint;
+        var endpoint = options.CollectorEndpoint is { } explicitEndpoint
+            ? new CollectorDestination(explicitEndpoint, options.CollectorProtocol)
+            : null;
         var probe = !buildTimeHost && endpoint is null && options.EnableCollectorDiscovery && !endpointFromEnvironment
             ? CollectorDiscovery.Start()
             : null;
@@ -132,7 +137,7 @@ public static class QylHostApplicationBuilderExtensions
         var exportEnabled = !buildTimeHost
                             && (!options.RequireConfiguredEndpoint || endpoint is not null || endpointFromEnvironment);
         var resolvedEndpoint = endpoint;
-        Uri? ResolveEndpoint()
+        CollectorDestination? ResolveEndpoint()
             => resolvedEndpoint ??= probe is null ? null : CollectorDiscovery.WaitForEndpoint(probe, DiscoveryTimeout);
 
         var serviceName = options.ServiceName
@@ -222,23 +227,17 @@ public static class QylHostApplicationBuilderExtensions
     /// <summary>Marks the container as already carrying a qyl registration.</summary>
     private sealed class QylRegistration;
 
-    private static void ConfigureExporter(OtlpExporterOptions exporter, Uri? endpoint, string signalPath)
+    private static void ConfigureExporter(OtlpExporterOptions exporter, CollectorDestination? destination, string signalPath)
     {
-        if (endpoint is null)
+        if (destination is null)
             return;
 
-        // Port 4317 is the collector's gRPC listener; anything else speaks OTLP/HTTP. Unlike the
-        // environment-variable path, a programmatic http/protobuf endpoint is used verbatim, so
-        // the per-signal path is appended here.
-        if (endpoint.Port == 4317)
-        {
-            exporter.Protocol = OtlpExportProtocol.Grpc;
-            exporter.Endpoint = endpoint;
-        }
-        else
-        {
-            exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-            exporter.Endpoint = new Uri(endpoint, signalPath);
-        }
+        // A port does not identify an OTLP transport. Explicit endpoints use the caller's
+        // protocol; discovery carries the protocol of its declared target. With no endpoint, leave the SDK's environment
+        // configuration intact, including its per-signal endpoint and protocol variables.
+        exporter.Protocol = destination.Protocol;
+        exporter.Endpoint = destination.Protocol == OtlpExportProtocol.Grpc
+            ? destination.Endpoint
+            : new Uri(destination.Endpoint, signalPath);
     }
 }

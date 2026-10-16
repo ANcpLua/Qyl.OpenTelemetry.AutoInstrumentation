@@ -31,7 +31,7 @@ using (var host = builder.Build())
 {
     await host.StartAsync();
     using (var span = Spans.Work("checkout"))
-        span?.SetAppTag("order.id", "o-1");
+        span?.SetTag("checkout.order.id", "o-1");
 
     var tracerProvider = host.Services.GetRequiredService<TracerProvider>();
     tracerProvider.ForceFlush(5_000);
@@ -46,7 +46,7 @@ foreach (var activity in exported)
     Console.WriteLine($"span={activity.DisplayName}|{activity.Kind}");
     Console.WriteLine($"scope={activity.Source.Name}|{activity.Source.Version}|{activity.Source.TelemetrySchemaUrl}");
     Console.WriteLine("qyl.instrumentation.domain=" + activity.GetTagItem("qyl.instrumentation.domain"));
-    Console.WriteLine("qyl.app.order.id=" + activity.GetTagItem("qyl.app.order.id"));
+    Console.WriteLine("checkout.order.id=" + activity.GetTagItem("checkout.order.id"));
 }
 
 foreach (var key in new[] { "service.name", "service.namespace", "service.version", "deployment.environment.name" })

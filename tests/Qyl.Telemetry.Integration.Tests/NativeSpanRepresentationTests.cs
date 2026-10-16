@@ -47,7 +47,7 @@ public sealed class NativeSpanRepresentationTests
             Assert.AreEqual("42", Export(source, MessagingAttributes.MessageBodySize, "42"));
         });
         WithPipeline("MassTransit", source =>
-            Assert.AreEqual("42", Export(source, "qyl.app.text", "42")));
+            Assert.AreEqual("42", Export(source, "checkout.text", "42")));
     }
 
     private readonly List<Activity> _exported = [];
@@ -55,7 +55,7 @@ public sealed class NativeSpanRepresentationTests
     private object? Export(ActivitySource source, string key, string value)
     {
         _exported.Clear();
-        using (var activity = source.StartActivity("wire-representation"))
+        using (var activity = source.CreateActivity("wire-representation", ActivityKind.Internal)?.Start())
         {
             Assert.IsNotNull(activity);
             activity.SetTag(key, value);

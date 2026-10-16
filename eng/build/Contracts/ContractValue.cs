@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 
 namespace Qyl.Build;
 
@@ -47,47 +46,6 @@ static class ContractValue
     /// <summary>The text of the value under <paramref name="key"/>, or <paramref name="fallback"/> when the key is absent.</summary>
     public static string GetText(this OrderedDictionary<string, object?> mapping, string key, string fallback = "") =>
         mapping.TryGetValue(key, out var value) ? Text(value) : fallback;
-
-    public static bool DeepEquals(object? left, object? right)
-    {
-        switch (left, right)
-        {
-            case (null, null):
-                return true;
-            case (null, _) or (_, null):
-                return false;
-            case (long a, long b):
-                return a == b;
-            case (long a, double b):
-                return a == b;
-            case (double a, long b):
-                return a == b;
-            case (bool a, bool b):
-                return a == b;
-            case (string a, string b):
-                return string.Equals(a, b, StringComparison.Ordinal);
-            case (IEnumerable<KeyValuePair<string, object?>> a, IEnumerable<KeyValuePair<string, object?>> b):
-            {
-                var first = a.ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
-                var second = b.ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
-                return first.Count == second.Count && first.All(pair => second.TryGetValue(pair.Key, out var other) && DeepEquals(pair.Value, other));
-            }
-            case (System.Collections.IList a, System.Collections.IList b):
-            {
-                if (a.Count != b.Count)
-                    return false;
-                for (var index = 0; index < a.Count; index++)
-                {
-                    if (!DeepEquals(a[index], b[index]))
-                        return false;
-                }
-
-                return true;
-            }
-            default:
-                return Equals(left, right);
-        }
-    }
 
     public static string RenderSorted(IEnumerable<string> values) =>
         "[" + string.Join(", ", values.OrderBy(static value => value, StringComparer.Ordinal).Select(static value => Render(value))) + "]";

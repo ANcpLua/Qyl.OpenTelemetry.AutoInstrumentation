@@ -10,7 +10,7 @@ namespace Qyl.Build;
 /// several gates compare them verbatim or require stderr to be empty.</summary>
 sealed record ProcessResult(string Command, int ExitCode, string Stdout, string Stderr, int ProcessId, TimeSpan Elapsed)
 {
-    public string Describe() => $"{Command}\nexit={ExitCode}\nstdout={Stdout}\nstderr={Stderr}";
+    public string Describe() => $"{Command}\nexit={ExitCode} elapsed={Elapsed}\nstdout={Stdout}\nstderr={Stderr}";
 }
 
 /// <summary>
@@ -20,7 +20,7 @@ sealed record ProcessResult(string Command, int ExitCode, string Stdout, string 
 /// </summary>
 static class Shell
 {
-    public static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromMinutes(30);
 
     public static int FreeTcpPort()
     {
@@ -105,9 +105,7 @@ sealed class RunningProcess : IDisposable
         _stderrPump = Pump(process.StandardError, _stderr, echo ? prefix : null);
     }
 
-    public string Command { get; }
-
-    public int ProcessId => _process.Id;
+    private string Command { get; }
 
     public bool HasExited => _process.HasExited;
 
@@ -236,7 +234,7 @@ static class DotNet
     public static ProcessResult Build(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
         Shell.Checked("dotnet", ["build", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], workingDirectory, environment);
 
-    public static ProcessResult Publish(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
+    private static ProcessResult Publish(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
         Shell.Checked("dotnet", ["publish", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], workingDirectory, environment);
 
     public static ProcessResult Pack(string project, string output, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null) =>

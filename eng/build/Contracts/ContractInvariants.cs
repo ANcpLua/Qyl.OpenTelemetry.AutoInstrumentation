@@ -26,7 +26,7 @@ static partial class ContractInvariants
     private static AbsolutePath DeclarationsPath => RuntimeSourceRoot / "QylDeclarations.cs";
     private static AbsolutePath VerifiedRoot => Repo.Root / "tests" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots" / "verified";
     public static AbsolutePath GeneratedInterceptorSnapshotPath => VerifiedRoot / "QylAutoInstrumentation.Interceptors.g.verified.cs";
-    public static AbsolutePath GeneratedInterceptorManifestArtifactPath => VerifiedRoot / "QylAutoInstrumentation.ContractManifests.verified.jsonl";
+    private static AbsolutePath GeneratedInterceptorManifestArtifactPath => VerifiedRoot / "QylAutoInstrumentation.ContractManifests.verified.jsonl";
     private static AbsolutePath OptionsPath => RuntimeSourceRoot / "QylAutoInstrumentationOptions.cs";
     private static AbsolutePath IdsPath => RuntimeSourceRoot / "QylAutoInstrumentationIds.cs";
     private static AbsolutePath RuntimeProjectPath => RuntimeSourceRoot / "Qyl.Telemetry.AutoInstrumentation.csproj";

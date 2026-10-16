@@ -36,7 +36,7 @@ sealed class Testbed
 
     public string Path { get; }
 
-    public static string DefaultPath =>
+    private static string DefaultPath =>
         Environment.GetEnvironmentVariable("QYL_TESTBED_ENV") is { Length: > 0 } configured
             ? configured
             : System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "vitals", "qyl-testbed.env");
@@ -69,7 +69,7 @@ sealed class Testbed
     public TimeSpan WakeLimit =>
         TimeSpan.FromSeconds(_values.TryGetValue("QYL_TESTBED_WAKE_SECONDS_MAX", out var seconds) && int.TryParse(seconds, out var parsed) ? parsed : 300);
 
-    public string Require(string key)
+    private string Require(string key)
     {
         Gate.Require(_values.TryGetValue(key, out var value) && value.Length > 0, $"{Path} sets no {key}");
         return value!;
@@ -221,9 +221,9 @@ sealed class Testbed
 
     private static string Value(DbConnectionStringBuilder builder, string key, string? alternative = null, string? defaultValue = null)
     {
-        if (builder.TryGetValue(key, out var value) && value?.ToString() is { Length: > 0 } text)
+        if (builder.TryGetValue(key, out var value) && value.ToString() is { Length: > 0 } text)
             return text;
-        if (alternative is not null && builder.TryGetValue(alternative, out value) && value?.ToString() is { Length: > 0 } other)
+        if (alternative is not null && builder.TryGetValue(alternative, out value) && value.ToString() is { Length: > 0 } other)
             return other;
         return defaultValue ?? throw Gate.Fail($"the testbed connection string has no {key}");
     }

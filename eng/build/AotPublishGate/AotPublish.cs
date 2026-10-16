@@ -127,13 +127,13 @@ static partial class AotPublish
 
     /// <summary>Policies for projects that are not demos: the web API AOT consumer carries the EF Core
     /// and SqlClient vendor boundaries.</summary>
-    public static readonly IReadOnlyDictionary<string, AotApproval[]> ExternalWarnedProjects = new Dictionary<string, AotApproval[]>(StringComparer.Ordinal)
+    private static readonly IReadOnlyDictionary<string, AotApproval[]> ExternalWarnedProjects = new Dictionary<string, AotApproval[]>(StringComparer.Ordinal)
     {
         ["WebApiAotDemo"] = [.. EfCoreApprovals, .. SqlClientApprovals],
     };
 
     /// <summary>Extra publish properties a demo needs: EF Core publishes its compiled model.</summary>
-    public static readonly IReadOnlyDictionary<string, string[]> ExtraProperties = new Dictionary<string, string[]>(StringComparer.Ordinal)
+    private static readonly IReadOnlyDictionary<string, string[]> ExtraProperties = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         ["Qyl.RealEfCoreDemo"] = ["-p:QylEfCoreUseCompiledModel=true"],
     };
@@ -302,7 +302,7 @@ static partial class AotPublish
 
     /// <summary>The installed runtime version per family, in the major global.json's SDK targets:
     /// measured, because a publish resolves the runtime pack of the runtime it runs on.</summary>
-    public static IReadOnlyDictionary<string, string> RuntimePackVersions()
+    private static IReadOnlyDictionary<string, string> RuntimePackVersions()
     {
         if (s_runtimeVersions is not null)
             return s_runtimeVersions;

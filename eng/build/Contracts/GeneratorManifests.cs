@@ -13,13 +13,13 @@ namespace Qyl.Build;
 /// </summary>
 static partial class GeneratorManifests
 {
-    public const string ManifestPrefix = "// qyl-interceptor-manifest: ";
-    public const string GeneratedInterceptorFile = "QylAutoInstrumentation.Interceptors.g.cs";
+    private const string ManifestPrefix = "// qyl-interceptor-manifest: ";
+    private const string GeneratedInterceptorFile = "QylAutoInstrumentation.Interceptors.g.cs";
     public const string GeneratorOutputSegment = "Qyl.Telemetry.AutoInstrumentation.SourceGenerators";
 
-    public static readonly string[] ManifestFields = ["interceptorKind", "signal", "instrumentationId", "additionalMetricIds", "contractKeys"];
+    private static readonly string[] ManifestFields = ["interceptorKind", "signal", "instrumentationId", "additionalMetricIds", "contractKeys"];
 
-    public static Item StrictJsonObject(string payload, string context)
+    private static Item StrictJsonObject(string payload, string context)
     {
         JsonDocument document;
         try
@@ -63,7 +63,7 @@ static partial class GeneratorManifests
         return result;
     }
 
-    public static void VerifyManifestShape(Item manifest, string context)
+    private static void VerifyManifestShape(Item manifest, string context)
     {
         Gate.Require(manifest.Keys.SequenceEqual(ManifestFields),
             () => $"interceptor manifest fields are not canonical in {context}: expected=({string.Join(", ", ManifestFields)}) actual=({string.Join(", ", manifest.Keys)})");
@@ -90,7 +90,7 @@ static partial class GeneratorManifests
     }
 
     /// <summary>Compact JSON in canonical field order, non-ASCII kept, as the generator writes it.</summary>
-    public static string CanonicalManifestLine(Item manifest)
+    private static string CanonicalManifestLine(Item manifest)
     {
         VerifyManifestShape(manifest, "canonical manifest");
         using var stream = new MemoryStream();
@@ -172,7 +172,7 @@ static partial class GeneratorManifests
         return manifests;
     }
 
-    public static string RenderManifestArtifact(IEnumerable<Item> manifests)
+    private static string RenderManifestArtifact(IEnumerable<Item> manifests)
     {
         var lines = manifests.Select(CanonicalManifestLine).Distinct(StringComparer.Ordinal).Sorted().ToArray();
         Gate.Require(lines.Length > 0, "live generator builds emitted no interceptor manifests");
@@ -180,7 +180,7 @@ static partial class GeneratorManifests
     }
 
     /// <summary>The single demo project behind every implemented signal's demos/ evidence.</summary>
-    public static IReadOnlyList<AbsolutePath> ImplementedSignalDemoProjects()
+    private static IReadOnlyList<AbsolutePath> ImplementedSignalDemoProjects()
     {
         var contract = ContractModel.Load();
         var projects = new HashSet<string>(StringComparer.Ordinal);

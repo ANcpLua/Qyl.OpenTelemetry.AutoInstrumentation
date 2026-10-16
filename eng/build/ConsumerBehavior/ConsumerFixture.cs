@@ -6,7 +6,7 @@ namespace Qyl.Build;
 /// reading what the generator emitted into it, and comparing outputs line by line.</summary>
 static class ConsumerFixture
 {
-    public const string GeneratedInterceptorFile = "QylAutoInstrumentation.Interceptors.g.cs";
+    private const string GeneratedInterceptorFile = "QylAutoInstrumentation.Interceptors.g.cs";
 
     /// <summary>The project items that make a consumer write its generated sources to Generated/
     /// without compiling them twice.</summary>
@@ -46,7 +46,7 @@ static class ConsumerFixture
     public static ProcessResult RunExecutable(string executable, IReadOnlyDictionary<string, string>? overrides = null, IEnumerable<string>? arguments = null) =>
         Shell.Run(executable, arguments ?? [], Path.GetDirectoryName(executable), Environment(overrides));
 
-    public static Dictionary<string, string> Environment(IReadOnlyDictionary<string, string>? overrides) =>
+    private static Dictionary<string, string> Environment(IReadOnlyDictionary<string, string>? overrides) =>
         overrides is null ? Shell.CleanEnvironment() : Shell.CleanEnvironment().With(overrides);
 
     /// <summary>Every generated interceptor source under the consumer's Generated/ folder.</summary>

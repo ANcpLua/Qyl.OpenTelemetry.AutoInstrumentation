@@ -26,7 +26,7 @@
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
 
-    <Version>26.0.0</Version>
+    <Version>27.0.0</Version>
     <Authors>qyl</Authors>
     <!-- The GitHub repository was NOT renamed with the packages; this must stay truthful to
          the real origin or the publish workflow's provenance check rejects the nuspec. -->
@@ -39,7 +39,7 @@
   <PropertyGroup>
     <!-- Every project here is an instrumentation library or a demo that proves one: both version-lock
          with the incubating semantic-convention tier on purpose (QYL0008, "copy incubating constants
-         locally", does not apply) and own ActivitySources (QYL0111 does not apply). The consumer
+         locally", does not apply). Applications may own ActivitySources too. The consumer
          fixtures under artifacts/fixtures do not inherit this file, so the rules reach them as they
          reach any application. -->
     <OtelSemConvInstrumentationLibrary>true</OtelSemConvInstrumentationLibrary>

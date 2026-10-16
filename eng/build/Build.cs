@@ -63,7 +63,7 @@ sealed partial class QylBuild : FalloutBuild
 /// <summary>The release pack: the derived packable set, one version, one output folder.</summary>
 static class ReleasePack
 {
-    public static AbsolutePath Output => Repo.Artifacts / "release";
+    private static AbsolutePath Output => Repo.Artifacts / "release";
 
     public static void Run()
     {

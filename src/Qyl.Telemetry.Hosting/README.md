@@ -19,16 +19,16 @@ unless its `OTEL_DOTNET_AUTO_<ID>_INSTRUMENTATION_ENABLED` toggle turns it off.
 
 The package also carries `SKILL.md`, the guide for a coding agent working in the application: what
 `AddQyl()` already records, the generated span starters (`Spans.Work`, `Spans.DbClient`, ...),
-`SetAppTag` for business keys, `RecordFailure`, and the three things the compiler cannot check.
+native typed attributes for business keys, `RecordFailure`, and the three things the compiler cannot check.
 
 ## Your own spans
 
-Application code starts spans through `Qyl.Spans`, on the application scope `AddQyl()` subscribes,
-never with a hand-made `ActivitySource` (the bundled analyzers reject one, QYL0111):
+Use `Qyl.Spans` for the generated application scope, or register an application-owned
+`ActivitySource` with `options.AdditionalSources.Add(sourceName)`:
 
 ```csharp
 using var span = Spans.Work("checkout");
-span?.SetAppTag("order.id", orderId);
+span?.SetTag("checkout.order.id", orderId);
 try
 {
     await checkout.RunAsync(order);
@@ -46,7 +46,8 @@ catch (Exception exception)
 
 1. `OTEL_EXPORTER_OTLP_ENDPOINT` — the standard variable, which also redirects every other OTLP
    exporter in the process.
-2. `QYL_ENDPOINT` — a collector for the qyl exporters alone.
+2. `QYL_ENDPOINT` — an HTTP/protobuf collector for the qyl exporters alone. For gRPC, use the standard
+   OTLP endpoint/protocol variables or set both `CollectorEndpoint` and `CollectorProtocol`.
 3. A qyl collector discovered on `localhost` or the host `qyl` at 4318/4317, which is what
    `qyl up` from the [`qyl`](https://www.nuget.org/packages/qyl) dotnet tool provides.
 
@@ -72,6 +73,7 @@ builder.AddQyl(o => o.ConfigureTracing = t => t.AddConsoleExporter());
 | `DeploymentEnvironment` | the host environment | The `deployment.environment.name` resource attribute, by default `IHostEnvironment.EnvironmentName`. |
 | `ConfigureTracing` | unset | A hook for tracing setup the typed options do not cover. It runs after the qyl sources and processors and before the OTLP exporter. |
 | `CollectorEndpoint` | unset | An explicit collector endpoint, ahead of the order above. |
+| `CollectorProtocol` | `HttpProtobuf` | Transport for an explicit `CollectorEndpoint`. Set `OtlpExportProtocol.Grpc` for gRPC on any port. Standard OTLP environment endpoints use the SDK's protocol configuration. |
 | `EnableCollectorDiscovery` | `true` | Probe `localhost` and the host `qyl` for a collector when no endpoint is set. |
 | `RequireConfiguredEndpoint` | `false` | Export only when an endpoint is set or discovered, instead of falling back to the exporter's `localhost` default. A process that is itself a telemetry destination, such as a collector, sets it to `true`. |
 | `EnableLogExport` | `true` | Export application logs over OTLP. |

@@ -149,7 +149,7 @@ static class PackageLayoutGate
                      "---\nname: qyl-telemetry\ndescription: ",
                      "`AddQyl()` already records the HTTP server span",
                      "start no span for those operations",
-                     "Spans.Work(", "SetAppTag(", "RecordFailure(",
+                     "Spans.Work(", "SetTag(", "RecordFailure(",
                      "## What the compiler cannot see",
                  })
         {

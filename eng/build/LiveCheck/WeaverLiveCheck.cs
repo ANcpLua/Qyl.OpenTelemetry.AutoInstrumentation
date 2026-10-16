@@ -20,9 +20,11 @@ static partial class WeaverLiveCheck
 {
     private const string RegistryRepository = "https://github.com/ANcpLua/Qyl.Telemetry.SemanticConventions.git";
 
-    // AddQyl's exporter speaks gRPC to port 4317 and OTLP/HTTP to any other, and weaver listens for
-    // gRPC only, so the listener takes the conventional gRPC port.
+    // Weaver receives gRPC. Lane environments select that protocol explicitly; the port does
+    // not decide the transport.
     private const int OtlpGrpcPort = 4317;
+
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     // Bounds one demo lane end to end: wake, build, NativeAOT publish and runs.
     private static readonly TimeSpan s_laneTimeout = TimeSpan.FromMinutes(20);
@@ -35,9 +37,9 @@ static partial class WeaverLiveCheck
     /// <summary>One lane per row of the native-source table. RabbitMQ's two source names share one lane;
     /// Elastic.Transport and Elasticsearch share one source and have a lane each, because the two
     /// clients put different attributes on it.</summary>
-    public static readonly string[] Lanes = ["azure", "corewcf", "elastictransport", "elasticsearch", "masstransit", "mongodb", "nservicebus", "quartz", "rabbitmq"];
+    private static readonly string[] Lanes = ["azure", "corewcf", "elastictransport", "elasticsearch", "masstransit", "mongodb", "nservicebus", "quartz", "rabbitmq"];
 
-    public static AbsolutePath Checkout => Repo.Root / ".semconv";
+    private static AbsolutePath Checkout => Repo.Root / ".semconv";
 
     public static void Run(IReadOnlyCollection<string> skipped)
     {
@@ -99,8 +101,7 @@ static partial class WeaverLiveCheck
                 EnsureAlive(listener, $"during the {lane.Name} lane");
             }
 
-            using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            using var response = http.PostAsync($"http://127.0.0.1:{adminPort}/stop", null).GetAwaiter().GetResult();
+            using var response = Http.PostAsync($"http://127.0.0.1:{adminPort}/stop", null).GetAwaiter().GetResult();
             Gate.Require(response.IsSuccessStatusCode, $"weaver admin port {adminPort} did not accept /stop: {(int)response.StatusCode}");
             stopped = true;
         }

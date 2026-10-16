@@ -42,7 +42,7 @@ static class ContractModel
     }
 
     // This one stays a literal on purpose: the six qyl-native promises are qyl's own scope.
-    public const int QylNativeContractItemCount = 6;
+    private const int QylNativeContractItemCount = 6;
 
     public static int TotalContractItemCount => UpstreamContractItemCount + QylNativeContractItemCount;
 
@@ -108,7 +108,7 @@ static class ContractModel
     public static readonly HashSet<string> EvidenceLevels = new(StringComparer.Ordinal) { "none", "verified_nativeaot", "verified_managed", "compile_binding_only", "option_bound" };
     public static readonly HashSet<string> ConformanceKinds = new(StringComparer.Ordinal) { "span", "metric", "log" };
 
-    public static readonly (string Id, string Key, string Signal, string InstrumentationId, string Toggle)[] QylNative8SignalContract =
+    private static readonly (string Id, string Key, string Signal, string InstrumentationId, string Toggle)[] QylNative8SignalContract =
     [
         ("QYL_NATIVE_CONTRACT_001", "signals.traces.MICROSOFTEXTENSIONSAI", "traces", "MICROSOFTEXTENSIONSAI", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED"),
         ("QYL_NATIVE_CONTRACT_002", "signals.metrics.MICROSOFTEXTENSIONSAI", "metrics", "MICROSOFTEXTENSIONSAI", "OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED"),
@@ -120,7 +120,7 @@ static class ContractModel
 
     // Every exact version a contract string names is the Directory.Packages.props pin, read here
     // rather than typed, so a pin bump cannot leave a stale "verified against" behind.
-    public static IReadOnlyDictionary<string, string> QylNative8SupportedPaths => new Dictionary<string, string>(StringComparer.Ordinal)
+    private static IReadOnlyDictionary<string, string> QylNative8SupportedPaths => new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["signals.traces.MICROSOFTEXTENSIONSAI"] = $"Microsoft.Extensions.AI =={Repo.Pin("Microsoft.Extensions.AI")}; ChatClientBuilder.UseOpenTelemetry() wrapper only",
         ["signals.metrics.MICROSOFTEXTENSIONSAI"] = $"Microsoft.Extensions.AI =={Repo.Pin("Microsoft.Extensions.AI")}; ChatClientBuilder.UseOpenTelemetry() wrapper only",
@@ -144,7 +144,7 @@ static class ContractModel
         ["signals.traces.WCFCORE"] = $"CoreWCF.Primitives =={Repo.Pin("CoreWCF.Http")}; CoreWCF.Http =={Repo.Pin("CoreWCF.Http")}; server ActivitySource path only",
     };
 
-    public static readonly HashSet<string> ManagedNativeAotBoundarySignalKeys = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> ManagedNativeAotBoundarySignalKeys = new(StringComparer.Ordinal)
     {
         "signals.traces.KAFKA",
         "signals.traces.MONGODB",
@@ -185,7 +185,7 @@ static class ContractModel
         "environment_variable", "target_signal", "target_instrumentation_id", "description", "attribute_names", "default_value",
         "default_behavior", "value_format", "value_type", "not_supported_on", "notes"], StringComparer.Ordinal);
 
-    public static readonly IReadOnlyDictionary<string, HashSet<string>> AllowedItemPropertiesByKind = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
+    private static readonly IReadOnlyDictionary<string, HashSet<string>> AllowedItemPropertiesByKind = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
     {
         [SignalKind] = SignalItemProperties,
         [ControlKind] = ControlItemProperties,
@@ -206,7 +206,7 @@ static class ContractModel
         return Yaml.Load(path) as Item ?? throw Gate.Fail($"YAML root must be an object: {Repo.Relative(path)}");
     }
 
-    public static Item Resolve(Item upstream, Item qylNative, Item ownership)
+    private static Item Resolve(Item upstream, Item qylNative, Item ownership)
     {
         var upstreamItems = upstream.Get("contract_items") as List<object?> ?? throw Gate.Fail("upstream contract must contain contract_items[]");
         var qylNativeItems = qylNative.Get("contract_items") as List<object?> ?? throw Gate.Fail("qyl-native contract must contain contract_items[]");
@@ -278,7 +278,7 @@ static class ContractModel
         };
     }
 
-    public static void VerifySourceContractSequences(IReadOnlyList<Item> upstreamItems, IReadOnlyList<Item> qylNativeItems)
+    private static void VerifySourceContractSequences(IReadOnlyList<Item> upstreamItems, IReadOnlyList<Item> qylNativeItems)
     {
         var upstreamLast = UpstreamContractItemCount;
         Gate.Require(upstreamItems.Count == upstreamLast, $"upstream contract must remain exactly {upstreamLast} items: {upstreamItems.Count}");
@@ -317,16 +317,13 @@ static class ContractModel
 
     public static List<Item> ContractItems(Item contract) => ((List<object?>)contract["contract_items"]!).Cast<Item>().ToList();
 
-    public static List<Item> SignalItems(Item contract) => ContractItems(contract).Where(static item => item.GetText("kind") == SignalKind).ToList();
+    private static List<Item> SignalItems(Item contract) => ContractItems(contract).Where(static item => item.GetText("kind") == SignalKind).ToList();
 
     public static List<Item> ImplementedSignalItems(Item contract) =>
         SignalItems(contract).Where(static item => item.Get("qyl_status") is "implemented").ToList();
 
     public static List<Item> SourceInterceptorSignalItems(Item contract) =>
         ImplementedSignalItems(contract).Where(static item => item.Get("lane") is "source_interceptor").ToList();
-
-    public static List<Item> RuntimePublicTelemetrySignalItems(Item contract) =>
-        ImplementedSignalItems(contract).Where(static item => item.Get("lane") is "runtime_public_telemetry").ToList();
 
     public static List<Item> UnsupportedSignalItems(Item contract) =>
         SignalItems(contract).Where(static item => item.Get("qyl_status") is "unsupported_nativeaot").ToList();
@@ -380,7 +377,8 @@ static class ContractModel
             ["logs_signal_specific_promises"] = 3,
             ["unique_instrumentation_ids"] = 35,
         };
-        Gate.Require(counts.SequenceEqual(expectedCounts),
+        Gate.Require(counts.Count == expectedCounts.Count && counts.Zip(expectedCounts).All(static pair =>
+                string.Equals(pair.First.Key, pair.Second.Key, StringComparison.Ordinal) && pair.First.Value == pair.Second.Value),
             () => $"contract count mismatch: expected={{{string.Join(", ", expectedCounts.Select(static pair => $"{pair.Key}: {pair.Value}"))}}} actual={{{string.Join(", ", counts.Select(static pair => $"{pair.Key}: {pair.Value}"))}}}");
 
         var seenKeys = new HashSet<string>(StringComparer.Ordinal);
@@ -406,7 +404,7 @@ static class ContractModel
         VerifyConformanceSignalSemantics(contract);
     }
 
-    public static void VerifyContractItem(Item item)
+    private static void VerifyContractItem(Item item)
     {
         var kind = item.GetText("kind");
         var key = item.GetText("key");
@@ -527,7 +525,7 @@ static class ContractModel
         Gate.Require(!(status == "option_bound" && lane != "instrumentation_option"), $"option_bound item must use instrumentation_option lane: {key}");
     }
 
-    public static void VerifyManagedNativeAotBoundarySemantics(Item contract)
+    private static void VerifyManagedNativeAotBoundarySemantics(Item contract)
     {
         var managedKeys = SignalItems(contract)
             .Where(static item => item.Get("qyl_status") is "implemented" && item.Get("evidence_level") is "verified_managed")
@@ -541,7 +539,7 @@ static class ContractModel
 
     private static readonly string[] ConformanceSignalShape = ["kind", "name", "required_attributes", "recommended_attributes", "opt_in_attributes"];
 
-    public static void VerifyConformanceSignalSemantics(Item contract)
+    private static void VerifyConformanceSignalSemantics(Item contract)
     {
         var signalsByName = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var item in SignalItems(contract))
@@ -632,10 +630,9 @@ static class ContractEvidence
 {
     public const string GeneratorSource = "src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs";
     public const string SourceInterceptorConsumer = "eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs";
-    public const string ContractInvariants = "eng/build/Contracts/ContractInvariants.cs";
 
     /// <summary>The gates other than demo lanes that execute a published consumer at runtime.</summary>
-    public static readonly HashSet<string> RuntimeGates = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> RuntimeGates = new(StringComparer.Ordinal)
     {
         "eng/build/Smoke/SmokeGate.cs",
         "eng/build/ConsumerBehavior/NativeAotConsumer.cs",
