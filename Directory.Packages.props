@@ -57,7 +57,7 @@
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.301" />
     <PackageVersion Include="Oracle.ManagedDataAccess.OpenTelemetry" Version="23.26.300" />
     <PackageVersion Include="Quartz" Version="4.4.0" />
-    <PackageVersion Include="Qyl.Telemetry.Testing" Version="3.0.1" />
+    <PackageVersion Include="Qyl.Telemetry.Testing" Version="3.0.3" />
     <PackageVersion Include="Qyl.Telemetry.SemanticConventions" Version="13.1.2" />
     <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Incubating" Version="13.1.2" />
     <PackageVersion Include="Qyl.Telemetry.SemanticConventions.Analyzers" Version="13.1.2" />

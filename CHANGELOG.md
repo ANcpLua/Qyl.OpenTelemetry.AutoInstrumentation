@@ -5,6 +5,10 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## Unreleased
+
+- Run the transport integration tests against Qyl.Telemetry.Testing 3.0.3.
+
 ## [28.0.0] - 2026-10-17
 
 - Consume SemanticConventions 13.1.2, including its compact analyzer catalog and shared legacy compiler polyfills.
