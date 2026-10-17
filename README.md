@@ -270,10 +270,12 @@ The full 70-row contract, with every environment control and instrumentation opt
 level and its authoritative source, is the generated
 [coverage matrix](contracts/coverage-matrix.md).
 
-### Selected outbound HTTP headers (local, unreleased)
+### Selected outbound HTTP headers
 
-Capture maintenance checkpoint (2026-10-17): source version 28.1.0 remains
-unpublished on NuGet. Qyl's existing capture helpers enrich native activities;
+Capture maintenance checkpoint (2026-10-17): all six 28.1.0 packages are published
+and indexed on NuGet. The release verifier passed managed and Native AOT
+published-package consumers and refreshed the qyl.at version snapshot; the
+release is `VERIFIED`. Qyl's existing capture helpers enrich native activities;
 the SDK owns the disposable listener through `AddInstrumentation`, without a
 CLR profiler. Native MSTest class initialization publishes each consumer once,
 and 20 individually selectable data rows execute separate processes using shared
@@ -309,7 +311,7 @@ Capture opt-in does not override Collector retention: the local canonical policy
 field names and known credential suffixes while retaining benign arrays. This is not arbitrary-value secret detection.
 
 
-### Selected gRPC client metadata (local, unreleased)
+### Selected gRPC client metadata
 
 Set `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` and/or
 `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` to comma-separated
