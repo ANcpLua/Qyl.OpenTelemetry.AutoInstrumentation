@@ -99,24 +99,24 @@ using (var host = builder.Build())
         var responseCaptured = scenario.ResponseCaptured;
         if (requestCaptured)
         {
-            Values(span, "http.request.header.x-tenant-id", ["tenant"]);
-            Values(span, "http.request.header.x-request-id", ["dash"]);
-            Values(span, "http.request.header.x_request_id", ["underscore"]);
-            Values(span, "http.request.header.x.request.id", ["dot"]);
-            Values(span, "http.request.header.x-custom-multi", ["first", "first", "", "comma,kept"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.x-tenant-id", ["tenant"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.x-request-id", ["dash"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.x_request_id", ["underscore"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.x.request.id", ["dot"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.x-custom-multi", ["first", "first", "", "comma,kept"]);
             if (path != "/empty")
             {
-                Values(span, "http.request.header.content-type", ["application/custom"]);
-                Values(span, "http.request.header.content-disposition", ["attachment; filename=sample.txt"]);
+                CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.content-type", ["application/custom"]);
+                CapturedAttributeAssertions.RequireValues(span.Tags, "http.request.header.content-disposition", ["attachment; filename=sample.txt"]);
             }
             else Require(!span.Tags.ContainsKey("http.request.header.content-type"), "invented request content header");
         }
         else Require(!span.Tags.Keys.Any(static key => key.StartsWith("http.request.header.", StringComparison.Ordinal)), "request capture was not opt-in");
         if (responseCaptured && path == "/ok")
         {
-            Values(span, "http.response.header.x-ratelimit-remaining", ["7"]);
-            Values(span, "http.response.header.content-type", ["application/result"]);
-            Values(span, "http.response.header.x-custom-multi", ["response-a", "response-b"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.response.header.x-ratelimit-remaining", ["7"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.response.header.content-type", ["application/result"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "http.response.header.x-custom-multi", ["response-a", "response-b"]);
         }
         else Require(!span.Tags.Keys.Any(static key => key.StartsWith("http.response.header.", StringComparison.Ordinal)), "invented or unselected response header");
         Require(!span.Tags.ContainsKey("http.request.header.unselected"), "unselected header captured");
@@ -159,12 +159,6 @@ static HttpRequestMessage Request(string path, bool content)
         request.Content.Headers.TryAddWithoutValidation("Content-Disposition", "attachment; filename=sample.txt");
     }
     return request;
-}
-
-static void Values(Snapshot span, string key, string[] expected)
-{
-    Require(span.Tags.TryGetValue(key, out var value) && value is string[] actual && actual.SequenceEqual(expected),
-        "missing, non-array or changed values: " + key);
 }
 
 static void Require(bool condition, string message)

@@ -140,31 +140,31 @@ using (var host = builder.Build())
         var responseCaptured = scenario.ResponseCaptured;
         if (requestCaptured && profile != ClientCaptureProfiles.BinaryOnly)
         {
-            Values(span, "rpc.request.metadata.x-demo-md", ["mv1"]);
-            Values(span, "rpc.request.metadata.x-request-id", ["dash"]);
-            Values(span, "rpc.request.metadata.x_request_id", ["underscore"]);
-            Values(span, "rpc.request.metadata.x.request.id", ["dot"]);
-            Values(span, "rpc.request.metadata.x-multi", ["first", "first", "", "comma,kept"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.request.metadata.x-demo-md", ["mv1"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.request.metadata.x-request-id", ["dash"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.request.metadata.x_request_id", ["underscore"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.request.metadata.x.request.id", ["dot"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.request.metadata.x-multi", ["first", "first", "", "comma,kept"]);
         }
         else if (!requestCaptured) Require(!span.Tags.Keys.Any(static key => key.StartsWith("rpc.request.metadata.", StringComparison.Ordinal)), "request not opt-in");
         if (responseCaptured && profile != ClientCaptureProfiles.BinaryOnly && !method.EndsWith("Unavailable", StringComparison.Ordinal))
         {
-            Values(span, "rpc.response.metadata.x-demo-res-md", ["sv1"]);
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.response.metadata.x-demo-res-md", ["sv1"]);
             if (method.EndsWith("Cancel", StringComparison.Ordinal))
             {
-                Values(span, "rpc.response.metadata.x-overlap", ["from-header"]);
+                CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.response.metadata.x-overlap", ["from-header"]);
                 Require(!span.Tags.ContainsKey("rpc.response.metadata.x-demo-trailer-md"), "invented cancellation trailer");
             }
             else
             {
-                Values(span, "rpc.response.metadata.x-demo-trailer-md", ["tv1"]);
-                Values(span, "rpc.response.metadata.x-overlap", ["from-header", "from-trailer"]);
+                CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.response.metadata.x-demo-trailer-md", ["tv1"]);
+                CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.response.metadata.x-overlap", ["from-header", "from-trailer"]);
             }
         }
         else if (!responseCaptured || method.EndsWith("Unavailable", StringComparison.Ordinal)) Require(!span.Tags.Keys.Any(static key => key.StartsWith("rpc.response.metadata.", StringComparison.Ordinal)), "invented or unselected response");
-        if (requestCaptured) Values(span, "rpc.request.metadata.trace-bin", ["AQID"]);
+        if (requestCaptured) CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.request.metadata.trace-bin", ["AQID"]);
         if (responseCaptured && !method.EndsWith("Unavailable", StringComparison.Ordinal))
-            Values(span, "rpc.response.metadata.trace-bin", method.EndsWith("Cancel", StringComparison.Ordinal)
+            CapturedAttributeAssertions.RequireValues(span.Tags, "rpc.response.metadata.trace-bin", method.EndsWith("Cancel", StringComparison.Ordinal)
                 ? ["YWJj"] : ["YWJj", "AAH/"]);
         Require(!span.Tags.ContainsKey("rpc.request.metadata.unselected"), "unselected metadata captured");
     }
@@ -182,10 +182,6 @@ static async Task ExpectFailure<T>(Task<T> response, StatusCode expected)
     catch (RpcException exception) when (exception.StatusCode == expected) { failed = true; }
     Require(failed, "call did not fail with expected native gRPC status");
 }
-
-static void Values(Snapshot span, string key, string[] expected) => Require(
-    span.Tags.TryGetValue(key, out var value) && value is string[] actual && actual.SequenceEqual(expected),
-    "missing, non-array or changed values: " + key);
 
 static void Require(bool condition, string message)
 {
