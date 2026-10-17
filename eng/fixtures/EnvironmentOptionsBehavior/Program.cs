@@ -2,8 +2,7 @@ using Qyl.Telemetry.AutoInstrumentation;
 
 var options = QylAutoInstrumentationOptions.Current;
 
-Console.WriteLine("global=" + options.GlobalEnabled);
-Console.WriteLine("traces=" + options.TracesEnabled);
+Console.WriteLine("trace.fallback=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, "UNDECLARED"));
 Console.WriteLine("metrics=" + options.MetricsEnabled);
 Console.WriteLine("logs=" + options.LogsEnabled);
 Console.WriteLine("trace.http=" + options.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient));
@@ -14,7 +13,7 @@ Console.WriteLine("log.fallback=" + options.IsInstrumentationEnabled(QylAutoInst
 Console.WriteLine("meters=" + string.Join("|", QylMetricMeters.GetEnabledMeterNames()));
 Console.WriteLine("ef.text=" + options.EntityFrameworkCoreSetDbStatementForText);
 Console.WriteLine("sql.text=" + options.SqlClientSetDbStatementForText);
-Console.WriteLine("aspnetcore.req=" + string.Join("|", options.AspNetCoreCapturedRequestHeaders));
-Console.WriteLine("aspnetcore.res=" + string.Join("|", options.AspNetCoreCapturedResponseHeaders));
+Console.WriteLine("aspnetcore.req=" + string.Join("|", Enumerable.Range(0, options.AspNetCoreCapturedRequestHeaderMap.Count).Select(options.AspNetCoreCapturedRequestHeaderMap.GetTagName)));
+Console.WriteLine("aspnetcore.res=" + string.Join("|", Enumerable.Range(0, options.AspNetCoreCapturedResponseHeaderMap.Count).Select(options.AspNetCoreCapturedResponseHeaderMap.GetTagName)));
 Console.WriteLine("aspnetcore.query.unredacted=" + options.AspNetCoreUrlQueryRedactionDisabled);
 Console.WriteLine("http.query.unredacted=" + options.HttpClientUrlQueryRedactionDisabled);

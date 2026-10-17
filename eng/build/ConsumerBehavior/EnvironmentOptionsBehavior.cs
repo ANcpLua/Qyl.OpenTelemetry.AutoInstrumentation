@@ -1,8 +1,8 @@
 namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
-/// Every upstream environment control resolves to the exact option state, read by a package consumer
-/// through the public options surface, and the one remaining HttpClient option changes an emitted
+/// Environment controls resolve to instrumentation decisions and capture-key maps in isolated
+/// processes. The configuration probe reads internal state; the public HttpClient probe changes an emitted
 /// span: the BCL's own System.Net.Http client span, whose url.full query qyl un-redacts by flipping the
 /// runtime's System.Net.Http.DisableUriRedaction switch from the upstream opt-out variable.
 /// </summary>

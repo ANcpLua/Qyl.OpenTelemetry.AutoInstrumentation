@@ -1,5 +1,4 @@
-global=False
-traces=True
+trace.fallback=True
 metrics=True
 logs=True
 trace.http=True

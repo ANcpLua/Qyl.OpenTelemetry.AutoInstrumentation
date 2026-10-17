@@ -8,6 +8,7 @@ packages are then exercised in clean managed and NativeAOT consumers.
 ## Unreleased
 
 - Run the transport integration tests against Qyl.Telemetry.Testing 3.0.3.
+- Check environment configuration through resolved instrumentation decisions and capture-key maps instead of removed metadata properties.
 
 ## [28.0.0] - 2026-10-17
 
