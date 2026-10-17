@@ -77,6 +77,9 @@ using (var host = builder.Build())
     await host.StartAsync(timeout.Token);
     using var source = new ActivitySource("MetadataCapture.Fixture");
     using var parent = source.CreateActivity("capture-parent", ActivityKind.Internal)?.Start();
+    var expectedParentSpanId = parent?.SpanId;
+    Require(!scenario.EmitsSpans || expectedParentSpanId.HasValue,
+        "native gRPC capture requires a parent activity when client spans are expected");
     using (SuppressInstrumentationScope.Begin(scenario.Control is ClientCaptureControl.Suppressed))
     {
         using var channel = GrpcChannel.ForAddress(server.Urls.Single());
@@ -127,7 +130,8 @@ using (var host = builder.Build())
     foreach (var span in grpc)
     {
         Require(span is { Operation: "Grpc.Net.Client.GrpcOut", Kind: ActivityKind.Client, Status: ActivityStatusCode.Unset }, "native ownership/status changed");
-        if (parent is not null) Require(span.Parent == parent.SpanId, "native parentage changed");
+        Require(span.Parent == expectedParentSpanId,
+            $"native gRPC parent changed: expected {expectedParentSpanId}, actual {span.Parent}");
         var method = (string)span.Tags["grpc.method"]!;
         var status = Convert.ToInt32(span.Tags["grpc.status_code"], System.Globalization.CultureInfo.InvariantCulture);
         Require(status == (method.EndsWith("Cancel", StringComparison.Ordinal) ? 1 : method.EndsWith("Unavailable", StringComparison.Ordinal) ? 14 : 0), "native status tag changed");

@@ -10,6 +10,7 @@ packages are then exercised in clean managed and NativeAOT consumers.
 - Register qyl-owned client capture as disposable OpenTelemetry instrumentation instead of a lifetime-only span processor. Preserve native span ownership and provider disposal without a profiler.
 - Expose each HTTP/gRPC capture profile as a native MSTest data row. Publish once per test class, forward native fixture/invocation cancellation through publishing and child execution, retain row-specific evidence, and share profile/configuration constants.
 - Declare capture inputs and expectations in the data rows, share the child-process contract through one non-packable fixture assembly, and require every expected HTTP/gRPC operation exactly once. Use native typed assertions for captured arrays.
+- Require a parent activity when native client spans are expected and verify every emitted span's parent unconditionally. Give each native MSTest row a concise profile label through `ArgumentsDisplayName`.
 - Assert that each configured consumer actually runs without dynamic-code support; exercise the factory registration through NativeAOT execution.
 
 - Add independently selected textual gRPC client metadata at native start/completion, combining initial headers then trailers without reading streams. Skip binary names and verify configured unary, streaming, cancellation and failure paths through an executed NativeAOT consumer.

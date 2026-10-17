@@ -18,18 +18,29 @@ public sealed class ClientMetadataCaptureTests(TestContext testContext)
         _fixture = await NativeCaptureFixture.PublishAsync("ClientMetadataCapture", context);
 
     [TestMethod]
-    [DataRow(ClientCaptureProfiles.Configured, RequestHeaders, ResponseHeaders, ClientCaptureControl.Enabled, true, true, null)]
-    [DataRow(ClientCaptureProfiles.Request, RequestHeaders, null, ClientCaptureControl.Enabled, true, false, null)]
-    [DataRow(ClientCaptureProfiles.Response, null, ResponseHeaders, ClientCaptureControl.Enabled, false, true, null)]
-    [DataRow(ClientCaptureProfiles.None, null, null, ClientCaptureControl.Enabled, false, false, null)]
-    [DataRow(ClientCaptureProfiles.Empty, EmptyHeaders, EmptyHeaders, ClientCaptureControl.Enabled, false, false, null)]
-    [DataRow(ClientCaptureProfiles.BinaryOnly, BinaryHeader, BinaryHeader, ClientCaptureControl.Enabled, false, false, null)]
-    [DataRow(ClientCaptureProfiles.HttpOnly, null, null, ClientCaptureControl.Enabled, false, false, HttpHeader)]
-    [DataRow(ClientCaptureProfiles.Disabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.InstrumentationDisabled, false, false, null)]
-    [DataRow(ClientCaptureProfiles.GlobalDisabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.GlobalDisabled, false, false, null)]
-    [DataRow(ClientCaptureProfiles.Unsampled, RequestHeaders, ResponseHeaders, ClientCaptureControl.Unsampled, false, false, null)]
-    [DataRow(ClientCaptureProfiles.Suppressed, RequestHeaders, ResponseHeaders, ClientCaptureControl.Suppressed, false, false, null)]
-    public async Task Published_native_grpc_capture_preserves_metadata_completion_and_controls(
+    [DataRow(ClientCaptureProfiles.Configured, RequestHeaders, ResponseHeaders, ClientCaptureControl.Enabled, true, true, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Configured)]
+    [DataRow(ClientCaptureProfiles.Request, RequestHeaders, null, ClientCaptureControl.Enabled, true, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Request)]
+    [DataRow(ClientCaptureProfiles.Response, null, ResponseHeaders, ClientCaptureControl.Enabled, false, true, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Response)]
+    [DataRow(ClientCaptureProfiles.None, null, null, ClientCaptureControl.Enabled, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.None)]
+    [DataRow(ClientCaptureProfiles.Empty, EmptyHeaders, EmptyHeaders, ClientCaptureControl.Enabled, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Empty)]
+    [DataRow(ClientCaptureProfiles.BinaryOnly, BinaryHeader, BinaryHeader, ClientCaptureControl.Enabled, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.BinaryOnly)]
+    [DataRow(ClientCaptureProfiles.HttpOnly, null, null, ClientCaptureControl.Enabled, false, false, HttpHeader,
+        ArgumentsDisplayName = ClientCaptureProfiles.HttpOnly)]
+    [DataRow(ClientCaptureProfiles.Disabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.InstrumentationDisabled, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Disabled)]
+    [DataRow(ClientCaptureProfiles.GlobalDisabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.GlobalDisabled, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.GlobalDisabled)]
+    [DataRow(ClientCaptureProfiles.Unsampled, RequestHeaders, ResponseHeaders, ClientCaptureControl.Unsampled, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Unsampled)]
+    [DataRow(ClientCaptureProfiles.Suppressed, RequestHeaders, ResponseHeaders, ClientCaptureControl.Suppressed, false, false, null,
+        ArgumentsDisplayName = ClientCaptureProfiles.Suppressed)]
+    public async Task Native_grpc_capture_preserves_metadata_controls_and_parentage(
         string profile, string? requestHeaders, string? responseHeaders,
         ClientCaptureControl control, bool requestCaptured, bool responseCaptured, string? httpRequestHeaders)
     {

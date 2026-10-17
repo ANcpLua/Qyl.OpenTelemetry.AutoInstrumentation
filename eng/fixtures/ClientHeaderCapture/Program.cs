@@ -59,6 +59,9 @@ using (var host = builder.Build())
     await host.StartAsync(timeout.Token);
     using var source = new ActivitySource("HeaderCapture.Fixture");
     using var parent = source.CreateActivity("capture-parent", ActivityKind.Internal)?.Start();
+    var expectedParentSpanId = parent?.SpanId;
+    Require(!scenario.EmitsSpans || expectedParentSpanId.HasValue,
+        "native HTTP capture requires a parent activity when client spans are expected");
     using (SuppressInstrumentationScope.Begin(scenario.Control is ClientCaptureControl.Suppressed))
     {
         using var request = Request("/ok", true);
@@ -118,7 +121,8 @@ using (var host = builder.Build())
         else Require(!span.Tags.Keys.Any(static key => key.StartsWith("http.response.header.", StringComparison.Ordinal)), "invented or unselected response header");
         Require(!span.Tags.ContainsKey("http.request.header.unselected"), "unselected header captured");
         Require(span.Status == (path == "/fail" ? ActivityStatusCode.Error : ActivityStatusCode.Unset), "native status changed");
-        if (parent is not null) Require(span.Parent == parent.SpanId, "native parentage changed");
+        Require(span.Parent == expectedParentSpanId,
+            $"native HTTP parent changed: expected {expectedParentSpanId}, actual {span.Parent}");
     }
     await host.StopAsync(timeout.Token);
 }

@@ -16,16 +16,25 @@ public sealed class ClientHeaderCaptureTests(TestContext testContext)
         _fixture = await NativeCaptureFixture.PublishAsync("ClientHeaderCapture", context);
 
     [TestMethod]
-    [DataRow(ClientCaptureProfiles.Configured, RequestHeaders, ResponseHeaders, ClientCaptureControl.Enabled, true, true)]
-    [DataRow(ClientCaptureProfiles.Request, RequestHeaders, null, ClientCaptureControl.Enabled, true, false)]
-    [DataRow(ClientCaptureProfiles.Response, null, ResponseHeaders, ClientCaptureControl.Enabled, false, true)]
-    [DataRow(ClientCaptureProfiles.None, null, null, ClientCaptureControl.Enabled, false, false)]
-    [DataRow(ClientCaptureProfiles.Empty, EmptyHeaders, EmptyHeaders, ClientCaptureControl.Enabled, false, false)]
-    [DataRow(ClientCaptureProfiles.Disabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.InstrumentationDisabled, false, false)]
-    [DataRow(ClientCaptureProfiles.GlobalDisabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.GlobalDisabled, false, false)]
-    [DataRow(ClientCaptureProfiles.Unsampled, RequestHeaders, ResponseHeaders, ClientCaptureControl.Unsampled, false, false)]
-    [DataRow(ClientCaptureProfiles.Suppressed, RequestHeaders, ResponseHeaders, ClientCaptureControl.Suppressed, false, false)]
-    public async Task Published_native_http_capture_preserves_arrays_controls_ownership_and_disposal(
+    [DataRow(ClientCaptureProfiles.Configured, RequestHeaders, ResponseHeaders, ClientCaptureControl.Enabled, true, true,
+        ArgumentsDisplayName = ClientCaptureProfiles.Configured)]
+    [DataRow(ClientCaptureProfiles.Request, RequestHeaders, null, ClientCaptureControl.Enabled, true, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.Request)]
+    [DataRow(ClientCaptureProfiles.Response, null, ResponseHeaders, ClientCaptureControl.Enabled, false, true,
+        ArgumentsDisplayName = ClientCaptureProfiles.Response)]
+    [DataRow(ClientCaptureProfiles.None, null, null, ClientCaptureControl.Enabled, false, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.None)]
+    [DataRow(ClientCaptureProfiles.Empty, EmptyHeaders, EmptyHeaders, ClientCaptureControl.Enabled, false, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.Empty)]
+    [DataRow(ClientCaptureProfiles.Disabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.InstrumentationDisabled, false, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.Disabled)]
+    [DataRow(ClientCaptureProfiles.GlobalDisabled, RequestHeaders, ResponseHeaders, ClientCaptureControl.GlobalDisabled, false, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.GlobalDisabled)]
+    [DataRow(ClientCaptureProfiles.Unsampled, RequestHeaders, ResponseHeaders, ClientCaptureControl.Unsampled, false, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.Unsampled)]
+    [DataRow(ClientCaptureProfiles.Suppressed, RequestHeaders, ResponseHeaders, ClientCaptureControl.Suppressed, false, false,
+        ArgumentsDisplayName = ClientCaptureProfiles.Suppressed)]
+    public async Task Native_http_capture_preserves_headers_controls_and_parentage(
         string profile, string? requestHeaders, string? responseHeaders,
         ClientCaptureControl control, bool requestCaptured, bool responseCaptured)
     {

@@ -279,12 +279,16 @@ CLR profiler. Native MSTest class initialization publishes each consumer once,
 and 20 individually selectable data rows execute separate processes using shared
 profile constants, explicit expectations and native cancellation. A non-packable
 fixture contract assembly keeps the parent and children on the same argument
-contract. Each child asserts that dynamic code is unavailable and that every
-expected HTTP path or gRPC method appears exactly once. The 20 native scenarios
-and five directly affected capture tests pass, the Contracts check passes, and
-scoped JetBrains inspections have no remaining findings. The private .NET/gRPC
-payload bindings remain version-sensitive;
-no public replacement preserving these capture boundaries has been established.
+contract. Native `ArgumentsDisplayName` labels retain the test method and show
+the profile without dumping its configuration arguments. Each child asserts
+that dynamic code is unavailable, that a parent exists when client spans are
+expected, and that every expected HTTP path or gRPC method appears exactly once
+with the expected parent. The 20 native scenarios and five directly affected
+capture tests pass. A controlled missing-parent probe rejects all 12 active
+profiles, and the restored fixtures pass. The Contracts check passes, and scoped
+JetBrains inspections have no remaining findings. The private .NET/gRPC payload
+bindings remain version-sensitive; no public replacement preserving these
+capture boundaries has been established.
 
 Set `OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` and/or
 `OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` to comma-separated names.
