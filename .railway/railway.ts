@@ -6,8 +6,9 @@ import { defineRailway, image, preserve, project, service } from "railway/iac";
 // slice without this file deleting it.
 //
 // Every service sleeps once Railway has seen no outbound traffic from it for 5 to 10 minutes and
-// wakes on the next connection through its TCP proxy. Nothing is persisted: a woken service starts
-// from an empty data directory, which is what a verifier expects of a fresh container.
+// wakes on the next connection through its TCP proxy. Sleep preserves the container filesystem;
+// a redeploy replaces it. Verifiers own and isolate their test data rather than relying on wake
+// to provide an empty database.
 //
 // Passwords exist only on Railway (preserve()); eng/testbed/provision.sh generates the missing ones
 // before an apply and writes the connection strings to ~/.config/vitals/qyl-testbed.env.
