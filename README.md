@@ -626,9 +626,7 @@ from the resolved reference and `./eng/build.sh PackageLayout` checks against th
   third-party library publishes warning-free under NativeAOT.
 - Query text and other sensitive or high-cardinality values remain opt-in or redacted according to
   the package options and the upstream OpenTelemetry controls.
-- Generic HTTP header capture never records the reserved `Mcp-Param-*` namespace. Those headers
-  mirror MCP tool arguments; capturing argument content belongs to an MCP-specific, explicitly
-  enabled policy rather than to the HTTP layer.
+- Generic HTTP header capture records explicitly selected names, including `Mcp-Param-*`.
 - Generator snapshots prove emitted source shape; protocol interoperability requires a real OTLP
   receiver and structural decoding of the official protobuf messages.
 - MassTransit 9 is commercially licensed and is neither referenced nor redistributed here; the demo
