@@ -7,8 +7,8 @@ packages are then exercised in clean managed and NativeAOT consumers.
 
 ## [27.0.0] - 2026-10-17
 
-- Adopt SemanticConventions 13.0.0: native typed application attributes replace `SetAppTag` and its forced prefix. Generated starters remain optional; consumers can register their own activity sources.
-- Verify both generated and application-owned sources through real packaged consumers and the public host pipeline. Use Testing 3.0.0 for HTTP and gRPC receivers, configurable bounded payloads, reliable cancellation and retained raw captures.
+- Adopt SemanticConventions 13.1.1: native typed application attributes replace `SetAppTag` and its forced prefix. Generated starters remain optional; consumers can register their own activity sources.
+- Verify both generated and application-owned sources through real packaged consumers and the public host pipeline. Use Testing 3.0.1 for HTTP and gRPC receivers, configurable bounded payloads, reliable cancellation and retained raw captures.
 - Add `CollectorProtocol` for explicit collector endpoints. HTTP/protobuf remains the programmatic default; selecting native `OtlpExportProtocol.Grpc` works on any port. Remove the port-4317 transport guess and verify real hosts export all three signals through both transports.
 - Advance the generated-code ABI to V27 so generator and runtime packages share the new major.
 - Dispose the collector-discovery probe's wait handle, remove unused build helpers and meter constants, and keep process failure diagnostics with their elapsed time.
