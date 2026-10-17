@@ -7,8 +7,7 @@ packages are then exercised in clean managed and NativeAOT consumers.
 
 ## [28.0.0] - 2026-10-17
 
-Unreleased.
-
+- Consume SemanticConventions 13.1.2, including its compact analyzer catalog and shared legacy compiler polyfills.
 - Remove the redundant service-collection activation wrapper and the unused DB-command operation-name binding; advance the generated-code ABI to V28.
 - Remove metadata-only constructor property storage, the unused integration domain argument, and the obsolete method-name binding. Preserve Roslyn metadata uses with annotations on those exact protocol members.
 - Remove redundant internal option state and obsolete empty contract allowlists. Runtime implementation claims now require runtime evidence without an exception list.
