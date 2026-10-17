@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>Every path, version and platform fact the gates share. Nothing here is typed twice.</summary>
 static partial class Repo

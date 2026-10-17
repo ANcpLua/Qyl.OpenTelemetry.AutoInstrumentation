@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>
 /// The canonical text of a JSON document for a committed verified file: object keys in ordinal order,
@@ -11,7 +11,7 @@ namespace Qyl.Build;
 /// </summary>
 static class CanonicalJson
 {
-    public static string Render(JsonElement element)
+    private static string Render(JsonElement element)
     {
         var builder = new StringBuilder();
         Write(builder, element, 0);

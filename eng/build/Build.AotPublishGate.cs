@@ -2,22 +2,22 @@ namespace Qyl.Build;
 
 sealed partial class QylBuild
 {
-    [Parameter("AotPublishGate: which classification to publish — clean, warned or all (default all)")]
-    readonly string AotSet = "all";
+    [Parameter("AotPublishGate: which classification to publish — clean, warned or all (default all)", Name = "AotSet")]
+    readonly string _aotSet = "all";
 
     Target AotPublishGate => definition => definition
         .Description("NativeAOT publish matrix: clean demos warning-free, vendor-warned demos exactly their approved diagnostics, promotions fail")
         .After(Check)
         .Executes(() =>
         {
-            Gate.Require(AotSet is "clean" or "warned" or "all", $"--aot-set must be clean, warned or all, not {AotSet}");
+            Gate.Require(_aotSet is "clean" or "warned" or "all", $"--aot-set must be clean, warned or all, not {_aotSet}");
             var plan = new List<(string Demo, string Kind)>();
-            if (AotSet is "clean" or "all")
+            if (_aotSet is "clean" or "all")
                 plan.AddRange(AotPublish.CleanDemos.Select(static demo => (demo, "clean")));
-            if (AotSet is "warned" or "all")
+            if (_aotSet is "warned" or "all")
                 plan.AddRange(AotPublish.VendorWarnedDemos.Keys.Select(static demo => (demo, "warned")));
 
-            Log.Information("AOT publish gate | rid={Rid} | {Count} demo(s) | set={Set}", Repo.RuntimeIdentifier, plan.Count, AotSet);
+            Log.Information("AOT publish gate | rid={Rid} | {Count} demo(s) | set={Set}", Repo.RuntimeIdentifier, plan.Count, _aotSet);
             AotPublish.PrebuildGenerator();
             var failures = 0;
             var promotions = 0;

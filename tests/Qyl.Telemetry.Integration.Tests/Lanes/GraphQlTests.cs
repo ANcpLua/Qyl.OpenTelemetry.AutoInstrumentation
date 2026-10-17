@@ -9,7 +9,7 @@ namespace Qyl.Telemetry.Integration.Tests.Lanes;
 [TestCategory("graphql")]
 public sealed class GraphQlTests(TestContext testContext)
 {
-    private static readonly Dictionary<string, string[]> s_spanSets = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> SpanSets = new(StringComparer.Ordinal)
     {
         ["query-with-telemetry"] = ["GraphQL/Internal"],
         ["query-without-telemetry"] = [],
@@ -29,7 +29,7 @@ public sealed class GraphQlTests(TestContext testContext)
         run.RequireSucceeded()
             .RequireTokens("graphql-with-telemetry-success=true", "graphql-without-telemetry-success=true")
             .RequireReportPassed();
-        LaneChecks.SpanSets(run, "SpanSets", "Operation", s_spanSets);
+        LaneChecks.SpanSets(run, "SpanSets", "Operation", SpanSets);
         LaneChecks.ExcludedWithPrefix(run, "ExcludedScopes", "Experimental.", requireSome: false);
         lane.Telemetry.Spans(run, run.RequireCount("Activities", 1, "GraphQL activity"), "GraphQL");
     }

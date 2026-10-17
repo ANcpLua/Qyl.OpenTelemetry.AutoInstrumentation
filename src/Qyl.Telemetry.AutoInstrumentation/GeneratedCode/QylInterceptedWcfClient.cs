@@ -7,7 +7,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>WCF client operation spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.WcfClient, QylAttributes.InstrumentationDomainValues.RpcWcfClient)]
+[QylIntegration(QylAutoInstrumentationIds.WcfClient)]
 [QylIntercept("System.ServiceModel.ClientBase`1", Shape = QylShapes.WcfClient, Start = nameof(Call))]
 public static class QylInterceptedWcfClient
 {

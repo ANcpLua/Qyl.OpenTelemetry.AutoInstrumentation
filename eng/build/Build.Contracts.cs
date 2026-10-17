@@ -2,14 +2,14 @@ namespace Qyl.Build;
 
 sealed partial class QylBuild
 {
-    [Parameter("Contracts: regenerate the generated contract artifacts instead of checking them")]
-    readonly bool WriteContracts;
+    [Parameter("Contracts: regenerate the generated contract artifacts instead of checking them", Name = "WriteContracts")]
+    readonly bool _writeContracts;
 
     Target Contracts => definition => definition
         .Description("Contract invariants, doc pins, the contract coverage report, version sync and the generated contract artifacts")
         .Executes(() =>
         {
-            if (WriteContracts)
+            if (_writeContracts)
             {
                 var contract = ContractModel.Load();
                 ContractModel.VerifyContractModel(contract);

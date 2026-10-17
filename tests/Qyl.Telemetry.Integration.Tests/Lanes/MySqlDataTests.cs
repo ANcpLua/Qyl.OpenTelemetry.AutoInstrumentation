@@ -16,7 +16,7 @@ public sealed class MySqlDataTests(TestContext testContext)
     // A physical open traces the driver's five handshake statements; the Connection activity it
     // starts stops only at Close/Dispose, so it lands in the close phase. A pooled re-open traces
     // nothing at open. Every user command is exactly one span.
-    private static readonly Dictionary<string, string[]> s_spanSets = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> SpanSets = new(StringComparer.Ordinal)
     {
         ["physical-open"] = [ConnectorNetClient, ConnectorNetClient, ConnectorNetClient, ConnectorNetClient, ConnectorNetClient],
         ["command-select"] = [ConnectorNetClient],
@@ -28,7 +28,7 @@ public sealed class MySqlDataTests(TestContext testContext)
 
     // The first Open() runs MySqlConfiguration's static constructor, which reads ConfigurationManager,
     // and the config host it activates by name is gone from the trimmed application.
-    private static readonly string[] s_nativeAotAbortMarkers =
+    private static readonly string[] NativeAotAbortMarkers =
     [
         "MySql.Data.MySqlClient.MySqlConfiguration..cctor()",
         "No parameterless constructor defined for type 'System.Configuration.ClientConfigurationHost'.",
@@ -53,12 +53,12 @@ public sealed class MySqlDataTests(TestContext testContext)
         run.RequireSucceeded()
             .RequireTokens("physical-open=1", "select-scalar=1", "expected-mysqldata-error=MySql.Data.MySqlClient.MySqlException", "pooled-open=1")
             .RequireReportPassed();
-        LaneChecks.SpanSets(run, "SpanSets", "Phase", s_spanSets, sortExpected: true);
+        LaneChecks.SpanSets(run, "SpanSets", "Phase", SpanSets, sortExpected: true);
         LaneChecks.ExcludedWithPrefix(run, "ExcludedSources", "Experimental.", requireSome: true);
 
         // MySql.Data keeps writing to a stopped activity: the failing command reads ERROR at the instant
         // a processor sees it and OK once the driver is done. Both readings are asserted.
-        var total = s_spanSets.Values.Sum(static spans => spans.Length);
+        var total = SpanSets.Values.Sum(static spans => spans.Length);
         var rereadings = run.RequireCount("StatusCodeRereadings", total, "status-code re-readings").EnumerateArray().ToArray();
         var failing = rereadings.Where(static entry => ReportedActivity.Text(entry, "Phase") == "command-failing-select").ToArray();
         Assert.IsTrue(failing.Length == 1, $"{run.Label} expected 1 re-reading for the failing command, got {failing.Length}");
@@ -116,7 +116,7 @@ public sealed class MySqlDataTests(TestContext testContext)
         Assert.IsTrue(run.Process.ExitCode != 0,
             "the NativeAOT MySql.Data demo now runs: replace this pinned limitation with the full Verify() the managed runs use");
         var output = run.Process.Stdout + run.Process.Stderr;
-        foreach (var marker in s_nativeAotAbortMarkers)
+        foreach (var marker in NativeAotAbortMarkers)
             Assert.IsTrue(output.Contains(marker, StringComparison.Ordinal), $"the NativeAOT MySql.Data demo failed somewhere new — '{marker}' is missing\n{run.Process.Describe()}");
         Log.Information("  NativeAOT MySql.Data run pinned to MySqlConfiguration..cctor / ConfigurationManager");
     }

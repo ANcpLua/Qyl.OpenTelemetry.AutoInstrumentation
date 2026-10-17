@@ -9,7 +9,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>StackExchange.Redis command spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.StackExchangeRedis, QylAttributes.InstrumentationDomainValues.DbRedis)]
+[QylIntegration(QylAutoInstrumentationIds.StackExchangeRedis)]
 [QylIntercept("StackExchange.Redis.IDatabaseAsync", Shape = QylShapes.RedisCommand, Start = nameof(Command))]
 public static class QylInterceptedRedis
 {
@@ -41,6 +41,7 @@ public static class QylInterceptedRedis
     /// Returns <see langword="null"/> for text that is not a single command token, so an
     /// unbounded value is left off the span instead of becoming a span dimension.
     /// </summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public static string? NormalizeCommandText(string? command)
     {
         if (command is null)

@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Qyl.Build;
+namespace Qyl.Build.WebApiAotDemo;
 
 /// <summary>
 /// The NativeAOT web API consumer: ASP.NET Core, HttpClient, EF Core with a compiled model and

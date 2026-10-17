@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>A gate assertion that did not hold. The message is the whole report: what was expected,
 /// what was found, and the output that shows it.</summary>

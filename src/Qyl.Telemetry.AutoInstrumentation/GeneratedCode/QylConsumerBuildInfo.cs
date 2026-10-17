@@ -8,17 +8,18 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public static class QylConsumerBuildInfo
 {
-    private static string? s_version;
+    private static string? _version;
 
     /// <summary>Registers the consuming build's version. The entry assembly's module initializer runs
     /// before <c>Main</c>, so the first registration wins.</summary>
     /// <param name="version">The build's informational version.</param>
+    [JetBrains.Annotations.UsedImplicitly]
     public static void Register(string version)
     {
         if (!string.IsNullOrWhiteSpace(version))
-            Interlocked.CompareExchange(ref s_version, version, null);
+            Interlocked.CompareExchange(ref _version, version, null);
     }
 
     /// <summary>The registered version, or <see langword="null"/> when no consuming build registered one.</summary>
-    internal static string? Version => Volatile.Read(ref s_version);
+    internal static string? Version => Volatile.Read(ref _version);
 }

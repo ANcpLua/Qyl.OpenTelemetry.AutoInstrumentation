@@ -2,7 +2,7 @@ using System.Text.Json;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace Qyl.Build;
+namespace Qyl.Build.ApiBaseline;
 
 /// <summary>
 /// The public API of every shipped project, as a report that never fails the gate. It reads the

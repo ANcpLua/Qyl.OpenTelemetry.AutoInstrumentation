@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// Every upstream environment control resolves to the exact option state, read by a package consumer

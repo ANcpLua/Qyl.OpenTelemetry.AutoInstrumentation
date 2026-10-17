@@ -1,9 +1,7 @@
 namespace Qyl.Telemetry.AutoInstrumentation;
 
 /// <summary>
-/// Public API facade for the qyl AOT-native instrumentation core. This is the only entry point a
-/// consuming app needs — wire it into the app's startup (or let the
-/// <c>[ModuleInitializer]</c> in <c>Qyl.Telemetry.AutoInstrumentation.Hosting</c> do it automatically).
+/// Process-wide activation shared by the public host and package module initializer.
 /// </summary>
 internal static class QylInstrumentation
 {
@@ -22,11 +20,10 @@ internal static class QylInstrumentation
     /// <summary>
     /// Applies the process-wide runtime switches qyl instrumentation depends on.
     /// </summary>
-    /// <returns><c>true</c> on the first activation, <c>false</c> on subsequent calls.</returns>
-    public static bool Activate()
+    public static void Activate()
     {
         if (Interlocked.Exchange(ref _activated, 1) == 1)
-            return false;
+            return;
 
         // The outbound HTTP span is the BCL's own, and the BCL redacts the query of its url.full to
         // "*" by itself. qyl does not rewrite what a library emitted, so the only thing left to bind
@@ -42,6 +39,5 @@ internal static class QylInstrumentation
             AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
         }
 
-        return true;
     }
 }

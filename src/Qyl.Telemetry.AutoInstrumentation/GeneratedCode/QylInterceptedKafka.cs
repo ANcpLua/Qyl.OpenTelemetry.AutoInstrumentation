@@ -1,12 +1,11 @@
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
-using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
 /// <summary>Confluent.Kafka producer and consumer spans.</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.Kafka, QylAttributes.InstrumentationDomainValues.MessagingKafka)]
+[QylIntegration(QylAutoInstrumentationIds.Kafka)]
 [QylIntercept("Confluent.Kafka.IProducer`2", "Produce", "ProduceAsync", Shape = QylShapes.KafkaProduce, Start = nameof(Send))]
 [QylIntercept("Confluent.Kafka.IConsumer`2", "Consume", Shape = QylShapes.KafkaConsume, Start = nameof(Receive))]
 public static class QylInterceptedKafka

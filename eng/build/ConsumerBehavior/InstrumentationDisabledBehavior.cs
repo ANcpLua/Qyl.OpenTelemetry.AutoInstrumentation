@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// Negative space: a disabled instrumentation emits zero qyl telemetry. The ADO.NET DbCommand

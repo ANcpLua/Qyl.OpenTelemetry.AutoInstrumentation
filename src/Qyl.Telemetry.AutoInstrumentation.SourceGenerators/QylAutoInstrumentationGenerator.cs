@@ -22,7 +22,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     private const string ReceiverName = "receiver";
     private const string SharedHelperType = "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity";
 
-    private static readonly SymbolDisplayFormat s_fullyQualifiedFormat =
+    private static readonly SymbolDisplayFormat FullyQualifiedFormat =
         SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
             SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
             ~SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
@@ -32,7 +32,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
     // ExecuteReader is intercepted), so a call back onto that receiver from inside a runtime package
     // would re-enter the interceptor. Keep this set aligned with runtime packages under /src;
     // consumers, demos, and test fixtures remain instrumented.
-    private static readonly HashSet<string> s_qylRuntimeAssemblies = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> QylRuntimeAssemblies = new(StringComparer.Ordinal)
     {
         RuntimeAssemblyName,
         "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners",
@@ -131,7 +131,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         var invocation = (InvocationExpressionSyntax)context.Node;
         var compilation = context.SemanticModel.Compilation;
         if (compilation.AssemblyName is { } assemblyName &&
-            s_qylRuntimeAssemblies.Contains(assemblyName))
+            QylRuntimeAssemblies.Contains(assemblyName))
         {
             return default;
         }
@@ -156,7 +156,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                 : new InvocationScanResult(
                     null,
                     new ShapeMismatch(
-                        symbol.ContainingType.ToDisplayString(s_fullyQualifiedFormat),
+                        symbol.ContainingType.ToDisplayString(FullyQualifiedFormat),
                         symbol.Name,
                         declaredShape,
                         invocation.GetLocation()));
@@ -347,7 +347,7 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
         builder.AppendLine("{");
         builder.AppendLine("    internal static class QylGeneratedInterceptors");
         builder.AppendLine("    {");
-        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V27;");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V28;");
         builder.AppendLine();
 
         for (var index = 0; index < invocations.Length; index++)
@@ -677,9 +677,6 @@ public sealed partial class QylAutoInstrumentationGenerator : IIncrementalGenera
                         builder.Append(binding.Convert);
                     }
 
-                    return;
-                case BindingSource.MethodName:
-                    AppendStringLiteral(builder, target.MethodName);
                     return;
                 case BindingSource.InstrumentationId:
                     AppendStringLiteral(builder, target.InstrumentationId);

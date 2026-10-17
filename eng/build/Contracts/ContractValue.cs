@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>
 /// Values of the contract YAML object graph (see <see cref="Yaml"/>): their text, how a message

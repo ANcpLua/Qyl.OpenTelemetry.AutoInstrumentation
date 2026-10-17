@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>
 /// The packages this checkout would ship, packed once per build into artifacts/fixtures/feed. A
@@ -9,7 +9,7 @@ namespace Qyl.Build;
 /// </summary>
 static class LocalFeed
 {
-    private static bool s_packed;
+    private static bool _packed;
 
     public static AbsolutePath Directory => FixtureWorkspace.Root / "feed";
 
@@ -17,13 +17,13 @@ static class LocalFeed
     public static string EnsurePacked()
     {
         var version = Repo.Version;
-        if (s_packed)
+        if (_packed)
             return version;
 
         Directory.CreateOrCleanDirectory();
         foreach (var project in Repo.PackableProjects)
             DotNet.Pack(project, Directory);
-        s_packed = true;
+        _packed = true;
         Log.Information("local feed: {Count} packages at {Version} in {Feed}", Repo.PackableProjects.Count, version, Repo.Relative(Directory));
         return version;
     }
@@ -37,7 +37,7 @@ static class LocalFeed
 /// </summary>
 static class FixtureWorkspace
 {
-    private static readonly HashSet<string> s_prepared = new(StringComparer.Ordinal);
+    private static readonly HashSet<string> Prepared = new(StringComparer.Ordinal);
 
     public static AbsolutePath Root => Repo.Artifacts / "fixtures";
 
@@ -86,7 +86,7 @@ static class FixtureWorkspace
     private static AbsolutePath Prepare(bool published)
     {
         var scope = published ? Repo.Artifacts / "fixtures-published" : Root;
-        if (!s_prepared.Add(scope))
+        if (!Prepared.Add(scope))
             return scope;
 
         scope.CreateDirectory();

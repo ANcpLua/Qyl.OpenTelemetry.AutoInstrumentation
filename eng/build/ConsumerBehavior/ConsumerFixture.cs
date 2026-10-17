@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>What the consumer-behavior, smoke and evidence gates share: running a built consumer,
 /// reading what the generator emitted into it, and comparing outputs line by line.</summary>

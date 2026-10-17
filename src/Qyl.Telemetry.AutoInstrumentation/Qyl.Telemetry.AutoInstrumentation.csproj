@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" PrivateAssets="all" />
     <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners" />
     <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.Hosting" />
     <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore" />

@@ -16,7 +16,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
 {
     internal static class QylGeneratedInterceptors
     {
-        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V27;
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V28;
 
         // qyl-interceptor-manifest: {"interceptorKind":"DbCommand.Execute","signal":"traces","instrumentationId":"ADONET","additionalMetricIds":[],"contractKeys":["signals.traces.ADONET"]}
         // Intercepted call at /_qyl_generator_snapshot/Program.cs(3,13)
@@ -24,7 +24,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
         public static object DbCommand_ExecuteScalar_0(this global::SnapshotCommand receiver)
         {
             var metricStart = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp();
-            var activity = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(receiver, "ADONET", "ExecuteScalar");
+            var activity = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(receiver, "ADONET");
             try
             {
                 var result = receiver.ExecuteScalar();
@@ -49,7 +49,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
         public static object DbCommand_ExecuteScalar_1(this global::SnapshotCommand receiver)
         {
             var metricStart = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp();
-            var activity = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(receiver, "ADONET", "ExecuteScalar");
+            var activity = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(receiver, "ADONET");
             try
             {
                 var result = receiver.ExecuteScalar();

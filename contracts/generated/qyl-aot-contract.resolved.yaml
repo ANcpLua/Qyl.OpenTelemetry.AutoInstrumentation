@@ -311,7 +311,7 @@ contract_items:
   evidence_level: verified_nativeaot
   primary_owner: EntityFrameworkCore specialist package EntityFrameworkCoreDiagnosticListener
   evidence:
-  - src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs
+  - src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs
   - demos/Qyl.RealEfCoreDemo
   - tests/Qyl.Telemetry.Integration.Tests/Lanes/EfCoreTests.cs
   conformance_signals:
@@ -927,8 +927,8 @@ contract_items:
   primary_owner: QylAutoInstrumentationGenerator; dependency-specific SqlClient listener fallback when no interceptor is emitted
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedDbCommand.cs
-  - src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/GeneratedCode/QylInterceptedDbCommand.cs
+  - src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClient/SqlClientDiagnosticListener.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqlClientDemo
   - tests/Qyl.Telemetry.Integration.Tests/Lanes/SqlClientTests.cs
@@ -1469,7 +1469,7 @@ contract_items:
   primary_owner: QylAutoInstrumentationGenerator + QylDbClientMetrics
   evidence:
   - src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/QylAutoInstrumentationGenerator.cs
-  - src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedDbCommand.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/GeneratedCode/QylInterceptedDbCommand.cs
   - src/Qyl.Telemetry.AutoInstrumentation/QylDbClientMetrics.cs
   - eng/build/ConsumerBehavior/SourceInterceptorConsumer.cs
   - demos/Qyl.RealSqlClientDemo
@@ -1515,7 +1515,7 @@ contract_items:
   evidence:
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - demos/Qyl.RealILoggerDemo
-  - tests/Qyl.Telemetry.Integration.Tests/Lanes/ILoggerTests.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/LoggerTests.cs
   conformance_signals:
   - kind: log
     name: ilogger.log
@@ -1746,7 +1746,7 @@ contract_items:
   - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
   - src/Qyl.Telemetry.Hosting/QylHostApplicationBuilderExtensions.cs
   - eng/build/Contracts/ContractInvariants.cs
-  - tests/Qyl.Telemetry.Integration.Tests/Lanes/ILoggerTests.cs
+  - tests/Qyl.Telemetry.Integration.Tests/Lanes/LoggerTests.cs
 - kind: global_environment_control
   key: global_environment_controls.OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED
   environment_variable: OTEL_DOTNET_AUTO_LOGS_{0}_INSTRUMENTATION_ENABLED

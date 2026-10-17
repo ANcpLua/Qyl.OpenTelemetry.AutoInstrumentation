@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Smoke;
 
 /// <summary>
 /// The package smoke test. A Qyl.Telemetry.Hosting package consumer and a ProjectReference consumer run

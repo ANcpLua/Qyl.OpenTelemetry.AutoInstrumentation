@@ -17,10 +17,12 @@ public static class QylInterceptedActivity
     }
 
     /// <summary>Observes an asynchronous operation and records its failure on the activity.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public static Task ObserveAsync(Task? task, Activity? activity)
         => QylActivityObserver.ObserveAsync(task, activity);
 
     /// <summary>Observes an asynchronous operation and records its failure on the activity.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public static Task<T> ObserveAsync<T>(Task<T>? task, Activity? activity)
         => QylActivityObserver.ObserveAsync(task, activity);
 }

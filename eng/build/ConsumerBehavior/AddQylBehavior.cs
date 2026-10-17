@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// AddQyl is registered once, never blocks on a socket, deduplicates a source the consumer names

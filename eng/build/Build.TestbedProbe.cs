@@ -2,6 +2,7 @@ namespace Qyl.Build;
 
 sealed partial class QylBuild
 {
+    [JetBrains.Annotations.UsedImplicitly]
     Target TestbedProbe => definition => definition
         .Description("Wake and reach the eight Railway testbed services named by the testbed environment file, with wake timing")
         .Executes(() =>

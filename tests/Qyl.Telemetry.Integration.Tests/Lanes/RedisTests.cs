@@ -9,7 +9,7 @@ namespace Qyl.Telemetry.Integration.Tests.Lanes;
 [TestCategory("redis")]
 public sealed class RedisTests(TestContext testContext)
 {
-    private static readonly Dictionary<string, string> s_requiredProbes = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string> RequiredProbes = new(StringComparer.Ordinal)
     {
         ["StringGet"] = "GET",
         ["StringGet.Multi"] = "MGET",
@@ -59,10 +59,10 @@ public sealed class RedisTests(TestContext testContext)
     private static void Verify(DemoContext lane, DemoRun run)
     {
         run.RequireSucceeded().RequireReportPassed();
-        var probes = run.RequireAtLeast("Probes", s_requiredProbes.Count, "Redis probes").EnumerateArray().ToArray();
+        var probes = run.RequireAtLeast("Probes", RequiredProbes.Count, "Redis probes").EnumerateArray().ToArray();
         var observed = probes.GroupBy(static probe => ReportedActivity.Text(probe, "Label") ?? string.Empty)
             .ToDictionary(static group => group.Key, static group => ReportedActivity.Text(group.Last(), "SpanOperation"), StringComparer.Ordinal);
-        foreach (var (label, operation) in s_requiredProbes)
+        foreach (var (label, operation) in RequiredProbes)
         {
             Assert.IsTrue(observed.ContainsKey(label), $"{run.Label} missing required probe {label}\n{run.Dump()}");
             Assert.IsTrue(observed[label] == operation, $"{run.Label} probe {label} reported db.operation.name={observed[label]}, expected {operation}");

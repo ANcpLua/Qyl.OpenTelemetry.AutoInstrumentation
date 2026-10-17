@@ -1,4 +1,2 @@
 Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap
 static Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationBootstrap.Boot() -> void
-Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions
-static Qyl.Telemetry.AutoInstrumentation.Hosting.QylAutoInstrumentationServiceCollectionExtensions.AddQylAutoInstrumentation(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

@@ -69,7 +69,7 @@ sealed class DemoContext
             new JsonSerializerOptions { WriteIndented = true, NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals }));
         _testContext.AddResultFile(path);
         _testContext.WriteLine($"{label}: {snapshot.Spans.Count} spans, {snapshot.Logs.Count} logs, {snapshot.Metrics.Count} metrics; full capture: {path}");
-        Assert.IsTrue(snapshot.Receipts.All(static receipt => receipt.Rejected == 0 && receipt.Error is null),
+        Assert.IsTrue(snapshot.Receipts.All(static receipt => receipt is { Rejected: 0, Error: null }),
             $"{label}: the receiver rejected telemetry; see {path}");
         if (registry is not null)
             Assert.IsTrue(registry.IsConformant, $"{label}: registry violations; see {path}");

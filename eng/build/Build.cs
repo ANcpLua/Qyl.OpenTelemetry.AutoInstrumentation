@@ -41,9 +41,10 @@ sealed partial class QylBuild : FalloutBuild
             Log.Information("release build ok: {Solution}, {Demos}", Repo.Solution.Name, Repo.DemoSolution.Name);
         });
 
+    [JetBrains.Annotations.UsedImplicitly]
     Target Pack => definition => definition
         .Description("Pack every packable project under src/ at the Directory.Build.props version into artifacts/release")
-        .Executes(() => ReleasePack.Run());
+        .Executes(ReleasePack.Run);
 
     Target Check => definition => definition
         .Description("The gate before every push and release: contracts, release builds, the public API report, generator snapshots, package layout and consumer behavior")
@@ -54,6 +55,7 @@ sealed partial class QylBuild : FalloutBuild
             Log.Information("check-ok");
         });
 
+    [JetBrains.Annotations.UsedImplicitly]
     Target CheckFull => definition => definition
         .Description("Everything: Check, the NativeAOT publish matrix, all thirty demos, the live check, smoke, web API AOT demo and OTLP wire evidence")
         .DependsOn(Check, AotPublishGate, Demos, LiveCheck, Smoke, WebApiAotDemo, OtlpEvidence)

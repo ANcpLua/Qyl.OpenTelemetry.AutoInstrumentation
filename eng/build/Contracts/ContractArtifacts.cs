@@ -2,7 +2,7 @@ using System.Text;
 using YamlDotNet.Serialization;
 using Item = System.Collections.Generic.OrderedDictionary<string, object?>;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>
 /// The four artifacts generated from the resolved contract: the resolved YAML, its JSON schema, the
@@ -484,9 +484,9 @@ static class ContractArtifacts
 
 /// <summary>Quotes a plain string scalar that YAML 1.1 would read as a timestamp (YamlDotNet's
 /// YAML 1.1 quoting covers booleans and numbers but not dates) and spells null out.</summary>
-sealed partial class QuoteTimestampEmitter(YamlDotNet.Serialization.IEventEmitter next) : YamlDotNet.Serialization.EventEmitters.ChainedEventEmitter(next)
+sealed partial class QuoteTimestampEmitter(IEventEmitter next) : YamlDotNet.Serialization.EventEmitters.ChainedEventEmitter(next)
 {
-    public override void Emit(YamlDotNet.Serialization.ScalarEventInfo eventInfo, YamlDotNet.Core.IEmitter emitter)
+    public override void Emit(ScalarEventInfo eventInfo, YamlDotNet.Core.IEmitter emitter)
     {
         if (eventInfo.Source.Value is string text && Timestamp().IsMatch(text))
             eventInfo.Style = YamlDotNet.Core.ScalarStyle.SingleQuoted;

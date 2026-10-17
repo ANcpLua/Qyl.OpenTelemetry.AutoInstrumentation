@@ -5,11 +5,13 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 /// the environment toggles bind to is generated from declarations rather than retyped.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-internal sealed class QylSignalAttribute(string instrumentationId, QylAutoInstrumentationSignal signal) : Attribute
+[JetBrains.Annotations.MeansImplicitUse]
+internal sealed class QylSignalAttribute : Attribute
 {
-    public string InstrumentationId { get; } = instrumentationId;
-
-    public QylAutoInstrumentationSignal Signal { get; } = signal;
+    // The generator reads constructor arguments from Roslyn AttributeData; no runtime
+    // attribute instance or duplicate property storage is needed.
+    public QylSignalAttribute([JetBrains.Annotations.UsedImplicitly] string instrumentationId,
+        [JetBrains.Annotations.UsedImplicitly] QylAutoInstrumentationSignal signal) { }
 }
 
 /// <summary>

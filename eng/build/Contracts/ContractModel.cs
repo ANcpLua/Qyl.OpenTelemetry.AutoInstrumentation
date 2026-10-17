@@ -1,6 +1,6 @@
 using Item = System.Collections.Generic.OrderedDictionary<string, object?>;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>A conformance profile: one fixture service and the conformance signals it is expected to emit.</summary>
 sealed record ConformanceProfile(string ServiceName, string ProfileId, string[] SignalNames);
@@ -26,18 +26,18 @@ static class ContractModel
     // publishes, not a qyl invariant: when upstream adds a row the contract grows, so it is read from the
     // contract. What is enforced is what a count never proved: the indexes run contiguously from 1, and
     // the contract_item_id sequence matches them exactly.
-    private static int? s_upstreamCount;
+    private static int? _upstreamCount;
 
     public static int UpstreamContractItemCount
     {
         get
         {
-            if (s_upstreamCount is { } cached)
+            if (_upstreamCount is { } cached)
                 return cached;
             var document = Yaml.Load(UpstreamContractPath) as Item;
             var items = document?.Get("contract_items") as List<object?>;
             Gate.Require(items is { Count: > 0 }, $"contract: {UpstreamContractPath.Name} carries no contract_items");
-            return (s_upstreamCount = items!.Count).Value;
+            return (_upstreamCount = items!.Count).Value;
         }
     }
 
@@ -160,13 +160,6 @@ static class ContractModel
         "signals.metrics.MICROSOFTAGENTSAI",
         "signals.traces.MICROSOFTAGENTSAIWORKFLOWS",
     };
-
-    public static readonly HashSet<string> ImplementedCompileBindingOnlyAllowlist = new(StringComparer.Ordinal);
-
-    // Signals whose contract row is owned by the runtime_public_telemetry listener/meter lane while a
-    // source interceptor also binds their call sites. Empty since 15.0.0: no signal has both an
-    // interceptor and another producing lane.
-    public static readonly HashSet<string> GeneratedInterceptorAlternatePathSignalAllowlist = new(StringComparer.Ordinal);
 
     private static readonly string[] CommonItemProperties =
     [
@@ -496,14 +489,7 @@ static class ContractModel
                     $"source_interceptor item must carry real demo lane evidence: {key}");
             }
 
-            if (evidenceLevel == "compile_binding_only")
-            {
-                Gate.Require(ImplementedCompileBindingOnlyAllowlist.Contains(key),
-                    $"implemented compile_binding_only signals require an explicit allowlist entry: {key}");
-                var runtimeEvidence = evidence.Where(ContractEvidence.IsRuntimeVerification).ToArray();
-                Gate.Require(runtimeEvidence.Length == 0,
-                    () => $"compile_binding_only item must not claim runtime verification evidence for {key}: {ContractValue.Render(runtimeEvidence.ToList())}");
-            }
+            Gate.Require(evidenceLevel != "compile_binding_only", $"implemented signals require runtime evidence: {key}");
 
             if (lane == "runtime_public_telemetry")
             {
@@ -585,8 +571,8 @@ static class ContractModel
         {
             Gate.Require(profileIds.Add(profile.ProfileId), $"duplicate conformance profile_id: {profile.ProfileId}");
             Gate.Require(serviceNames.Add(profile.ServiceName), $"duplicate conformance service_name: {profile.ServiceName}");
-            Gate.Require(!(profile.ProfileId == "qyl-aot-unsupported-nativeaot" && profile.SignalNames.Length > 0), "unsupported NativeAOT conformance profile must expect no signals");
-            Gate.Require(!(profile.ProfileId != "qyl-aot-unsupported-nativeaot" && profile.SignalNames.Length == 0), $"conformance profile must expect at least one signal: {profile.ProfileId}");
+            Gate.Require(profile is not { ProfileId: "qyl-aot-unsupported-nativeaot", SignalNames.Length: > 0 }, "unsupported NativeAOT conformance profile must expect no signals");
+            Gate.Require(profile is not { ProfileId: not "qyl-aot-unsupported-nativeaot", SignalNames.Length: 0 }, $"conformance profile must expect at least one signal: {profile.ProfileId}");
             foreach (var name in profile.SignalNames)
                 Gate.Require(assignedNames.Add(name), $"conformance signal assigned to multiple profiles: {name}");
         }

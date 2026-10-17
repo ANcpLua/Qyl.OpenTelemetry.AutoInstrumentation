@@ -6,12 +6,13 @@ sealed partial class QylBuild
     /// nuget.org serves every packable project at the version (ReleaseIndex, up to 45 minutes), then the
     /// package smoke in published mode, which restores from nuget.org into its own packages folder with
     /// --no-cache.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     Target VerifyRelease => definition => definition
         .Description("Wait until nuget.org serves --published-version, then run the package smoke against it")
-        .Requires(() => PublishedVersion)
+        .Requires(() => _publishedVersion)
         .Executes(() =>
         {
-            var version = PublishedVersion!.Trim();
+            var version = _publishedVersion!.Trim();
             ReleaseIndex.Wait(
                 Repo.Artifacts / $"release-{version}-index.status",
                 TimeSpan.FromMinutes(45),

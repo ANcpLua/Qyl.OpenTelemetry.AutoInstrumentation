@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.AotPublishGate;
 
 /// <summary>One tolerated third-party diagnostic: its id, the assembly that produced it, the package
 /// and exact version it ships in, a marker the line must contain, and how often it occurs.</summary>
@@ -138,9 +138,9 @@ static partial class AotPublish
         ["Qyl.RealEfCoreDemo"] = ["-p:QylEfCoreUseCompiledModel=true"],
     };
 
-    private static readonly HashSet<string> s_publishedThisRun = new(StringComparer.Ordinal);
-    private static bool s_generatorPrebuilt;
-    private static IReadOnlyDictionary<string, string>? s_runtimeVersions;
+    private static readonly HashSet<string> PublishedThisRun = new(StringComparer.Ordinal);
+    private static bool _generatorPrebuilt;
+    private static IReadOnlyDictionary<string, string>? _runtimeVersions;
 
     /// <summary>
     /// Builds the source generator into artifacts/ before any NativeAOT publish: under PublishAot a demo
@@ -149,10 +149,10 @@ static partial class AotPublish
     /// </summary>
     public static void PrebuildGenerator()
     {
-        if (s_generatorPrebuilt)
+        if (_generatorPrebuilt)
             return;
         DotNet.Build(Repo.GeneratorProject, ["--disable-build-servers"]);
-        s_generatorPrebuilt = true;
+        _generatorPrebuilt = true;
     }
 
     /// <summary>A demo's NativeAOT binary, published the way its classification says, once per build
@@ -162,7 +162,7 @@ static partial class AotPublish
     {
         var project = Repo.DemoProject(demo);
         var executable = Path.Combine(Repo.PublishDirectory(project, "nativeaot"), Repo.ExecutableName(demo));
-        if (s_publishedThisRun.Contains(demo) && File.Exists(executable))
+        if (PublishedThisRun.Contains(demo) && File.Exists(executable))
             return executable;
 
         var (verdict, detail) = CleanDemos.Contains(demo, StringComparer.Ordinal) ? CheckClean(demo)
@@ -176,7 +176,7 @@ static partial class AotPublish
     public static (AotVerdict Verdict, string Detail) CheckClean(string demo)
     {
         var outcome = PublishClassified(demo, strict: true);
-        return outcome.ExitCode == 0 && outcome.Diagnostics.Count == 0
+        return outcome is { ExitCode: 0, Diagnostics.Count: 0 }
             ? (AotVerdict.Ok, "warning-clean")
             : (AotVerdict.Regression, $"exit={outcome.ExitCode}; " + (outcome.Diagnostics.FirstOrDefault() ?? outcome.Tail));
     }
@@ -199,7 +199,7 @@ static partial class AotPublish
         PrebuildGenerator();
         var outcome = Publish(project, Repo.PublishDirectory(project, "nativeaot"), strict, ExtraProperties.GetValueOrDefault(demo));
         if (outcome.ExitCode == 0)
-            s_publishedThisRun.Add(demo);
+            PublishedThisRun.Add(demo);
         return outcome;
     }
 
@@ -304,8 +304,8 @@ static partial class AotPublish
     /// measured, because a publish resolves the runtime pack of the runtime it runs on.</summary>
     private static IReadOnlyDictionary<string, string> RuntimePackVersions()
     {
-        if (s_runtimeVersions is not null)
-            return s_runtimeVersions;
+        if (_runtimeVersions is not null)
+            return _runtimeVersions;
 
         using var globalJson = JsonDocument.Parse(File.ReadAllText(Repo.Root / "global.json"));
         var major = globalJson.RootElement.GetProperty("sdk").GetProperty("version").GetString()!.Split('.')[0];
@@ -327,7 +327,7 @@ static partial class AotPublish
 
         var missing = families.Values.Where(key => !versions.ContainsKey(key)).ToArray();
         Gate.Require(missing.Length == 0, $"no {major}.x runtime installed for {string.Join(", ", missing)}; the AOT gate cannot pin the runtime packs");
-        return s_runtimeVersions = versions;
+        return _runtimeVersions = versions;
     }
 
     private static int CompareVersions(string left, string right)

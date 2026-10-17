@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>The contract coverage report: the model holds, the generated artifacts are current, and the
 /// counts are printed for the reader.</summary>

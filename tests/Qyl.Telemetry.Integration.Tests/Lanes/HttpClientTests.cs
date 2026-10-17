@@ -10,7 +10,7 @@ namespace Qyl.Telemetry.Integration.Tests.Lanes;
 [TestCategory("http-client")]
 public sealed class HttpClientTests(TestContext testContext)
 {
-    private static readonly Dictionary<string, string[]> s_spanSets = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> SpanSets = new(StringComparer.Ordinal)
     {
         ["error-status"] = ["System.Net.Http/Client"],
         // The refused connection and the application's Spans.Work span that records the failure.
@@ -31,7 +31,7 @@ public sealed class HttpClientTests(TestContext testContext)
         run.RequireSucceeded()
             .RequireTokens("error-status=503", "expected-failure=HttpRequestException")
             .RequireReportPassed();
-        LaneChecks.SpanSets(run, "SpanSets", "Operation", s_spanSets);
+        LaneChecks.SpanSets(run, "SpanSets", "Operation", SpanSets);
         LaneChecks.ExcludedWithPrefix(run, "ExcludedScopes", "Experimental.", requireSome: false);
         lane.Telemetry.Spans(run, run.RequireCount("Activities", 3, "System.Net.Http and application activities"), "HttpClient");
         lane.Telemetry.Metrics(run, LaneChecks.Metrics(run.RequireCount("Metrics", 2, "HttpClient duration metrics")));

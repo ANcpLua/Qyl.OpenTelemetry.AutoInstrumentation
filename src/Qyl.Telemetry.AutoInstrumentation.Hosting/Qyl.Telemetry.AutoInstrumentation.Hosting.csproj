@@ -5,12 +5,8 @@
     <RootNamespace>Qyl.Telemetry.AutoInstrumentation.Hosting</RootNamespace>
     <AssemblyName>Qyl.Telemetry.AutoInstrumentation.Hosting</AssemblyName>
     <PackageId>Qyl.Telemetry.AutoInstrumentation.Hosting</PackageId>
-    <Description>Zero-code AOT boot: [ModuleInitializer] auto-activates the qyl listeners when the assembly is loaded. Also exposes AddQylAutoInstrumentation() for explicit wiring.</Description>
+    <Description>Native AOT bootstrap for qyl diagnostic listeners, activated by a generated module initializer. Use Qyl.Telemetry.Hosting and AddQyl() to configure telemetry export.</Description>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-  </ItemGroup>
 
   <ItemGroup>
     <None Include="buildTransitive\Qyl.Telemetry.AutoInstrumentation.Hosting.targets"

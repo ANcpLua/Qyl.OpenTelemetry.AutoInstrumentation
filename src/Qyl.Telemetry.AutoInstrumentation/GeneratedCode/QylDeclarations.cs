@@ -5,29 +5,22 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 /// <summary>
 /// Declares an intercepted integration. The source generator discovers every class carrying this
 /// attribute in the referenced runtime assembly and derives the interceptor kind, matcher, emitted
-/// body, instrumentation id, domain, signal, and contract manifest from the declaration alone.
+/// body, instrumentation id, signal, and contract manifest from the declaration alone.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+[JetBrains.Annotations.MeansImplicitUse]
 public sealed class QylIntegrationAttribute : Attribute
 {
-    /// <summary>Declares the integration's instrumentation id and domain.</summary>
-    public QylIntegrationAttribute(string instrumentationId, string domain)
-    {
-        InstrumentationId = instrumentationId;
-        Domain = domain;
-    }
-
-    /// <summary>The upstream instrumentation id (the <c>OTEL_DOTNET_AUTO_*_{ID}_INSTRUMENTATION_ENABLED</c> token).</summary>
-    public string InstrumentationId { get; }
-
-    /// <summary>The <c>qyl.instrumentation.domain</c> value stamped on every span.</summary>
-    public string Domain { get; }
+    /// <summary>Declares the upstream instrumentation id in compiler metadata.</summary>
+    public QylIntegrationAttribute([JetBrains.Annotations.UsedImplicitly] string instrumentationId) { }
 
     /// <summary>The signal the integration's spans belong to.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public QylAutoInstrumentationSignal Signal { get; set; } = QylAutoInstrumentationSignal.Traces;
 
     /// <summary>Metric instrumentation ids the integration also owns.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string[] MetricIds { get; set; } = [];
 }
 
@@ -40,37 +33,35 @@ public sealed class QylIntegrationAttribute : Attribute
 public sealed class QylInterceptAttribute : Attribute
 {
     /// <summary>Declares the receiver type (metadata name, arity as a backtick suffix; empty when the shape decides) and the intercepted method names (empty when the shape decides).</summary>
-    public QylInterceptAttribute(string receiverType, params string[] methods)
-    {
-        ReceiverType = receiverType;
-        Methods = methods;
-    }
-
-    /// <summary>The receiver type the intercepted method is declared on, or that the extension-method receiver implements.</summary>
-    public string ReceiverType { get; }
-
-    /// <summary>The intercepted method names.</summary>
-    public string[] Methods { get; }
+    public QylInterceptAttribute([JetBrains.Annotations.UsedImplicitly] string receiverType,
+        [JetBrains.Annotations.UsedImplicitly] params string[] methods) { }
 
     /// <summary>The named shape predicate (<see cref="QylShapes"/>) that validates the overload and computes the shape-bound value.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string Shape { get; set; } = string.Empty;
 
     /// <summary>The helper method that starts the activity.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string Start { get; set; } = string.Empty;
 
     /// <summary>The body template the generator emits.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public QylInterceptorBody Body { get; set; } = QylInterceptorBody.Trace;
 
     /// <summary>Whether the runtime observes the returned task instead of the interceptor awaiting it.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public bool ObserveAsync { get; set; }
 
     /// <summary>Whether <see cref="ObserveAsync"/> applies only to asynchronous overloads with by-reference parameters.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public bool ObserveByRefOnly { get; set; }
 
     /// <summary>The helper method that enriches the started activity from the call's arguments.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string Enrich { get; set; } = string.Empty;
 
     /// <summary>The helper method that records the operation's duration metric; the helper also exposes <c>GetTimestamp()</c>.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string Metric { get; set; } = string.Empty;
 
     /// <summary>
@@ -78,6 +69,7 @@ public sealed class QylInterceptAttribute : Attribute
     /// subscribes instead. A call site on one of them is left to the native lane: no interceptor is
     /// emitted, and the skip is not a shape mismatch, so it reports no <c>QYL1001</c>.
     /// </summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string[] NativeSourceReceivers { get; set; } = [];
 }
 
@@ -113,18 +105,14 @@ public static class QylShapes
 public sealed class QylFromArgumentAttribute : Attribute
 {
     /// <summary>Binds to the intercepted argument at <paramref name="index"/>.</summary>
-    public QylFromArgumentAttribute(int index)
-    {
-        Index = index;
-    }
-
-    /// <summary>The intercepted argument's position.</summary>
-    public int Index { get; }
+    public QylFromArgumentAttribute([JetBrains.Annotations.UsedImplicitly] int index) { }
 
     /// <summary>The argument type this binding applies to; empty applies to any type.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string Type { get; set; } = string.Empty;
 
     /// <summary>The conversion applied at the call site, with <c>{0}</c> standing for the argument.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public string Convert { get; set; } = "{0}";
 }
 
@@ -134,19 +122,9 @@ public sealed class QylFromArgumentAttribute : Attribute
 public sealed class QylFromReceiverAttribute : Attribute
 {
     /// <summary>Binds to the receiver itself, or to <paramref name="path"/> read from it.</summary>
-    public QylFromReceiverAttribute(string path = "")
-    {
-        Path = path;
-    }
+    public QylFromReceiverAttribute([JetBrains.Annotations.UsedImplicitly] string path = "") { }
 
-    /// <summary>The member path read from the receiver; empty binds the receiver itself.</summary>
-    public string Path { get; }
 }
-
-/// <summary>Binds a helper parameter to the intercepted method's name.</summary>
-[EditorBrowsable(EditorBrowsableState.Never)]
-[AttributeUsage(AttributeTargets.Parameter)]
-public sealed class QylFromMethodNameAttribute : Attribute;
 
 /// <summary>Binds a helper parameter to the instrumentation id the intercepted call reports under.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]

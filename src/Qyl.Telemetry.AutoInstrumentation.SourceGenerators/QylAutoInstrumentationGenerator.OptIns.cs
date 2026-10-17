@@ -40,7 +40,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         string Consequence,
         DiagnosticSeverity Severity);
 
-    private static readonly ImmutableArray<OptInDeclaration> s_optIns =
+    private static readonly ImmutableArray<OptInDeclaration> OptIns =
     [
         new(
             "GraphQL.NET",
@@ -105,15 +105,15 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
         var compilation = context.SemanticModel.Compilation;
-        if (compilation.AssemblyName is { } assemblyName && s_qylRuntimeAssemblies.Contains(assemblyName))
+        if (compilation.AssemblyName is { } assemblyName && QylRuntimeAssemblies.Contains(assemblyName))
             return default;
 
         if (context.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol is not IMethodSymbol symbol)
             return default;
 
-        for (var row = 0; row < s_optIns.Length; row++)
+        for (var row = 0; row < OptIns.Length; row++)
         {
-            var declaration = s_optIns[row];
+            var declaration = OptIns[row];
             if (string.Equals(symbol.Name, declaration.OptInMethod, StringComparison.Ordinal) &&
                 (declaration.OptInNamespace.Length is 0 || IsInNamespace(symbol, declaration.OptInNamespace)))
             {
@@ -197,7 +197,7 @@ public sealed partial class QylAutoInstrumentationGenerator
             if (optedIn.Contains(row))
                 continue;
 
-            var declaration = s_optIns[row - 1];
+            var declaration = OptIns[row - 1];
             context.ReportDiagnostic(Diagnostic.Create(
                 QylGeneratorDiagnostics.NativeTelemetryOptInMissing,
                 used[row],

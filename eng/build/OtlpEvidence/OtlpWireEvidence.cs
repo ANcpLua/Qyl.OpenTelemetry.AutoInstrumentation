@@ -8,7 +8,7 @@ using OpenTelemetry.Proto.Collector.Trace.V1;
 using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Trace.V1;
 
-namespace Qyl.Build;
+namespace Qyl.Build.OtlpEvidence;
 
 /// <summary>
 /// The OTLP wire evidence. A README-style Qyl.Telemetry.Hosting package consumer makes one real
@@ -141,9 +141,11 @@ static class OtlpWireEvidence
     private static JsonObject BuildReport(IReadOnlyList<object> otlpRequests, IReadOnlyList<object> downstreamRequests)
     {
         var downstreamPath = $"/probe?access_token={Secret}";
-        Gate.Require(downstreamRequests.Count == 1 && downstreamRequests[0] is HttpRequest { Method: "GET" } only && only.Path == downstreamPath,
+        Gate.Require(downstreamRequests is [HttpRequest { Method: "GET" } only] && only.Path == downstreamPath,
             () => $"unexpected downstream requests: [{string.Join(", ", downstreamRequests)}]");
-        Gate.Require(otlpRequests.Count == 1 && otlpRequests[0] is OtlpRequest,
+        var malformed = otlpRequests.OfType<InvalidOtlpRequest>().ToArray();
+        Gate.Require(malformed.Length == 0, () => "invalid OTLP requests: " + string.Join("; ", malformed.Select(static request => $"{request.Path}: {request.Error}")));
+        Gate.Require(otlpRequests is [OtlpRequest],
             () => $"expected one typed OTLP request, got [{string.Join(", ", otlpRequests)}]");
 
         var request = (OtlpRequest)otlpRequests[0];
@@ -177,7 +179,7 @@ static class OtlpWireEvidence
         Gate.Require(url is not null && !url.Contains(Secret, StringComparison.Ordinal) && url.Contains("?*", StringComparison.Ordinal),
             $"url.full was not safely redacted: {Show(url)}");
         var (normalizedUrl, urlPort) = NormalizeLoopbackUrl(url!);
-        Gate.Require(values.GetValueOrDefault("server.port") is long serverPort && serverPort > 0 && serverPort == urlPort,
+        Gate.Require(values.GetValueOrDefault("server.port") is long serverPort and > 0 && serverPort == urlPort,
             $"server.port did not match the real loopback URL: attribute={Show(values.GetValueOrDefault("server.port"))} url={url}");
         Gate.Require(!values.Values.Any(static value => Show(value).Contains(Secret, StringComparison.Ordinal)), "OTLP attributes leaked the downstream secret");
         Gate.Require(span.TraceId.Length == 16 && span.SpanId.Length == 8, "OTLP span carries invalid trace/span identifiers");

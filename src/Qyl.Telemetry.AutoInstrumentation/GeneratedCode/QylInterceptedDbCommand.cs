@@ -1,7 +1,6 @@
 using System.Data.Common;
 using System.Diagnostics;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
-using Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Qyl;
 
 namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 
@@ -11,7 +10,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.GeneratedCode;
 /// their spans are their own.
 /// </summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
-[QylIntegration(QylAutoInstrumentationIds.AdoNet, QylAttributes.InstrumentationDomainValues.DbClient)]
+[QylIntegration(QylAutoInstrumentationIds.AdoNet)]
 [QylIntercept(
     "System.Data.Common.DbCommand",
     "ExecuteReader", "ExecuteReaderAsync", "ExecuteScalar", "ExecuteScalarAsync", "ExecuteNonQuery", "ExecuteNonQueryAsync",
@@ -30,12 +29,10 @@ public static class QylInterceptedDbCommand
     /// <summary>Starts the client span for the command under the provider's instrumentation id.</summary>
     public static Activity? Execute(
         [QylFromReceiver] DbCommand command,
-        [QylFromInstrumentationId] string instrumentationId,
-        [QylFromMethodName] string operationName)
+        [QylFromInstrumentationId] string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(instrumentationId);
-        ArgumentNullException.ThrowIfNull(operationName);
 
         return QylDbActivityPolicy.StartDbCommandActivity(command, instrumentationId);
     }
@@ -49,6 +46,7 @@ public static class QylInterceptedDbCommand
         => QylDbClientMetrics.RecordDuration(startTimestamp, instrumentationId);
 
     /// <summary>Observes an asynchronous database command and records qyl success, exception, and duration telemetry.</summary>
+    [JetBrains.Annotations.UsedImplicitly]
     public static Task<T> ObserveAsync<T>(Task<T> task, Activity? activity, long metricStart, string instrumentationId)
     {
         ArgumentNullException.ThrowIfNull(task);

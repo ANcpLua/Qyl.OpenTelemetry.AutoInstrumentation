@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// A PackageReference consumer of Qyl.Telemetry.AutoInstrumentation alone gets the generated

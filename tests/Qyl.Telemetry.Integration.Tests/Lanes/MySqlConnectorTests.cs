@@ -12,7 +12,7 @@ public sealed class MySqlConnectorTests(TestContext testContext)
     // against the stable one. The demo sets it too, so neither side can drift silently.
     private const string StabilityOptIn = "database";
 
-    private static readonly Dictionary<string, string[]> s_operations = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> Operations = new(StringComparer.Ordinal)
     {
         ["connection-open"] = ["MySqlConnector|Client"],
         ["select"] = ["MySqlConnector|Client"],
@@ -38,8 +38,8 @@ public sealed class MySqlConnectorTests(TestContext testContext)
             .RequireTokens("connection-state=Open", "select-scalar=1", "expected-mysql-error-number=1054")
             .RequireReportPassed();
         LaneChecks.ExactStrings(run, "ExcludedSourcePrefixes", ["Experimental."]);
-        LaneChecks.SpanSets(run, "Operations", "Operation", s_operations);
-        var total = s_operations.Values.Sum(static spans => spans.Length);
+        LaneChecks.SpanSets(run, "Operations", "Operation", Operations);
+        var total = Operations.Values.Sum(static spans => spans.Length);
         lane.Telemetry.Spans(run, run.RequireCount("Activities", total, "MySqlConnector activities"), "MySqlConnector");
     }
 }

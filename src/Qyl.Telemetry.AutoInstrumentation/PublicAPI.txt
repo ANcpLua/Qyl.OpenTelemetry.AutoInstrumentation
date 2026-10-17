@@ -3,27 +3,21 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylConsumerBuildInfo.Regi
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Convert.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Convert.set -> void
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Index.get -> int
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.QylFromArgumentAttribute(int index) -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Type.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromArgumentAttribute.Type.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromInstrumentationIdAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromInstrumentationIdAttribute.QylFromInstrumentationIdAttribute() -> void
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromMethodNameAttribute
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromMethodNameAttribute.QylFromMethodNameAttribute() -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromReceiverAttribute
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromReceiverAttribute.Path.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromReceiverAttribute.QylFromReceiverAttribute(string! path = "") -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromShapeAttribute
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylFromShapeAttribute.QylFromShapeAttribute() -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi
-const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V27 = 27 -> int
+const Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V28 = 28 -> int
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.Domain.get -> string!
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.InstrumentationId.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.MetricIds.get -> string![]!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.MetricIds.set -> void
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.QylIntegrationAttribute(string! instrumentationId, string! domain) -> void
+Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.QylIntegrationAttribute(string! instrumentationId) -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.Signal.get -> Qyl.Telemetry.AutoInstrumentation.QylAutoInstrumentationSignal
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntegrationAttribute.Signal.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute
@@ -31,7 +25,6 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Body.get -
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Body.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Enrich.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Enrich.set -> void
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Methods.get -> string![]!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Metric.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Metric.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.NativeSourceReceivers.get -> string![]!
@@ -41,7 +34,6 @@ Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ObserveAsy
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ObserveByRefOnly.get -> bool
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ObserveByRefOnly.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.QylInterceptAttribute(string! receiverType, params string![]! methods) -> void
-Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.ReceiverType.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Shape.get -> string!
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Shape.set -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptAttribute.Start.get -> string!
@@ -51,7 +43,7 @@ static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.Ob
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.ObserveAsync<T>(System.Threading.Tasks.Task<T>? task, System.Diagnostics.Activity? activity) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedActivity.RecordFailure(System.Diagnostics.Activity? activity, System.Exception! exception) -> void
 Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand
-static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(System.Data.Common.DbCommand! command, string! instrumentationId, string! operationName) -> System.Diagnostics.Activity?
+static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.Execute(System.Data.Common.DbCommand! command, string! instrumentationId) -> System.Diagnostics.Activity?
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.GetTimestamp() -> long
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.ObserveAsync<T>(System.Threading.Tasks.Task<T>! task, System.Diagnostics.Activity? activity, long metricStart, string! instrumentationId) -> System.Threading.Tasks.Task<T>!
 static Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylInterceptedDbCommand.RecordDuration(long startTimestamp, string! instrumentationId) -> void

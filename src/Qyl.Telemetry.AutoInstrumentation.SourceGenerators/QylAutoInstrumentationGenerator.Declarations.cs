@@ -11,7 +11,7 @@ public sealed partial class QylAutoInstrumentationGenerator
     private const string IntegrationAttributeName = "QylIntegrationAttribute";
     private const string InterceptAttributeName = "QylInterceptAttribute";
     private const string SignalAttributeName = "QylSignalAttribute";
-    private static readonly string[] s_generatedCodeNamespace = ["Qyl", "Telemetry", "AutoInstrumentation", "GeneratedCode"];
+    private static readonly string[] GeneratedCodeNamespace = ["Qyl", "Telemetry", "AutoInstrumentation", "GeneratedCode"];
 
     /// <summary>Mirrors <c>QylInterceptorBody</c> in the runtime; read from metadata by value.</summary>
     private enum InterceptorBody
@@ -24,7 +24,6 @@ public sealed partial class QylAutoInstrumentationGenerator
     {
         Argument,
         Receiver,
-        MethodName,
         InstrumentationId,
         Shape,
     }
@@ -80,10 +79,10 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     // One catalog per compilation: the referenced runtime assembly's declarations are read once and
     // reused by every invocation the syntax provider visits in that compilation.
-    private static readonly ConditionalWeakTable<Compilation, DeclarationCatalog> s_catalogs = new();
+    private static readonly ConditionalWeakTable<Compilation, DeclarationCatalog> Catalogs = new();
 
     private static DeclarationCatalog GetCatalog(Compilation compilation)
-        => s_catalogs.GetValue(compilation, static current => ReadCatalog(current));
+        => Catalogs.GetValue(compilation, static current => ReadCatalog(current));
 
     private static DeclarationCatalog ReadCatalog(Compilation compilation)
     {
@@ -98,7 +97,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static ImmutableArray<IntegrationDeclaration> ReadIntegrations(IAssemblySymbol assembly)
     {
-        if (FindNamespace(assembly.GlobalNamespace, s_generatedCodeNamespace) is not { } generatedCode)
+        if (FindNamespace(assembly.GlobalNamespace, GeneratedCodeNamespace) is not { } generatedCode)
             return ImmutableArray<IntegrationDeclaration>.Empty;
 
         var builder = ImmutableArray.CreateBuilder<IntegrationDeclaration>();
@@ -239,9 +238,6 @@ public sealed partial class QylAutoInstrumentationGenerator
                     break;
                 case "QylFromReceiverAttribute":
                     bindings.Add(new ArgumentBinding(BindingSource.Receiver, 0, string.Empty, attribute.GetConstructorArgument<string>(0) ?? string.Empty));
-                    break;
-                case "QylFromMethodNameAttribute":
-                    bindings.Add(new ArgumentBinding(BindingSource.MethodName, 0, string.Empty, string.Empty));
                     break;
                 case "QylFromInstrumentationIdAttribute":
                     bindings.Add(new ArgumentBinding(BindingSource.InstrumentationId, 0, string.Empty, string.Empty));

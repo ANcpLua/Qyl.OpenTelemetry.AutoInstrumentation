@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore</RootNamespace>
+    <RootNamespace>Qyl.Telemetry.AutoInstrumentation</RootNamespace>
     <AssemblyName>Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore</AssemblyName>
     <PackageId>Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore</PackageId>
     <Description>Zero-code AOT-native EFCore DiagnosticSource instrumentation for qyl.</Description>

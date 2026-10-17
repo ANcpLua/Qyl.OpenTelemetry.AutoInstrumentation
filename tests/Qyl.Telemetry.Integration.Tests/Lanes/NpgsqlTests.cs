@@ -10,7 +10,7 @@ namespace Qyl.Telemetry.Integration.Tests.Lanes;
 [TestCategory("npgsql")]
 public sealed class NpgsqlTests(TestContext testContext)
 {
-    private static readonly Dictionary<string, string[]> s_operations = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string[]> Operations = new(StringComparer.Ordinal)
     {
         ["connection-open"] = ["Npgsql|Client"],
         ["select"] = ["Npgsql|Client"],
@@ -36,8 +36,8 @@ public sealed class NpgsqlTests(TestContext testContext)
             .RequireTokens("connection-state=Open", "select-scalar=1", "expected-postgres-sqlstate=42703")
             .RequireReportPassed();
         LaneChecks.ExactStrings(run, "ExcludedSourcePrefixes", ["Experimental."]);
-        LaneChecks.SpanSets(run, "Operations", "Operation", s_operations);
-        var total = s_operations.Values.Sum(static spans => spans.Length);
+        LaneChecks.SpanSets(run, "Operations", "Operation", Operations);
+        var total = Operations.Values.Sum(static spans => spans.Length);
         lane.Telemetry.Spans(run, run.RequireCount("Activities", total, "Npgsql activities"), "Npgsql");
     }
 }

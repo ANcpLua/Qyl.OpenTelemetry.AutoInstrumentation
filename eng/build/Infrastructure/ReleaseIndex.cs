@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>
 /// VerifyRelease's index wait. Polls NuGet's flat-container index, the endpoint a restore reads, with a

@@ -29,7 +29,6 @@ internal sealed class QylAutoInstrumentationOptions
     private readonly IReadOnlyDictionary<InstrumentationLookupKey, bool> _instrumentationEnabled;
 
     private QylAutoInstrumentationOptions(
-        bool globalEnabled,
         bool tracesEnabled,
         bool metricsEnabled,
         bool logsEnabled,
@@ -42,15 +41,12 @@ internal sealed class QylAutoInstrumentationOptions
         bool aspNetCoreUrlQueryRedactionDisabled,
         bool httpClientUrlQueryRedactionDisabled)
     {
-        GlobalEnabled = globalEnabled;
         TracesEnabled = tracesEnabled;
         MetricsEnabled = metricsEnabled;
         LogsEnabled = logsEnabled;
         _instrumentationEnabled = instrumentationEnabled;
         EntityFrameworkCoreSetDbStatementForText = entityFrameworkCoreSetDbStatementForText;
         SqlClientSetDbStatementForText = sqlClientSetDbStatementForText;
-        AspNetCoreCapturedRequestHeaders = aspNetCoreCapturedRequestHeaders;
-        AspNetCoreCapturedResponseHeaders = aspNetCoreCapturedResponseHeaders;
         AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", aspNetCoreCapturedRequestHeaders);
         AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", aspNetCoreCapturedResponseHeaders);
         AdditionalMetricMeterNames = additionalMetricMeterNames;
@@ -58,9 +54,7 @@ internal sealed class QylAutoInstrumentationOptions
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
     }
 
-    public bool GlobalEnabled { get; }
-
-    public bool TracesEnabled { get; }
+    private bool TracesEnabled { get; }
 
     public bool MetricsEnabled { get; }
 
@@ -69,10 +63,6 @@ internal sealed class QylAutoInstrumentationOptions
     public bool EntityFrameworkCoreSetDbStatementForText { get; }
 
     public bool SqlClientSetDbStatementForText { get; }
-
-    public string[] AspNetCoreCapturedRequestHeaders { get; }
-
-    public string[] AspNetCoreCapturedResponseHeaders { get; }
 
     internal QylCapturedNameMap AspNetCoreCapturedRequestHeaderMap { get; }
 
@@ -115,7 +105,6 @@ internal sealed class QylAutoInstrumentationOptions
         AddSignalInstrumentations(instrumentationEnabled, QylAutoInstrumentationSignal.Logs, logsEnabled, QylDeclaredInstrumentations.Logs);
 
         return new QylAutoInstrumentationOptions(
-            globalEnabled,
             tracesEnabled,
             metricsEnabled,
             logsEnabled,
@@ -238,25 +227,25 @@ internal sealed class QylAutoInstrumentationOptions
 
     private readonly struct InstrumentationLookupKey : IEquatable<InstrumentationLookupKey>
     {
-        private readonly QylAutoInstrumentationSignal signal;
-        private readonly string instrumentationId;
+        private readonly QylAutoInstrumentationSignal _signal;
+        private readonly string _instrumentationId;
 
         internal InstrumentationLookupKey(QylAutoInstrumentationSignal signal, string instrumentationId)
         {
-            this.signal = signal;
-            this.instrumentationId = instrumentationId;
+            _signal = signal;
+            _instrumentationId = instrumentationId;
         }
 
         public bool Equals(InstrumentationLookupKey other)
-            => signal == other.signal &&
-               string.Equals(instrumentationId, other.instrumentationId, StringComparison.Ordinal);
+            => _signal == other._signal &&
+               string.Equals(_instrumentationId, other._instrumentationId, StringComparison.Ordinal);
 
         public override bool Equals(object? obj)
             => obj is InstrumentationLookupKey other && Equals(other);
 
         public override int GetHashCode()
             => HashCode.Combine(
-                signal,
-                instrumentationId is null ? 0 : StringComparer.Ordinal.GetHashCode(instrumentationId));
+                _signal,
+                _instrumentationId is null ? 0 : StringComparer.Ordinal.GetHashCode(_instrumentationId));
     }
 }

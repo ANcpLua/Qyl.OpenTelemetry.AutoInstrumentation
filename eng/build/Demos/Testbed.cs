@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Demos;
 
 /// <summary>The eight services of the Railway testbed. They sleep when idle.</summary>
 enum TestbedService
@@ -334,8 +334,7 @@ static class TestbedProbes
     private static byte[] MongoHello()
     {
         // BSON { hello: 1, $db: "admin" }
-        var document = new List<byte>();
-        document.Add(0x10);
+        var document = new List<byte> { 0x10 };
         document.AddRange("hello\0"u8.ToArray());
         document.AddRange(BitConverter.GetBytes(1));
         document.Add(0x02);

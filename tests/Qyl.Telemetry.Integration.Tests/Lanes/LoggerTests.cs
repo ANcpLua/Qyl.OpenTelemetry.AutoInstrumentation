@@ -7,11 +7,11 @@ namespace Qyl.Telemetry.Integration.Tests.Lanes;
 /// </summary>
 [TestClass]
 [TestCategory("ilogger")]
-public sealed class ILoggerTests(TestContext testContext)
+public sealed class LoggerTests(TestContext testContext)
 {
     private const string LogsControl = "OTEL_DOTNET_AUTO_LOGS_INSTRUMENTATION_ENABLED";
 
-    private static readonly (string Severity, string Body)[] s_records =
+    private static readonly (string Severity, string Body)[] Records =
     [
         ("Trace", "qyl trace record"),
         ("Debug", "qyl debug record"),
@@ -39,7 +39,7 @@ public sealed class ILoggerTests(TestContext testContext)
 
     private static void Verify(DemoContext lane, DemoRun run, bool logsEnabled)
     {
-        var expected = logsEnabled ? s_records : [];
+        var expected = logsEnabled ? Records : [];
         run.RequireSucceeded()
             .RequireTokens($"ilogger-record-count={expected.Length}")
             .RequireReportPassed()

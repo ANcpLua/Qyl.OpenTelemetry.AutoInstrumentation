@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>
 /// The contract YAML as a plain object graph: <see cref="OrderedDictionary{TKey,TValue}"/> for a
@@ -113,13 +113,13 @@ static partial class Yaml
         }
     }
 
-    [GeneratedRegex(@"^[-+]?(?:0|[1-9][0-9_]*)$")]
+    [GeneratedRegex("^[-+]?(?:0|[1-9][0-9_]*)$")]
     private static partial Regex DecimalInt();
 
-    [GeneratedRegex(@"^([-+]?)0x([0-9a-fA-F_]+)$")]
+    [GeneratedRegex("^([-+]?)0x([0-9a-fA-F_]+)$")]
     private static partial Regex HexInt();
 
-    [GeneratedRegex(@"^([-+]?)0o?([0-7_]+)$")]
+    [GeneratedRegex("^([-+]?)0o?([0-7_]+)$")]
     private static partial Regex OctalInt();
 
     [GeneratedRegex(@"^(?:[-+]?[0-9][0-9_]*\.[0-9_]*(?:[eE][-+][0-9]+)?|[-+]?\.[0-9_]+(?:[eE][-+][0-9]+)?)$")]

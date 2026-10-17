@@ -13,9 +13,9 @@ namespace Qyl.Telemetry.Integration.Tests.Lanes;
 public sealed class McpTests(TestContext testContext)
 {
     private const string McpSource = "Experimental.ModelContextProtocol";
-    private static readonly string[] s_sensitiveValues = ["mcp-sensitive-argument-73f8a9", "mcp-sensitive-result-9d20c4"];
+    private static readonly string[] SensitiveValues = ["mcp-sensitive-argument-73f8a9", "mcp-sensitive-result-9d20c4"];
 
-    private static readonly Dictionary<string, string> s_operations = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, string> Operations = new(StringComparer.Ordinal)
     {
         ["server/discover"] = "server/discover",
         ["tools/list"] = "tools/list",
@@ -39,7 +39,7 @@ public sealed class McpTests(TestContext testContext)
     private static void Verify(DemoContext lane, DemoRun run, bool registrationEnabled)
     {
         run.RequireSucceeded();
-        foreach (var sensitive in s_sensitiveValues)
+        foreach (var sensitive in SensitiveValues)
             Assert.IsTrue(!run.Stdout.Contains(sensitive, StringComparison.Ordinal), $"{run.Label} leaked a sensitive tool value to telemetry output: {sensitive}");
         run.RequireReportPassed()
             .RequireBool("ToolListed", true)
@@ -54,14 +54,14 @@ public sealed class McpTests(TestContext testContext)
         var all = activities.EnumerateArray().ToArray();
         Assert.IsTrue(all.All(static activity => ReportedActivity.Text(activity, "Source") == McpSource), $"{run.Label} ActivitySource mismatch:\n{activities}");
         var names = all.GroupBy(static activity => ReportedActivity.Text(activity, "Name") ?? string.Empty).ToDictionary(static group => group.Key, static group => group.Count(), StringComparer.Ordinal);
-        Assert.IsTrue(names.Count == s_operations.Count && s_operations.Keys.All(name => names.GetValueOrDefault(name) == 2), $"{run.Label} operation set mismatch:\n{activities}");
+        Assert.IsTrue(names.Count == Operations.Count && Operations.Keys.All(name => names.GetValueOrDefault(name) == 2), $"{run.Label} operation set mismatch:\n{activities}");
 
         var rootTrace = run.StringField("RootTraceId");
         var rootSpan = run.StringField("RootSpanId");
         Assert.IsTrue(rootTrace is not null && rootSpan is not null, $"{run.Label} report is missing root context:\n{run.Dump()}");
 
         var sessions = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal) { ["Client"] = [], ["Server"] = [] };
-        foreach (var (operation, method) in s_operations)
+        foreach (var (operation, method) in Operations)
         {
             var pair = all.Where(activity => ReportedActivity.Text(activity, "Name") == operation).ToArray();
             var byKind = pair.ToDictionary(static activity => ReportedActivity.Text(activity, "Kind") ?? string.Empty, StringComparer.Ordinal);

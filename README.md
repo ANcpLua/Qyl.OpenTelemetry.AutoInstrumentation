@@ -28,7 +28,7 @@ registry checks; no duration unit is inferred or converted.
 | --- | --- |
 | `Qyl.Telemetry.Hosting` | One-line onboarding. `builder.AddQyl()` wires the OpenTelemetry SDK, subscribes the native `ActivitySource` table and the application scope, adds the two processors, registers the meter inventory and exports OTLP with collector discovery. Its package root carries `SKILL.md`, the guide for a coding agent in the consuming application. |
 | `Qyl.Telemetry.AutoInstrumentation` | The core runtime: the single qyl `ActivitySource`, the interceptor declarations and helper bodies, the options surface, the compiler-facing ABI, the build assets and the source generator. |
-| `Qyl.Telemetry.AutoInstrumentation.Hosting` | Process bootstrap: a `[ModuleInitializer]` activates the qyl listeners when the assembly loads, and `AddQylAutoInstrumentation()` wires them explicitly. |
+| `Qyl.Telemetry.AutoInstrumentation.Hosting` | Process bootstrap: a `[ModuleInitializer]` activates the qyl listeners when the assembly loads. `AddQyl()` is the application host entrypoint. |
 | `Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners` | The base `DiagnosticListener` subscriber and the shared semantics helpers the EF Core and SqlClient packages build on. |
 | `Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore` | EF Core `DiagnosticSource` instrumentation. |
 | `Qyl.Telemetry.AutoInstrumentation.SqlClient` | `Microsoft.Data.SqlClient` `DiagnosticSource` instrumentation. |
@@ -312,7 +312,7 @@ the application's spans carry `Qyl.Telemetry.Application`. Both sources carry th
 schema URL, `SchemaUrl.Qyl` (`https://qyl.at/schemas/<release>`), so the collector's `schema_urls`
 name the registry release each producer compiled against. A manually wired SDK mirrors them in
 `AddSource(...)`, `AddMeter(...)` or `OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES`. The generated-code ABI anchor is
-`QylGeneratedCodeAbi.V27` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
+`QylGeneratedCodeAbi.V28` in the `Qyl.Telemetry.AutoInstrumentation.GeneratedCode` namespace and
 tracks the package major, so a generated interceptor from another major fails to compile rather
 than binding to this runtime.
 

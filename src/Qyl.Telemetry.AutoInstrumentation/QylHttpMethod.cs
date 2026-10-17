@@ -4,7 +4,7 @@ namespace Qyl.Telemetry.AutoInstrumentation;
 
 internal static class QylHttpMethod
 {
-    public static bool IsKnown(string method)
+    private static bool IsKnown(string method)
         => method is not HttpAttributes.RequestMethodValues.Other && HttpAttributes.RequestMethodValues.Contains(method);
 
     public static string Normalize(string? method)

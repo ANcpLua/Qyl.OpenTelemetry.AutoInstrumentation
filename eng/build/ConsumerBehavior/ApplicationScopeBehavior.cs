@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// The application scope, through the packages alone: a consumer's <c>Spans.Work</c> span is exported

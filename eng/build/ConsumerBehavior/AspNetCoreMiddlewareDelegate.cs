@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// Hand-written ASP.NET Core middleware does not break the build. Convention-based middleware calls

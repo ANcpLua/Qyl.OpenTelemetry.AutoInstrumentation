@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>
 /// Fails when a README or contract YAML names a version that Directory.Packages.props does not pin.
@@ -95,7 +95,7 @@ static partial class DocPins
             }
 
             var cells = line.Trim().Trim('|').Split('|').Select(static cell => cell.Trim()).ToArray();
-            if (cells.Length >= 2 && cells[1] == "Pinned")
+            if (cells is [_, "Pinned", ..])
             {
                 inPinnedTable = true;
                 continue;

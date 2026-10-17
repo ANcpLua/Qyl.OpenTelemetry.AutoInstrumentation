@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>
 /// Version truth. The instrumentation-scope version is stamped onto every emitted span and metric and
@@ -19,7 +19,7 @@ static partial class VersionSync
     private static AbsolutePath Changelog => Repo.Root / "CHANGELOG.md";
     private static AbsolutePath Readme => Repo.Root / "README.md";
     private static AbsolutePath Instrumentation => Repo.Src / "Qyl.Telemetry.AutoInstrumentation" / "QylInstrumentation.cs";
-    private static AbsolutePath GeneratedCodeAbi => Repo.Src / "Qyl.Telemetry.AutoInstrumentation" / "QylGeneratedCodeAbi.cs";
+    private static AbsolutePath GeneratedCodeAbi => Repo.Src / "Qyl.Telemetry.AutoInstrumentation" / "GeneratedCode" / "QylGeneratedCodeAbi.cs";
     private static AbsolutePath Generator => Repo.Src / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs";
 
     public static void Verify()

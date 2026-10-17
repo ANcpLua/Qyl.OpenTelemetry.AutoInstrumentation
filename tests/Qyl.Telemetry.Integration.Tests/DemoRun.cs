@@ -14,25 +14,17 @@ enum LaneRuntime
 /// The assertions restate what the demo already asserts in-process, so a
 /// demo that quietly relaxes its own expectation still fails its lane.
 /// </summary>
-sealed class DemoRun
+sealed class DemoRun(string label, LaneRuntime runtime, ProcessResult process, TelemetrySnapshot telemetry)
 {
     private JsonElement? _report;
 
-    public DemoRun(string label, LaneRuntime runtime, ProcessResult process, TelemetrySnapshot telemetry)
-    {
-        Label = label;
-        Runtime = runtime;
-        Process = process;
-        Telemetry = telemetry;
-    }
+    public string Label { get; } = label;
 
-    public string Label { get; }
+    private LaneRuntime Runtime { get; } = runtime;
 
-    private LaneRuntime Runtime { get; }
+    public ProcessResult Process { get; } = process;
 
-    public ProcessResult Process { get; }
-
-    public TelemetrySnapshot Telemetry { get; }
+    public TelemetrySnapshot Telemetry { get; } = telemetry;
 
     public string Stdout => Process.Stdout;
 

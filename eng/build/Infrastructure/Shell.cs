@@ -4,7 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Infrastructure;
 
 /// <summary>What a finished child process left behind. Stdout and stderr are kept apart and byte-exact:
 /// several gates compare them verbatim or require stderr to be empty.</summary>
@@ -231,13 +231,13 @@ sealed class RunningProcess : IDisposable
 /// <summary>The dotnet CLI as every gate calls it: Release, at most four MSBuild nodes, no node reuse.</summary>
 static class DotNet
 {
-    public static ProcessResult Build(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
+    public static void Build(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
         Shell.Checked("dotnet", ["build", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], workingDirectory, environment);
 
-    private static ProcessResult Publish(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
+    private static void Publish(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
         Shell.Checked("dotnet", ["publish", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], workingDirectory, environment);
 
-    public static ProcessResult Pack(string project, string output, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null) =>
+    public static void Pack(string project, string output, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null) =>
         Shell.Checked("dotnet", ["pack", project, "-c", "Release", "-o", output, "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], null, environment);
 
     /// <summary>A NativeAOT publish for the host runtime into <paramref name="output"/>; returns the executable.</summary>

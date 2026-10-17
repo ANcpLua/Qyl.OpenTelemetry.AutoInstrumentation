@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Item = System.Collections.Generic.OrderedDictionary<string, object?>;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>
 /// The interceptor manifests the source generator writes beside every intercepted call

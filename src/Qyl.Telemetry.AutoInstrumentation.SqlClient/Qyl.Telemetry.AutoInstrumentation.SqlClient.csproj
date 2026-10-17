@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>Qyl.Telemetry.AutoInstrumentation.SqlClient</RootNamespace>
+    <RootNamespace>Qyl.Telemetry.AutoInstrumentation</RootNamespace>
     <AssemblyName>Qyl.Telemetry.AutoInstrumentation.SqlClient</AssemblyName>
     <PackageId>Qyl.Telemetry.AutoInstrumentation.SqlClient</PackageId>
     <Description>Zero-code AOT-native Microsoft.Data.SqlClient DiagnosticSource instrumentation for qyl.</Description>

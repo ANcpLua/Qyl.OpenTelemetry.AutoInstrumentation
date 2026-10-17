@@ -1043,7 +1043,7 @@ public sealed partial class QylAutoInstrumentationGenerator
     }
 
     private static string CleanTypeName(ITypeSymbol symbol)
-        => symbol.ToDisplayString(s_fullyQualifiedFormat);
+        => symbol.ToDisplayString(FullyQualifiedFormat);
 
     private static string CleanTypeName(ITypeSymbol symbol, IMethodSymbol method)
     {
@@ -1072,7 +1072,7 @@ public sealed partial class QylAutoInstrumentationGenerator
                 return CleanTypeName(array.ElementType, typeParameters, typeArguments) + "[]";
             case INamedTypeSymbol { IsGenericType: true, TypeArguments.Length: > 0 } named:
             {
-                var constructedName = named.ConstructedFrom.ToDisplayString(s_fullyQualifiedFormat);
+                var constructedName = named.ConstructedFrom.ToDisplayString(FullyQualifiedFormat);
                 var genericStart = constructedName.IndexOf('<');
                 var typeName = genericStart < 0 ? constructedName : constructedName.Substring(0, genericStart);
                 var arguments = named.TypeArguments

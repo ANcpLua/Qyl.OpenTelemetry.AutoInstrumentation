@@ -3,7 +3,7 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Xml.Linq;
 
-namespace Qyl.Build;
+namespace Qyl.Build.PackageLayout;
 
 /// <summary>The packed Qyl.Telemetry.AutoInstrumentation: required build assets present, identical in
 /// build/ and buildTransitive/, no entry or token of a forbidden instrumentation mechanism, and the

@@ -15,17 +15,17 @@ public sealed class OracleMdaTests(TestContext testContext)
     private const string ModeNone = "none";
     private const string ModeAddonDefault = "addon-default";
     private const string ModeAddonEnriched = "addon-enriched";
-    private static readonly string[] s_modes = [ModeNone, ModeAddonDefault, ModeAddonEnriched];
-    private static readonly string[] s_commandPhases = ["command-scalar", "command-nonquery", "command-failing"];
-    private static readonly string[] s_connectionPhases = ["open", "close"];
+    private static readonly string[] Modes = [ModeNone, ModeAddonDefault, ModeAddonEnriched];
+    private static readonly string[] CommandPhases = ["command-scalar", "command-nonquery", "command-failing"];
+    private static readonly string[] ConnectionPhases = ["open", "close"];
     private const string RootParent = "0000000000000000";
 
     // The four keys ODP.NET writes on its own, plus the one the qyl processor stamps.
-    private static readonly string[] s_defaultVocabulary =
+    private static readonly string[] DefaultVocabulary =
         ["db.odp.roundtrip.count", "db.odp.roundtrip.duration", "db.response.returned_rows", "db.system", "qyl.instrumentation.domain"];
 
     // What the add-on adds once its enrichment options are on. None of these gate whether a span exists.
-    private static readonly string[] s_enrichedOnlyKeys =
+    private static readonly string[] EnrichedOnlyKeys =
         ["db.name", "db.odp.connection.id", "db.odp.sql_id", "db.statement", "db.user", "server.address", "server.port"];
 
     [TestMethod]
@@ -35,9 +35,9 @@ public sealed class OracleMdaTests(TestContext testContext)
         lane.BuildManaged();
         var executable = lane.PublishNativeAot();
         var managed = new Dictionary<string, DemoRun>(StringComparer.Ordinal);
-        foreach (var mode in s_modes)
+        foreach (var mode in Modes)
             managed[mode] = Verify(lane, (await lane.RunManagedAsync($"managed Oracle MDA demo ({mode})", lane.With(("QYL_ORACLE_ADDON_MODE", mode)))), mode);
-        foreach (var mode in s_modes)
+        foreach (var mode in Modes)
             Verify(lane, (await lane.RunNativeAotAsync(executable, $"NativeAOT Oracle MDA demo ({mode})", lane.With(("QYL_ORACLE_ADDON_MODE", mode)))), mode);
         VerifyAddonDelta(managed);
     }
@@ -45,8 +45,8 @@ public sealed class OracleMdaTests(TestContext testContext)
     private static Dictionary<string, string[]> ExpectedSpanSets(string mode)
     {
         var connection = mode == ModeAddonEnriched ? new[] { OracleClient, OracleClient } : [];
-        var sets = s_commandPhases.ToDictionary(static phase => phase, static _ => new[] { OracleClient, OracleClient }, StringComparer.Ordinal);
-        foreach (var phase in s_connectionPhases)
+        var sets = CommandPhases.ToDictionary(static phase => phase, static _ => new[] { OracleClient, OracleClient }, StringComparer.Ordinal);
+        foreach (var phase in ConnectionPhases)
             sets[phase] = connection;
         return sets;
     }
@@ -77,7 +77,7 @@ public sealed class OracleMdaTests(TestContext testContext)
         var roots = activities.Where(static activity => ReportedActivity.Text(activity, "ParentSpanId") == RootParent)
             .GroupBy(static activity => ReportedActivity.Text(activity, "Phase") ?? string.Empty)
             .ToDictionary(static group => group.Key, static group => ReportedActivity.Text(group.Last(), "SpanId"), StringComparer.Ordinal);
-        foreach (var phase in s_commandPhases)
+        foreach (var phase in CommandPhases)
         {
             Assert.IsTrue(roots.ContainsKey(phase), $"{run.Label} {phase} produced no root span");
             var children = activities.Count(activity => ReportedActivity.Text(activity, "Phase") == phase && ReportedActivity.Text(activity, "ParentSpanId") == roots[phase]);
@@ -85,7 +85,7 @@ public sealed class OracleMdaTests(TestContext testContext)
         }
 
         LaneChecks.ExcludedWithPrefix(run, "ExcludedSources", "Experimental.", requireSome: true);
-        var vocabulary = mode == ModeAddonEnriched ? s_defaultVocabulary.Concat(s_enrichedOnlyKeys).Order(StringComparer.Ordinal).ToArray() : s_defaultVocabulary.Order(StringComparer.Ordinal).ToArray();
+        var vocabulary = mode == ModeAddonEnriched ? DefaultVocabulary.Concat(EnrichedOnlyKeys).Order(StringComparer.Ordinal).ToArray() : DefaultVocabulary.Order(StringComparer.Ordinal).ToArray();
         LaneChecks.ExactStrings(run, "TagVocabulary", vocabulary);
         lane.Telemetry.Spans(run, run.RequireCount("Activities", sets.Values.Sum(static spans => spans.Length), "ODP.NET activities"), "ODP.NET");
         return run;
@@ -109,7 +109,7 @@ public sealed class OracleMdaTests(TestContext testContext)
         var defaultKeys = DemoRun.Strings(reports[ModeNone].Array("TagVocabulary")).ToHashSet(StringComparer.Ordinal);
         var enrichedKeys = DemoRun.Strings(reports[ModeAddonEnriched].Array("TagVocabulary")).ToHashSet(StringComparer.Ordinal);
         var added = enrichedKeys.Except(defaultKeys).Order(StringComparer.Ordinal).ToArray();
-        Assert.IsTrue(added.SequenceEqual(s_enrichedOnlyKeys.Order(StringComparer.Ordinal)), $"add-on attribute delta: expected [{string.Join(", ", s_enrichedOnlyKeys)}], got [{string.Join(", ", added)}]");
+        Assert.IsTrue(added.SequenceEqual(EnrichedOnlyKeys.Order(StringComparer.Ordinal)), $"add-on attribute delta: expected [{string.Join(", ", EnrichedOnlyKeys)}], got [{string.Join(", ", added)}]");
         var removed = defaultKeys.Except(enrichedKeys).ToArray();
         Assert.IsTrue(removed.Length == 0, $"the add-on removed attributes ODP.NET writes on its own: [{string.Join(", ", removed)}]");
 

@@ -1,7 +1,7 @@
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 
-namespace Qyl.Build;
+namespace Qyl.Build.LiveCheck;
 
 /// <summary>
 /// What the instrumentation emits, judged against the pinned semantic-convention registry rather than
@@ -27,12 +27,12 @@ static partial class WeaverLiveCheck
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     // Bounds one demo lane end to end: wake, build, NativeAOT publish and runs.
-    private static readonly TimeSpan s_laneTimeout = TimeSpan.FromMinutes(20);
+    private static readonly TimeSpan LaneTimeout = TimeSpan.FromMinutes(20);
 
     // weaver's inactivity timer resets on every span it receives, so the longest silence it has to
     // survive is one whole cold lane. Larger than the lane bound, so the lane bound is the enforcer and
     // weaver never stops mid-run.
-    private static readonly TimeSpan s_inactivity = s_laneTimeout + TimeSpan.FromMinutes(2);
+    private static readonly TimeSpan Inactivity = LaneTimeout + TimeSpan.FromMinutes(2);
 
     /// <summary>One lane per row of the native-source table. RabbitMQ's two source names share one lane;
     /// Elastic.Transport and Elasticsearch share one source and have a lane each, because the two
@@ -63,7 +63,7 @@ static partial class WeaverLiveCheck
             "--include-unreferenced",
             "--otlp-grpc-port", OtlpGrpcPort.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--admin-port", adminPort.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            "--inactivity-timeout", ((int)s_inactivity.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "--inactivity-timeout", ((int)Inactivity.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--fail-on", "violation",
         ];
         Log.Information("{Weaver} {Arguments}", weaver, Shell.Quote(arguments));
@@ -89,15 +89,15 @@ static partial class WeaverLiveCheck
                         environment[key] = value;
                 DotNet.Build(lane.Project);
                 var managed = Shell.Checked("dotnet", [Repo.BinAssembly(lane.Project)], lane.Project.Parent,
-                    environment, s_laneTimeout);
+                    environment, LaneTimeout);
                 Gate.Require(managed.Stderr.Length == 0, managed.Describe());
                 if (lane.RunsNativeAot)
                 {
                     var executable = AotPublish.PublishDemo(lane.Demo);
-                    var native = Shell.Checked(executable, [], Path.GetDirectoryName(executable), environment, s_laneTimeout);
+                    var native = Shell.Checked(executable, [], Path.GetDirectoryName(executable), environment, LaneTimeout);
                     Gate.Require(native.Stderr.Length == 0, native.Describe());
                 }
-                Gate.Require(DateTime.UtcNow - started < s_laneTimeout, $"{lane.Name} lane took longer than {s_laneTimeout.TotalMinutes:0} minutes");
+                Gate.Require(DateTime.UtcNow - started < LaneTimeout, $"{lane.Name} lane took longer than {LaneTimeout.TotalMinutes:0} minutes");
                 EnsureAlive(listener, $"during the {lane.Name} lane");
             }
 
@@ -194,7 +194,7 @@ static partial class WeaverLiveCheck
         }
     }
 
-    [GeneratedRegex(@"<VersionPrefix[^>]*>([^<]+)</VersionPrefix>")]
+    [GeneratedRegex("<VersionPrefix[^>]*>([^<]+)</VersionPrefix>")]
     private static partial Regex VersionPrefix();
 }
 

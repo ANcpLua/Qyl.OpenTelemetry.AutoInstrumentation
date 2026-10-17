@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Item = System.Collections.Generic.OrderedDictionary<string, object?>;
 
-namespace Qyl.Build;
+namespace Qyl.Build.Contracts;
 
 /// <summary>
 /// The contract-invariants gate. Every check holds under exactly one authority class:
@@ -23,7 +23,7 @@ static partial class ContractInvariants
 {
     private static AbsolutePath GeneratorPath => Repo.Src / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators" / "QylAutoInstrumentationGenerator.cs";
     private static AbsolutePath RuntimeSourceRoot => Repo.Src / "Qyl.Telemetry.AutoInstrumentation";
-    private static AbsolutePath DeclarationsPath => RuntimeSourceRoot / "QylDeclarations.cs";
+    private static AbsolutePath DeclarationsPath => RuntimeSourceRoot / "GeneratedCode" / "QylDeclarations.cs";
     private static AbsolutePath VerifiedRoot => Repo.Root / "tests" / "Qyl.Telemetry.AutoInstrumentation.SourceGenerators.Snapshots" / "verified";
     public static AbsolutePath GeneratedInterceptorSnapshotPath => VerifiedRoot / "QylAutoInstrumentation.Interceptors.g.verified.cs";
     private static AbsolutePath GeneratedInterceptorManifestArtifactPath => VerifiedRoot / "QylAutoInstrumentation.ContractManifests.verified.jsonl";
@@ -194,8 +194,8 @@ static partial class ContractInvariants
 
     private static readonly HashSet<string> DbQueryTextAllowedPaths = new(StringComparer.Ordinal)
     {
-        "src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
-        "src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClientDiagnosticListener.cs",
+        "src/Qyl.Telemetry.AutoInstrumentation.EntityFrameworkCore/EntityFrameworkCore/EntityFrameworkCoreDiagnosticListener.cs",
+        "src/Qyl.Telemetry.AutoInstrumentation.SqlClient/SqlClient/SqlClientDiagnosticListener.cs",
     };
 
     private const string QylAbiDelegationToken = "global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylIntercepted";
@@ -215,7 +215,7 @@ static partial class ContractInvariants
     // The one recorded gap: rpc.system.name enumerates connectrpc, dubbo, grpc and jsonrpc, so WCF has no
     // generated member and the value is named locally, with the gap in a comment beside it.
     private static readonly (string Literal, string Path)[] RecordedSystemValueGaps =
-        [("dotnet_wcf", "src/Qyl.Telemetry.AutoInstrumentation/QylInterceptedWcfClient.cs")];
+        [("dotnet_wcf", "src/Qyl.Telemetry.AutoInstrumentation/GeneratedCode/QylInterceptedWcfClient.cs")];
 
     private const string RecordedSystemValueGapComment = "rpc.system.name enumerates only connectrpc, dubbo, grpc and jsonrpc";
 
@@ -249,17 +249,15 @@ static partial class ContractInvariants
     }
 
     // Data-level re-enforcement of the compile-binding truth predicate: an implemented
-    // compile_binding_only signal needs an explicit allowlist entry and must not claim runtime
-    // verification evidence. Enforced here directly so weakening the model cannot drop it.
+    // compile_binding_only signal cannot claim implementation or runtime verification evidence. Enforced here directly so weakening the model cannot drop it.
     private static void VerifyCompileBindingOnlyTruthGate(Item contract)
     {
         var items = ContractModel.ContractItems(contract);
         var unexpected = items
             .Where(static item => item.Get("qyl_status") is "implemented" && item.Get("evidence_level") is "compile_binding_only")
             .Select(static item => item.GetText("key"))
-            .Where(static key => !ContractModel.ImplementedCompileBindingOnlyAllowlist.Contains(key))
             .ToArray();
-        Gate.Require(unexpected.Length == 0, () => $"implemented compile_binding_only signals must be explicit allowlist entries: {ContractValue.RenderSorted(unexpected)}");
+        Gate.Require(unexpected.Length == 0, () => $"implemented signals require runtime evidence; compile_binding_only is not implemented: {ContractValue.RenderSorted(unexpected)}");
 
         foreach (var item in items.Where(static item => item.Get("evidence_level") is "compile_binding_only"))
         {
@@ -343,12 +341,12 @@ static partial class ContractInvariants
     private static IReadOnlyList<AbsolutePath> GeneratorPartialPaths() =>
         GeneratorPath.Parent.GlobFiles("QylAutoInstrumentationGenerator*.cs").OrderBy(static path => path.ToString(), StringComparer.Ordinal).ToArray();
 
-    private static string? s_generatorSources;
+    private static string? _generatorSources;
 
-    private static string ReadGeneratorSources() => s_generatorSources ??= string.Join("\n", GeneratorPartialPaths().Select(static path => File.ReadAllText(path)));
+    private static string ReadGeneratorSources() => _generatorSources ??= string.Join("\n", GeneratorPartialPaths().Select(static path => File.ReadAllText(path)));
 
     private static IReadOnlyList<AbsolutePath> DeclarationPaths() =>
-        RuntimeSourceRoot.GlobFiles("QylIntercepted*.cs").OrderBy(static path => path.ToString(), StringComparer.Ordinal).ToArray();
+        (RuntimeSourceRoot / "GeneratedCode").GlobFiles("QylIntercepted*.cs").OrderBy(static path => path.ToString(), StringComparer.Ordinal).ToArray();
 
     private static IReadOnlyList<AbsolutePath> SourceFiles(AbsolutePath root) =>
         Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories).Order(StringComparer.Ordinal).Select(static path => (AbsolutePath)path).ToArray();
@@ -410,7 +408,7 @@ static partial class ContractInvariants
 
     private sealed record Intercept(string Shape, string Body, string Kind);
 
-    private sealed record IntegrationDeclaration(string Name, AbsolutePath Path, string InstrumentationId, string Domain, string Signal, string[] MetricIds, Intercept[] Intercepts);
+    private sealed record IntegrationDeclaration(string Name, AbsolutePath Path, string InstrumentationId, string Signal, string[] MetricIds, Intercept[] Intercepts);
 
     /// <summary>The interceptor-lane declarations: one [QylIntegration] class per integration with its
     /// [QylIntercept] rows — the single source the generator derives its catalog from.</summary>
@@ -429,7 +427,7 @@ static partial class ContractInvariants
             var name = classMatch.Groups[1].Value["QylIntercepted".Length..];
             var integration = integrations[0];
             var head = IntegrationHead().Match(integration);
-            Gate.Require(head.Success, $"[QylIntegration] must name its id and domain through the vocabulary constants: {Repo.Relative(path)}");
+            Gate.Require(head.Success, $"[QylIntegration] must name its id through the vocabulary constants: {Repo.Relative(path)}");
             var signalMatch = IntegrationSignal().Match(integration);
             var metricMatch = IntegrationMetricIds().Match(integration);
             var methodNames = PublicStaticMethod().Matches(text).Select(static match => match.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
@@ -456,7 +454,6 @@ static partial class ContractInvariants
                 name,
                 path,
                 head.Groups[1].Value,
-                head.Groups[2].Value,
                 signalMatch.Success ? signalMatch.Groups[1].Value : "Traces",
                 metricMatch.Success ? MetricIdConstant().Matches(metricMatch.Groups[1].Value).Select(static match => match.Groups[1].Value).ToArray() : [],
                 intercepts.ToArray()));
@@ -1134,11 +1131,8 @@ static partial class ContractInvariants
         var unknownEmitted = emittedKeys.Except(implementedKeys).ToArray();
         Gate.Require(unknownEmitted.Length == 0, () => $"generated interceptor manifests contain non-implemented keys: {ContractValue.RenderSorted(unknownEmitted)}");
         var nonSource = emittedKeys.Except(sourceInterceptorKeys).ToHashSet(StringComparer.Ordinal);
-        var allowedNonSource = ContractModel.ImplementedCompileBindingOnlyAllowlist.Union(ContractModel.GeneratedInterceptorAlternatePathSignalAllowlist).ToHashSet(StringComparer.Ordinal);
-        var unexpectedNonSource = nonSource.Except(allowedNonSource).ToArray();
+        var unexpectedNonSource = nonSource.ToArray();
         Gate.Require(unexpectedNonSource.Length == 0, () => $"generated interceptor manifests contain keys not owned by the source_interceptor lane: {ContractValue.RenderSorted(unexpectedNonSource)}");
-        var staleAllowlist = allowedNonSource.Except(nonSource).ToArray();
-        Gate.Require(staleAllowlist.Length == 0, () => $"generated interceptor non-source allowlist contains stale keys: {ContractValue.RenderSorted(staleAllowlist)}");
         var missingSource = sourceInterceptorKeys.Except(emittedKeys).ToArray();
         Gate.Require(missingSource.Length == 0, () => $"source_interceptor contract keys missing from live generated manifests: {ContractValue.RenderSorted(missingSource)}");
         Gate.Require(coverageManifests.Any(static manifest => ContractModel.Strings(manifest["additionalMetricIds"]).Length > 0),
@@ -1156,10 +1150,10 @@ static partial class ContractInvariants
     [GeneratedRegex(@"public const string ([A-Za-z0-9]+) = ""([A-Z0-9]+)"";")]
     private static partial Regex InstrumentationIdConstant();
 
-    [GeneratedRegex(@"public static class (QylIntercepted[A-Za-z0-9]+)")]
+    [GeneratedRegex("public static class (QylIntercepted[A-Za-z0-9]+)")]
     private static partial Regex InterceptedClass();
 
-    [GeneratedRegex(@"^\s*QylAutoInstrumentationIds\.([A-Za-z0-9]+),\s*QylAttributes\.InstrumentationDomainValues\.([A-Za-z0-9]+)")]
+    [GeneratedRegex(@"^\s*QylAutoInstrumentationIds\.([A-Za-z0-9]+)")]
     private static partial Regex IntegrationHead();
 
     [GeneratedRegex(@"Signal\s*=\s*QylAutoInstrumentationSignal\.([A-Za-z]+)")]

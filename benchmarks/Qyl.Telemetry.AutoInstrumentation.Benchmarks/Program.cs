@@ -29,22 +29,21 @@ internal static class BenchmarkSmoke
 [SimpleJob(RuntimeMoniker.NativeAot10_0, launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class DbCommandHotPathBenchmarks
 {
-    private readonly BenchmarkDbCommand command = new()
+    private readonly BenchmarkDbCommand _command = new()
     {
         CommandText = "SELECT 1",
         CommandType = CommandType.Text,
     };
 
     [Benchmark(Baseline = true)]
-    public int DirectSqlClientCommand() => command.CommandText.Length;
+    public int DirectSqlClientCommand() => _command.CommandText.Length;
 
     [Benchmark]
     public int InterceptedSqlClientCommand()
     {
         using var activity = QylInterceptedDbCommand.Execute(
-            command,
-            "SQLCLIENT",
-            "ExecuteScalar");
+            _command,
+            "SQLCLIENT");
 
         return activity is null ? 0 : 1;
     }

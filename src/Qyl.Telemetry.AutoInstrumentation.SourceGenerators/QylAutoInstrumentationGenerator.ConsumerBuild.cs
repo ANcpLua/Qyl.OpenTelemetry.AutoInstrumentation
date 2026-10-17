@@ -26,7 +26,7 @@ public sealed partial class QylAutoInstrumentationGenerator
 
     private static bool IsConsumerExecutable(Compilation compilation)
         => compilation.Options.OutputKind is OutputKind.ConsoleApplication or OutputKind.WindowsApplication or OutputKind.WindowsRuntimeApplication
-           && !(compilation.AssemblyName is { } assemblyName && s_qylRuntimeAssemblies.Contains(assemblyName));
+           && !(compilation.AssemblyName is { } assemblyName && QylRuntimeAssemblies.Contains(assemblyName));
 
     private static ConsumerBuild? ReadConsumerBuild(AnalyzerConfigOptions options)
     {
@@ -57,7 +57,7 @@ public sealed partial class QylAutoInstrumentationGenerator
         builder.AppendLine("    /// <summary>This build's version and source revision, as constants.</summary>");
         builder.AppendLine("    internal static class QylConsumerBuild");
         builder.AppendLine("    {");
-        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V27;");
+        builder.AppendLine("        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V28;");
         builder.AppendLine();
         builder.AppendLine("        /// <summary>The informational version, carrying the source revision as SemVer build metadata: the service.version AddQyl stamps.</summary>");
         builder.Append("        public const string Version = ");

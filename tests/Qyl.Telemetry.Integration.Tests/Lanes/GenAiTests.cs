@@ -14,23 +14,23 @@ public sealed class GenAiTests(TestContext testContext)
     private const string MeaiSource = "Experimental.Microsoft.Extensions.AI";
     private const string AgentsSource = "Experimental.Microsoft.Agents.AI";
     private const string WorkflowsSource = "Microsoft.Agents.AI.Workflows";
-    private static readonly string[] s_sources = [MeaiSource, AgentsSource, WorkflowsSource];
-    private static readonly string[] s_meters = [AgentsSource, MeaiSource];
+    private static readonly string[] Sources = [MeaiSource, AgentsSource, WorkflowsSource];
+    private static readonly string[] Meters = [AgentsSource, MeaiSource];
 
     [TestMethod]
     public async Task ExportsExpectedTelemetry()
     {
         var lane = new DemoContext(DemoLanes.ByName("genai"), testContext);
         lane.BuildManaged("--disable-build-servers");
-        Verify(lane, (await lane.RunManagedAsync("managed GenAI demo")), s_sources, s_meters);
+        Verify(lane, (await lane.RunManagedAsync("managed GenAI demo")), Sources, Meters);
 
         (string Name, string Variable, string[] Sources, string[] Meters)[] scenarios =
         [
-            ("MEAI traces disabled", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED", Without(s_sources, MeaiSource), s_meters),
-            ("MEAI metrics disabled", "OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED", s_sources, Without(s_meters, MeaiSource)),
-            ("Agents traces disabled", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED", Without(s_sources, AgentsSource), s_meters),
-            ("Agents metrics disabled", "OTEL_DOTNET_AUTO_METRICS_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED", s_sources, Without(s_meters, AgentsSource)),
-            ("Workflows traces disabled", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAIWORKFLOWS_INSTRUMENTATION_ENABLED", Without(s_sources, WorkflowsSource), s_meters),
+            ("MEAI traces disabled", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED", Without(Sources, MeaiSource), Meters),
+            ("MEAI metrics disabled", "OTEL_DOTNET_AUTO_METRICS_MICROSOFTEXTENSIONSAI_INSTRUMENTATION_ENABLED", Sources, Without(Meters, MeaiSource)),
+            ("Agents traces disabled", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED", Without(Sources, AgentsSource), Meters),
+            ("Agents metrics disabled", "OTEL_DOTNET_AUTO_METRICS_MICROSOFTAGENTSAI_INSTRUMENTATION_ENABLED", Sources, Without(Meters, AgentsSource)),
+            ("Workflows traces disabled", "OTEL_DOTNET_AUTO_TRACES_MICROSOFTAGENTSAIWORKFLOWS_INSTRUMENTATION_ENABLED", Without(Sources, WorkflowsSource), Meters),
         ];
         foreach (var (name, variable, sources, meters) in scenarios)
             Verify(lane, (await lane.RunManagedAsync($"managed GenAI demo ({name})", lane.With((variable, "false")))), sources, meters);
@@ -52,15 +52,15 @@ public sealed class GenAiTests(TestContext testContext)
 
         var activities = run.Array("Activities");
         var sourceNames = activities.EnumerateArray().Select(static activity => ReportedActivity.Text(activity, "SourceName")).ToHashSet(StringComparer.Ordinal);
-        Assert.IsTrue(sourceNames.SetEquals(s_sources), $"{run.Label} source mismatch: expected [{string.Join(", ", s_sources)}] actual [{string.Join(", ", sourceNames)}]");
-        LaneChecks.ExactStrings(run, "PublishedMeterNames", s_meters.Order(StringComparer.Ordinal).ToArray());
+        Assert.IsTrue(sourceNames.SetEquals(Sources), $"{run.Label} source mismatch: expected [{string.Join(", ", Sources)}] actual [{string.Join(", ", sourceNames)}]");
+        LaneChecks.ExactStrings(run, "PublishedMeterNames", Meters.Order(StringComparer.Ordinal).ToArray());
         var measurements = run.RequireCount("Measurements", 14, "measurements");
         LaneChecks.ExactStrings(run, "QylExportedActivitySources", expectedSources.Order(StringComparer.Ordinal).ToArray());
-        var exportedMeters = DemoRun.Strings(run.Array("QylExportedMeterNames")).Where(meter => s_meters.Contains(meter)).ToHashSet(StringComparer.Ordinal);
+        var exportedMeters = DemoRun.Strings(run.Array("QylExportedMeterNames")).Where(meter => Meters.Contains(meter)).ToHashSet(StringComparer.Ordinal);
         Assert.IsTrue(exportedMeters.SetEquals(expectedMeters), $"{run.Label} Qyl.Telemetry.Hosting exported meter mismatch: expected [{string.Join(", ", expectedMeters.Order(StringComparer.Ordinal))}] actual [{string.Join(", ", exportedMeters.Order(StringComparer.Ordinal))}]");
 
         var capturedMeters = run.Telemetry.Metrics.Select(static metric => metric.Scope?.Name)
-            .OfType<string>().Where(meter => s_meters.Contains(meter)).ToHashSet(StringComparer.Ordinal);
+            .OfType<string>().Where(meter => Meters.Contains(meter)).ToHashSet(StringComparer.Ordinal);
         Assert.IsTrue(capturedMeters.SetEquals(expectedMeters), $"{run.Label}: actual OTLP instrumentation scopes differ from the enabled GenAI meters");
 
         // What reached the collector is exactly the spans of the subscribed sources, nothing more.

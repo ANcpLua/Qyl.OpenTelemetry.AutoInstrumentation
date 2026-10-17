@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// The qyl runtime works inside a NativeAOT-published package consumer: System.Net.Http emits the

@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.Demos;
 
 /// <summary>Application metadata shared by native integration tests and the independent Weaver run.</summary>
 sealed record DemoDefinition(string Name, string Demo, bool RunsNativeAot, IReadOnlyList<TestbedService> Services, string? ServiceNameOverride, string TestClass)
@@ -24,7 +24,7 @@ static class DemoLanes
         new("graphql", "Qyl.RealGraphQlDemo", true, [], null, "GraphQlTests"),
         new("grpc-client", "Qyl.RealGrpcClientDemo", true, [], null, "GrpcClientTests"),
         new("http-client", "Qyl.RealHttpClientDemo", true, [], null, "HttpClientTests"),
-        new("ilogger", "Qyl.RealILoggerDemo", true, [], null, "ILoggerTests"),
+        new("ilogger", "Qyl.RealILoggerDemo", true, [], null, "LoggerTests"),
         new("kafka", "Qyl.RealKafkaDemo", false, [TestbedService.Kafka], null, "KafkaTests"),
         new("masstransit", "Qyl.RealMassTransitDemo", true, [TestbedService.RabbitMq], null, "MassTransitTests"),
         new("mcp", "Qyl.RealMcpDemo", true, [], null, "McpTests"),

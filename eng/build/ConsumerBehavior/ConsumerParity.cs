@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// Referencing Qyl.Telemetry.AutoInstrumentation.Hosting changes nothing an application observes:

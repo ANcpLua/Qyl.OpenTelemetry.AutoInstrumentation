@@ -1,4 +1,4 @@
-namespace Qyl.Build;
+namespace Qyl.Build.ConsumerBehavior;
 
 /// <summary>
 /// A ProjectReference consumer gets the generated interceptor at all, managed and NativeAOT. The

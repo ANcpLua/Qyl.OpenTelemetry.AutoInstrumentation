@@ -1,8 +1,7 @@
 # Qyl.Telemetry.AutoInstrumentation.Hosting
 
 Process bootstrap for qyl's automatic instrumentation. A `[ModuleInitializer]` activates the qyl
-listeners when the assembly loads, and `AddQylAutoInstrumentation()` wires them explicitly for
-applications that prefer a visible call.
+listeners when the assembly loads. Applications using the qyl host integration call `AddQyl()`.
 
 Most applications get this package through
 [`Qyl.Telemetry.Hosting`](https://www.nuget.org/packages/Qyl.Telemetry.Hosting) and its one-line
@@ -26,8 +25,8 @@ builder.Services.AddOpenTelemetry()
 builder.Logging.AddOpenTelemetry(o => o.AddOtlpExporter());
 ```
 
-The instrumentation packages ship no exporter of their own. An application that also subscribes a
-native source qyl already covers, such as `System.Net.Http`, exports that operation twice.
+The instrumentation packages ship no exporter. Applications that configure the SDK themselves
+also subscribe the native sources they use, such as `System.Net.Http`.
 
 Publishing with `-p:PublishAot=true` produces no trim, AOT or analyzer warning from this package.
 

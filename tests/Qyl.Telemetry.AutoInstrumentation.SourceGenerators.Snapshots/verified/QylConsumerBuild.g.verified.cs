@@ -6,7 +6,7 @@ namespace Qyl.Telemetry.AutoInstrumentation.Generated
     /// <summary>This build's version and source revision, as constants.</summary>
     internal static class QylConsumerBuild
     {
-        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V27;
+        private const int RequiredQylGeneratedCodeAbi = global::Qyl.Telemetry.AutoInstrumentation.GeneratedCode.QylGeneratedCodeAbi.V28;
 
         /// <summary>The informational version, carrying the source revision as SemVer build metadata: the service.version AddQyl stamps.</summary>
         public const string Version = "1.2.3+0123456789abcdef0123456789abcdef01234567";

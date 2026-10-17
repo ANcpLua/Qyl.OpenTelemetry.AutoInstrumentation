@@ -8,6 +8,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../eng/build/build.csproj" />
+    <ProjectReference Include="../../src/Qyl.Telemetry.AutoInstrumentation.SourceGenerators/Qyl.Telemetry.AutoInstrumentation.SourceGenerators.csproj" />
+    <PackageReference Include="Microsoft.Agents.AI" />
+    <PackageReference Include="Microsoft.Agents.AI.Workflows" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
     <ProjectReference Include="../../src/Qyl.Telemetry.Hosting/Qyl.Telemetry.Hosting.csproj" />
     <PackageReference Include="Qyl.Telemetry.Testing" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
