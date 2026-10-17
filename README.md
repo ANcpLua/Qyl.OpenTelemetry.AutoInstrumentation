@@ -255,7 +255,8 @@ Every row above, native or intercepted, is gated per signal by its instrumentati
 a disabled id contributes neither an `AddSource` call nor a processor row. Query-text capture is
 opt-in per provider — `OTEL_DOTNET_AUTO_ENTITYFRAMEWORKCORE_SET_DBSTATEMENT_FOR_TEXT` and
 `OTEL_DOTNET_AUTO_SQLCLIENT_SET_DBSTATEMENT_FOR_TEXT`, both still read by qyl's own
-instrumentation — and so is header capture on the ASP.NET Core, HTTP and gRPC-client lanes.
+instrumentation. ASP.NET Core header capture and the local outbound HTTP implementation are opt-in.
+gRPC-client metadata capture is independently opt-in; the unconfigured lane still expects no metadata.
 The GraphQL and ODP.NET equivalents are no longer qyl's: the document is owned by GraphQL.NET's
 `UseTelemetry(o => o.RecordDocument)` and the statement text by ODP.NET's own `SetDbStatementForText`
 add-on option, so `OTEL_DOTNET_AUTO_GRAPHQL_SET_DOCUMENT` and
@@ -268,6 +269,63 @@ qyl never force-registers a library's own `Meter`. A consumer that wants `Npgsql
 The full 70-row contract, with every environment control and instrumentation option, its evidence
 level and its authoritative source, is the generated
 [coverage matrix](contracts/coverage-matrix.md).
+
+### Selected outbound HTTP headers (local, unreleased)
+
+Capture maintenance checkpoint (2026-10-17): source version 28.1.0 remains
+unpublished on NuGet. Qyl's existing capture helpers enrich native activities;
+the SDK owns the disposable listener through `AddInstrumentation`, without a
+CLR profiler. Native MSTest class initialization publishes each consumer once,
+and 20 individually selectable data rows execute separate processes using shared
+profile constants, explicit expectations and native cancellation. A non-packable
+fixture contract assembly keeps the parent and children on the same argument
+contract. Each child asserts that dynamic code is unavailable and that every
+expected HTTP path or gRPC method appears exactly once. The 20 native scenarios
+and five directly affected capture tests pass, the Contracts check passes, and
+scoped JetBrains inspections have no remaining findings. The private .NET/gRPC
+payload bindings remain version-sensitive;
+no public replacement preserving these capture boundaries has been established.
+
+Set `OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` and/or
+`OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` to comma-separated names.
+Absent, empty and whitespace-only lists capture nothing. Selection is case-insensitive; emitted
+`http.request.header.<name>` / `http.response.header.<name>` keys are lowercase, preserving punctuation,
+and values are string arrays. Message headers and content headers are both checked through `NonValidated`.
+That API has already converted null header inputs to empty strings; capture preserves its exposed values.
+
+The request is a snapshot at the native start callback, before runtime propagation and later handlers
+may add or compute headers. The response is captured synchronously before native span stop/export;
+transport failures keep available request fields and omit an absent response. No body is read or buffered.
+Capture follows the existing HTTP/global controls, sampling and SDK suppression and ends with provider disposal.
+The fixed .NET 10 diagnostic-payload accessors and complete configured consumer have been published and
+executed as NativeAOT on .NET 10.0.12. They depend on that runtime's private payload shapes; incompatible
+payload access is reported as a bounded warning without including values or exception text.
+
+Capture opt-in does not override Collector retention: the local canonical policy rejects malformed
+field names and known credential suffixes while retaining benign arrays. This is not arbitrary-value secret detection.
+
+
+### Selected gRPC client metadata (local, unreleased)
+
+Set `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` and/or
+`OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` to comma-separated
+names. The lists are independent of HTTP capture and each other; absent, empty and whitespace-only lists
+capture nothing. Matching is case-insensitive, suffixes become lowercase without changing punctuation,
+and values are real string arrays. Names ending in `-bin` are skipped; binary metadata is not decoded.
+
+The existing `Grpc.Net.Client` activity is enriched through its synchronous diagnostic callbacks.
+Request capture reads `HttpRequestMessage.Headers` at native start, before call credentials or later
+handlers may add fields. At natural call completion, response capture reads initial headers followed
+by trailers and sets one array per name before native stop/export. It preserves the values exposed by
+`NonValidated`, including duplicates and empty strings; it cannot reconstruct original metadata entry
+boundaries if another layer combined them. It does not read, drain or buffer response bodies.
+Cancellation and failure capture only available metadata, without inventing trailers or an absent response.
+
+Configured unary, streaming, cancellation and connection-failure calls were published and executed under
+NativeAOT with Grpc.Net.Client 2.84.0 and .NET 10.0.12. The fixed payload accessors depend on that library's
+private diagnostic shapes. An incompatible payload produces a bounded, value-free warning. Native
+source, operation, kind, status and parentage remain unchanged; metadata is not added to HTTP child spans.
+Existing gRPC/global controls, sampling, suppression and provider lifetime still apply.
 
 ## The qyl attributes
 

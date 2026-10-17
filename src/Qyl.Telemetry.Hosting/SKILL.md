@@ -71,3 +71,29 @@ A `catch` that rethrows inside a starter's scope without `RecordFailure` does no
 1. **The messaging parent context.** `MessagingProcessConsumer` takes the producer's `ActivityContext`, extracted from the message headers; `default` starts a new trace and cuts the message off from its sender.
 2. **`UseOpenTelemetry()` on a custom source name.** `AddQyl()` subscribes the default Microsoft.Extensions.AI, Agents.AI and Workflows sources; `UseOpenTelemetry(sourceName: "...")` records spans no one exports. Keep the default name. (QYL1002 warns only when the call is missing.)
 3. **Business keys.** Which facts identify the work (an order, a tenant, a plan) only the application knows: put them on its spans with native `SetTag` attributes.
+
+## Selected outbound HTTP headers (local, unreleased)
+
+`OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` and
+`OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` accept comma-separated names;
+empty lists capture nothing. Names match case-insensitively and become lowercase attribute suffixes with
+punctuation unchanged. Values stay string arrays, including singleton and duplicate values. Both ordinary
+and content headers are inspected without forcing parsing or body consumption.
+
+Requests are snapshots at native start, before runtime propagation or later handlers. Response fields are
+captured before native stop/export; an absent response adds no fields. SDK suppression, sampling and tracing
+controls still apply. Collector retention is independent: known credential names remain denied. Capture
+of a benign-looking name is not a guarantee that its values contain no secrets.
+
+## Selected gRPC client metadata (local, unreleased)
+
+`OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` and
+`OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` independently select
+textual client metadata. Empty lists capture nothing; selection is case-insensitive with lowercase-only
+suffixes and string-array values. Binary `-bin` selections are skipped without changing HTTP header capture.
+
+The request snapshot is at native gRPC start, before later credentials/handlers. Response capture combines
+initial headers then trailers at natural completion, before native stop/export. Cancellation/failure retain
+only available fields. No stream is consumed by capture. Values reflect the HTTP-message API, which may
+already have combined original metadata entries. Grpc.Net.Client 2.84.0 and .NET 10.0.12 are verified through
+an executed configured NativeAOT consumer; private payload-shape changes require re-verification.

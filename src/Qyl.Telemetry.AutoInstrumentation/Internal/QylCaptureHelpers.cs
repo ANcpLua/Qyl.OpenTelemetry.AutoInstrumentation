@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http.Headers;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
@@ -7,6 +8,56 @@ namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
 internal static class QylCaptureHelpers
 {
+    internal static void SetHttpClientRequestHeaders(Activity? activity, QylCapturedNameMap map, HttpRequestMessage? request)
+    {
+        if (activity is not { IsAllDataRequested: true } || request is null || map.Count is 0)
+            return;
+        SetHttpHeaders(activity, map, request.Headers, request.Content?.Headers);
+    }
+
+    internal static void SetHttpClientResponseHeaders(Activity? activity, QylCapturedNameMap map, HttpResponseMessage? response)
+    {
+        if (activity is not { IsAllDataRequested: true } || response is null || map.Count is 0)
+            return;
+        SetHttpHeaders(activity, map, response.Headers, response.Content.Headers);
+    }
+
+    internal static void SetGrpcRequestMetadata(Activity? activity, QylCapturedNameMap map, HttpRequestMessage? request)
+    {
+        if (activity is not { IsAllDataRequested: true } || request is null || map.Count is 0)
+            return;
+        SetHttpHeaders(activity, map, request.Headers, null, skipBinary: true);
+    }
+
+    internal static void SetGrpcResponseMetadata(Activity? activity, QylCapturedNameMap map, HttpResponseMessage? response)
+    {
+        if (activity is not { IsAllDataRequested: true } || response is null || map.Count is 0)
+            return;
+        SetHttpHeaders(activity, map, response.Headers, response.TrailingHeaders, skipBinary: true);
+    }
+
+    private static void SetHttpHeaders(Activity activity, QylCapturedNameMap map, HttpHeaders primary, HttpHeaders? additional, bool skipBinary = false)
+    {
+        for (var index = 0; index < map.Count; index++)
+        {
+            var name = map.GetLookupName(index);
+            if (skipBinary && name.EndsWith("-bin", StringComparison.OrdinalIgnoreCase)) continue;
+            var values = new List<string>();
+            AddHeaderValues(primary, name, values);
+            if (additional is not null) AddHeaderValues(additional, name, values);
+            if (values.Count > 0) activity.SetTag(map.GetTagName(index), values.ToArray());
+        }
+    }
+
+    private static void AddHeaderValues(HttpHeaders headers, string name, List<string> values)
+    {
+        if (!headers.NonValidated.TryGetValues(name, out var exposed)) return;
+        // This API exposes non-null strings: HttpHeaders normalizes null inputs to empty
+        // strings before capture. Preserve those exposed empty values as well as duplicates.
+        // https://github.com/dotnet/runtime/blob/v10.0.12/src/libraries/System.Net.Http/src/System/Net/Http/Headers/HttpHeaders.cs#L148-L153
+        values.AddRange(exposed);
+    }
+
     public static void SetRequestHeaders(
         Activity? activity,
         QylCapturedNameMap configuredHeaders,

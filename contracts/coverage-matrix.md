@@ -24,8 +24,8 @@ Every row identifies its contract origin and carries a clickable authoritative s
 |---|---:|
 | `control_bound` | 9 |
 | `implemented` | 37 |
-| `option_bound` | 6 |
-| `research_required` | 10 |
+| `option_bound` | 10 |
+| `research_required` | 6 |
 | `unsupported_nativeaot` | 8 |
 
 ## Lane counts
@@ -33,9 +33,9 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | Lane | Count |
 |---|---:|
 | `environment_control` | 9 |
-| `instrumentation_option` | 6 |
+| `instrumentation_option` | 10 |
 | `native_source` | 15 |
-| `not_implemented` | 10 |
+| `not_implemented` | 6 |
 | `official_library_hook` | 7 |
 | `runtime_public_telemetry` | 8 |
 | `source_interceptor` | 7 |
@@ -45,9 +45,9 @@ Every row identifies its contract origin and carries a clickable authoritative s
 
 | Evidence level | Count |
 |---|---:|
-| `none` | 18 |
+| `none` | 14 |
 | `verified_managed` | 22 |
-| `verified_nativeaot` | 30 |
+| `verified_nativeaot` | 34 |
 
 ## Matrix
 
@@ -105,10 +105,10 @@ Every row identifies its contract origin and carries a clickable authoritative s
 | 50 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNET_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L280) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |
 | 51 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L281) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 52 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L282) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
-| 53 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L283) | n/a | `not_implemented` | `research_required` | `not_applicable` | `not_applicable` | `none` | unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it. |
-| 54 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L284) | n/a | `not_implemented` | `research_required` | `not_applicable` | `not_applicable` | `none` | unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it. |
-| 55 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L285) | n/a | `not_implemented` | `research_required` | `not_applicable` | `not_applicable` | `none` | unowned: The outbound HTTP span is the BCL's; a processor has no HttpRequestMessage, so qyl can capture no header onto it. |
-| 56 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L286) | n/a | `not_implemented` | `research_required` | `not_applicable` | `not_applicable` | `none` | unowned: The outbound HTTP span is the BCL's; a processor has no HttpResponseMessage, so qyl can capture no header onto it. |
+| 53 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L283) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylClientHeaderCapture |
+| 54 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L284) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylClientHeaderCapture |
+| 55 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L285) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylClientHeaderCapture |
+| 56 | upstream 64 | `instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L286) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylClientHeaderCapture |
 | 57 | upstream 64 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L287) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_nativeaot` | QylAutoInstrumentationOptions |
 | 58 | upstream 64 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_HTTPCLIENT_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L289) | n/a | `instrumentation_option` | `option_bound` | `not_applicable` | `not_applicable` | `verified_managed` | QylAutoInstrumentationOptions |
 | 59 | upstream 64 | `instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNET_DISABLE_URL_QUERY_REDACTION` | [current config](https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L288) | n/a | `unsupported_nativeaot` | `unsupported_nativeaot` | `not_applicable` | `not_applicable` | `none` | not_applicable |

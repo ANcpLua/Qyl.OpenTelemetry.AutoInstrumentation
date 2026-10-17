@@ -2023,13 +2023,18 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L283
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientMetadataCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientMetadataCaptureTests.cs
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
   environment_variable: OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
@@ -2047,13 +2052,18 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L284
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientMetadataCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientMetadataCaptureTests.cs
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
@@ -2071,13 +2081,18 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L285
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The outbound HTTP span is the BCL's; a processor has no HttpRequestMessage, so qyl can capture no header onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientHeaderCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientHeaderCaptureTests.cs
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
   environment_variable: OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
@@ -2095,13 +2110,18 @@ contract_items:
   - label: current config
     url: https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/blob/bb2d0ef0cfb64bbe0d9c88640848e4a92f263fd6/docs/config.md#L286
   contract_origin: upstream_otel_dotnet_auto_60
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The outbound HTTP span is the BCL's; a processor has no HttpResponseMessage, so qyl can capture no header onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientHeaderCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientHeaderCaptureTests.cs
 - kind: instrumentation_option
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
   environment_variable: OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION

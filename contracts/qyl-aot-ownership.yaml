@@ -971,40 +971,60 @@ ownership_items:
   - tests/Qyl.Telemetry.Integration.Tests/Lanes/AspNetCoreTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_053
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientMetadataCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientMetadataCaptureTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_054
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The gRPC client span is Grpc.Net.Client's own; a processor has no call metadata, so qyl can capture none onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientMetadataCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientMetadataCaptureTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_055
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The outbound HTTP span is the BCL's; a processor has no HttpRequestMessage, so qyl can capture no header onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientHeaderCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientHeaderCaptureTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_056
   key: instrumentation_options.OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS
-  lane: not_implemented
-  qyl_status: research_required
+  lane: instrumentation_option
+  qyl_status: option_bound
   call_site_visibility: not_applicable
   payload_access: not_applicable
-  evidence_level: none
-  primary_owner: "unowned: The outbound HTTP span is the BCL's; a processor has no HttpResponseMessage, so qyl can capture no header onto it."
-  evidence: []
+  evidence_level: verified_nativeaot
+  primary_owner: QylClientHeaderCapture
+  evidence:
+  - src/Qyl.Telemetry.AutoInstrumentation/QylAutoInstrumentationOptions.cs
+  - src/Qyl.Telemetry.AutoInstrumentation/Internal/QylCaptureHelpers.cs
+  - src/Qyl.Telemetry.Hosting/QylClientHeaderCapture.cs
+  - eng/fixtures/ClientHeaderCapture
+  - tests/Qyl.Telemetry.Integration.Tests/ClientHeaderCaptureTests.cs
 - contract_item_id: OTEL_DOTNET_AUTO_CONTRACT_057
   key: instrumentation_options.OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION
   lane: instrumentation_option

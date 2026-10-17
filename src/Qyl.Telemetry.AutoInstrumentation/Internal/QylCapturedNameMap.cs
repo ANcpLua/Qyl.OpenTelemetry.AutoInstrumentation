@@ -59,5 +59,5 @@ internal sealed class QylCapturedNameMap
     }
 
     private static string NormalizeName(string name)
-        => name.Replace('_', '-').ToLower(CultureInfo.InvariantCulture);
+        => name.ToLower(CultureInfo.InvariantCulture);
 }

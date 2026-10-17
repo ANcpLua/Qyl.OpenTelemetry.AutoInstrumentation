@@ -234,16 +234,32 @@ static class DotNet
     public static void Build(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
         Shell.Checked("dotnet", ["build", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], workingDirectory, environment);
 
-    private static void Publish(string project, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null) =>
-        Shell.Checked("dotnet", ["publish", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], workingDirectory, environment);
-
     public static void Pack(string project, string output, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null) =>
         Shell.Checked("dotnet", ["pack", project, "-c", "Release", "-o", output, "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo", .. extra ?? []], null, environment);
 
     /// <summary>A NativeAOT publish for the host runtime into <paramref name="output"/>; returns the executable.</summary>
     public static string PublishNativeAot(string project, string output, IEnumerable<string>? extra = null, IReadOnlyDictionary<string, string>? environment = null, string? workingDirectory = null)
     {
-        Publish(project, ["-r", Repo.RuntimeIdentifier, "-p:PublishAot=true", "--self-contained", "true", "-o", output, .. extra ?? []], environment, workingDirectory);
+        Shell.Checked("dotnet", NativeAotArguments(project, output, extra), workingDirectory, environment);
+        return NativeAotExecutable(project, output);
+    }
+
+    public static async Task<string> PublishNativeAotAsync(string project, string output, CancellationToken cancellationToken,
+        IEnumerable<string>? extra = null)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        using var process = RunningProcess.Start("dotnet", NativeAotArguments(project, output, extra), Repo.Root, Shell.CleanEnvironment());
+        var result = await process.WaitForExitAsync(TimeSpan.FromMinutes(30), cancellationToken).ConfigureAwait(false);
+        Gate.Require(result.ExitCode == 0, () => "command failed: " + result.Describe());
+        return NativeAotExecutable(project, output);
+    }
+
+    private static string[] NativeAotArguments(string project, string output, IEnumerable<string>? extra) =>
+        ["publish", project, "-c", "Release", "-maxcpucount:4", "-nodeReuse:false", "-v", "quiet", "-nologo",
+            "-r", Repo.RuntimeIdentifier, "-p:PublishAot=true", "--self-contained", "true", "-o", output, .. extra ?? []];
+
+    private static string NativeAotExecutable(string project, string output)
+    {
         var executable = Path.Combine(output, Repo.ExecutableName(Path.GetFileNameWithoutExtension(project)));
         Gate.Require(File.Exists(executable), $"NativeAOT executable missing: {executable}");
         return executable;

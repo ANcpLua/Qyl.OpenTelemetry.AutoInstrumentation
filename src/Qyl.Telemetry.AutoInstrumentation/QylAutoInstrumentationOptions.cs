@@ -2,12 +2,13 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using Qyl.Telemetry.AutoInstrumentation.Internal;
 using HttpAttributes = Qyl.Telemetry.SemanticConventions.Attributes.Http.HttpAttributes;
+using RpcAttributes = Qyl.Telemetry.SemanticConventions.Incubating.Attributes.Rpc.RpcAttributes;
 
 namespace Qyl.Telemetry.AutoInstrumentation;
 
 internal sealed class QylAutoInstrumentationOptions
 {
-    private const string GlobalEnabledVariable = "OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED";
+    internal const string GlobalEnabledVariable = "OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED";
     private const string TracesEnabledVariable = "OTEL_DOTNET_AUTO_TRACES_INSTRUMENTATION_ENABLED";
     private const string MetricsEnabledVariable = "OTEL_DOTNET_AUTO_METRICS_INSTRUMENTATION_ENABLED";
     private const string MetricsAdditionalSourcesVariable = "OTEL_DOTNET_AUTO_METRICS_ADDITIONAL_SOURCES";
@@ -19,6 +20,14 @@ internal sealed class QylAutoInstrumentationOptions
         "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
     private const string AspNetCoreResponseHeadersVariable =
         "OTEL_DOTNET_AUTO_TRACES_ASPNETCORE_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
+    internal const string HttpClientRequestHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_REQUEST_HEADERS";
+    internal const string HttpClientResponseHeadersVariable =
+        "OTEL_DOTNET_AUTO_TRACES_HTTP_INSTRUMENTATION_CAPTURE_RESPONSE_HEADERS";
+    internal const string GrpcRequestMetadataVariable =
+        "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA";
+    internal const string GrpcResponseMetadataVariable =
+        "OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA";
     private const string AspNetCoreUrlQueryRedactionDisabledVariable =
         "OTEL_DOTNET_EXPERIMENTAL_ASPNETCORE_DISABLE_URL_QUERY_REDACTION";
     private const string HttpClientUrlQueryRedactionDisabledVariable =
@@ -37,6 +46,10 @@ internal sealed class QylAutoInstrumentationOptions
         bool sqlClientSetDbStatementForText,
         string[] aspNetCoreCapturedRequestHeaders,
         string[] aspNetCoreCapturedResponseHeaders,
+        string[] httpClientCapturedRequestHeaders,
+        string[] httpClientCapturedResponseHeaders,
+        string[] grpcCapturedRequestMetadata,
+        string[] grpcCapturedResponseMetadata,
         string[] additionalMetricMeterNames,
         bool aspNetCoreUrlQueryRedactionDisabled,
         bool httpClientUrlQueryRedactionDisabled)
@@ -49,6 +62,10 @@ internal sealed class QylAutoInstrumentationOptions
         SqlClientSetDbStatementForText = sqlClientSetDbStatementForText;
         AspNetCoreCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", aspNetCoreCapturedRequestHeaders);
         AspNetCoreCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", aspNetCoreCapturedResponseHeaders);
+        HttpClientCapturedRequestHeaderMap = QylCapturedNameMap.Create(HttpAttributes.RequestHeader + ".", httpClientCapturedRequestHeaders);
+        HttpClientCapturedResponseHeaderMap = QylCapturedNameMap.Create(HttpAttributes.ResponseHeader + ".", httpClientCapturedResponseHeaders);
+        GrpcCapturedRequestMetadataMap = CreateGrpcMetadataMap(RpcAttributes.RequestMetadata + ".", grpcCapturedRequestMetadata);
+        GrpcCapturedResponseMetadataMap = CreateGrpcMetadataMap(RpcAttributes.ResponseMetadata + ".", grpcCapturedResponseMetadata);
         AdditionalMetricMeterNames = additionalMetricMeterNames;
         AspNetCoreUrlQueryRedactionDisabled = aspNetCoreUrlQueryRedactionDisabled;
         HttpClientUrlQueryRedactionDisabled = httpClientUrlQueryRedactionDisabled;
@@ -67,6 +84,14 @@ internal sealed class QylAutoInstrumentationOptions
     internal QylCapturedNameMap AspNetCoreCapturedRequestHeaderMap { get; }
 
     internal QylCapturedNameMap AspNetCoreCapturedResponseHeaderMap { get; }
+
+    internal QylCapturedNameMap HttpClientCapturedRequestHeaderMap { get; }
+
+    internal QylCapturedNameMap HttpClientCapturedResponseHeaderMap { get; }
+
+    internal QylCapturedNameMap GrpcCapturedRequestMetadataMap { get; }
+
+    internal QylCapturedNameMap GrpcCapturedResponseMetadataMap { get; }
 
     internal string[] AdditionalMetricMeterNames { get; }
 
@@ -113,10 +138,17 @@ internal sealed class QylAutoInstrumentationOptions
             EnvironmentOptions.ReadBoolean(SqlClientSetDbStatementVariable) ?? false,
             EnvironmentOptions.ReadList(AspNetCoreRequestHeadersVariable),
             EnvironmentOptions.ReadList(AspNetCoreResponseHeadersVariable),
+            EnvironmentOptions.ReadList(HttpClientRequestHeadersVariable),
+            EnvironmentOptions.ReadList(HttpClientResponseHeadersVariable),
+            EnvironmentOptions.ReadList(GrpcRequestMetadataVariable),
+            EnvironmentOptions.ReadList(GrpcResponseMetadataVariable),
             EnvironmentOptions.ReadCaseSensitiveList(MetricsAdditionalSourcesVariable),
             EnvironmentOptions.ReadBoolean(AspNetCoreUrlQueryRedactionDisabledVariable) ?? false,
             EnvironmentOptions.ReadBoolean(HttpClientUrlQueryRedactionDisabledVariable) ?? false);
     }
+
+    private static QylCapturedNameMap CreateGrpcMetadataMap(string prefix, string[] names) =>
+        QylCapturedNameMap.Create(prefix, [.. names.Where(static name => !name.EndsWith("-bin", StringComparison.OrdinalIgnoreCase))]);
 
     private static void AddSignalInstrumentations(
         Dictionary<InstrumentationLookupKey, bool> target,

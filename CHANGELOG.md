@@ -5,8 +5,17 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
-## Unreleased
+## [28.1.0] - 2026-10-17
 
+- Register qyl-owned client capture as disposable OpenTelemetry instrumentation instead of a lifetime-only span processor. Preserve native span ownership and provider disposal without a profiler.
+- Expose each HTTP/gRPC capture profile as a native MSTest data row. Publish once per test class, forward native fixture/invocation cancellation through publishing and child execution, retain row-specific evidence, and share profile/configuration constants.
+- Declare capture inputs and expectations in the data rows, share the child-process contract through one non-packable fixture assembly, and require every expected HTTP/gRPC operation exactly once. Use native typed assertions for captured arrays.
+- Assert that each configured consumer actually runs without dynamic-code support; exercise the factory registration through NativeAOT execution.
+
+- Add independently selected textual gRPC client metadata at native start/completion, combining initial headers then trailers without reading streams. Skip binary names and verify configured unary, streaming, cancellation and failure paths through an executed NativeAOT consumer.
+- Add selected outbound HTTP request/response headers on the existing native span, including content headers, raw exposed value arrays, start/stop snapshots, sampling/suppression and provider disposal. Verify configured execution through a published NativeAOT consumer.
+
+- Preserve distinct underscore, hyphen and dotted names in explicitly selected ASP.NET Core headers; retain case-insensitive selection and string arrays.
 - Run the transport integration tests against Qyl.Telemetry.Testing 3.0.3.
 - Check environment configuration through resolved instrumentation decisions and capture-key maps instead of removed metadata properties.
 

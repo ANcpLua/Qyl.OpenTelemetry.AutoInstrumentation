@@ -173,6 +173,16 @@ public static class QylHostApplicationBuilderExtensions
                 var nativeSourceRows = QylTelemetrySources.GetEnabledNativeSourceRows();
                 tracing.AddProcessor(new QylNativeSpanProcessor(nativeSourceRows));
 
+                var capture = QylAutoInstrumentationOptions.Current;
+                if (capture.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.HttpClient) &&
+                    (capture.HttpClientCapturedRequestHeaderMap.Count > 0 || capture.HttpClientCapturedResponseHeaderMap.Count > 0) ||
+                    capture.IsInstrumentationEnabled(QylAutoInstrumentationSignal.Traces, QylAutoInstrumentationIds.GrpcNetClient) &&
+                    (capture.GrpcCapturedRequestMetadataMap.Count > 0 || capture.GrpcCapturedResponseMetadataMap.Count > 0))
+                {
+                    tracing.AddInstrumentation(services => new QylClientHeaderCapture(capture,
+                        services.GetRequiredService<ILogger<QylClientHeaderCapture>>()));
+                }
+
                 if (options.EnableSessionTagInheritance)
                     tracing.AddProcessor(new QylSessionSpanProcessor());
 

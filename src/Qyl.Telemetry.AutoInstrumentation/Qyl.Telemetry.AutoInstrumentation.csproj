@@ -19,6 +19,7 @@
     <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.SqlClient" />
     <InternalsVisibleTo Include="Qyl.Telemetry.Hosting" />
     <InternalsVisibleTo Include="Qyl.Telemetry.AutoInstrumentation.VerifierProbe" />
+    <InternalsVisibleTo Include="Qyl.Telemetry.Integration.Tests" />
   </ItemGroup>
 
   <ItemGroup>

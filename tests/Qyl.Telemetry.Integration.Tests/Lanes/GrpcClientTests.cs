@@ -1,7 +1,7 @@
 namespace Qyl.Telemetry.Integration.Tests.Lanes;
 
 /// <summary>Grpc.Net.Client's native source: the raw CallInvoker shape, the ClientBase shape, and the
-/// metadata capture opt-in, each managed and NativeAOT.</summary>
+/// unconfigured metadata contract, each managed and NativeAOT.</summary>
 [TestClass]
 [TestCategory("grpc-client")]
 public sealed class GrpcClientTests(TestContext testContext)
@@ -20,12 +20,6 @@ public sealed class GrpcClientTests(TestContext testContext)
         Verify(lane, (await lane.RunManagedAsync("managed gRPC client demo (client lane)", client)));
         Verify(lane, (await lane.RunNativeAotAsync(executable, "NativeAOT gRPC client demo (client lane)", client)));
 
-        var optIn = lane.With(
-            ("QYL_GRPC_DEMO_MODE", "client"),
-            ("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA", "X-Demo-Md"),
-            ("OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA", "X-Demo-Res-Md"));
-        Verify(lane, (await lane.RunManagedAsync("managed gRPC client demo (metadata opt-in)", optIn)));
-        Verify(lane, (await lane.RunNativeAotAsync(executable, "NativeAOT gRPC client demo (metadata opt-in)", optIn)));
     }
 
     private static void Verify(DemoContext lane, DemoRun run)

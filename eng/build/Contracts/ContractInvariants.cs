@@ -44,6 +44,7 @@ static partial class ContractInvariants
 
     private static AbsolutePath[] ProductiveMechanismRoots =>
     [
+        Repo.Src / "Qyl.Telemetry.Hosting",
         Repo.Src / "Qyl.Telemetry.AutoInstrumentation",
         Repo.Src / "Qyl.Telemetry.AutoInstrumentation.DiagnosticListeners",
         Repo.Src / "Qyl.Telemetry.AutoInstrumentation.Hosting",
