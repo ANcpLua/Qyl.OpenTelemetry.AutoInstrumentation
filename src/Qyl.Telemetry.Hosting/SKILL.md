@@ -82,15 +82,15 @@ and content headers are inspected without forcing parsing or body consumption.
 
 Requests are snapshots at native start, before runtime propagation or later handlers. Response fields are
 captured before native stop/export; an absent response adds no fields. SDK suppression, sampling and tracing
-controls still apply. Collector retention is independent: known credential names remain denied. Capture
-of a benign-looking name is not a guarantee that its values contain no secrets.
+controls still apply. Collector retention preserves valid explicitly captured names, including credential-like
+names. Selection determines which values are exposed.
 
-## Selected gRPC client metadata (local, unreleased)
+## Selected gRPC client metadata
 
 `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METADATA` and
 `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` independently select
-textual client metadata. Empty lists capture nothing; selection is case-insensitive with lowercase-only
-suffixes and string-array values. Binary `-bin` selections are skipped without changing HTTP header capture.
+client metadata. Empty lists capture nothing; selection is case-insensitive with lowercase-only
+suffixes and string-array values. Selected binary `-bin` values retain the HTTP transport's base64 strings.
 
 The request snapshot is at native gRPC start, before later credentials/handlers. Response capture combines
 initial headers then trailers at natural completion, before native stop/export. Cancellation/failure retain

@@ -4,8 +4,6 @@ namespace Qyl.Telemetry.AutoInstrumentation.Internal;
 
 internal sealed class QylCapturedNameMap
 {
-    private const string McpParameterHeaderPrefix = "mcp-param-";
-
     private static readonly QylCapturedNameMap Empty = new([], []);
 
     private readonly string[] _lookupNames;
@@ -33,8 +31,6 @@ internal sealed class QylCapturedNameMap
         {
             var trimmedName = configuredName.Trim();
             if (trimmedName.Length is 0)
-                continue;
-            if (trimmedName.StartsWith(McpParameterHeaderPrefix, StringComparison.OrdinalIgnoreCase))
                 continue;
 
             var normalizedName = NormalizeName(trimmedName);

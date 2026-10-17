@@ -5,6 +5,12 @@ Notable changes to the `Qyl.Telemetry.*` package family. Versions are owned by `
 that exact version, creates the matching `v*` tag and GitHub release, and waits for all package indexes. Indexed
 packages are then exercised in clean managed and NativeAOT consumers.
 
+## [28.2.0] - 2026-10-17
+
+- Honor explicitly selected `mcp-param-*` headers and metadata without a hidden prefix exclusion.
+- Capture selected gRPC binary metadata as the HTTP transport's base64 string arrays, including initial response headers followed by trailers. Preserve existing native spans and opt-in defaults.
+- Verify the binary-only native profile and raw binary header/trailer values. Consume SemanticConventions 14.0.0 with the updated capture persistence policy.
+
 ## [28.1.1] - 2026-10-17
 
 - Rebuild the instrumentation and hosting package family against SemanticConventions 13.2.0 so producers and the Collector share the same generated vocabulary and schema version. Preserve the reviewed HTTP/gRPC capture implementation and generated-code ABI V28.

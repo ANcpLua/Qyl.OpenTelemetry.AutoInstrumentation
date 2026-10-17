@@ -9,7 +9,7 @@ namespace Qyl.Telemetry.Integration.Tests;
 public sealed class CapturedHeaderTests
 {
     [TestMethod]
-    public void Grpc_message_capture_combines_headers_then_trailers_and_skips_binary_only_for_grpc()
+    public void Grpc_message_capture_preserves_text_and_binary_headers_then_trailers()
     {
         using var request = new HttpRequestMessage();
         request.Headers.TryAddWithoutValidation("trace-bin", "YWJj");
@@ -34,8 +34,8 @@ public sealed class CapturedHeaderTests
         Assert.AreSequenceEqual(["a", "a", "", "comma,kept"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("rpc.request.metadata.x-text")));
         Assert.AreSequenceEqual(["", ""], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("rpc.request.metadata.x-null-input")));
         Assert.AreSequenceEqual(["header", "header", "trailer", ""], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("rpc.response.metadata.x-text")));
-        Assert.IsNull(activity.GetTagItem("rpc.request.metadata.trace-bin"));
-        Assert.IsNull(activity.GetTagItem("rpc.response.metadata.trace-bin"));
+        Assert.AreSequenceEqual(["YWJj"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("rpc.request.metadata.trace-bin")));
+        Assert.AreSequenceEqual(["YWJj"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("rpc.response.metadata.trace-bin")));
         QylCaptureHelpers.SetHttpClientRequestHeaders(activity,
             QylCapturedNameMap.Create("http.request.header.", ["trace-bin"]), request);
         Assert.AreSequenceEqual(["YWJj"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("http.request.header.trace-bin")));
@@ -90,21 +90,22 @@ public sealed class CapturedHeaderTests
     {
         var map = QylCapturedNameMap.Create("http.request.header.",
             ["X-Request-Id", "X_Request_Id", "X-REQUEST-ID", "X.Request.Id", "mcp-param-secret", " "]);
-        Assert.AreEqual(3, map.Count);
+        Assert.AreEqual(4, map.Count);
         var headers = new HeaderDictionary
         {
             ["x-request-id"] = "dash",
             ["X_REQUEST_ID"] = new StringValues(["under", null, "under", ""]),
             ["x.request.id"] = new StringValues(["dot,kept", "second"]),
             ["unselected"] = "absent",
-            ["mcp-param-secret"] = "absent"
+            ["mcp-param-secret"] = "selected"
         };
         using var activity = new Activity("capture");
         QylCaptureHelpers.SetRequestHeaders(activity, map, headers);
         Assert.AreSequenceEqual(["dash"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("http.request.header.x-request-id")));
         Assert.AreSequenceEqual(["under", "under", ""], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("http.request.header.x_request_id")));
         Assert.AreSequenceEqual(["dot,kept", "second"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("http.request.header.x.request.id")));
-        Assert.HasCount(3, activity.TagObjects);
+        Assert.AreSequenceEqual(["selected"], Assert.IsInstanceOfType<string[]>(activity.GetTagItem("http.request.header.mcp-param-secret")));
+        Assert.HasCount(4, activity.TagObjects);
     }
 
     [TestMethod]

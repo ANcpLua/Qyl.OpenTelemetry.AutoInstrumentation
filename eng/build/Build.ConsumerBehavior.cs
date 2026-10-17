@@ -3,7 +3,7 @@ namespace Qyl.Build;
 sealed partial class QylBuild
 {
     Target ConsumerBehavior => definition => definition
-        .Description("Consumer behavior: ProjectReference and package consumers, environment options, AddQyl, generated and native application scopes, kill switches, middleware delegates, interceptors, parity and the NativeAOT consumer")
+        .Description("Consumer behavior: package consumers, AddQyl, native scopes, capture arrays, kill switches, middleware, parity and NativeAOT")
         .After(PackageLayout)
         .Executes(() =>
         {
@@ -16,6 +16,10 @@ sealed partial class QylBuild
             SourceInterceptorConsumer.Run();
             ConsumerParity.Run();
             NativeAotConsumer.Run();
+            Shell.Checked("dotnet",
+                ["test", "--project", Repo.IntegrationTests, "--configuration", "Release", "--no-build", "--no-restore", "--",
+                    "--filter", "FullyQualifiedName~CapturedHeaderTests|FullyQualifiedName~ClientHeaderCaptureTests|FullyQualifiedName~ClientMetadataCaptureTests"],
+                Repo.Root, echo: true);
             Log.Information("consumer-behavior-gate-ok");
         });
 }

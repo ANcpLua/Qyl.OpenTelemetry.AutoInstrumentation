@@ -148,7 +148,7 @@ internal sealed class QylAutoInstrumentationOptions
     }
 
     private static QylCapturedNameMap CreateGrpcMetadataMap(string prefix, string[] names) =>
-        QylCapturedNameMap.Create(prefix, [.. names.Where(static name => !name.EndsWith("-bin", StringComparison.OrdinalIgnoreCase))]);
+        QylCapturedNameMap.Create(prefix, names);
 
     private static void AddSignalInstrumentations(
         Dictionary<InstrumentationLookupKey, bool> target,

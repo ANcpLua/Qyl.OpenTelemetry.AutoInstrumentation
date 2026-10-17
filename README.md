@@ -307,8 +307,8 @@ The fixed .NET 10 diagnostic-payload accessors and complete configured consumer 
 executed as NativeAOT on .NET 10.0.12. They depend on that runtime's private payload shapes; incompatible
 payload access is reported as a bounded warning without including values or exception text.
 
-Capture opt-in does not override Collector retention: the local canonical policy rejects malformed
-field names and known credential suffixes while retaining benign arrays. This is not arbitrary-value secret detection.
+Capture opt-in selects the exposed fields. The canonical Collector policy retains valid captured names,
+including credential-like names; unrelated attributes retain their existing persistence rules.
 
 
 ### Selected gRPC client metadata
@@ -317,7 +317,8 @@ Set `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_REQUEST_METAD
 `OTEL_DOTNET_AUTO_TRACES_GRPCNETCLIENT_INSTRUMENTATION_CAPTURE_RESPONSE_METADATA` to comma-separated
 names. The lists are independent of HTTP capture and each other; absent, empty and whitespace-only lists
 capture nothing. Matching is case-insensitive, suffixes become lowercase without changing punctuation,
-and values are real string arrays. Names ending in `-bin` are skipped; binary metadata is not decoded.
+and values are real string arrays. Selected `-bin` entries retain the HTTP transport's base64-encoded strings,
+including values in initial response headers followed by trailers.
 
 The existing `Grpc.Net.Client` activity is enriched through its synchronous diagnostic callbacks.
 Request capture reads `HttpRequestMessage.Headers` at native start, before call credentials or later

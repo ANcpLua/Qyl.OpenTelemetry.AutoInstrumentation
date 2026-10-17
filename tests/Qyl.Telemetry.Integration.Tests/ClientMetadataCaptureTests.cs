@@ -28,7 +28,7 @@ public sealed class ClientMetadataCaptureTests(TestContext testContext)
         ArgumentsDisplayName = ClientCaptureProfiles.None)]
     [DataRow(ClientCaptureProfiles.Empty, EmptyHeaders, EmptyHeaders, ClientCaptureControl.Enabled, false, false, null,
         ArgumentsDisplayName = ClientCaptureProfiles.Empty)]
-    [DataRow(ClientCaptureProfiles.BinaryOnly, BinaryHeader, BinaryHeader, ClientCaptureControl.Enabled, false, false, null,
+    [DataRow(ClientCaptureProfiles.BinaryOnly, BinaryHeader, BinaryHeader, ClientCaptureControl.Enabled, true, true, null,
         ArgumentsDisplayName = ClientCaptureProfiles.BinaryOnly)]
     [DataRow(ClientCaptureProfiles.HttpOnly, null, null, ClientCaptureControl.Enabled, false, false, HttpHeader,
         ArgumentsDisplayName = ClientCaptureProfiles.HttpOnly)]

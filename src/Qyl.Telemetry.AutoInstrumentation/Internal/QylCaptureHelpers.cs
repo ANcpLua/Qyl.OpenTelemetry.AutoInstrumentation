@@ -26,22 +26,22 @@ internal static class QylCaptureHelpers
     {
         if (activity is not { IsAllDataRequested: true } || request is null || map.Count is 0)
             return;
-        SetHttpHeaders(activity, map, request.Headers, null, skipBinary: true);
+        // gRPC binary metadata is already base64-encoded by the HTTP transport.
+        SetHttpHeaders(activity, map, request.Headers, null);
     }
 
     internal static void SetGrpcResponseMetadata(Activity? activity, QylCapturedNameMap map, HttpResponseMessage? response)
     {
         if (activity is not { IsAllDataRequested: true } || response is null || map.Count is 0)
             return;
-        SetHttpHeaders(activity, map, response.Headers, response.TrailingHeaders, skipBinary: true);
+        SetHttpHeaders(activity, map, response.Headers, response.TrailingHeaders);
     }
 
-    private static void SetHttpHeaders(Activity activity, QylCapturedNameMap map, HttpHeaders primary, HttpHeaders? additional, bool skipBinary = false)
+    private static void SetHttpHeaders(Activity activity, QylCapturedNameMap map, HttpHeaders primary, HttpHeaders? additional)
     {
         for (var index = 0; index < map.Count; index++)
         {
             var name = map.GetLookupName(index);
-            if (skipBinary && name.EndsWith("-bin", StringComparison.OrdinalIgnoreCase)) continue;
             var values = new List<string>();
             AddHeaderValues(primary, name, values);
             if (additional is not null) AddHeaderValues(additional, name, values);

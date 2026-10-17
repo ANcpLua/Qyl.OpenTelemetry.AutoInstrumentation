@@ -48,6 +48,7 @@ server.Run(async context =>
     context.Response.AppendTrailer("grpc-status", "0");
     context.Response.AppendTrailer("x-demo-trailer-md", "tv1");
     context.Response.AppendTrailer("x-overlap", "from-trailer");
+    context.Response.AppendTrailer("trace-bin", "AAH/");
     // A zero-length protobuf message, framed by gRPC. The application consumes the stream naturally.
     await context.Response.Body.WriteAsync(new byte[5], context.RequestAborted);
     if (context.Request.Path == "/qyl.Capture/Stream")
@@ -137,7 +138,7 @@ using (var host = builder.Build())
         Require(status == (method.EndsWith("Cancel", StringComparison.Ordinal) ? 1 : method.EndsWith("Unavailable", StringComparison.Ordinal) ? 14 : 0), "native status tag changed");
         var requestCaptured = scenario.RequestCaptured;
         var responseCaptured = scenario.ResponseCaptured;
-        if (requestCaptured)
+        if (requestCaptured && profile != ClientCaptureProfiles.BinaryOnly)
         {
             Values(span, "rpc.request.metadata.x-demo-md", ["mv1"]);
             Values(span, "rpc.request.metadata.x-request-id", ["dash"]);
@@ -145,8 +146,8 @@ using (var host = builder.Build())
             Values(span, "rpc.request.metadata.x.request.id", ["dot"]);
             Values(span, "rpc.request.metadata.x-multi", ["first", "first", "", "comma,kept"]);
         }
-        else Require(!span.Tags.Keys.Any(static key => key.StartsWith("rpc.request.metadata.", StringComparison.Ordinal)), "request not opt-in");
-        if (responseCaptured && !method.EndsWith("Unavailable", StringComparison.Ordinal))
+        else if (!requestCaptured) Require(!span.Tags.Keys.Any(static key => key.StartsWith("rpc.request.metadata.", StringComparison.Ordinal)), "request not opt-in");
+        if (responseCaptured && profile != ClientCaptureProfiles.BinaryOnly && !method.EndsWith("Unavailable", StringComparison.Ordinal))
         {
             Values(span, "rpc.response.metadata.x-demo-res-md", ["sv1"]);
             if (method.EndsWith("Cancel", StringComparison.Ordinal))
@@ -160,8 +161,11 @@ using (var host = builder.Build())
                 Values(span, "rpc.response.metadata.x-overlap", ["from-header", "from-trailer"]);
             }
         }
-        else Require(!span.Tags.Keys.Any(static key => key.StartsWith("rpc.response.metadata.", StringComparison.Ordinal)), "invented or unselected response");
-        Require(!span.Tags.ContainsKey("rpc.request.metadata.trace-bin") && !span.Tags.ContainsKey("rpc.response.metadata.trace-bin"), "binary captured");
+        else if (!responseCaptured || method.EndsWith("Unavailable", StringComparison.Ordinal)) Require(!span.Tags.Keys.Any(static key => key.StartsWith("rpc.response.metadata.", StringComparison.Ordinal)), "invented or unselected response");
+        if (requestCaptured) Values(span, "rpc.request.metadata.trace-bin", ["AQID"]);
+        if (responseCaptured && !method.EndsWith("Unavailable", StringComparison.Ordinal))
+            Values(span, "rpc.response.metadata.trace-bin", method.EndsWith("Cancel", StringComparison.Ordinal)
+                ? ["YWJj"] : ["YWJj", "AAH/"]);
         Require(!span.Tags.ContainsKey("rpc.request.metadata.unselected"), "unselected metadata captured");
     }
     await host.StopAsync(timeout.Token);
